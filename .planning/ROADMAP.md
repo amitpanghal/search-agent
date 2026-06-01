@@ -29,7 +29,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. With no `ANTHROPIC_API_KEY` in the environment, the command fails fast with a clear, actionable error before any query is sent (the key is read from env, never committed).
   4. Re-running the same query against an unchanged prompt makes **zero** API calls (a cache keyed by query + prompt-hash + model is hit); changing the prompt or model invalidates the cache.
   5. `npm run extract --fresh "<query>"` bypasses the cache and runs the query 5× at temperature 0, surfacing all 5 raw results for a reproducibility check.
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 01-01-PLAN.md — Bootstrap the runnable repo + the live query→Haiku→Zod-validated QueryPlan slice (BOOT-01, BOOT-02, EXT-01, EXT-02)
+- [ ] 01-02-PLAN.md — Response cache (zero-call re-runs) + the `--fresh` 5× reproducibility mode (EXT-03, EXT-04)
 
 ### Phase 2: Scorer + Report, Validated on Seeds
 **Goal**: The structural scorer grades raw extractor output on every no-grounding axis, the report emits per-axis + per-tag pass-rates and a tiered-gate verdict, and the entire query→extract→score→report pipeline is proven correct against the 3 seed records (known answers) via `npm test` — the hard ordering gate before any bulk authoring.
@@ -63,6 +66,6 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Runnable Extractor Slice | 0/TBD | Not started | - |
+| 1. Runnable Extractor Slice | 0/2 | Not started | - |
 | 2. Scorer + Report, Validated on Seeds | 0/TBD | Not started | - |
 | 3. Corpus Expansion + Baseline Report | 0/TBD | Not started | - |
