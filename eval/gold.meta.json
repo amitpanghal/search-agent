@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "gold-record/v1",
+  "schemaNote": "Mirrors decision-18 QueryPlan; Grounded.id widened to number | number[] (see scorer.spec.md, finding 1).",
+  "catalogVersion": "football@unversioned-2026-05-28",
+  "catalogCounts": { "criterions": 607, "clubs": 1784, "players": 32587 },
+  "sports": ["FOOTBALL"],
+  "generatedFrom": [
+    "football/football_criterions.json",
+    "football/football_participants.json"
+  ],
+  "validationNote": "E11: at eval start every Grounded.id is checked against the loaded catalog. A missing id => 'stale gold -- re-author'; that cell is skipped, never counted as an AI failure. catalogVersion is a placeholder until the build pipeline (plan step 2) emits a real version string."
+}
