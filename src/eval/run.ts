@@ -1,6 +1,6 @@
 // Structural eval harness (CLI).
 //   npm run eval                  -> all gold records, 1x each
-//   npm run eval -- --release     -> 5x each; query passes only if all 5 pass (E10)
+//   npm run eval -- --release     -> 5x each; query passes only if all 5 pass (E10) (Always ask permission before running this)
 //   npm run eval -- --id g001     -> a single record
 //   npm run eval -- --query "..." -> ad-hoc extraction, no grading (eyeball the extractor)
 //

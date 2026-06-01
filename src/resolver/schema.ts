@@ -6,7 +6,7 @@
 // downstream, in place. The eval's `gold-record.ts` is the same shape with every groundable
 // leaf wrapped in a `Grounded` cell that carries the real id; keep the two in sync.
 //
-// Assumes `zod`. `BUILT_SPORTS` is generated at startup from football/groups.json
+// Assumes `zod`. `BUILT_SPORTS` is generated at startup from data/football/groups.json
 // (decision 17) — today only FOOTBALL is built, so the `sport` enum and the `ambiguous`
 // candidates are single-valued for now.
 
@@ -22,11 +22,13 @@ const Subject = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("event") }),
 ]);
 
-// A line picks an outcome side: a numeric threshold on a counted stat, or a yes/no side.
-// Omitted entirely = "all offered lines".
+// A line picks the market outcome: a numeric threshold on a counted stat, a yes/no side, or a
+// named multi-outcome selection (HT/FT, correct score). Omitted entirely = "all offered lines".
+// `selection.value` is text close to the query wording; grounding maps it to an outcome id.
 const Line = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("numeric"), value: z.number(), direction: z.enum(["over", "under"]) }),
   z.object({ kind: z.literal("binary"), direction: z.enum(["yes", "no"]) }),
+  z.object({ kind: z.literal("selection"), value: z.string().min(1) }),
 ]);
 
 // A price bound on the outcome. At least one of min/max; min <= max.

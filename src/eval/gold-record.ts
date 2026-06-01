@@ -32,10 +32,12 @@ const GoldSubject = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("event") }), // bare -- whole-match / no named owner
 ]);
 
-// structural -- graded by exact value, not grounded (E2)
+// numeric/binary are structural -- graded by exact value (E2). selection is a groundable
+// pick (HT/FT cell, correct score) -> the value carries the real outcome id.
 const Line = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("numeric"), value: z.number(), direction: z.enum(["over", "under"]) }),
   z.object({ kind: z.literal("binary"), direction: z.enum(["yes", "no"]) }),
+  z.object({ kind: z.literal("selection"), value: Grounded }),
 ]);
 
 const Odds = z

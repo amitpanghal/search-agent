@@ -5,9 +5,43 @@ newest on top. A sprint's plan lives in its own `sprint-N.md`.
 
 ---
 
+## Sprint 2 — Market grounding (criterion star) + id-graded market axis
+
+Plan: [sprint-2.md](sprint-2.md)
+
+### 2026-06-01 — Plan drafted (not started)
+
+Drafted the Sprint 2 plan: ground `selector.market_concept` text → criterion id(s) via curated
+alias (head) + voyage-3 cosine over criterion-name vectors (tail), then swap the scorer's market
+axis from text (`accept[]`) to catalog id (doc E3). Staged A (catalog + alias + scorer id-swap) →
+B (voyage-3 vectors + `build:index`) → C (subject-aware side-split for `team total goals`). SQLite
+deferred (decision 10). Scope: market axis only — entities/competition/attrFilter stay text.
+Implementation pending approval.
+
+---
+
 ## Sprint 1 — Bootstrap a runnable structural eval
 
 Plan: [sprint-1.md](sprint-1.md)
+
+### 2026-06-01 13:05 CEST — Prompt refinements from ad-hoc probing (2 fixes)
+
+Probed the extractor with 5 messy WC-26-style queries (Mbappé / Bellingham / Modrić /
+Yamal / Bruno Fernandes) via `--query`. Two real issues found and fixed in
+`resolver/extractor-prompt.md`; eval still 3/3, ship gate PASS (no regression).
+
+1. **Empty-odds crash.** "…odds/price" with no number made Haiku emit `odds: {}`, which
+   fails schema validation (`need >=1 bound`). Added an odds-section rule mirroring the
+   existing line-no-number rule: a number-less price mention → omit `odds`, never emit `{}`.
+   Confirmed: "team to score first odds" now omits odds instead of crashing.
+2. **Self-correction miss.** "Haaland-less Norway out — sorry, with Modrić in the lineup"
+   kept the retracted `Norway`. Rule 5 already covered the pattern; reinforced it with a
+   matching worked example. Confirmed: `teams` now `[]`, only Modrić retained.
+
+Note: these 5 probes are good candidates for gold records — they exercise the still-uncovered
+tags `coref-his`, `coref-his-team`, `self-correction`, `player-role`, `line-no-number`.
+
+---
 
 ### 2026-06-01 12:35 CEST — Sprint 1 COMPLETE — eval passes 3/3, ship gate PASS
 

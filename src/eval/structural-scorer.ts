@@ -42,9 +42,8 @@ type ResolvedGold = Extract<GoldRecord["expect"], { status: "resolved" }>;
 type PredSelector = ResolvedPlan["selectors"][number];
 type GoldSelector = ResolvedGold["selectors"][number];
 
-type LineVal =
-  | { kind: "numeric"; value: number; direction: "over" | "under" }
-  | { kind: "binary"; direction: "yes" | "no" };
+type PredLine = NonNullable<PredSelector["line"]>;
+type GoldLine = NonNullable<GoldSelector["line"]>;
 type OddsVal = { min?: number; max?: number };
 type StageVal = { round: string | null; ordinal: "first" | "last" | null; conditional: boolean };
 type TimeVal = {
@@ -52,14 +51,15 @@ type TimeVal = {
   kickoff_time_of_day: string | null;
 };
 
-function lineEqual(a: LineVal | undefined, b: LineVal | undefined): boolean {
-  if (!a && !b) return true;
-  if (!a || !b) return false;
-  if (a.kind !== b.kind) return false;
-  if (a.kind === "numeric" && b.kind === "numeric") {
-    return a.value === b.value && a.direction === b.direction;
+function lineEqual(p: PredLine | undefined, g: GoldLine | undefined): boolean {
+  if (!p && !g) return true;
+  if (!p || !g) return false;
+  if (p.kind !== g.kind) return false;
+  if (p.kind === "numeric" && g.kind === "numeric") {
+    return p.value === g.value && p.direction === g.direction;
   }
-  if (a.kind === "binary" && b.kind === "binary") return a.direction === b.direction;
+  if (p.kind === "binary" && g.kind === "binary") return p.direction === g.direction;
+  if (p.kind === "selection" && g.kind === "selection") return looseMatch(p.value, g.value.accept);
   return false;
 }
 
