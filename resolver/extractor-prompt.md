@@ -28,6 +28,10 @@ Built sports today: **FOOTBALL** (the only one). Decide `status`:
   (`recognizedAs` = the unbuilt sport). Do not half-answer by dropping the other sport.
 - `status: "ambiguous"` is reserved for a query torn between **two built sports**. With only
   one built sport this can never happen today — never emit it.
+- **Abstain only on a named unbuilt sport.** Nothing else triggers `unsupported` — not a vague
+  or collective subject (descriptors like "the hosts", "the top seeds", "the favourites"), not an
+  ungroundable entity, not confusing phrasing. Resolve and keep the descriptor as **text** in
+  `teams`; grounding enumerates it. Never emit `recognizedAs` reason text (e.g. "ambiguous query").
 
 Only when `status` is `"resolved"` do you continue to Step 2 and Step 3. A `resolved` plan
 carries `sport`, `event_scope`, and `selectors[]`.
@@ -52,10 +56,11 @@ Which fixtures the query is about. Fields:
   - Record the role exactly as stated — never downgrade it. The same player may also own a
     market in Step 3.
 - **`competition`**: named tournament as text ("WC 26" → "World Cup 2026"), else `null`.
-- **`level`**: `"competition"` when the market is settled over the **whole tournament** (a
-  tournament outright, an award or top-scorer market spanning every game, a season-long
-  total); `"fixture"` when it belongs to a single match. ("tournament top scorer" →
-  competition; "shots in this match" → fixture.)
+- **`level`** — settlement **scope**, not whether a tournament is named. `"competition"` only
+  if it settles over the whole tournament / many matches (outright, award, tournament
+  top-scorer, "across the group stage"); else `"fixture"` — even when a competition is named.
+  ("Croatia fouls at WC 26", "first foul inside 2 min" → fixture; "at WC 26" sets
+  `competition`, not `level`.)
 - **`stage`** (or `null`) — the tournament round, as `{ round, ordinal, conditional }`:
   - `round`: text of the round ("group stage", "round of 16", "quarterfinal", "semifinal",
     "final", "knockout"), else `null`.
@@ -116,18 +121,34 @@ The market as a short concept phrase close to the query wording ("tackle markets
 "tackles", "fouls conceded", "winning margin", "time of first goal"). Text only — never
 guess a catalog name, never invent a market that wasn't asked for.
 
-### line (optional) — a threshold on a **counted** stat
+### line (optional) — by **answer-type**, not the nouns
 
-- **numeric**: a number tied to a counted thing → `{ kind: "numeric", value, direction:
-  "over"|"under" }`. "interceptions over 1.5" → `{ numeric, 1.5, over }`.
-- **binary**: the side of a yes/no market → `{ kind: "binary", direction: "yes"|"no" }`. A
-  named yes/no market defaults to the **`"yes"`** side: "to win to nil" → `{ binary, yes }`,
-  "to score in both halves" → `{ binary, yes }`. Use `"no"` only when the query says so.
-  **Exception — price-only filter:** when a yes/no market is named with **only a price bound
-  and no side word** ("both teams to score markets priced over 1.90", "BTTS odds above 2.0"),
-  the query filters the offering by price, not a side — **omit `line`** and emit only `odds`.
-- **Omit `line` entirely** when a counted market is named with **no number** ("clearances
-  over/under", "ground duels won markets") — that means *all offered lines*.
+What kind of answer settles the market? Decide from what it *asks*, **never** from a counted
+noun (shots, cards, corners, fouls). One branch applies:
+
+- **`numeric`** — asks *how many* against a threshold. Number stated → `{ kind: "numeric",
+  value, direction: "over"|"under" }`. A count market with **no number → omit `line`** (= all
+  offered lines) — *omit* is only for true over/under markets ("team corners", "clearances"). A
+  **first-event** ("first card"), **superlative** ("most fouls"), or **to-be** market is not
+  over/under → binary, never omitted.
+- **`binary`** — a single **yes/no proposition**; the default whenever it isn't numeric or a
+  pick. → `{ kind: "binary", direction: "yes"|"no" }`, default `"yes"` (`"no"` only if stated).
+  Covers props (to score, anytime / first / last goalscorer, a brace, clean sheet, BTTS, win
+  to nil), occurrences (to be carded, a card in
+  the first 10 min, first foul inside 2 min), and superlatives (*most / highest / fewest / top
+  / first-to / race-to*: "most fouls", "highest possession", "race to 5 corners"). A counted
+  noun — or a number inside the phrase ("race to **5**") — never makes it numeric. Never
+  omitted: a price-only mention keeps the `"yes"` line and puts the price in `odds`.
+- **`selection`** — picks **one of several named outcomes** (HT/FT, correct score, winning
+  margin, handicap line) → `{ kind: "selection", value: "<pick>" }` as text; subject = named
+  team, else `event`. **Handicaps** (Asian / 3-way): `market_concept` names the type only
+  ("Asian handicap", "3-way handicap") — never the number; `value` = the signed line alone
+  ("-1.5", "+1"), never the team (it's the subject).
+
+**Binary vs selection:** asserts one proposition true → `binary`; chooses among named outcomes
+→ `selection`. A superlative/occurrence/scorer stays `binary` even when it names the achiever
+("most passes … to be Griezmann", "Mbappé first goalscorer" → binary). Keep any time/score
+window in `market_concept`, never in `attrFilter`.
 
 ### odds (optional) — a **price** bound
 
@@ -138,14 +159,21 @@ A bare number, or a number with "priced / odds / at" → `{ min?, max? }`. "pric
 `line` and `odds` can **both** appear: "headers won over 2.5 priced above 1.80" → `line {
 numeric, 2.5, over }` **and** `odds { min: 1.80 }`.
 
+**Omit `odds` entirely** when "odds / price" is named with **no number** ("team to score
+first odds", "match result odds") — that means *any price*. Never emit an empty `odds: {}`;
+an `odds` object must carry at least a `min` or a `max`.
+
 ### attrFilter (optional) — filter **which participants** inside a market
 
 For position / region / age applied to the participant outcomes of a market. An **unnamed
 participant group is NEVER a subject** — keep the subject (`event`, or whoever is named) and
-add an `attrFilter`:
+add an `attrFilter`. `attrFilter` holds **only** a player attribute (position, region, age);
+a **time window or score band is never an `attrFilter`** — it stays inside `market_concept`
+text ("first corner inside 5 minutes" → market_concept "first corner inside 5 minutes", no
+attrFilter):
 
-- `position`: text, singularised ("wingers" → "winger", "full-backs" → "fullback",
-  "goalkeepers" → "goalkeeper").
+- `position`: a **player field position only** ("wingers" → "winger", "full-backs" →
+  "fullback", "goalkeepers" → "goalkeeper"). Never a time band, score, or other phrase.
 - `region`: text confederation/continent ("African nations" → "Africa", "Asian teams" →
   "Asia").
 - `ageMin` / `ageMax`: **inclusive integer** bounds — normalize: "under 23" → `ageMax: 22`;
@@ -153,7 +181,8 @@ add an `attrFilter`:
 
 "tournament top scorer for wingers" → subject `event`, level `competition`, market_concept
 "tournament top scorer", attrFilter `{ position: "winger" }`. "to be carded for full-backs" →
-subject `event`, market_concept "to be carded", attrFilter `{ position: "fullback" }`.
+subject `event`, market_concept "to be carded", line `{ kind: "binary", direction: "yes" }`,
+attrFilter `{ position: "fullback" }`.
 
 ---
 
@@ -168,11 +197,14 @@ subject `event`, market_concept "to be carded", attrFilter `{ position: "fullbac
 3. **Line vs price** — a number on a counted thing is a **line**; a bare or "priced" number
    is **odds**; both can co-occur. Age is **never** a line/odds → it goes to `attrFilter`.
    ("tackles over 3.5 priced above 2.0" → line `{numeric,3.5,over}` + odds `{min:2.0}`.)
-4. **Binary side** — a named yes/no market defaults to side **`"yes"`**; the opposite side is
-   the opposite bet, so only use `"no"` when stated.
+4. **Binary side** — a named yes/no *or* occurrence/achievement market ("to be carded", "race
+   to 5 corners", "first card") defaults to side **`"yes"`**; the opposite side is the opposite
+   bet, so only use `"no"` when stated. A counted noun (card/corner) does not make it numeric —
+   only an explicit over/under threshold does.
 5. **Self-correction** — if the query retracts something ("X out — sorry, with Y"), emit
    **only the final corrected intent** and drop the retracted entity completely. ("with Kane
-   up top — wait, swap that for Foden" → only Foden appears.)
+   up top — wait, swap that for Foden" → only Foden appears; "Norway out — sorry, with
+   Modrić in the lineup" → drop Norway entirely, keep only Modrić.)
 6. **Never fabricate** — do not invent a market, a stage/time that wasn't asked for, a
    player, a price, or an id. Record only what the query says, as its stated text.
 
