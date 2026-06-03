@@ -1,0 +1,30 @@
+{
+  "leagues": {
+    "PL": "Premier League",
+    "EPL": "Premier League",
+    "UCL": "UEFA Champions League"
+  },
+  "teams":{
+    "PSG": "Paris Saint-Germain",
+    "Spurs": "Tottenham Hotspur"
+  },
+  "markets": {
+    "BTTS":             { "type": "category_concept", "id": 10027880, "boTypeId": 18, "name": "Both Teams To Score" },
+    "GG":               { "type": "category_concept", "id": 10027880, "boTypeId": 18, "name": "Both Teams To Score" },
+    "both teams score": { "type": "category_concept", "id": 10027880, "boTypeId": 18, "name": "Both Teams To Score" },
+    "AH":               { "type": "botype", "id": 7, "label": "Asian Handicap" },
+    "DNB":              { "type": "criterion_concept", "name": "Draw No Bet" },
+    "1X2":              { "type": "botype", "id": 2, "label": "Match Result" },
+    "match result":     { "type": "botype", "id": 2, "label": "Match Result" },
+    "O/U":              { "type": "botype", "id": 6, "label": "Over/Under" },
+    "over under":       { "type": "botype", "id": 6, "label": "Over/Under" },
+    "CS":               { "type": "botype", "id": 3, "label": "Result" },
+    "HT/FT":            { "type": "botype", "id": 8, "label": "Half Time / Full Time" }
+  },
+  "periodQualifiers": {
+    "1st half":    "FIRST_HALF",
+    "first half":  "FIRST_HALF",
+    "2nd half":    "SECOND_HALF",
+    "second half": "SECOND_HALF"
+  }
+}
