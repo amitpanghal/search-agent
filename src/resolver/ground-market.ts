@@ -12,7 +12,8 @@
 //          load-bearing cut: a `player` query never sees team/match criterions, nor v.v.).
 //       2. cosine within the bucket.
 //       3. line→boType HARD gate (a numeric over/under line can only ground an over/under market;
-//          a yes/no can only ground a yes/no one) + period SOFT penalty (down-rank, never drop).
+//          a yes/no can only ground a yes/no one) + period & specificity SOFT penalties (down-rank,
+//          never drop; specificity demotes a name padded with words the query never asked for).
 //       4. tier by stat-type core: one clear winner (gap > ε) → `confident`; survivors sharing a
 //          core → `variants` (returns ALL their ids — this is how the home/away side-split is
 //          produced); a different-core rival within ε → `ambiguous` (the executor clarifies).
@@ -59,9 +60,15 @@ const NONE: GroundResult = { ids: [], method: "none" };
 // THRESHOLD: a cosine win must clear this to count as a grounding; below it we abstain (E5).
 // EPSILON: the near-tie band. A different-core rival within ε of the top → `ambiguous`, not a guess.
 // PERIOD_PENALTY: a period-mismatched candidate loses this much score for ranking/tiering only.
+// SPEC_PENALTY: per query-absent CONTENT word, a candidate name loses this much (ranking/tiering only)
+//   — the scoped Option-1 rerank that demotes an over-specified false friend ("Any Team to win without
+//   conceding a goal" for "to win the tournament"). Set to EPSILON so one unrequested content word ≈ one
+//   near-tie band of doubt; SPEC_CAP ceilings it so a very long name can't be obliterated. Uncalibrated.
 const THRESHOLD = 0.55;
 const EPSILON = 0.03;
 const PERIOD_PENALTY = 0.05;
+const SPEC_PENALTY = 0.03;
+const SPEC_CAP = 5;
 const TOP_K = 8;
 
 // ---- subject bucket (decision 20 step 1) ----
@@ -120,6 +127,29 @@ function periodOf(text: string): Period {
   if (/\b1st half\b|\bfirst half\b/.test(t)) return "first_half";
   if (/\b2nd half\b|\bsecond half\b/.test(t)) return "second_half";
   return "full"; // intervals/regular time fall here; they separate by core string instead
+}
+
+// ---- query-coverage specificity penalty (decision 20, Option 1 — the deferred rerank, scoped) ----
+// Raw cosine rewards semantic closeness, but a long, over-specified name can out-cosine the tight true
+// twin: "Any Team to win without conceding a goal" (0.584) beats "To Win The Trophy" (0.553) for the
+// query "to win the tournament". Penalize a candidate for the CONTENT words in its name the query never
+// mentioned — the constraints it didn't ask for ("team", "without", "conceding", "goal"). Like the period
+// penalty this touches `adj` (ranking/tiering) only, never `raw` (the THRESHOLD), so it can reorder
+// survivors but never drops one from the pool nor resurrects a below-threshold name — the same fail-safe
+// envelope. Function words aren't content, and a word the query DID use is free, so a pure synonym swap
+// ("competition"/"trophy" vs "tournament") costs ≤1 and leaves genuine twins clustered.
+const SPEC_STOPWORDS = new Set([
+  "the", "a", "an", "to", "of", "in", "on", "at", "by", "for", "and", "or", "with", "is", "are", "be", "s", "any", "all", "their",
+]);
+
+function specificityPenalty(queryText: string, name: string): number {
+  const q = new Set(lc(queryText).split(" ").filter(Boolean));
+  let extra = 0;
+  for (const tok of lc(stripSettle(name)).split(" ")) {
+    if (!tok || SPEC_STOPWORDS.has(tok) || q.has(tok)) continue;
+    extra++;
+  }
+  return Math.min(extra, SPEC_CAP) * SPEC_PENALTY;
 }
 
 // ---- stat-type core (decision 20 step 4) ----
@@ -213,14 +243,14 @@ async function vectorGround(text: string, opts: GroundOpts): Promise<GroundResul
     .sort((a, b) => b.raw - a.raw);
   const candidates = allScored.slice(0, TOP_K).map(({ id, name, raw }) => ({ id, name, score: raw }));
 
-  // HARD line→boType gate, then period SOFT penalty, then the threshold cut (penalty touches `adj` —
-  // ranking/tiering — only; the threshold still gates on raw). `isBinary` gates the yes/no tie-break below.
+  // HARD line→boType gate, then period + specificity SOFT penalties, then the threshold cut (penalties
+  // touch `adj` — ranking/tiering — only; the threshold still gates on raw). `isBinary` gates the yes/no tie-break below.
   const isBinary = opts.line?.kind === "binary";
   const survivors: Scored[] = allScored
     .filter((s) => passesGate(s.boTypeNames, required))
     .map((s) => ({
       ...s,
-      adj: s.raw - (periodOf(s.name) === qPeriod ? 0 : PERIOD_PENALTY),
+      adj: s.raw - (periodOf(s.name) === qPeriod ? 0 : PERIOD_PENALTY) - specificityPenalty(text, s.name),
       core: statCore(s.name),
     }))
     .filter((s) => s.raw >= THRESHOLD)
