@@ -67,8 +67,10 @@ const TOP_K = 8;
 // ---- subject bucket (decision 20 step 1) ----
 function bucketFor(kind?: SubjectKind): Subject | null {
   if (kind === "player") return "player";
-  if (kind === "team" || kind === "either_match_team" || kind === "event") return "team_or_match";
-  return null; // no subject hint -> search every bucket (the bare --ground eyeball path)
+  if (kind === "team" || kind === "either_match_team") return "team_or_match";
+  // event + no-hint -> search BOTH buckets: an "event" outcome can land on a team market
+  // ("Winner") OR a player award ("Golden Ball Winner"), so it must not be team-only.
+  return null;
 }
 
 // ---- line → boType gate (decision 20 step 3, HARD) ----
