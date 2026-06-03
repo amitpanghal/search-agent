@@ -4,3 +4,6 @@ node_modules/
 *.log
 __pycache__/
 *.pyc
+
+# Derived vector index (rebuild with `npm run build:index`; needs VOYAGE_API_KEY).
+src/resolver/index/
