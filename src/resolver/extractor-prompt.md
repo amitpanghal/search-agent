@@ -121,6 +121,15 @@ The market as a short concept phrase close to the query wording ("tackle markets
 "tackles", "fouls conceded", "winning margin", "time of first goal"). Text only — never
 guess a catalog name, never invent a market that wasn't asked for.
 
+A **bare count noun** is incomplete: a whole-match or whole-team count names the aggregate
+"total <noun>" even when the query omits the word — "Over 2.5 goals" → "total goals", "9+
+corners" → "total corners". Leave already-qualified concepts as-is ("shots on target",
+"fouls conceded", "winning margin").
+
+A **yes/no achievement** (a player *or team* proposition) is an infinitive *to <verb>*, not a noun — "anytime
+goalscorer" → "to score", "clean sheet" → "to keep a clean sheet". Drop "anytime" (scoring
+at any point is just "to score"); a *first/last* scorer keeps that word ("first goalscorer").
+
 ### line (optional) — by **answer-type**, not the nouns
 
 What kind of answer settles the market? Decide from what it *asks*, **never** from a counted
@@ -134,7 +143,8 @@ noun (shots, cards, corners, fouls). One branch applies:
 - **`binary`** — a single **yes/no proposition**; the default whenever it isn't numeric or a
   pick. → `{ kind: "binary", direction: "yes"|"no" }`, default `"yes"` (`"no"` only if stated).
   Covers props (to score, anytime / first / last goalscorer, a brace, clean sheet, BTTS, win
-  to nil), occurrences (to be carded, a card in
+  to nil), a **named team's tournament outright** (to win the tournament / group, to reach the
+  final / semi-finals — a single team's progression is a yes/no), occurrences (to be carded, a card in
   the first 10 min, first foul inside 2 min), and superlatives (*most / highest / fewest / top
   / first-to / race-to*: "most fouls", "highest possession", "race to 5 corners"). A counted
   noun — or a number inside the phrase ("race to **5**") — never makes it numeric. Never
@@ -147,8 +157,10 @@ noun (shots, cards, corners, fouls). One branch applies:
 
 **Binary vs selection:** asserts one proposition true → `binary`; chooses among named outcomes
 → `selection`. A superlative/occurrence/scorer stays `binary` even when it names the achiever
-("most passes … to be Griezmann", "Mbappé first goalscorer" → binary). Keep any time/score
-window in `market_concept`, never in `attrFilter`.
+("most passes … to be Griezmann", "Mbappé first goalscorer" → binary). A **named team to win /
+reach** a stage asserts one proposition → `binary` ("Spain to win the group" → binary yes); the
+bare **field** outright names no side ("outright winner", "group winner") → subject `event`, not
+binary. Keep any time/score window in `market_concept`, never in `attrFilter`.
 
 ### odds (optional) — a **price** bound
 

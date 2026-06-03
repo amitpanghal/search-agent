@@ -3,10 +3,13 @@
 //   npm run eval -- --release     -> 5x each; query passes only if all 5 pass (E10) (Always ask permission before running this)
 //   npm run eval -- --id g001     -> a single record
 //   npm run eval -- --query "..." -> ad-hoc extraction, no grading (eyeball the extractor)
+//   npm run eval -- --ground "..."-> ad-hoc market grounding, no extraction (eyeball the grounder)
+//                  [--subject player|team|either_match_team|event] [--line numeric|binary|selection]
 //
-// Grades the raw extractor output on the costly structural facets and reports per-tag
-// pass-rates + a ship gate (critical tags = 100%, soft tags ~90% aggregate). Exits
-// non-zero on any critical miss (CI-usable). The id-graded axes wait for grounding.
+// Grades the extractor output on the costly structural facets and reports per-tag pass-rates +
+// a ship gate (critical tags = 100%, soft tags ~90% aggregate). Exits non-zero on any critical
+// miss (CI-usable). The market axis is graded by criterion id: each selector is pre-grounded
+// (text -> id) before scoring (Sprint 2); the other id-graded axes still wait for grounding.
 
 import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -16,9 +19,11 @@ import { BEHAVIOR_TAGS, CRITICAL_TAGS, SOFT_TAGS, BEHAVIOR_TAG_IDS, type Behavio
 import { extract, EXTRACTION_MODEL } from "../resolver/extract";
 import { scoreRun, type RunResult } from "./structural-scorer";
 import type { QueryPlan } from "../resolver/schema";
+import { groundMarket, type GroundOpts, type GroundResult, type SubjectKind } from "../resolver/ground-market";
+import { loadCatalog } from "../resolver/catalog";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const ROOT = join(HERE, "..");
+const ROOT = join(HERE, "..", ".."); // src/eval -> repo root (where .env lives)
 const SOFT_BAR = 0.9;
 
 type RunOutcome = { result: RunResult; plan?: QueryPlan };
@@ -71,12 +76,26 @@ function loadMeta(): { schemaVersion?: string; catalogVersion?: string } {
   }
 }
 
+// Pre-ground each selector's text market_concept to a criterion id-set + tier so the scorer can
+// grade the market axis by id under E13 (scoring stays sync). A selector that grounds to nothing
+// becomes null. Abstentions have no selectors -> nothing to ground.
+async function groundSelectors(plan: QueryPlan): Promise<(GroundResult | null)[] | undefined> {
+  if (plan.status !== "resolved") return undefined;
+  const grounded: (GroundResult | null)[] = [];
+  for (const sel of plan.selectors) {
+    const g = await groundMarket(sel.market_concept, { subjectKind: sel.subject.kind, line: sel.line });
+    grounded.push(g.ids.length ? g : null);
+  }
+  return grounded;
+}
+
 async function runQuery(rec: GoldRecord, n: number): Promise<QueryReport> {
   const outcomes: RunOutcome[] = [];
   for (let r = 0; r < n; r++) {
     try {
       const plan = await extract(rec.query);
-      outcomes.push({ result: scoreRun(rec, plan), plan });
+      const grounded = await groundSelectors(plan);
+      outcomes.push({ result: scoreRun(rec, plan, grounded), plan });
     } catch (e) {
       outcomes.push({ result: { pass: false, failures: [`extraction error: ${(e as Error).message}`], soft: [] } });
     }
@@ -186,12 +205,59 @@ async function adHoc(query: string): Promise<void> {
   console.log(JSON.stringify(plan, null, 2));
 }
 
+function buildGroundOpts(subject?: string, lineKind?: string): GroundOpts {
+  const opts: GroundOpts = {};
+  if (subject !== undefined) {
+    const valid: SubjectKind[] = ["player", "team", "either_match_team", "event"];
+    if (!valid.includes(subject as SubjectKind)) {
+      console.error(`--subject must be one of: ${valid.join(", ")}`);
+      process.exit(2);
+    }
+    opts.subjectKind = subject as SubjectKind;
+  }
+  if (lineKind !== undefined) {
+    if (lineKind === "numeric") opts.line = { kind: "numeric", value: 0, direction: "over" };
+    else if (lineKind === "binary") opts.line = { kind: "binary", direction: "yes" };
+    else if (lineKind === "selection") opts.line = { kind: "selection", value: "x" };
+    else {
+      console.error("--line must be one of: numeric, binary, selection");
+      process.exit(2);
+    }
+  }
+  return opts;
+}
+
+async function adHocGround(text: string, opts: GroundOpts): Promise<void> {
+  const tags = [opts.subjectKind ? `subject=${opts.subjectKind}` : "", opts.line ? `line=${opts.line.kind}` : ""].filter(Boolean);
+  console.log(`Ground: ${text}${tags.length ? `  [${tags.join(", ")}]` : ""}`);
+  const r = await groundMarket(text, opts);
+  if (!r.ids.length) {
+    console.log(`  -> none (${r.method})`);
+  } else {
+    const cat = loadCatalog();
+    const names = r.ids.map((id) => cat.byId.get(id)?.name ?? "?");
+    const score = r.score != null ? `, score ${r.score.toFixed(3)}` : "";
+    console.log(`  -> ${JSON.stringify(r.ids)}  [${names.join(", ")}]  (${r.method}/${r.tier ?? "?"}${score})`);
+  }
+  if (r.candidates?.length) {
+    console.log("  candidates (in-bucket top-k, pre-gate):");
+    for (const c of r.candidates) console.log(`    ${c.score.toFixed(3)}  ${c.id}  ${c.name}`);
+  }
+}
+
 async function main(): Promise<void> {
   loadDotEnv();
   const args = process.argv.slice(2);
   const query = flagValue(args, "--query");
+  const ground = flagValue(args, "--ground");
   const onlyId = flagValue(args, "--id");
   const release = args.includes("--release");
+
+  // Grounding needs no LLM call, so eyeballing it does not require ANTHROPIC_API_KEY.
+  if (ground !== undefined) {
+    await adHocGround(ground, buildGroundOpts(flagValue(args, "--subject"), flagValue(args, "--line")));
+    return;
+  }
 
   if (!process.env.ANTHROPIC_API_KEY) {
     console.error("ANTHROPIC_API_KEY is not set. Export it, or copy .env.example -> .env.");
@@ -214,7 +280,7 @@ async function main(): Promise<void> {
   const n = release ? 5 : 1;
   console.log(`Structural eval — model ${EXTRACTION_MODEL}, ${n}x per query (temp 0)`);
   console.log(`Gold: ${gold.length} record(s) | schema ${meta.schemaVersion ?? "?"} | catalog ${meta.catalogVersion ?? "?"}`);
-  console.log("Mode: STRUCTURAL (text vs accept[]); id-graded axes deferred to grounding.\n");
+  console.log("Mode: GROUNDED (market axis by id; tiered, subject-filtered); other axes text vs accept[].\n");
 
   const reports: QueryReport[] = [];
   for (const rec of gold) {

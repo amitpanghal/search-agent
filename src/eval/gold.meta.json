@@ -2,7 +2,7 @@
   "schemaVersion": "gold-record/v1",
   "schemaNote": "Mirrors decision-18 QueryPlan; Grounded.id widened to number | number[] (see scorer.spec.md, finding 1).",
   "catalogVersion": "football@unversioned-2026-05-28",
-  "catalogCounts": { "criterions": 607, "clubs": 1784, "players": 32587 },
+  "catalogCounts": { "criterions": 600, "clubs": 1784, "players": 32587 },
   "sports": ["FOOTBALL"],
   "generatedFrom": [
     "football/football_criterions.json",
