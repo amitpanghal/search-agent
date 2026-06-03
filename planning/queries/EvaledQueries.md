@@ -825,3 +825,245 @@ Event scope: team Argentina, player Martínez (role `plays`), competition null, 
 Triage flags:
 - **Player duplicated** — Martínez is both a selector subject and listed in `event_scope.players` (role `plays`). Confirm this matches the intended gold convention (subject player also echoed into scope vs. only when a scope constraint like "if X starts").
 - **Competition null** — "Argentina's knockout game" produced a stage (`round: "knockout"`) but no competition. Reasonable since none was named; flag if WC-26 context should be inferred by default.
+
+## Stage B grounding collision probes (2026-06-03)
+
+Ran the extractor to confirm the *real* `market_concept`/subject/line the grounder receives for the collision cases, then fed those exact values to `groundMarket`. The extractor strips the subject into `subject.kind`/`name` and leaves a **bare** stat as `market_concept` — so these are the true grounder inputs, not impoverished probe stubs.
+
+### Q: "Will Saka have over 1.5 shots on target tonight?"
+
+| # | Subject | Market | Line |
+|---|---|---|---|
+| 1 | player: Saka | shots on target | numeric over 1.5 |
+
+Event scope: time `tonight` (anchor `now`); everything else empty.
+
+```json
+{
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": { "teams": [], "players": [], "competition": null, "level": "fixture", "stage": null, "time": { "date_window": { "value": "tonight", "anchor": "now" }, "kickoff_time_of_day": null } },
+  "selectors": [
+    { "subject": { "kind": "player", "name": "Saka" }, "market_concept": "shots on target", "line": { "kind": "numeric", "value": 1.5, "direction": "over" } }
+  ]
+}
+```
+
+Grounding (`--ground "shots on target" --subject player --line numeric`): **confident → `2100112502` "Player's Headed Shots on Target"** — WRONG. Generic `2100015085` "Player Shots on Target" ranks 6th (0.554) vs headed (0.586). Gate dropped head-only rivals, leaving a 0.032 gap (just over ε=0.03) → false confidence on the over-specific market.
+
+### Q: "Over 2.5 goals in Arsenal vs Chelsea"
+
+| # | Subject | Market | Line |
+|---|---|---|---|
+| 1 | event | goals | numeric over 2.5 |
+
+Event scope: teams [Arsenal, Chelsea], everything else empty.
+
+```json
+{
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": { "teams": ["Arsenal", "Chelsea"], "players": [], "competition": null, "level": "fixture", "stage": null, "time": null },
+  "selectors": [
+    { "subject": { "kind": "event" }, "market_concept": "goals", "line": { "kind": "numeric", "value": 2.5, "direction": "over" } }
+  ]
+}
+```
+
+Grounding (`--ground "goals" --subject event --line numeric`): **none** — bare "goals" tops out at 0.495 (`Total Daily Goals`); the real `1001159926` "Total Goals" sits at 0.438, all below THRESHOLD=0.55. E5-safe abstain, but a miss. The weak link is the extractor emitting bare `goals` rather than `total goals`.
+
+### Q: "Arsenal total goals over 1.5"
+
+| # | Subject | Market | Line |
+|---|---|---|---|
+| 1 | team: Arsenal | total goals | numeric over 1.5 |
+
+Event scope: teams [Arsenal], everything else empty.
+
+```json
+{
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": { "teams": ["Arsenal"], "players": [], "competition": null, "level": "fixture", "stage": null, "time": null },
+  "selectors": [
+    { "subject": { "kind": "team", "name": "Arsenal" }, "market_concept": "total goals", "line": { "kind": "numeric", "value": 1.5, "direction": "over" } }
+  ]
+}
+```
+
+Grounding (`--ground "total goals" --subject team --line numeric`): **name/confident → `1001159926` "Total Goals"** (match total) — but subject is `team`, so the intent is the per-team side-split `1001159967`/`1001159633` "Total Goals by Home/Away Team". The **exact-name path ignores subject entirely** and short-circuits before the bucket is consulted; and even if consulted, `team` and `event` both collapse to `team_or_match`, so the 2-way bucket can't separate per-team from match-level markets.
+
+## #2 fix re-probe — prompt rule rewrite (2026-06-03)
+
+Added a crisp rule to `extractor-prompt.md` (`market_concept` section): a **bare count noun** is incomplete — a whole-match/whole-team count names the aggregate `"total <noun>"` even when the query omits the word. Root-causes the conflict with the "close to query wording" rule rather than memorizing the failing query.
+
+### Q: "Over 2.5 goals in Arsenal vs Chelsea" (re-probe)
+
+```json
+{
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": { "teams": ["Arsenal", "Chelsea"], "players": [], "competition": null, "level": "fixture", "stage": null, "time": null },
+  "selectors": [
+    { "subject": { "kind": "event" }, "market_concept": "total goals", "line": { "kind": "numeric", "value": 2.5, "direction": "over" } }
+  ]
+}
+```
+
+`market_concept` is now **`"total goals"`** (was bare `"goals"`). Grounding (`--ground "total goals" --subject event --line numeric`): **name/confident → `1001159926` "Total Goals"**. #2 closed end-to-end.
+
+## #1 canonical phrasing — player yes/no achievement rule (2026-06-03)
+
+Added a crisp rule to `extractor-prompt.md` (`market_concept` section): a **player yes/no achievement** is an infinitive *to <verb>*, not a noun — "anytime goalscorer" → "to score", "clean sheet" → "to keep a clean sheet"; drop "anytime", keep "first/last". Generalizes a register the prompt already uses (`to be carded`) so the catalog's own name resolves via the exact-name path. Closes the residual fuzzy misses for these two concepts (were `none`).
+
+### Q: "Will Haaland score anytime in Man City vs Chelsea?"
+
+```json
+{ "status": "resolved", "sport": "FOOTBALL",
+  "event_scope": { "teams": ["Man City", "Chelsea"], "players": [], "competition": null, "level": "fixture", "stage": null, "time": null },
+  "selectors": [ { "subject": { "kind": "player", "name": "Haaland" }, "market_concept": "to score", "line": { "kind": "binary", "direction": "yes" } } ] }
+```
+
+`market_concept` **`"to score"`** ("anytime" dropped). Grounding (`--ground "to score" --subject player --line binary`): **name/variants → `1001159886,1006478338` "To Score"** (was `none` for "anytime goalscorer").
+
+### Q: "Arsenal clean sheet vs Chelsea"
+
+```json
+{ "status": "resolved", "sport": "FOOTBALL",
+  "event_scope": { "teams": ["Arsenal", "Chelsea"], "players": [], "competition": null, "level": "fixture", "stage": null, "time": null },
+  "selectors": [ { "subject": { "kind": "team", "name": "Arsenal" }, "market_concept": "to keep a clean sheet", "line": { "kind": "binary", "direction": "yes" } } ] }
+```
+
+`market_concept` **`"to keep a clean sheet"`**. Grounding (`--ground "to keep a clean sheet" --subject team --line binary`): **name/confident → `1003971484` "To keep a clean sheet"** (was `none`).
+
+### Q: "Who will be first goalscorer in Arsenal vs Chelsea?" (regression guard)
+
+```json
+{ "status": "resolved", "sport": "FOOTBALL",
+  "event_scope": { "teams": ["Arsenal", "Chelsea"], "players": [], "competition": null, "level": "fixture", "stage": null, "time": null },
+  "selectors": [ { "subject": { "kind": "event" }, "market_concept": "first goalscorer" } ] }
+```
+
+`market_concept` **`"first goalscorer"`** — "first" preserved, NOT collapsed to "to score". Grounding (`--ground "first goalscorer" --subject event --line selection`): **vector/ambiguous** (Home/Away splits cluster 0.581–0.562) — unchanged by the rule; correct E5 abstention (no single match-level first-scorer market).
+
+---
+
+## 2026-06-03 — Re-probe: first-10 outright queries (regression check vs 2026-06-01 16:10 baseline)
+
+Re-ran the first 10 logged outright probes (Q1–Q10) via `--query` after the Sprint 2/3 extractor-prompt + catalog changes (model `claude-haiku-4-5-20251001`, temp 0). **Input caveat:** the original full query strings were not preserved — the 2026-06-01 headers are truncated with a leading "…", so I re-probed the header text with the ellipsis stripped. Wording-level diffs could be input-driven; but the line-shape flips below are on **identical** concept strings → genuine prompt/model drift.
+
+**4/10 reproduce the baseline exactly:** Q1 (`outright winner`), Q4 (`Golden Ball`), Q6 (Brazil/Argentina `to reach the final`, both binary yes), Q9 (`Young Player` + `Golden Glove`).
+
+**6/10 drifted — three patterns:**
+
+**Pattern A — binary line dropped on team yes/no outrights (regression).** Same concept string, `line` flipped vs baseline:
+- Q2 `to win the tournament`: `binary yes` → **no line** (sibling `to reach the final` stays binary yes → in-query inconsistency, just moved).
+- Q10 `to win the group` / `to reach the semi-finals` / `to win the tournament`: **all binary yes** → **all no line**.
+- Q5 `to win the group`: **no line** → **binary yes** (opposite direction — improved).
+- ⇒ Old Flag-2 inconsistency persists: Q5 `to win the group` = binary yes but Q10 `to win the group` = no line. Same proposition, two shapes. Matters for the grounder line→boType gate.
+
+**Pattern B — `<UNKNOWN>` sentinel leaked into the plan.** Q5 s2 `stage of elimination` → `line: { selection, value: "<UNKNOWN>" }` (baseline had no line). A placeholder escaped into output.
+
+**Pattern C — self-referential / meta selection lines (new noise).**
+- Q3 `top goalscorer` → `line: selection "top five favourites"` (baseline no line) — meta-instruction encoded as a selection value.
+- Q7 `top European nation` / `top South American nation` → `line: selection` duplicating the concept; **lost** baseline `attrFilter.region = Europe/South America`.
+
+**Plus Q8 restructure:** baseline `group winner` ×12 + `selection "Group A…L"` → now concept `outright winner of Group A…L` ×12 with **no line** (group parameter moved from line into the concept). Both expand to 12 selectors; stage = group stage.
+
+New plans for the 6 drifted (selectors only; event_scope unchanged from baseline unless noted):
+
+```json
+// Q2  "back France to win the tournament and reach the final as well."  (competition: null)
+[ { "subject": { "kind": "team", "name": "France" }, "market_concept": "to win the tournament" },
+  { "subject": { "kind": "team", "name": "France" }, "market_concept": "to reach the final", "line": { "kind": "binary", "direction": "yes" } } ]
+
+// Q3  "top goalscorer outright markets for WC 26, including the top five favourites?"
+[ { "subject": { "kind": "event" }, "market_concept": "top goalscorer", "line": { "kind": "selection", "value": "top five favourites" } } ]
+
+// Q5  "which group England will win, plus their stage of elimination market?"  (teams: ["England"])
+[ { "subject": { "kind": "team", "name": "England" }, "market_concept": "to win the group", "line": { "kind": "binary", "direction": "yes" } },
+  { "subject": { "kind": "team", "name": "England" }, "market_concept": "stage of elimination", "line": { "kind": "selection", "value": "<UNKNOWN>" } } ]
+
+// Q7  "top European nation and top South American nation outright markets for WC 26."  (competition: "World Cup 2026")
+[ { "subject": { "kind": "event" }, "market_concept": "top European nation", "line": { "kind": "selection", "value": "top European nation" } },
+  { "subject": { "kind": "event" }, "market_concept": "top South American nation", "line": { "kind": "selection", "value": "top South American nation" } } ]
+
+// Q8  "outright winner of Group A through Group L for the World Cup 2026."  (stage: group stage) — 12 selectors, one per group:
+[ { "subject": { "kind": "event" }, "market_concept": "outright winner of Group A" }, … "Group B" … through … "Group L" ]
+
+// Q10 "Show me Spain's outrights: to win the group, to reach the semi-finals, and to win the tournament."  (teams: ["Spain"])
+[ { "subject": { "kind": "team", "name": "Spain" }, "market_concept": "to win the group" },
+  { "subject": { "kind": "team", "name": "Spain" }, "market_concept": "to reach the semi-finals" },
+  { "subject": { "kind": "team", "name": "Spain" }, "market_concept": "to win the tournament" } ]
+```
+
+### Pattern A fix — team tournament-outright binary line (2026-06-03)
+
+**Root cause.** Git shows the only prompt changes since the 2026-06-01 baseline are two uncommitted 2026-06-03 paragraphs in `market_concept`; last *commit* touching the prompt was the repo reorg. Q10 (header carries the full query, no "…") regressed all-binary-yes → all-no-line on **identical input** ⇒ prompt-driven. Two compounding causes: (1) the new achievement rule was scoped "**player** yes/no achievement → *to <verb>*", yet its own `clean sheet → to keep a clean sheet` example is a team market — the "player" label told the model a team "to win the tournament" isn't a yes/no, weakening its binary default; (2) the binary rule's coverage list (props / occurrences / superlatives) **never named the team tournament-outright family**, so it was unanchored even at baseline (why Q5 was the lone 2026-06-01 outlier).
+
+**Fix (crisp rule rewrite, not example-appending) — 3 edits to `extractor-prompt.md`:**
+1. `market_concept`: "**player** yes/no achievement" → "**yes/no achievement** (a player *or team* proposition)" — removes the false player-only scoping.
+2. `line`/binary `Covers …` list: add "a **named team's tournament outright** (to win the tournament / group, to reach the final / semi-finals — a single team's progression is a yes/no)".
+3. Binary-vs-selection note: add the protective contrast — a **named team to win / reach** a stage → `binary` ("Spain to win the group" → binary yes); the bare **field** outright ("outright winner", "group winner") names no side → subject `event`, not binary.
+
+**Verification re-probe (5 queries, temp 0):** all pass.
+- Q2 `back France to win the tournament and reach the final`: **both `binary` yes** (s1 regained).
+- Q10 `Spain … to win the group / reach the semi-finals / win the tournament`: **all three `binary` yes** (regained).
+- Q5 `to win the group`: **`binary` yes** (Flag-2 inconsistency vs Q10 now resolved — both binary yes).
+- Control Q1 `outright winner` (event field): **no line** — did NOT over-trigger to binary.
+- Control Q6 Brazil/Argentina `to reach the final`: **both `binary` yes** — unchanged.
+
+**Still open (out of scope):** Q5 s2 `stage of elimination` still emits `selection { value: "<UNKNOWN>" }` (Pattern B — a which-round pick with no named round; the `<UNKNOWN>` sentinel should be a no-line/abstain, not a fabricated selection value). Pattern C (Q3/Q7 self-referential selection lines; Q7 lost `attrFilter.region`) also untouched.
+
+### Stage-2 grounding of the first-10 plans (2026-06-03)
+
+Fed the **already-extracted** `market_concept`/`subject.kind`/`line.kind` from the plans above into `--ground` (no Haiku re-run; post-fix plans for Q2/Q5/Q10). 13 unique (concept, subject, line) triples — `to win the tournament`/`to win the group` dedupe across Q2/Q5/Q10; `outright winner of Group A` stands in for Q8's 12 identical group selectors.
+
+| concept (subj/line) | grounded | tier | verdict |
+| --- | --- | --- | --- |
+| outright winner (event) | `1001221607` Winner | vec/confident 0.557 | ✓ correct |
+| to reach the final (team/bin) | `1001232823` To reach the Final | name/confident | ✓ correct |
+| Young Player of the Tournament (event) | `1003303515` Young Player of the Tournament | name/confident | ✓ correct |
+| to reach the semi-finals (team/bin) | `1001241010` To reach the Semi Final | vec/confident 0.553 | ✓ correct (gate chose team-specific over plural `1004664149`) |
+| **to win the tournament** (team/bin) | `1003027271` Any Team to win **without conceding a goal** | vec/confident 0.584 | ✗ FALSE-CONFIDENT (right `1005991769` To win the competition was #2 @ 0.570) |
+| **Golden Ball** (event) | `1004699098` Golden Ball **& team doesn't reach KO** | vec/confident 0.560 | ✗ FALSE-CONFIDENT (no clean Golden Ball criterion; compound won) |
+| top goalscorer (event/sel) | `1004105291,1003786635,2100047425,1003267569` | vec/ambiguous 0.617 | ~ abstain (correct `1003786635` in set) |
+| **to win the group** (team/bin) | none | — | ✗ MISS — `1001241029` To win Group 0.584 / `1001615382` Group Winner 0.601 gated out by binary boType gate |
+| top European nation (event/sel) | none | — | ~ near-miss (`1001876097` Best European Team 0.490, sub-threshold) |
+| top South American nation (event/sel) | none | — | ~ near-miss (`2100017824` Best South American Team 0.533) |
+| outright winner of Group A (event) | none | — | ~ near-miss (`1001615382` Group Winner 0.515; concept-baking lowered the match) |
+| stage of elimination (team/sel) | none | — | ✓ correct abstain (top candidate 0.349 — no such market) |
+| Golden Glove (event) | none | — | ✓ correct abstain (no best-GK criterion) |
+
+**Tally:** 4 correct grounds, 2 correct abstains, 2 false-confidents, 1 ambiguous, 3 threshold/gate near-misses.
+
+**Findings:**
+1. **Two false-confidents (E5 precision miss)** — `to win the tournament` → "win without conceding a goal", `Golden Ball` → a conditional compound. Generic concept loses at the top of cosine to a longer specific name (the semantic-collision case). The correct/competition markets cluster just below (`To win the competition` 0.570, `To Win The Trophy` 0.553).
+2. **Pattern A fix surfaced a gate seam** — `to win the group` now emits `binary`, so the line→boType HARD gate filters out `To win Group` (0.584) / `Group Winner` (0.601) → `none`. Extractor correct, grounding can't complete; likely those catalog markets aren't tagged binary. (Q5 baseline also failed here — not a new regression, but a real seam.)
+3. **Catalog covers outrights better than cautioned** — real markets present for Winner, To reach the Final/Semi Final, Young Player, To win the competition, Group Winner, Best European/South American Team. Only `stage of elimination` and `Golden Glove` are genuinely absent; the other `none`s are threshold/gate near-misses, not missing data.
+4. **Concept-baking hurts grounding** — `outright winner of Group A` (0.515, none) vs the cleaner `group winner` register; argues for the baseline parameterized shape (concept `group winner` + `selection "Group A"`) over the drifted baked concept.
+
+### Gate seam fix + yes/no tie-break (2026-06-03)
+
+Resolves Finding #2's seam above (`to win the group` → `none`) and re-tunes the two markets it touched. Two changes to `ground-market.ts` (an **untracked** file — `git diff` won't show it).
+
+**1. Gate fix — `BINARY_BOTYPES` now `{yesno, outright}` (was `{yesno}`).** A named subject's tournament outright (to win the group / tournament, to reach a stage) is itself a yes/no, but Kambi tags those markets `outright`, often WITHOUT `yesno` (verified: `To win Group` `1001241029` / `Group Winner` `1001615382` carry boTypes `["outright"]` only; `To reach the Semi Final` `1001241010` carries `["head","outright","yesno"]`). The binary HARD gate therefore wrongly dropped the outright-only ones. Adding `outright` can only let MORE candidates pass, never fewer.
+
+Effects of the gate fix **alone** (re-probed, team/binary):
+- `to win the group`: `none` → **`[1001615382,1001241029]` ambiguous 0.600** — SEAM CLOSED.
+- `to win the tournament`: false-confident "win without conceding" → **ambiguous `[1003027271,1003844283]`** — precision WIN (honest abstain).
+- `to reach the semi-finals`: confident `[1001241010]` 0.553 → **ambiguous `[1004664149,1001241010]` 0.555** — REGRESSION: the outright-only plural `Teams to reach the Semi-Finals` (`["outright"]`, 0.555) now survives the gate and edges the correct `To reach the Semi Final` (`yesno`-bearing, 0.553).
+
+**2. Rejected: blunt "penalize non-`yesno` on a binary line" (−0.05 to `adj`).** Verified it DID restore semi-finals to confident, but it turned `to win the tournament` into a **false-confident on the WRONG market** `1003027271` "Any Team to win without conceding a goal" — a `yesno`-only false-friend that tops raw cosine (0.584). The penalty demoted every better outright candidate (Tournament Outcome, Winner, To Win The Trophy) and left the false-friend alone → confident wrong id = **E5 violation**. The fix-lever and the bug-lever are the same (both shove a rival out of the ε band), so a uniform penalty can't buy one without the other. Reverted.
+
+**3. Adopted: scoped `yesno` tie-break at the ambiguous step.** When a binary near-tie cluster (survivors within ε of top) is **entirely `outright`-typed** AND a *strict subset* ALSO carries `yesno`, prefer that subset (the truer single-subject yes/no). The `allOutright` guard is the crux — a `yesno`-**only** false-friend lacks `outright`, so it fails the guard and never triggers the preference. No new score penalty; the rule only re-tiers an already-detected collision.
+
+Final state (re-probed, deterministic):
+| concept (team/bin) | grounded | tier | vs gate-fix-only |
+| --- | --- | --- | --- |
+| to reach the semi-finals | `1001241010` To reach the Semi Final | confident 0.553 | regression **FIXED** |
+| to win the group | `1001615382,1001241029` Group Winner / To win Group | ambiguous 0.600 | unchanged (no `yesno` member in cluster) |
+| to win the tournament | `1003027271,1003844283` …without conceding / Tournament Outcome | ambiguous 0.584 | unchanged — guard blocks false-confident |
+| to reach the final / to win the competition | (name/confident) | — | unchanged (name path, pre-vector) |
+
+Net: gate seam closed (group outrights ground), `to win the tournament` stays an honest abstain, semi-finals confident restored — all **E5-clean**. The remaining collisions (`to win the tournament`, `Golden Ball` from Finding #1) are genuine semantic-collision cases for the rerank/facet work, not boType-gate problems.

@@ -24,14 +24,14 @@ Goals"` (the match total). These distinctions are invisible on surface text — 
 
 Sprint 1 made the extractor runnable and graded its output **structurally** (text vs each gold
 cell's `accept[]`). That makes `accept[]` a "shadow alias table" (doc E1): it proves the words,
-not the market. The raw catalog already sits in `data/football/` (607 criterions + alias tables);
+not the market. The raw catalog already sits in `data/football/` (600 criterions + alias tables);
 nothing is built on it yet. This sprint adds the **grounding stage** for the single highest-value
 axis — the **market** — and swaps the scorer's market check from text to **catalog id**. Market
 id is a *critical* ship-gate facet (must be 100%), so this is the biggest single upgrade to the
 eval available now.
 
 Per decision 5 (hybrid) and 10 (in-memory, no SQLite yet): grounding = curated alias (head) +
-brute-force cosine over criterion-name vectors (tail). At 607 vectors cosine is sub-ms; SQLite is
+brute-force cosine over criterion-name vectors (tail). At 600 vectors cosine is sub-ms; SQLite is
 **deferred** (it only saves re-embedding at boot — a step-2 build-pipeline concern, not needed
 until the embedding model is locked and boot time bites).
 
@@ -87,14 +87,14 @@ Stage B is what makes the seeds pass.
    https://api.voyageai.com/v1/embeddings`, `{ input, model: "voyage-3", input_type }`, bearer
    `VOYAGE_API_KEY` (already in `.env`; `loadDotEnv` picks it up). Chunk to safe batch size.
    *(Verify endpoint/field names + batch/token limits against current Voyage docs when wiring.)*
-6. **`src/resolver/build-market-index.ts` (new)** — script: embed all 607 criterion names as
+6. **`src/resolver/build-market-index.ts` (new)** — script: embed all 600 criterion names as
    `"document"` → write `src/resolver/index/criterion-vectors.voyage-3.json` =
    `{ model, dim, builtAt, count, criterions: [{id, name, vec}] }`. npm `"build:index"`. Run once /
    when criterions or model change; model pinned in the filename so a swap = a new file.
    `.gitignore` the index (derived, needs the key to rebuild; committing for offline repro is a
    noted alternative).
 7. **`ground-market.ts`, vector path** — load the cache at module init. On alias miss: `embed(text,
-   "query")` → cosine vs the 607 cached vectors → top-k. Best ≥ threshold (start ~0.55, calibrate
+   "query")` → cosine vs the 600 cached vectors → top-k. Best ≥ threshold (start ~0.55, calibrate
    on the seeds; below → `none`, never a guess). In-memory cache keyed by `text|subjectKind` so the
    `--release` 5× runs don't re-embed identical (temp-0) text.
 
@@ -130,7 +130,7 @@ Stage B is what makes the seeds pass.
   `.gitignore` (add `src/resolver/index/`).
 
 ## Verification (end-to-end)
-1. `npm run build:index` — embeds 607 names via voyage-3, writes the cache (needs `VOYAGE_API_KEY`).
+1. `npm run build:index` — embeds 600 names via voyage-3, writes the cache (needs `VOYAGE_API_KEY`).
 2. `npm run eval -- --ground "shots on target"` → `2100015085`; `"corner markets"` → `1001159897`;
    `"both teams to score"` → `1001642858`. Eyeball a few off-seed probes (`"clean sheet"`,
    `"anytime scorer"`) for sanity.

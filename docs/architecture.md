@@ -48,6 +48,11 @@ extractor schema designed this session._
 5. **Market grounding = hybrid: curated aliases + semantic vectors.** Aliases cover the head
    (deterministic, auditable); vectors cover the long tail of novel phrasings; the extraction LLM
    breaks ties. Betting vocab is finite, so this is tractable.
+   _Updated (decision 20): among **same-vocabulary collisions** (one phrase, many near-identical
+   criterion names), tie-breaking is no longer "the extraction LLM" — it's a **deterministic chain
+   inside grounding** (subject pre-filter → cosine → facet-boost → tier). The LLM's only input is the
+   `subject.kind` it already emits at extraction (decision 12); irreducible ambiguity is surfaced to
+   the executor to clarify, never guessed (E5)._
 6. **Event / stage / time / lineup is a SEPARATE live layer.** "quarterfinal", "opener", "group games",
    "first week", "late kick-offs" need real fixtures + kickoff times + round metadata — dynamic and
    non-cacheable. It must NOT live in the static index; it is computed at query time against a live
@@ -259,6 +264,66 @@ extractor schema designed this session._
     per call on a high-volume search box. Revisit only if the structural eval shows Haiku can't hold a
     well-stated universal rule — which is also the trigger for a per-sport prompt fragment, decision 17.)
 
+20. **Same-vocabulary market collisions are resolved by a deterministic pipeline — subject pre-filter →
+    cosine → facet-boost → tier — not by a reranker or an LLM tie-break.** _New this session (2026-06-03)._
+    The collision: a market phrase ("shots on target") sits in **38** criterion names, so raw cosine alone
+    ranks the wrong one (a per-player pre-baked row, or the match-total `1001159926` vs the side-split pair).
+    Decision 5 left tie-breaking to "the extraction LLM"; this replaces that with a deterministic chain that
+    stays inside grounding. Eight stages — **1–3 build-time** (catalog), **4–8 query-time**:
+    1. **Rebuild the catalog by joining the raw criterion feed ⋈ the category feed**, carrying **full
+       multi-category membership** + boTypes per criterion, and **version-stamp** it (E11). Load-bearing
+       because the committed snapshot was **trimmed** (see data facts): its criterions list held **598** ids
+       while category mappings referenced **1151**, so **553 criterions — including g001's target
+       `2100015085` "Player Shots on Target" — were invisible to grounding pre-rebuild**. **Now built**
+       (Stage A, catalog `0f2aac930df9`); the target grounds, subject `player`. *(prerequisite)*
+    2. **Tag each criterion's subject** from category membership: **in any player-meaning category →
+       `player`; else `team_or_match`** (player wins on overlap). Player-meaning = the 10 `Player*`
+       categories **plus four prefix-less ones** verified to name player markets — `Goal Scorer` ("To
+       Score"/first/last scorer), `Either Player`, `Man of the Match`, `Goalkeeper Saves` — **except**
+       explicit team-side rows ("… - Home Team"/"- Away Team", the 2 mixed `Goalkeeper Saves` rows) which
+       demote back to `team_or_match`. The strict `Player*` prefix alone mislabels 13 real player markets;
+       the curated set + demotion gets all 15 edge cases right (player = **705** post-quarantine on the full
+       feed). This is the catalog-native signal (the categories were built off these mappings), not a name-parse.
+    3. **Quarantine per-player pre-baked criterions** at build time via participant-name match, so the
+       ~32.5k-player explosion ("*Mbappé* shots on target" rows) never enters the vector index. Guarded
+       against common-word player names (open item). *(The earlier `*`-prefix hypothesis was disproved —
+       only 1/5647 raw names carried it — so participant-name match is the route.)*
+    4. **Hard pre-filter candidates to the query's `subject.kind`** (decision 12) before any cosine. This —
+       not category — is the load-bearing cut: a `player` query never sees team/match criterions, nor v.v.
+    5. **Cosine the market text against criterion names *within the subject bucket*** (decision 5's vector
+       tail, now scoped). Category does no further narrowing once subject has filtered; it stays only as the
+       subject-tag source (2) and as corroboration in the core test (7).
+    6. **Facet-boost the survivors.** **`line → boType` is a HARD gate** (a counted over/under line can only
+       ground a criterion that offers an over/under boType; a yes/no can't ground an over/under-only one).
+       **Period mismatch is a SOFT penalty** (a query saying "first half" down-ranks a full-match candidate).
+       **Presentation/settlement-source facets are neither gated nor penalized** — `(Settled using Opta
+       data)`, alternate-line labels — they don't change *which market* it is.
+    7. **Tier the result rather than force one id.** Build each survivor's **stat-type core** = name minus
+       the subject prefix minus a finite **non-semantic suffix strip-list** (settlement-source + alternate-
+       line presentation **only** — *not* period or extra-time, which are semantic), corroborated by a
+       shared stat-type category. Then: **one clear winner → `confident`**; **several sharing a core →
+       `variants`** (same market, different settlement/line/side — incl. the home/away **side-split pair**
+       `{1001159967,1001159633}` g001 wants); **otherwise → `ambiguous`** (the default when the core test is
+       inconclusive). A bare "corners" with both a full-match and a 1st-half criterion surviving tiers
+       **`ambiguous`** (distinct cores) → clarify the period, never a silent pick.
+    8. **The executor owns policy** (decision 9): it silently uses/offers a `variants` set (filtering the
+       live betoffer response by both ids), and **clarifies** on `ambiguous`. Grounding never guesses (E5).
+
+    The grounder therefore returns **`{ ids[], tier, score?, candidates? }`** — a `tier` discriminator added
+    beside today's `method` on `GroundResult`, an extension not a rewrite. (Rejected: **categories as a
+    second narrowing filter** — redundant once subject pre-filters; they add nothing for the seeds.
+    Rejected: a **cross-encoder rerank** — deferred; the deterministic chain resolves the seed collisions
+    with no new model dependency, and precision is served by abstain/clarify (E5), not a sharper ranker;
+    revisit only if a real collision survives all four deterministic stages. Rejected: a **suffix-penalty
+    that prefers the "modern"/"canonical" criterion** — E8 gold-fitting: there is **no recency/version
+    field**, and `shownInLive` shows the *suffixed* `1002035662` is the **more** featured row, so "prefer the
+    bare name" is reverse-engineered from the answer key; return both as `variants` and let the executor
+    filter live. Rejected: an **LLM disambiguation call on collisions** (old plan step 5) — superseded; the
+    LLM already emits `subject.kind`, consumed deterministically, with no second model call in the hot path.)
+    **Still uncalibrated / open** (none blocks the build; each fails safe — worked examples in Open
+    questions): the **cosine threshold + near-tie epsilon**, the **non-semantic suffix strip-list**, and the
+    **participant-name common-word guard**.
+
 ## Golden eval set — design & grading
 
 _New this session (2026-06-01). The query corpus lives under "Representative queries" below; this section
@@ -356,6 +421,17 @@ percentages are calibratable against a baseline; the *principle* (critical = 100
 fixed. (Rejected: a single overall threshold — a critical failure hides under the average; rejected: no
 gate — not auditable, indefensible with money on the line.)
 
+**E13. Multi-candidate grounding is graded by *containment + tier* (decision 20).** _New this session
+(2026-06-03)._ When the grounder returns a tiered set, the market axis (E3/E5) passes iff **the gold id ∈
+the returned ids AND the tier is clean**: `confident` and `variants` pass and stay **critical-gate-eligible**
+(E12); **`ambiguous` is a soft/tracked outcome, never a hard pass** — it means "ask the user", which is
+recorded, not scored correct. **Gold cells stay single ids** — g001's Vitinha SOT stays `{id: 2100015085}`
+and a `variants` return passes because that id is *contained*; the side-split `{1001159967,1001159633}` is
+the one gold cell that is natively a set (the `id: number|number[]` widening, Open questions). (Rejected:
+**exact set-equality** of returned vs gold ids — punishes a correct `variants` return that legitimately
+offers a sibling line gold didn't enumerate; rejected: **containment alone** — would bless an `ambiguous`
+5-way tie that happens to contain the gold id, hiding a real "couldn't tell" behind a green cell.)
+
 **Authoring rules (write down, not forks):**
 - **Coreference → concrete subject.** Gold records the resolved subject, never a pointer: "his shots" →
   that player's id; "his team" → the **national-team** id (`countryTeamId` anchor in WC context), not the club.
@@ -412,6 +488,37 @@ _Updated (2026-06-01): folded two findings from authoring the eval seed records 
   player-corner criterion exists. The gold keeps the **stated** binding (faithful to the canonical
   `Bruno↔corners`), leaving "can it filter to the player?" to the executor. Pin whether faithful-keep is
   always the rule, or whether some markets should **reject** a player owner (caveat vs drop vs `unsupported`).
+- **Cosine threshold + near-tie epsilon (grounding, decision 20).** _New (2026-06-03)._ Two distinct knobs
+  the current code conflates into one (`THRESHOLD = 0.55`, no epsilon): the **floor** below which we abstain
+  (`none`, E5), and the **epsilon** within which top-1 and top-2 count as a near-tie that triggers the
+  `variants`/`ambiguous` test (stage 7). Both are untrustworthy until the catalog rebuild, which shifts the
+  score distribution (recovers ~315 player rows). _Example (floor):_ `"anytime scorer"` vs catalog `"Player
+  To Score Anytime"` may land ~0.52 — a too-high floor returns a false `none` on a market we have.
+  _Example (epsilon):_ `"team total goals"` → `Total Goals by Home Team` 0.71 / `Away` 0.70 (Δ=0.01 < ε →
+  near-tie → side-split `variants`) vs `"corners"` → `Total Corners` 0.74 / `Corner Race To 5` 0.58 (Δ=0.16
+  ≫ ε → clear `confident`). Calibrate both off the **rebuilt seeds' top-k cosine table** (read from
+  `candidates`), from the score *distribution* — never hand-fit a seed (E8). Fails safe: too high → abstain,
+  never a wrong bet.
+- **Non-semantic suffix strip-list (grounding, decision 20 stage 7).** _New (2026-06-03)._ The maintained
+  enumeration of **provably non-semantic** suffixes stripped before the stat-type-core test — settlement
+  source `(Settled using Opta data)`, alternate-line presentation labels — explicitly **not** period
+  (`- 1st Half`), extra-time (`- Including Extra Time`), or odd/even, which change *which market* it is. The
+  list is finite and Kambi can ship an un-listed suffix. _Example (safe failure):_ a new `(VAR Reviewed)`
+  variant of `Player Shots on Target` keeps a different core → tiers `ambiguous` instead of `variants` → the
+  executor **over-clarifies** (worse UX, never a wrong bet). _Example (dangerous edit):_ wrongly adding
+  `- 1st Half` to the list merges a half-market with the full match → silent wrong period. Editing rule is
+  asymmetric — only add a provably non-semantic suffix; when unsure, omit and eat the clarify. Derive
+  candidates empirically (group by core, inspect high-frequency residual tails); add a guard test that no
+  entry is also a period/scope token.
+- **Participant-name common-word guard (catalog build, decision 20 stage 3).** _New (2026-06-03)._ The
+  quarantine matches criterion names against the ~32.5k-row participant list; a participant whose name is a
+  stat word would wrongly drop a **generic** market. _Example:_ a real player surnamed "Corner" makes
+  `Total Corners` match the participant list → quarantined → grounding for g001's `corners → 1001159897`
+  breaks. Guard, biased to **keep**: (a) no quarantine on a single-token substring — require the name to
+  consume a `Player`-subject criterion's leading proper-noun span; (b) a small stop-list of football
+  vocabulary that can't be a sole quarantine key; (c) a length/token floor. Validate by diffing the
+  quarantine set post-rebuild — every dropped name must be a real full player name. Fails safe: a stray
+  per-player row left in the index is one extra candidate the subject filter + tiering already contain.
 
 ## Plan / next steps (ordered, concrete)
 
@@ -452,6 +559,10 @@ table / position+age feed / live-layer vocab._
    (Region needs no provider — it's the static table.) _Updated: narrowed to position + age._
 5. **Implement disambiguation** — an LLM call that fires *only* on collisions (homonyms / vector tie
    clusters), with output ids **constrained to the retrieved candidate set**.
+   _Updated (decision 20): **market** vector-tie clusters are no longer disambiguated by an LLM call — they
+   are resolved by the deterministic subject-filter + facet-boost + tier, and irreducible ties become
+   `ambiguous` → the executor clarifies. This LLM call is now reserved for **entity** homonyms (decision 8)
+   if context disambiguation alone can't settle them — not for markets._
 6. **Define the resolver output schema** — the grounded query plan is now the **status-discriminated
    `QueryPlan`** of decision 18: `resolved → { sport, event_scope{ teams, players[{name,role}],
    competition, level, stage{round,ordinal,conditional}, time }, selectors[{ subject, market_concept,
@@ -492,16 +603,30 @@ extraction-model constraint (decision 19)._
 ### Authoritative data facts (measured, football)
 
 _Updated: re-measured region derivability this session — all in-catalog paths fail; age confirmed absent._
+_Updated (2026-06-03): the committed `data/football/` criterions snapshot **was trimmed** relative to the
+category feed — Sprint 3 Stage A rebuilt the catalog from the full feed (see the rebuilt-snapshot bullet
+below); this drove the catalog rebuild in decision 20, now built (catalog version `0f2aac930df9`)._
 
 | Dataset | Count | Cross-sport? | Record shape |
 |---|---|---|---|
 | BetOfferType | ~28 | **Universal** | `{id, label}` |
-| Criterion | 607 | per-sport | `{id, sport, name, shownInLive, shownInPreMatch, categoryNames[], boTypeNames[]}` |
-| Category (BetOfferCategory) | 64 (1,399 mappings) | per-sport | `{id, name, mappings:[{criterionId, boType, boTypeName}]}` |
+| Criterion | 600 | per-sport | `{id, sport, name, shownInLive, shownInPreMatch, categoryNames[], boTypeNames[]}` |
+| Category (BetOfferCategory) | 395 (11,927 mappings) | per-sport | `{id, name, mappings:[{criterionId, boType, boTypeName}]}` |
 | Clubs | 1,784 | per-sport | `{id, kind, sport, name, competitionIds[], groupIds[], ntVariant}` |
 | Players | 32,587 | per-sport | `{id, kind, sport, name, clubId, competitionIds[], countryTeamId}` |
 | Groups | hierarchical forest | per-sport | `{id, name, sport, groups[]}` |
 
+- **The committed criterions snapshot was trimmed — rebuilt from the feed (Sprint 3 Stage A, 2026-06-03).**
+  The old `football_criterions.json` held **598** criterions (its own `counts.criterions` claimed **600** —
+  internally inconsistent) while `football_categories.json` mappings referenced far more, so g001's target
+  `2100015085` "Player Shots on Target" (and many player markets) were **ungroundable**. ∴ decision 20 step 1
+  rebuilt the criterions list from the **raw criterion feed** (names + flags, 5647 entries) ⋈ the **category
+  feed** (membership + boTypes). **Post-rebuild (catalog version `0f2aac930df9`):** categories reference
+  **8550 distinct** criterion ids → **2486 kept + 2437 quarantined + 3627 still absent** (referenced by
+  categories but missing from the raw criterion feed — closing that gap needs a richer feed, not a join fix);
+  g001's `2100015085` is now **present, subject `player`**. *(The category `name` is the subject-tag source;
+  **49 player-meaning category ids in the full feed** carry the player markets. "shots on target" appears in
+  **38** criterion names locally: the collision decision 20 solves.)*
 - **Sports are the top-level group nodes (measured this session).** The group forest is rooted at a
   universal node (`id 1, sport NOT-SPECIFIED`); its **direct children are the sports**, each
   `{id, name, sport, groups[]}` — e.g. `FOOTBALL → id 1000093190, "Football", 270 competition children`.
@@ -636,6 +761,19 @@ _Updated: refined `Selector` + `Enrichment`; added terms for the extractor schem
 - **sole-built-sport default** — a sport-silent query resolves to the only built sport (unique answer);
   lapses once ≥2 partitions exist (decision 17).
 - **Context disambiguation** — resolving a homonym entity using other facets in the same query.
+- **subject pre-filter** — decision 20 stage 4: restricting market candidates to the query's `subject.kind`
+  *before* cosine; the load-bearing cut for same-vocabulary collisions (a `player` query never sees team/match criterions).
+- **facet-boost** — decision 20 stage 6: on the cosine survivors, `line → boType` is a **HARD gate** and a
+  period mismatch a **SOFT penalty**; presentation/settlement-source facets are neither.
+- **grounding tier** — decision 20 stage 7, returned on `GroundResult` beside `method`: `confident` (one
+  winner) / `variants` (share a stat-type core — offer all, incl. the side-split pair) / `ambiguous`
+  (default; the executor clarifies, E5).
+- **stat-type core** — a criterion name minus its subject prefix minus the non-semantic suffix strip-list;
+  two criterions sharing a core (corroborated by a shared stat-type category) are `variants` of one market.
+- **non-semantic suffix strip-list** — maintained list of presentation/settlement-source suffixes (e.g.
+  `(Settled using Opta data)`) stripped for the core test; **excludes** period/extra-time/odd-even (semantic).
+- **participant quarantine** — decision 20 step 3: dropping per-player pre-baked criterions from the vector
+  index by participant-name match, so the ~32.5k-player explosion never pollutes grounding.
 - **Grounded query plan** — resolver output (decision 18): status-discriminated; `resolved` carries `{sport, event_scope{teams,players,competition,level,stage,time}, selectors[]}`.
 - **Executor** — separate component that runs the plan: resolves events via the live layer, fetches betoffers, applies filters.
 - **Live event layer** — query-time access to fixtures/round/kickoff/lineup metadata; owns stage, time, and lineup roles.
@@ -671,6 +809,17 @@ _Items explicitly dropped or replaced this session — kept here in case they're
   static table; only position + age are the external feed.
 - **Line-vs-odds via a growing set of prompt rules/examples** → *superseded* by one universal rule +
   downstream resolution against real markets, under the bounded-prompt constraint (decisions 15–16).
+- **Market collisions disambiguated by an LLM call on vector-tie clusters** (old plan step 5 applied to
+  markets) → *superseded* by decision 20's deterministic chain (subject pre-filter → cosine → facet-boost →
+  tier); the only LLM input is the extraction-time `subject.kind`. The step-5 LLM call survives only for
+  *entity* homonyms.
+- **A suffix-penalty / "modern vs legacy criterion" ranking to pick one id among name-twins** → *rejected*
+  this session as **E8 gold-fitting**: no recency/version field exists on criterions, and `shownInLive`
+  shows the suffixed `1002035662` is the *more* featured row (contradicting "legacy"). Replaced by returning
+  the twins as `variants` and letting the executor filter against the live betoffer response (decision 20).
+- **`*`-prefix as the per-player-criterion quarantine signal** → *disproved* (only 1/5647 raw football
+  criterion names carried a leading `*`). Replaced by participant-name matching at build time (decision 20
+  step 3).
 
 ---
 
@@ -690,4 +839,12 @@ no-grounding axes (status / sport / subject.kind / line-vs-odds typing+values / 
 plus binding & market matched by text against `accept[]`) are gradeable on raw extractor output *now*,
 ahead of grounding — then **author the behavior-tagged gold records** (≈50–70, including the abstain cases
 E6 flags as still missing) and **build the full scorer** (id-graded axes run once grounding exists, step
-3). Region is a static ~48-row table; only position + age need the roster feed."*
+3). Region is a static ~48-row table; only position + age need the roster feed. **Sprints 1–2 are built**
+(runnable structural eval; hybrid market grounder — alias head + voyage-3 cosine tail — with the id-graded
+market axis). The **collision-handling design is settled** (decision 20 + eval E13): same-vocabulary market
+collisions resolve by a deterministic **subject pre-filter → cosine → facet-boost → tier** chain, graded by
+containment + tier; **Sprint 3 Stage A is built** (`planning/sprints/sprint-3.md`) — the catalog was
+rebuilt from the full criterion ⋈ category feed (version `0f2aac930df9`: 8550 referenced → 2486 kept +
+2437 quarantined + 3627 absent from the criterion feed), subject-tagged and participant-quarantined, and
+g001's `2100015085` now grounds as `player`; **Stages B (subject-filtered tiered grounding) and C (E13
+scorer) are not yet started**."*
