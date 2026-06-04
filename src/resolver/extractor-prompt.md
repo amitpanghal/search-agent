@@ -29,9 +29,11 @@ Built sports today: **FOOTBALL** (the only one). Decide `status`:
 - `status: "ambiguous"` is reserved for a query torn between **two built sports**. With only
   one built sport this can never happen today — never emit it.
 - **Abstain only on a named unbuilt sport.** Nothing else triggers `unsupported` — not a vague
-  or collective subject (descriptors like "the hosts", "the top seeds", "the favourites"), not an
-  ungroundable entity, not confusing phrasing. Resolve and keep the descriptor as **text** in
-  `teams`; grounding enumerates it. Never emit `recognizedAs` reason text (e.g. "ambiguous query").
+  or collective subject (descriptors like "the hosts", "the top seeds", "the favourites"), not a
+  missing or vague competition edition, not an exotic/unrecognized market, not an ungroundable
+  entity, not confusing phrasing. Resolve as FOOTBALL and keep the descriptor as **text** in
+  `teams`; grounding enumerates it. `recognizedAs` is the unbuilt sport's **name only** (e.g.
+  "tennis") or null — never a sentence, a reason, or "ambiguous query".
 
 Only when `status` is `"resolved"` do you continue to Step 2 and Step 3. A `resolved` plan
 carries `sport`, `event_scope`, and `selectors[]`.
@@ -126,9 +128,11 @@ A **bare count noun** is incomplete: a whole-match or whole-team count names the
 corners" → "total corners". Leave already-qualified concepts as-is ("shots on target",
 "fouls conceded", "winning margin").
 
-A **yes/no achievement** (a player *or team* proposition) is an infinitive *to <verb>*, not a noun — "anytime
-goalscorer" → "to score", "clean sheet" → "to keep a clean sheet". Drop "anytime" (scoring
-at any point is just "to score"); a *first/last* scorer keeps that word ("first goalscorer").
+A **yes/no achievement** (a player *or team* proposition) is an infinitive *to <verb>* close to
+the query's wording, not a noun ("<X> scorer" → "to score"). Strip **generic timing** words
+("anytime", "ever", "at any point") — they don't change the market; **keep ordinals**
+("first"/"last") — they do. Do **not** paraphrase sport-specific slang into its underlying count
+or method yourself — keep the query's own term; the per-sport lexicon maps it downstream.
 
 ### line (optional) — by **answer-type**, not the nouns
 
@@ -160,7 +164,9 @@ noun (shots, cards, corners, fouls). One branch applies:
 ("most passes … to be Griezmann", "Mbappé first goalscorer" → binary). A **named team to win /
 reach** a stage asserts one proposition → `binary` ("Spain to win the group" → binary yes); the
 bare **field** outright names no side ("outright winner", "group winner") → subject `event`, not
-binary. Keep any time/score window in `market_concept`, never in `attrFilter`.
+binary. An **enumerated instance** ("winner of Group A…L") → one selector each, `market_concept` the
+type only ("group winner") and the instance a `selection` line ("Group A"). Keep any time/score
+window in `market_concept`, never in `attrFilter`.
 
 ### odds (optional) — a **price** bound
 
@@ -186,8 +192,10 @@ attrFilter):
 
 - `position`: a **player field position only** ("wingers" → "winger", "full-backs" →
   "fullback", "goalkeepers" → "goalkeeper"). Never a time band, score, or other phrase.
-- `region`: text confederation/continent ("African nations" → "Africa", "Asian teams" →
-  "Asia").
+- `region`: a geographic/organizational category that **narrows the participants of an
+  otherwise-general market** (continent, confederation, conference, division). **Carve-out:**
+  when that category *defines* the market — "top/best <category> <competitor>" — it is a named
+  outright, NOT a filter: keep it whole in `market_concept`, with no `attrFilter`.
 - `ageMin` / `ageMax`: **inclusive integer** bounds — normalize: "under 23" → `ageMax: 22`;
   "U21" → `ageMax: 20`; "over 30" → `ageMin: 31`; "23 or older" → `ageMin: 23`.
 
@@ -200,25 +208,30 @@ attrFilter `{ position: "fullback" }`.
 
 ## Universal rules (the make-or-break — get these exactly right)
 
-1. **Binding** — nearest preceding named subject owns the market; no owner → `event`;
-   generic team-specific market with ≥2 teams and no side → `either_match_team`. Never bind a
-   market to a neighbouring subject. ("Kane tackles, Saka interceptions" → Kane↔tackles,
-   Saka↔interceptions.)
+1. **Binding & splitting** — nearest preceding named subject owns the market; no owner →
+   `event`; generic team-specific market with ≥2 teams and no side → `either_match_team`. Never
+   bind a market to a neighbouring subject. **Each comma/"and"-separated proposition is its own
+   selector — never fuse two into one `market_concept`.** ("Kane tackles, Saka interceptions" →
+   Kane↔tackles, Saka↔interceptions.)
 2. **Coreference → concrete name**; "his team" = the **national team** in a World Cup.
    ("Foden … his team to win the group" → team "England".)
 3. **Line vs price** — a number on a counted thing is a **line**; a bare or "priced" number
    is **odds**; both can co-occur. Age is **never** a line/odds → it goes to `attrFilter`.
    ("tackles over 3.5 priced above 2.0" → line `{numeric,3.5,over}` + odds `{min:2.0}`.)
 4. **Binary side** — a named yes/no *or* occurrence/achievement market ("to be carded", "race
-   to 5 corners", "first card") defaults to side **`"yes"`**; the opposite side is the opposite
-   bet, so only use `"no"` when stated. A counted noun (card/corner) does not make it numeric —
-   only an explicit over/under threshold does.
+   to 5 corners", "first card") defaults to side **`"yes"`**. Use **`"no"`** when the query
+   **negates the event** ("no <X>", "without <X>"): keep the bare event as `market_concept` and
+   set `line {binary,"no"}` — never fold the negation into the concept text. A counted noun
+   (card/corner) does not make it numeric — only an explicit over/under threshold does.
 5. **Self-correction** — if the query retracts something ("X out — sorry, with Y"), emit
    **only the final corrected intent** and drop the retracted entity completely. ("with Kane
    up top — wait, swap that for Foden" → only Foden appears; "Norway out — sorry, with
    Modrić in the lineup" → drop Norway entirely, keep only Modrić.)
-6. **Never fabricate** — do not invent a market, a stage/time that wasn't asked for, a
-   player, a price, or an id. Record only what the query says, as its stated text.
+6. **Never fabricate or substitute** — do not invent a market, stage/time, player, price, or id;
+   and never swap a vague concept for a different or narrower concrete market. **Record only what
+   the query states, as text** — keep a vague concept's own words as the `market_concept`
+   (grounding decides whether a market exists), and **omit any field rather than fill it with a
+   guess or a placeholder**.
 
 ---
 

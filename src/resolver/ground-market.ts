@@ -30,7 +30,7 @@
 import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { loadCatalog, type Subject } from "./catalog";
+import { loadCatalog, type Subject, type Catalog, type MarketAlias } from "./catalog";
 import { embed, EMBED_MODEL } from "./embed";
 import { normalize } from "../eval/structural-scorer";
 import type { QueryPlan } from "./schema";
@@ -312,22 +312,40 @@ function perSideIndex(): Map<string, number[]> {
   return (perSideCache = m);
 }
 
-// A query that names ONE team ("Arsenal total goals") should resolve to that team's per-side market,
-// not the whole-match total. So when a single named-team query lands cleanly on a MATCH-level
-// criterion that has per-side twins (same base-core + a shared category), swap in the twins — the
-// home/away side-split the executor binds to the named team. No twins (e.g. "Arsenal to win" ->
-// "Winner") => unchanged, so match-/competition-level team markets are never dropped.
-function applyPerSideDivert(res: GroundResult, opts: GroundOpts): GroundResult {
-  if (opts.subjectKind !== "team" || res.ids.length !== 1) return res; // only a single clean hit
+// A query about a team's side-specific stat ("Arsenal total goals", "Brazil to win to nil") should
+// resolve to the per-side home/away twins, which the executor binds to the right side. Two paths,
+// both gated to a team-ish subject (a named `team` OR a bare `either_match_team`):
+//   (a) SWAP — a clean single MATCH-level hit that has per-side twins (same base-core + a shared
+//       category) is replaced by those twins ("total goals" -> Total Goals by Home/Away Team).
+//   (b) DIRECT — a stat that exists ONLY per-side, with no match-level sibling to land on first
+//       ("to win to nil"): match the concept's base-core straight against the per-side index, so the
+//       twins are reachable even though the match-level resolution returned none.
+// No twins ("Arsenal to win" -> "Winner") => unchanged, so match-level team markets aren't dropped.
+function applyPerSideDivert(res: GroundResult, key: string, opts: GroundOpts): GroundResult {
+  if (opts.subjectKind !== "team" && opts.subjectKind !== "either_match_team") return res;
   const cat = loadCatalog();
-  const top = cat.byId.get(res.ids[0]!);
-  if (!top || top.side != null) return res; // unknown id, or already a per-side market
-  const twinIds = perSideIndex().get(baseStatCore(top.name));
-  if (!twinIds?.length) return res;
-  const topCats = new Set(top.categoryNames);
-  const ids = twinIds.filter((id) => cat.byId.get(id)?.categoryNames.some((cn) => topCats.has(cn))).sort((a, b) => a - b);
-  if (!ids.length) return res;
-  return { ids, method: res.method, tier: ids.length > 1 ? "variants" : "confident", candidates: res.candidates };
+
+  // (a) swap a clean match-level hit for its per-side twins
+  if (res.ids.length === 1) {
+    const top = cat.byId.get(res.ids[0]!);
+    if (!top || top.side != null) return res; // unknown id, or already a per-side market
+    const twinIds = perSideIndex().get(baseStatCore(top.name));
+    if (!twinIds?.length) return res;
+    const topCats = new Set(top.categoryNames);
+    const ids = twinIds.filter((id) => cat.byId.get(id)?.categoryNames.some((cn) => topCats.has(cn))).sort((a, b) => a - b);
+    if (!ids.length) return res;
+    return { ids, method: res.method, tier: ids.length > 1 ? "variants" : "confident", candidates: res.candidates };
+  }
+
+  // (b) per-side-only stat with no match-level sibling: match the concept's base-core directly.
+  if (res.ids.length === 0) {
+    const twinIds = perSideIndex().get(baseStatCore(key));
+    if (twinIds?.length) {
+      const ids = [...twinIds].sort((a, b) => a - b);
+      return { ids, method: "name", tier: ids.length > 1 ? "variants" : "confident", candidates: res.candidates };
+    }
+  }
+  return res;
 }
 
 // ---- layered exact-name resolution (decision 20 step 2) ----
@@ -380,17 +398,37 @@ export async function groundMarket(text: string, opts: GroundOpts = {}): Promise
   const memoKey = `${key}|${opts.subjectKind ?? ""}|${lineClass(opts.line)}`;
   const hit = memo.get(memoKey);
   if (hit) return hit;
-  const res = applyPerSideDivert(await resolveMarket(key, text, opts), opts);
+  const res = applyPerSideDivert(await resolveMarket(key, text, opts), key, opts);
   memo.set(memoKey, res);
   return res;
+}
+
+// Token-subset alias fallback: the most-specific criterion_concept alias whose every key-token
+// appears in the concept's tokens. Single-token keys ("brace") match the exact token only
+// ("braces" ≠ "brace"), so the curated, distinctive keys can't over-fire. criterion_concept only.
+function subsetAlias(cat: Catalog, key: string): MarketAlias | undefined {
+  const tokens = new Set(key.split(" ").filter(Boolean));
+  if (!tokens.size) return undefined;
+  let best: { alias: MarketAlias; n: number } | undefined;
+  for (const [k, alias] of cat.marketAliases) {
+    if (alias.type !== "criterion_concept") continue;
+    const kt = k.split(" ").filter(Boolean);
+    if (kt.length && kt.every((t) => tokens.has(t)) && (!best || kt.length > best.n)) {
+      best = { alias, n: kt.length };
+    }
+  }
+  return best?.alias;
 }
 
 async function resolveMarket(key: string, text: string, opts: GroundOpts): Promise<GroundResult> {
   const cat = loadCatalog();
 
   // 1. alias fast-path — only a criterion_concept grounds (a category/botype alias is the wrong
-  // granularity and falls through to the vector path as a scope hint).
-  const alias = cat.marketAliases.get(key);
+  // granularity and falls through to the vector path as a scope hint). Exact key first; on a miss,
+  // a token-subset fallback lets a curated criterion_concept alias fire on a longer phrasing
+  // ("to score a brace" → key "brace") — most-specific (most key-tokens) wins. Restricted to
+  // criterion_concept so a botype/category alias can never hijack the phrase.
+  const alias = cat.marketAliases.get(key) ?? subsetAlias(cat, key);
   if (alias?.type === "criterion_concept") {
     const ids = cat.byName.get(normalize(alias.name)) ?? [];
     if (ids.length) return { ids, method: "alias", tier: ids.length > 1 ? "variants" : "confident" };
