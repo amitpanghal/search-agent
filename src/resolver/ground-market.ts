@@ -10,19 +10,25 @@
 //   - vector tail, now the decision-20 chain on an alias/name miss:
 //       1. HARD subject pre-filter — restrict candidates to the query subject's bucket (the
 //          load-bearing cut: a `player` query never sees team/match criterions, nor v.v.).
-//       2. cosine within the bucket.
+//       2. cosine within the bucket, then a lexical token-cover BONUS folded in (gateScore = cosine +
+//          bonus): a candidate whose name literally contains the query's content tokens is boosted, so a
+//          token-identical near-miss ("goal in stoppage time" ⊆ "Goal scored - Stoppage Time") the raw
+//          cosine under-scores can still clear threshold. The bonus only adds — never drops a confident hit.
 //       3. line→boType HARD gate (a numeric over/under line can only ground an over/under market;
 //          a yes/no can only ground a yes/no one) + period & specificity SOFT penalties (down-rank,
 //          never drop; specificity demotes a name padded with words the query never asked for).
 //       4. tier by stat-type core: one clear winner (gap > ε) → `confident`; survivors sharing a
 //          core → `variants` (returns ALL their ids — this is how the home/away side-split is
 //          produced); a different-core rival within ε → `ambiguous` (the executor clarifies).
+//       5. recall floor: if nothing cleared THRESHOLD but the best is ≥ FLOOR, return the top-few as a
+//          `shortlist` (clarify) instead of abstaining; only below FLOOR do we return `none`.
 //   - named-team per-side divert (post-step, any method): a query naming ONE team that lands on a
 //     match-level total with per-side twins ("Arsenal total goals" → match "Total Goals") is swapped
 //     to the twins ("Total Goals by Home/Away Team"). No twins ("Arsenal to win") → left unchanged.
 //
-// Precision bias (E5): below threshold, or an unbreakable collision, never guesses a single id.
-// `none` (ids: []) and `ambiguous` are both non-passes the executor/harness handle loudly.
+// Precision bias (E5): on an unbreakable collision, or below FLOOR, never guesses a single id. Three
+// non-confident outcomes the executor/harness handle loudly: `ambiguous` (a near-tie), `shortlist` (a
+// sub-threshold recall-floor set), and `none` (ids: [], below FLOOR — a genuine abstain).
 //
 // Async because the vector path awaits the embedding API. Memoized by `text|bucket|lineClass` so the
 // --release reruns don't re-embed temp-0 text and so a different line (different gate) isn't aliased.
@@ -42,7 +48,11 @@ export type SubjectKind = ResolvedPlan["selectors"][number]["subject"]["kind"];
 type SelectorLine = NonNullable<ResolvedPlan["selectors"][number]["line"]>;
 
 export type GroundMethod = "alias" | "name" | "vector" | "none";
-export type Tier = "confident" | "variants" | "ambiguous";
+// `shortlist` is the recall-floor tier: below the confident THRESHOLD but above FLOOR we return the
+// top-few candidates for the executor to clarify against, instead of silently abstaining. Like
+// `ambiguous` it is a non-pass (the scorer greens only confident|variants), but it carries up to
+// SHORTLIST_CAP ids, not a near-tie cluster.
+export type Tier = "confident" | "variants" | "ambiguous" | "shortlist";
 
 export type GroundOpts = { subjectKind?: SubjectKind; line?: SelectorLine };
 
@@ -70,6 +80,17 @@ const PERIOD_PENALTY = 0.05;
 const SPEC_PENALTY = 0.03;
 const SPEC_CAP = 5;
 const TOP_K = 8;
+// Recall floor (the shortlist band): a gateScore in [FLOOR, THRESHOLD) returns the top-SHORTLIST_CAP
+// candidates as a `shortlist` (clarify) instead of `none`; below FLOOR we still abstain. FLOOR is set
+// low because score alone can't separate a present near-miss (match result ~0.41) from a plausible-but-
+// absent one (corners ~0.38) — we lean to surfacing, accepting a weak shortlist the executor rejects.
+const FLOOR = 0.35;
+const SHORTLIST_CAP = 3;
+// Lexical token-cover bonus: raw cosine under-weights exact token matches, so a candidate whose name
+// contains the query's content tokens ("goal in stoppage time" ⊆ "Goal scored - Stoppage Time") is
+// boosted by up to LEX_WEIGHT. Added to gateScore (raw + bonus), so it can only PROMOTE — never drop a
+// confident hit. Bounded, so a full-cover false friend at low cosine still can't manufacture a confident.
+const LEX_WEIGHT = 0.1;
 
 // ---- subject bucket (decision 20 step 1) ----
 function bucketFor(kind?: SubjectKind): Subject | null {
@@ -152,6 +173,32 @@ function specificityPenalty(queryText: string, name: string): number {
   return Math.min(extra, SPEC_CAP) * SPEC_PENALTY;
 }
 
+// ---- lexical token cover (the lexical booster) ----
+// Fraction of the query's CONTENT tokens (stopwords dropped, lightly singularized) that appear in the
+// candidate name. Raw cosine under-weights exact lexical overlap, so this rewards a candidate that
+// literally contains the query's words — the channel that rescues "goal in stoppage time" against
+// "Goal scored - Stoppage Time" (3/3 tokens) where cosine alone stalls below threshold. Symmetric stem
+// (drop a trailing "s" on tokens >3 chars) so assist≈assists, card≈cards. Returns 0..1.
+function stem(t: string): string {
+  return t.length > 3 && t.endsWith("s") ? t.slice(0, -1) : t;
+}
+function contentTokens(s: string): Set<string> {
+  return new Set(
+    lc(stripSettle(s))
+      .split(" ")
+      .filter((t) => t && !SPEC_STOPWORDS.has(t))
+      .map(stem),
+  );
+}
+function lexicalCover(queryText: string, name: string): number {
+  const q = contentTokens(queryText);
+  if (!q.size) return 0;
+  const n = contentTokens(name);
+  let hit = 0;
+  for (const t of q) if (n.has(t)) hit++;
+  return hit / q.size;
+}
+
 // ---- stat-type core (decision 20 step 4) ----
 // name − subject marker − home/away polarity − non-semantic (settlement-source) suffix. Period and
 // the stat noun are SEMANTIC and stay, so a full-match vs a 1st-half twin keep DISTINCT cores. The
@@ -220,7 +267,7 @@ function cosine(a: number[], b: number[]): number {
   return denom === 0 ? 0 : dot / denom;
 }
 
-type Scored = { id: number; name: string; raw: number; adj: number; boTypeNames: string[]; core: string };
+type Scored = { id: number; name: string; raw: number; gate: number; adj: number; boTypeNames: string[]; core: string };
 
 async function vectorGround(text: string, opts: GroundOpts): Promise<GroundResult> {
   const idx = loadIndex();
@@ -243,31 +290,47 @@ async function vectorGround(text: string, opts: GroundOpts): Promise<GroundResul
     .sort((a, b) => b.raw - a.raw);
   const candidates = allScored.slice(0, TOP_K).map(({ id, name, raw }) => ({ id, name, score: raw }));
 
-  // HARD line→boType gate, then period + specificity SOFT penalties, then the threshold cut (penalties
-  // touch `adj` — ranking/tiering — only; the threshold still gates on raw). `isBinary` gates the yes/no tie-break below.
+  // line→boType HARD gate, then the lexical booster + period/specificity penalties fold into the score.
+  // gateScore = raw + lexical-cover bonus (promotes a token-identical near-miss the cosine under-scores);
+  // adj subtracts the period/specificity penalties for ranking/tiering. The confident cut is on gateScore
+  // (so the lexical booster can lift a near-miss over THRESHOLD); the recall floor keeps [FLOOR, THRESHOLD)
+  // as a shortlist; below FLOOR we abstain. The raw pre-filter bounds the lexical work (a candidate with
+  // raw < FLOOR-LEX_WEIGHT can't reach FLOOR even at full cover). `isBinary` gates the yes/no tie-break below.
   const isBinary = opts.line?.kind === "binary";
-  const survivors: Scored[] = allScored
-    .filter((s) => passesGate(s.boTypeNames, required))
-    .map((s) => ({
-      ...s,
-      adj: s.raw - (periodOf(s.name) === qPeriod ? 0 : PERIOD_PENALTY) - specificityPenalty(text, s.name),
-      core: statCore(s.name),
-    }))
-    .filter((s) => s.raw >= THRESHOLD)
+  const gated: Scored[] = allScored
+    .filter((s) => s.raw >= FLOOR - LEX_WEIGHT && passesGate(s.boTypeNames, required))
+    .map((s) => {
+      const gate = s.raw + LEX_WEIGHT * lexicalCover(text, s.name);
+      return {
+        ...s,
+        gate,
+        adj: gate - (periodOf(s.name) === qPeriod ? 0 : PERIOD_PENALTY) - specificityPenalty(text, s.name),
+        core: statCore(s.name),
+      };
+    })
+    .filter((s) => s.gate >= FLOOR)
     .sort((a, b) => b.adj - a.adj);
 
-  if (survivors.length === 0) return { ids: [], method: "none", candidates };
+  if (gated.length === 0) return { ids: [], method: "none", candidates };
 
-  const top = survivors[0]!;
+  // recall floor: nothing cleared the confident THRESHOLD → return the top-few as a `shortlist` (clarify),
+  // neither a guess nor silence. Ranked by adj, capped at SHORTLIST_CAP. (Abstain — gate < FLOOR — already dropped.)
+  const confident = gated.filter((s) => s.gate >= THRESHOLD);
+  if (confident.length === 0) {
+    const ids = gated.slice(0, SHORTLIST_CAP).map((s) => s.id);
+    return { ids, method: "vector", tier: "shortlist", score: gated[0]!.adj, candidates };
+  }
+
+  const top = confident[0]!;
   const byId = loadCatalog().byId;
   const catsOf = (id: number): string[] => byId.get(id)?.categoryNames ?? [];
   const topCats = new Set(catsOf(top.id));
 
   // same-market cluster: identical stat-core AND ≥1 shared category (corroboration — guards an
   // accidental core-string collision from merging two genuinely different markets).
-  const sameCore = survivors.filter((s) => s.core === top.core && (s.id === top.id || catsOf(s.id).some((c) => topCats.has(c))));
+  const sameCore = confident.filter((s) => s.core === top.core && (s.id === top.id || catsOf(s.id).some((c) => topCats.has(c))));
   const sameCoreIds = new Set(sameCore.map((s) => s.id));
-  const nearestDiff = survivors.find((s) => !sameCoreIds.has(s.id));
+  const nearestDiff = confident.find((s) => !sameCoreIds.has(s.id));
 
   // a different-market rival within ε of the top is a collision → clarify, don't guess — UNLESS a yes/no
   // tie-break resolves it (binary line only): when the WHOLE near-tie cluster is outright-type and only
@@ -277,7 +340,7 @@ async function vectorGround(text: string, opts: GroundOpts): Promise<GroundResul
   // `yesno`-only false-friend (one that LACKS `outright`, e.g. "Any Team to win without conceding a goal"
   // for "to win the tournament") from triggering the preference and crowning itself a false confident.
   if (nearestDiff && top.adj - nearestDiff.adj <= EPSILON) {
-    const cluster = survivors.filter((s) => top.adj - s.adj <= EPSILON);
+    const cluster = confident.filter((s) => top.adj - s.adj <= EPSILON);
     if (isBinary) {
       const yesno = cluster.filter((s) => s.boTypeNames.includes("yesno"));
       const allOutright = cluster.every((s) => s.boTypeNames.includes("outright"));
@@ -325,8 +388,8 @@ function applyPerSideDivert(res: GroundResult, key: string, opts: GroundOpts): G
   if (opts.subjectKind !== "team" && opts.subjectKind !== "either_match_team") return res;
   const cat = loadCatalog();
 
-  // (a) swap a clean match-level hit for its per-side twins
-  if (res.ids.length === 1) {
+  // (a) swap a clean match-level hit for its per-side twins (never a low-confidence shortlist)
+  if (res.ids.length === 1 && res.tier !== "shortlist") {
     const top = cat.byId.get(res.ids[0]!);
     if (!top || top.side != null) return res; // unknown id, or already a per-side market
     const twinIds = perSideIndex().get(baseStatCore(top.name));

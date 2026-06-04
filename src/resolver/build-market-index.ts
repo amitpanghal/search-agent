@@ -14,6 +14,12 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { loadCatalog } from "./catalog";
 import { embed, EMBED_MODEL } from "./embed";
+// NOTE: the index embeds criterion NAMES only. Enriching the document with category info was tried
+// twice (verbatim category strings, then distinctive category tokens) and rejected — adding tokens
+// dilutes markets whose names ALREADY match the query, regressing confident grounds ("outright
+// winner"→Winner 0.557→0.487; "goal in stoppage time" confident→shortlist). Both produced ~no new
+// confident wins. The lexical booster in ground-market is the lever; scripts/ground-snapshot.ts guards
+// against a re-embed silently regressing a ground.
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "..", "..");

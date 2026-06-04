@@ -6,8 +6,9 @@
 //     accept[] (so accept[] is load-bearing, not just diagnostic).
 //   - ID (Sprint 3 E13, when `grounded` is supplied): the harness pre-grounds each selector to a
 //     tiered id-set; pairing + market-found pass iff the gold id(s) are *contained* in the returned
-//     ids AND the tier is clean (confident|variants). A containing-but-`ambiguous` result is an
-//     "ask the user" miss — failure, never a green pass (containment alone is deliberately not enough).
+//     ids AND the tier is clean (confident|variants). A containing-but-clarify (`ambiguous` near-tie or
+//     `shortlist` recall-floor) result is an "ask the user" miss — failure, never a green pass
+//     (containment alone is deliberately not enough).
 // Everything else (binding, line, odds, event_scope) is text in both modes.
 
 import type { GoldRecord } from "./gold-record";
@@ -211,7 +212,7 @@ export function scoreRun(
 
   // 3. selector pairing + "market found". In ID mode (grounded supplied) a pair requires the gold
   // id(s) to be *contained* in a selector's returned ids AND a clean tier (confident|variants), per
-  // E13; a containing-but-`ambiguous` selector is an "ask the user" miss (failure, never green).
+  // E13; a containing-but-clarify (`ambiguous`|`shortlist`) selector is an "ask the user" miss (never green).
   // Text mode pairs by Sprint-1 lenient text vs gold accept[]. Binding/line/odds (step 4) run on the
   // pairs this produces.
   const idMode = grounded !== undefined;
@@ -221,14 +222,14 @@ export function scoreRun(
   for (const [gi, g] of expect.selectors.entries()) {
     let matched: PredSelector | undefined; // clean pair: contains gold id(s) + clean tier, or text-matched
     let matchedIdx = -1;
-    let ambiguousIdx = -1; // contains gold id(s) but tier === "ambiguous" -> tracked miss, never green
+    let clarifyIdx = -1; // contains gold id(s) but tier is ambiguous|shortlist -> tracked miss, never green
     for (const [pi, p] of plan.selectors.entries()) {
       if (usedPred.has(pi)) continue;
       if (idMode) {
         const gr = grounded[pi];
         if (!gr || !idsContainGold(gr.ids, g.market_concept.id)) continue;
-        if (gr.tier === "ambiguous") {
-          if (ambiguousIdx < 0) ambiguousIdx = pi; // remember, but keep looking for a clean-tier hit
+        if (gr.tier !== "confident" && gr.tier !== "variants") {
+          if (clarifyIdx < 0) clarifyIdx = pi; // ambiguous|shortlist: remember, keep looking for a clean-tier hit
           continue;
         }
       } else if (!(g.market_concept.accept.length > 0 && looseMatch(p.market_concept, g.market_concept.accept))) {
@@ -241,12 +242,12 @@ export function scoreRun(
     if (matched) {
       usedPred.add(matchedIdx);
       pairs.push({ g, p: matched });
-    } else if (idMode && ambiguousIdx >= 0) {
-      usedPred.add(ambiguousIdx); // consume it so it isn't double-reported as an unexpected market
+    } else if (idMode && clarifyIdx >= 0) {
+      usedPred.add(clarifyIdx); // consume it so it isn't double-reported as an unexpected market
       const want = Array.isArray(g.market_concept.id) ? g.market_concept.id : [g.market_concept.id];
-      const gotIds = grounded[ambiguousIdx]?.ids ?? [];
+      const gr = grounded[clarifyIdx];
       failures.push(
-        `market ambiguous: gold[${gi}] (${g.subject.kind}) id ${JSON.stringify(want)} ⊆ ${JSON.stringify(gotIds)} but tier=ambiguous (clarify — not a pass)`,
+        `market ${gr?.tier}: gold[${gi}] (${g.subject.kind}) id ${JSON.stringify(want)} ⊆ ${JSON.stringify(gr?.ids ?? [])} but tier=${gr?.tier} (clarify — not a pass)`,
       );
     } else if (idMode) {
       const want = Array.isArray(g.market_concept.id) ? g.market_concept.id : [g.market_concept.id];
