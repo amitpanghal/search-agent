@@ -483,11 +483,18 @@ _Updated (2026-06-01): folded two findings from authoring the eval seed records 
   widened it to `id: number | number[]` (same shape as the `attrFilter`→participant **id set** above).
   Confirm the representation (widen `id` vs add a separate `ids[]`) and that grounding emits the set the
   executor then fans out.
-- **Player subject bound to a team-only market (extraction/grounding).** _New._ "Bruno Fernandes corner
-  markets" (seed g001) binds a `player` subject to **Total Corners**, a team/match market — no
-  player-corner criterion exists. The gold keeps the **stated** binding (faithful to the canonical
-  `Bruno↔corners`), leaving "can it filter to the player?" to the executor. Pin whether faithful-keep is
-  always the rule, or whether some markets should **reject** a player owner (caveat vs drop vs `unsupported`).
+- **Player subject bound to a team-only market (extraction/grounding) — RESOLVED (2026-06-05).** "Bruno
+  Fernandes corner markets" (seed g001) is a `player` subject + a team-only stat: no player corners-count
+  criterion exists. **Decision: reject the player owner for the absent market and _offer_ the real
+  alternatives** — not faithful-keep. Grounding a `player` subject to **Total Corners** (a team/match
+  market) is semantically incoherent and is structurally blocked anyway by the subject pre-filter
+  (decision 20, the load-bearing cut). Instead the grounder surfaces the player corner markets that _do_
+  exist (`To score from a direct corner`, `To give an assist from a corner`) as a `shortlist`, and the
+  executor says "a player corners-count market isn't offered — here's what is." Encoded as a gold
+  `{offer:[...]}` cell graded by the scorer's OFFER rule (`structural-scorer.ts`: pass iff a `shortlist`
+  contains the offered alternatives). Generalised rule: **a player subject for a stat with no player
+  market is an offer-of-alternatives, never a cross-bucket bind.** (The "corners in Bruno's _match_"
+  reading is a *different* extraction — a `team`/`event` subject — handled upstream, cf. Q26's `his team`.)
 - **Cosine threshold + near-tie epsilon (grounding, decision 20).** _New (2026-06-03)._ Two distinct knobs
   the current code conflates into one (`THRESHOLD = 0.55`, no epsilon): the **floor** below which we abstain
   (`none`, E5), and the **epsilon** within which top-1 and top-2 count as a near-tie that triggers the

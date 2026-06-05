@@ -59,9 +59,27 @@ const AttrFilter = z
   )
   .refine((a) => a.ageMin == null || a.ageMax == null || a.ageMin <= a.ageMax, "ageMin <= ageMax");
 
+// A market_concept is graded one of two ways. EXACT (`id`): the criterion id(s) the grounder must
+// contain at a clean confident|variants tier (the normal case). OFFER (`offer`): no exact market exists
+// for the *stated subject*, so the right outcome is the grounder SURFACING these real alternatives as a
+// `shortlist` for the executor to clarify — never a confident guess at a market that isn't there. The
+// canonical case is g001's "Bruno Fernandes corners": a `player` subject with no player corners-count
+// market, where the honest answer is "that isn't offered; here are the player corner markets that are".
+// Exactly one of id|offer; accept[] stays diagnostic. (Resolves the architecture line-486 open item.)
+const MarketConcept = z.union([
+  z.object({
+    id: z.union([z.number(), z.array(z.number()).min(1)]),
+    accept: z.array(z.string()).default([]),
+  }),
+  z.object({
+    offer: z.array(z.number()).min(1),
+    accept: z.array(z.string()).default([]),
+  }),
+]);
+
 const GoldSelector = z.object({
   subject: GoldSubject,
-  market_concept: Grounded, // criterion / betOfferType id
+  market_concept: MarketConcept, // exact criterion id(s) OR an offer-of-alternatives (see MarketConcept)
   line: Line.optional(),
   odds: Odds.optional(),
   attrFilter: AttrFilter.optional(),

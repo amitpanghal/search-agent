@@ -9,6 +9,10 @@
 //     ids AND the tier is clean (confident|variants). A containing-but-clarify (`ambiguous` near-tie or
 //     `shortlist` recall-floor) result is an "ask the user" miss — failure, never a green pass
 //     (containment alone is deliberately not enough).
+//   - OFFER (an `offer` gold cell, ID mode): the stated subject has NO exact market, so the *expected*
+//     outcome is a `shortlist` that surfaces the real alternatives (g001's "Bruno corners" — a player
+//     with no corners-count market — offers the player corner markets). Passes iff the grounding is a
+//     `shortlist` containing the offer set: here a shortlist is the RIGHT answer, not a clarify-miss.
 // Everything else (binding, line, odds, event_scope) is text in both modes.
 
 import type { GoldRecord } from "./gold-record";
@@ -220,6 +224,10 @@ export function scoreRun(
   const pairs: { g: GoldSelector; p: PredSelector }[] = [];
 
   for (const [gi, g] of expect.selectors.entries()) {
+    const mc = g.market_concept;
+    // exactly one of id|offer per the schema: offer => the "no exact market, surface alternatives" outcome.
+    const offer: number[] | null = "offer" in mc ? mc.offer : null;
+    const wantIds: number[] | null = "id" in mc ? (Array.isArray(mc.id) ? mc.id : [mc.id]) : null;
     let matched: PredSelector | undefined; // clean pair: contains gold id(s) + clean tier, or text-matched
     let matchedIdx = -1;
     let clarifyIdx = -1; // contains gold id(s) but tier is ambiguous|shortlist -> tracked miss, never green
@@ -227,12 +235,23 @@ export function scoreRun(
       if (usedPred.has(pi)) continue;
       if (idMode) {
         const gr = grounded[pi];
-        if (!gr || !idsContainGold(gr.ids, g.market_concept.id)) continue;
+        if (!gr) continue;
+        if (offer) {
+          // OFFER outcome: a market the stated subject doesn't have must be SURFACED as a `shortlist`
+          // (clarify with the real alternatives), never confidently guessed. Here a shortlist is the pass.
+          if (gr.tier === "shortlist" && idsContainGold(gr.ids, offer)) {
+            matched = p;
+            matchedIdx = pi;
+            break;
+          }
+          continue;
+        }
+        if (!idsContainGold(gr.ids, wantIds!)) continue; // wantIds non-null here (offer === null)
         if (gr.tier !== "confident" && gr.tier !== "variants") {
           if (clarifyIdx < 0) clarifyIdx = pi; // ambiguous|shortlist: remember, keep looking for a clean-tier hit
           continue;
         }
-      } else if (!(g.market_concept.accept.length > 0 && looseMatch(p.market_concept, g.market_concept.accept))) {
+      } else if (!(mc.accept.length > 0 && looseMatch(p.market_concept, mc.accept))) {
         continue;
       }
       matched = p;
@@ -242,18 +261,18 @@ export function scoreRun(
     if (matched) {
       usedPred.add(matchedIdx);
       pairs.push({ g, p: matched });
+    } else if (idMode && offer) {
+      failures.push(`offer not surfaced: gold[${gi}] (${g.subject.kind}) expected a shortlist offering ${JSON.stringify(offer)}`);
     } else if (idMode && clarifyIdx >= 0) {
       usedPred.add(clarifyIdx); // consume it so it isn't double-reported as an unexpected market
-      const want = Array.isArray(g.market_concept.id) ? g.market_concept.id : [g.market_concept.id];
       const gr = grounded[clarifyIdx];
       failures.push(
-        `market ${gr?.tier}: gold[${gi}] (${g.subject.kind}) id ${JSON.stringify(want)} ⊆ ${JSON.stringify(gr?.ids ?? [])} but tier=${gr?.tier} (clarify — not a pass)`,
+        `market ${gr?.tier}: gold[${gi}] (${g.subject.kind}) id ${JSON.stringify(wantIds)} ⊆ ${JSON.stringify(gr?.ids ?? [])} but tier=${gr?.tier} (clarify — not a pass)`,
       );
     } else if (idMode) {
-      const want = Array.isArray(g.market_concept.id) ? g.market_concept.id : [g.market_concept.id];
-      failures.push(`market not grounded: gold[${gi}] (${g.subject.kind}) expected id ${JSON.stringify(want)}`);
+      failures.push(`market not grounded: gold[${gi}] (${g.subject.kind}) expected id ${JSON.stringify(wantIds)}`);
     } else {
-      const acc = g.market_concept.accept;
+      const acc = mc.accept;
       const why = acc.length === 0 ? " (empty accept[] — cannot text-grade; author it)" : "";
       failures.push(`market not found: gold[${gi}] (${g.subject.kind}) accept=${JSON.stringify(acc)}${why}`);
     }
