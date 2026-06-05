@@ -43,6 +43,11 @@ weaknesses (update a status when revisiting).
 25. matches with Modrić in the lineup (self-correction from "Haaland-less Norway") and his assist markets above 4.0
 26. every Yamal appearance in WC 26 with shot markets, dribbles completed over 3.5, and his team match result
 27. fixtures where Bruno Fernandes is captain with his free kick specials and shots on target over 1.5
+28. WC 26 knockout fixtures with goalscorer markets for forwards under 25 and first-half goals over 0.5
+29. group-stage matches involving CONMEBOL teams with corner markets above 10.5 and red card specials
+30. upcoming WC 26 games in the next 48 hours with player shot markets and BTTS odds over 1.90
+31. every Spain fixture with passing-related player props and possession over 60% markets
+32. late kick-offs at WC 26 with over 3.5 goals markets, anytime scorer for strikers, and clean sheet odds under 3.0
 
 _Last probed: 2026-06-05 (grounding re-probe) — extractor `claude-haiku-4-5` (2026-06-04), grounding `voyage-3` + IDF/BM25 cover + soft boType gate._
 
@@ -212,6 +217,36 @@ _Last probed: 2026-06-05 (grounding re-probe) — extractor `claude-haiku-4-5` (
 - **Grounding:** "free kick specials" → **shortlist** [To take a direct free kick | To score from a direct free kick | Number of player goals scored from a direct free-kick in the Tournament/League] (vector, score 0.478). "shots on target" → **Player Shots on Target** (name/confident).
 - **Status:** ✅ Correct — selector 2 clean; selector 1's shortlist is the right behaviour for a deliberately vague "specials" (a family of direct-free-kick player markets to clarify against), not a miss.
 
+### Q28 — WC 26 knockout: goalscorer for forwards under 25, first-half goals over 0.5
+- **Query:** I want WC 26 knockout fixtures with goalscorer markets for forwards under 25 and first half goals over 0.5.
+- **Extractor:** *(re-probed 2026-06-05, post-decision-21.)* Two bets — comp "World Cup 2026", level fixture, stage `{round: "knockout"}`. Sel1 "goalscorer" → `subject: player` (no name) + `attrFilter {position: forward, ageMax: 24}` ("under 25" → ageMax 24, inclusive ✓) — **flipped from `event` to nameless `player`** by the per-player-line rule. Sel2 "first half goals" → `subject: event` (one match outcome), numeric over 0.5.
+- **Grounding:** "goalscorer" → **Goal Scorer** (`1001582442`, vector/confident 0.753; candidate list now all scorer markets, no team noise). "first half goals" over 0.5 → **Total Goals - 1st Half** (`1001159532`, vector/confident 0.607).
+- **Status:** ✅ Correct. Post-decision-21 the per-player "goalscorer" is a **nameless `player`** (kept in the player bucket); grounding held confident through the flip.
+
+### Q29 — group-stage CONMEBOL: corners above 10.5, red card specials
+- **Query:** Can you show me group stage matches involving CONMEBOL teams with corner markets above 10.5 and red card specials.
+- **Extractor:** Two bets — comp **null** (no tournament named), level fixture, stage `{round: "group stage"}`. "CONMEBOL teams" captured as `attrFilter {region: "CONMEBOL"}` on both selectors. Sel1 `subject: either_match_team`, "corners" numeric over 10.5. Sel2 `subject: event`, "red card specials" (no line).
+- **Grounding:** "corners" over 10.5 → **Number of corners in the Tournament/League** (`1002023771`, vector/confident 0.492) — ⚠️ **wrong target**: should be per-match **Total Corners** (`1147` in criterions; exists), but it never enters the top-5 raw cosine; bare "corners" embeds nearest First Corner (0.510) / Most Corners (0.509) / the tournament aggregate (0.482), and the numeric line gates out the first two, leaving the aggregate. "red card specials" → **shortlist** [To Get a Red Card | Red Cards Handicap | Most Red Cards] (vector/shortlist 0.483) ✅.
+- **Status:** ⚠️ Partial. Sel2 shortlist correct (right behaviour for vague "specials"). Sel1 mis-grounds (tournament-aggregate corners vs match Total Corners) → grounding-side KE candidate. Also debatable: comp=null, and `region` (an outcome filter per schema) repurposed to *scope fixtures* by confederation; `either_match_team` used with teams=[] (rule wants ≥2 named teams).
+
+### Q30 — upcoming WC 26 (48h): player shot markets, BTTS over 1.90
+- **Query:** Give me upcoming WC 26 games in the next 48 hours with player shot markets and BTTS odds over 1.90.
+- **Extractor:** ✅ **Resolves** *(re-probed 2026-06-05, post-decision-21; was a crash).* comp "World Cup 2026", level fixture, `time.date_window {next 48 hours, now}`. Sel1 `subject: player` (no name) "shots" — the **nameless generic player** (`player.name` now optional). Sel2 `subject: either_match_team` "both teams to score" binary yes, `odds.min 1.9`.
+- **Grounding:** "shots" → **Player's shots** (`2100015084`, name/confident — the player bucket gives the exact-name hit). "both teams to score" → **Both Teams To Score** (`1001642858`, name/confident).
+- **Status:** ✅ Fixed (decision 21). Was the KE-6 crash (unnamed `player`); now a nameless `player` keeps the bucket → `Player's shots` confident (vs the noisier `event` route the old "fix direction" would have taken).
+
+### Q31 — every Spain fixture: passing player props, possession over 60%
+- **Query:** Pull together every Spain fixture with passing-related player props and possession over 60% markets.
+- **Extractor:** ✅ **Resolves** *(re-probed 2026-06-05, post-decision-21; was a crash.)* teams=["Spain"], comp null, level fixture. Sel1 `subject: player` (no name) "passing" — Haiku emitted an empty `attrFilter: {}`, **dropped at the parse boundary** by `dropBlankSelectorLeaves`. Sel2 `subject: team` Spain "possession" numeric over 60.
+- **Grounding:** "passing" → **Player's passes completed** (`1001159617`, **alias/confident** — head-stat alias now wired). "possession" over 60 → **shortlist** [Ball possession (%) Handicap | Most Ball possession | Total Ball possession by Away Team] (vector/shortlist 0.290).
+- **Status:** ✅ Fixed (decision 21). Both KE-6 faults gone (nameless `player` valid; blank `{}`/`null` leaves dropped). "passing" now grounds **confident** to the head stat via the `passing → Player's passes completed` alias (`passing accuracy` / `pass completion` guarded → `Player's pass completion %`, closing the subset-alias over-fire). "possession" stays a niche-market shortlist (separate). No crash.
+
+### Q32 — late kick-offs WC 26: goals over 3.5, anytime scorer for strikers, clean sheet under 3.0
+- **Query:** Find me late kick-offs at WC 26 with over 3.5 goals markets, anytime scorer for strikers, and clean sheet odds under 3.0.
+- **Extractor:** *(re-probed 2026-06-05, post-decision-21.)* Three bets — comp "World Cup 2026", level fixture, `time.kickoff_time_of_day "late kick-offs"` ✓. Sel1 `subject: event` "total goals" numeric over 3.5. Sel2 "anytime scorer" → `subject: player` (no name) + `attrFilter {position: striker}` binary yes — **flipped from `event` to nameless `player`** by the per-player-line rule. Sel3 `subject: either_match_team` "clean sheet" binary yes, `odds.max 3`.
+- **Grounding:** "total goals" over 3.5 → **Total Goals** (`1001159926`, name/confident). "anytime scorer" (striker) → **To Score** (`1001159886` + variant `1006478338`, alias/variants). "clean sheet" → **To keep a clean sheet** (`1003971484`, alias/confident).
+- **Status:** ✅ Correct. "late kick-offs" → kickoff band; post-decision-21 "anytime scorer" is a nameless `player` with "strikers" as its `attrFilter`; still grounds `To Score`. All three clean.
+
 ---
 
 ## Known Errors / Known Issues
@@ -248,3 +283,12 @@ revisiting; add new ones as probes surface them.
 - **Asymmetry:** the same class is invisible when the concept **exact-name matches** the catalog — `"passes completed over 40"` resolves to **Player's passes completed** (`1001159617`, also `[head]`) via the exact-name path, which never applies the gate (Q24). The bug only bites when the concept misses exact-name and reaches `vectorGround` (here: catalog name is "successful dribbles", not "dribbles completed").
 - **Options (parked):** (a) soften the numeric gate from HARD-drop to a penalty for `head`-only count markets; (b) treat `head` as numeric-compatible for player count stats; (c) let exact-name near-matches reach the count market before the gate. Needs calibration — don't tweak blind.
 - **Resolution (2026-06-05):** took **option (a)**, applied uniformly. The line→boType gate is now **SOFT** — a mismatch costs `GATE_PENALTY` (0.10) in `ground-market.ts` instead of hard-dropping. The right market is demoted, not deleted, so a much-stronger off-type match still wins through (dribbles cosine 0.506 beats its passes-completed rival by 0.13 > 0.10). `"dribbles completed over 3.5"` now surfaces **Player's successful dribbles** leading the shortlist; the same class is fixed for **Q23**'s `"to score first"` → **Team to score first** (`1001828740`, `[head]`). Lands `shortlist` not `confident` by design — the over/under line can't be priced on a `head` market, so clarify rather than over-claim. Measured: **0 regressions** on the 32-case grounding snapshot; ship-gate g002/g003 unchanged.
+
+### KE-6 — generic/unnamed "player <market>" emitted as `subject:player` with no name (schema-invalid)
+- **Status:** RESOLVED (decision 21, 2026-06-05) — implemented + verified: both Q30/Q31 crashes gone, Q28/Q32 per-player scorers flipped to nameless `player` and still ground, awards stay `event`, ship gate PASS (0 regressions on g001–g003). Logged 2026-06-05 (Q30, Q31).
+- **Severity:** crash (uncaught) — `extract()` throws on `QueryPlan` validation; `player`/`team` subjects require `name: string().min(1)`.
+- **Trigger:** a market owned by a *generic class* of player with **no specific name and no position qualifier** — `"player shot markets"` (Q30), `"passing-related player props"` (Q31).
+- **Symptom:** `selectors[].subject = { kind: "player" }` (no `name`), which the schema rejects (`player.name` is `string().min(1)`). *(Decision 21 makes `name` optional, so this nameless form becomes valid and keeps the player bucket — see Resolution; the earlier "route to `event`" lean was reversed because `event` loses that bucket.)*
+- **Contrast (why it's a rule gap, not random):** when a **position qualifier is present** the extractor does the right thing — `"forwards under 25"` (Q28) and `"strikers"` (Q32) both → `subject: event` + `attrFilter`. The miss is specifically the *bare* `"player <market>"` with no position to anchor the event+attrFilter path; the literal word "player" pulls it to `subject: player`, which then has no name to give.
+- **Secondary (Q31):** optional selector fields emitted as explicit `null` (`line: null, odds: null, attrFilter: null`) instead of omitted — `.optional()` accepts *undefined*, not `null`. Same family as KE-1 / rule #6 ("omit any field rather than fill it with a guess or placeholder"); fails validation independently of the name issue.
+- **Resolution (decision 21, 2026-06-05 — implemented + verified):** made `player.name` **optional** so a generic player market stays a **nameless `player` subject** (keeps the player bucket — *better* than routing to `event`, which the probe showed leaks team/per-player markets). The player-vs-event cut is rewritten around a **per-player-line test** (each player priced → `player`; one match/tournament outcome → `event` + attr), which root-causes the inconsistency and carves out awards without naming them — so the Contrast above is **unified**, not special-cased (per-match scorers flip from `event` to nameless `player`+attr, to be re-probed). The blank secondary is fixed by **dropping a `null` or empty `{}`** on `line`/`odds`/`attrFilter` at the parse boundary (`dropBlankSelectorLeaves` in `extract.ts`; Haiku emitted `attrFilter: {}` here), scoped so `stage`/`time`/`competition` are untouched. Topic phrasings ("passing props") ground to the **head stat**; family-expansion is deferred to the shared no-result **suggestions** engine. Full rationale + rejected alternatives: **decision 21** in `docs/architecture.md`.

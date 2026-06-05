@@ -26,7 +26,7 @@ function loadDotEnv(): void {
   }
 }
 
-const QUERIES: string[] = [
+const DEFAULT_QUERIES: string[] = [
   "Find me the Portugal vs Brazil quarterfinal with Bruno Fernandes corner markets, Vitinha shots on target over 0.5, and team total goals over 1.5",
   "Show the Netherlands group opener with Van Dijk aerial duels won markets, clean sheet odds, and Gakpo anytime scorer",
   "Pull up Argentina's semi if they reach it with Messi assist markets, Lautaro shots over 2.5, and match result + both teams to score",
@@ -37,6 +37,10 @@ const QUERIES: string[] = [
   "Give me Player of the Tournament markets for anyone under 23",
   "Do we have most cards in tournament markets with defenders priced above 8.0",
 ];
+
+// Each non-flag argv entry is treated as one query; falls back to the curated list above.
+const cliQueries = process.argv.slice(2).filter((a) => !a.startsWith("--"));
+const QUERIES: string[] = cliQueries.length ? cliQueries : DEFAULT_QUERIES;
 
 function lineStr(line: any): string {
   if (!line) return "—";

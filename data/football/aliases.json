@@ -32,6 +32,10 @@
     "anytime goalscorer":    { "type": "criterion_concept", "name": "To Score" },
     "score the opener":      { "type": "criterion_concept", "name": "First Goal Scorer" },
 
+    "passing":               { "type": "criterion_concept", "name": "Player's passes completed" },
+    "passing accuracy":      { "type": "criterion_concept", "name": "Player's pass completion %" },
+    "pass completion":       { "type": "criterion_concept", "name": "Player's pass completion %" },
+
     "european nation":       { "type": "criterion_concept", "name": "Best European Team" },
     "european team":         { "type": "criterion_concept", "name": "Best European Team" },
     "south american nation": { "type": "criterion_concept", "name": "Best South American Team" },

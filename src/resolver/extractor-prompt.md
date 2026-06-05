@@ -97,21 +97,25 @@ attrFilter? }`.
 
 Pick exactly one `kind`:
 
-- **`player`** — a named player owns it. "Kane fouls won over 1.5" → `{ kind: "player", name:
-  "Kane" }`.
+- **`player`** — a market with **a line per player** (each player priced on the same
+  stat/prop). Include `name` when a specific player is named → `{ kind: "player", name:
+  "<player>" }`; **omit `name`** when it means any player → `{ kind: "player" }` (the executor
+  returns every player's line). A position/age class rides in `attrFilter`; subject stays `player`.
 - **`team`** — a **named** team owns it. "England to win to nil" → `{ kind: "team", name:
   "England" }`.
 - **`either_match_team`** — a **team-specific** market stated generically when **≥2 match
   teams are in scope and no side is named**. "team total tackles" / "to-win-to-nil odds" in a
   two-team match → `{ kind: "either_match_team" }` (bare, no name; do not split into two
   selectors).
-- **`event`** — a **whole-match** market with no named owner. "winning margin", "time of
-  first goal" → `{ kind: "event" }` (bare).
+- **`event`** — **one outcome for the whole match or tournament** (*not* a line per player),
+  including a tournament award/outright with a single winner among many players → `{ kind:
+  "event" }` (bare). A position/region/age class still rides in `attrFilter`.
 
-**Binding rule:** the **nearest preceding named subject owns the market**. A market with no
-named owner is `event`; a team-specific market with ≥2 teams in scope and no side named is
-`either_match_team`. (Distinguish: a *team-specific* generic market → `either_match_team`; a
-*whole-match* market → `event`.)
+**Binding rule:** the **nearest preceding named subject owns the market**. With no named
+owner, decide by **what gets priced**: a **line per player** → `player` (omit `name`); **one
+outcome for the whole match or tournament** → `event`; a **team-specific** generic market with
+≥2 teams in scope and no side named → `either_match_team`. (So a per-player stat with no name
+is `player`, but a single-winner award among players is `event`.)
 
 **Coreference:** resolve "his"/"their"/"its" to the concrete name — never emit the pronoun.
 "his shots" → that player's name. **"his team" → the player's national team** (World Cup
@@ -183,9 +187,11 @@ an `odds` object must carry at least a `min` or a `max`.
 
 ### attrFilter (optional) — filter **which participants** inside a market
 
-For position / region / age applied to the participant outcomes of a market. An **unnamed
-participant group is NEVER a subject** — keep the subject (`event`, or whoever is named) and
-add an `attrFilter`. `attrFilter` holds **only** a player attribute (position, region, age);
+For position / region / age applied to the participant outcomes of a market. The **attribute
+predicate itself is NEVER a subject** (a `<position>` or `<region>` group isn't a subject) —
+pick the subject with the binding rule (nameless `player` for a per-player market, `event` for
+a single-outcome one, or whoever is named) and add an `attrFilter` on top. `attrFilter` holds
+**only** a player attribute (position, region, age);
 a **time window or score band is never an `attrFilter`** — it stays inside `market_concept`
 text ("first corner inside 5 minutes" → market_concept "first corner inside 5 minutes", no
 attrFilter):
@@ -209,6 +215,7 @@ attrFilter `{ position: "fullback" }`.
 ## Universal rules (the make-or-break — get these exactly right)
 
 1. **Binding & splitting** — nearest preceding named subject owns the market; no owner →
+   **what gets priced**: line per player → `player` (no name); one match/tournament outcome →
    `event`; generic team-specific market with ≥2 teams and no side → `either_match_team`. Never
    bind a market to a neighbouring subject. **Each comma/"and"-separated proposition is its own
    selector — never fuse two into one `market_concept`.** ("Kane tackles, Saka interceptions" →

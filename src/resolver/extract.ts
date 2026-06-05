@@ -40,6 +40,30 @@ function client(): Anthropic {
   return cached;
 }
 
+// Haiku occasionally emits an absent OPTIONAL selector leaf (line/odds/attrFilter) as an
+// explicit `null` OR an empty object `{}` rather than omitting it — both fail validation
+// (`.optional()` rejects `null`; the `.refine` guards reject `{}`), and none of the three is
+// ever validly empty (a line needs a `kind`, odds need ≥1 bound, attrFilter needs ≥1
+// predicate). Normalize either to omitted at the parse boundary (KE-6 secondary / decision 21)
+// — scoped to the three leaves, so the legitimately nullable fields (stage/time/competition)
+// are untouched and the model-facing JSON Schema is unchanged (we don't advertise `null`).
+const OPTIONAL_SELECTOR_LEAVES = ["line", "odds", "attrFilter"] as const;
+function isBlank(v: unknown): boolean {
+  return v === null || (typeof v === "object" && v !== null && Object.keys(v).length === 0);
+}
+function dropBlankSelectorLeaves(plan: unknown): void {
+  if (!plan || typeof plan !== "object") return;
+  const selectors = (plan as { selectors?: unknown }).selectors;
+  if (!Array.isArray(selectors)) return;
+  for (const sel of selectors) {
+    if (!sel || typeof sel !== "object") continue;
+    const rec = sel as Record<string, unknown>;
+    for (const k of OPTIONAL_SELECTOR_LEAVES) {
+      if (isBlank(rec[k])) delete rec[k];
+    }
+  }
+}
+
 export async function extract(query: string): Promise<QueryPlan> {
   const msg = await client().messages.create({
     model: EXTRACTION_MODEL,
@@ -75,6 +99,7 @@ export async function extract(query: string): Promise<QueryPlan> {
       // leave as the raw string; QueryPlan validation below will surface it.
     }
   }
+  dropBlankSelectorLeaves(planValue);
   const parsed = QueryPlan.safeParse(planValue);
   if (!parsed.success) {
     throw new Error(

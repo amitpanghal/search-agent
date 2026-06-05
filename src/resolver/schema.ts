@@ -14,9 +14,12 @@ import { z } from "zod";
 
 export const BUILT_SPORTS = ["FOOTBALL"] as const;
 
-// Who owns a market. player/team carry a text name; either_match_team/event are bare tags.
+// Who owns a market. `player.name` is OPTIONAL (decision 21): named, a specific player owns a
+// line ("Mbappé shots"); omitted, it's a generic per-player market ("player shots") whose
+// outcomes the executor returns for every player. `team` still carries a required name;
+// either_match_team/event are bare tags.
 const Subject = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("player"), name: z.string().min(1) }),
+  z.object({ kind: z.literal("player"), name: z.string().min(1).optional() }),
   z.object({ kind: z.literal("team"), name: z.string().min(1) }),
   z.object({ kind: z.literal("either_match_team") }),
   z.object({ kind: z.literal("event") }),

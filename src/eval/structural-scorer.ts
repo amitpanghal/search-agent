@@ -100,8 +100,8 @@ function bindingFailure(g: GoldSelector, p: PredSelector): string | null {
   if (g.subject.kind === "player" || g.subject.kind === "team") {
     const want = g.subject.name.accept;
     if (p.subject.kind === "player" || p.subject.kind === "team") {
-      if (!looseMatch(p.subject.name, want)) {
-        return `binding name: expected ~${JSON.stringify(want)}, got "${p.subject.name}"`;
+      if (!looseMatch(p.subject.name ?? "", want)) {
+        return `binding name: expected ~${JSON.stringify(want)}, got "${p.subject.name ?? "(none)"}"`;
       }
     }
   }
