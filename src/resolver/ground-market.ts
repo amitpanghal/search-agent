@@ -10,10 +10,13 @@
 //   - vector tail, now the decision-20 chain on an alias/name miss:
 //       1. HARD subject pre-filter — restrict candidates to the query subject's bucket (the
 //          load-bearing cut: a `player` query never sees team/match criterions, nor v.v.).
-//       2. cosine within the bucket, then a lexical token-cover BONUS folded in (gateScore = cosine +
-//          bonus): a candidate whose name literally contains the query's content tokens is boosted, so a
-//          token-identical near-miss ("goal in stoppage time" ⊆ "Goal scored - Stoppage Time") the raw
-//          cosine under-scores can still clear threshold. The bonus only adds — never drops a confident hit.
+//       2. cosine within the bucket, then an IDF-weighted lexical token-cover BONUS folded in (gateScore =
+//          cosine + bonus): a candidate whose name literally contains the query's RARE content tokens is
+//          boosted, so a token-identical near-miss ("goal in stoppage time" ⊆ "Goal scored - Stoppage
+//          Time") the raw cosine under-scores can still clear threshold. The bonus only adds — never drops
+//          a confident hit. Alongside, a BM25 retrieval channel nominates the top lexical names into the
+//          pool — surfacing a true market cosine ranked below the candidate cut (Q23) — but a cold nominee
+//          can reach at most the `shortlist` tier, so this added recall never mints a false confident.
 //       3. line→boType HARD gate (a numeric over/under line can only ground an over/under market;
 //          a yes/no can only ground a yes/no one) + period & specificity SOFT penalties (down-rank,
 //          never drop; specificity demotes a name padded with words the query never asked for).
@@ -90,7 +93,21 @@ const SHORTLIST_CAP = 3;
 // contains the query's content tokens ("goal in stoppage time" ⊆ "Goal scored - Stoppage Time") is
 // boosted by up to LEX_WEIGHT. Added to gateScore (raw + bonus), so it can only PROMOTE — never drop a
 // confident hit. Bounded, so a full-cover false friend at low cosine still can't manufacture a confident.
+// The cover is now IDF-WEIGHTED (corpusStats): a rare distinctive token ("stoppage" — 15 names) counts
+// far more than a common one ("team" — 557), so the bonus tracks meaningful overlap, not word count.
 const LEX_WEIGHT = 0.1;
+// BM25 pool-expansion (the recall channel). A sparse BM25 retrieval runs ALONGSIDE cosine and nominates
+// its top names into the candidate pool — even ones whose cosine fell below the raw≥FLOOR−LEX_WEIGHT cut
+// (the Q23 "to score first" → "Team to score First Goal in respective match" recall miss, cosine < 0.25).
+// A nominee is admitted past the FLOOR only if it covers ≥ LEX_COVER_FLOOR of the query's IDF mass, and it
+// can reach at most the `shortlist` tier (its cold cosine keeps gate < THRESHOLD) — recall never mints a
+// confident. Set high (near-full cover) so a PARTIAL rare-token match can't sneak in: a crossbar market
+// whose boilerplate "(which does not result in a goal)" matches only "result" for the query "match result"
+// covers 0.70 — below this — so it's excluded and the cosine candidate (Match Odds) keeps the shortlist.
+// BM25_K1/B are the standard term-saturation/length-norm knobs (mild on 3–5 word names).
+const LEX_COVER_FLOOR = 0.8;
+const BM25_K1 = 1.5;
+const BM25_B = 0.75;
 
 // ---- subject bucket (decision 20 step 1) ----
 function bucketFor(kind?: SubjectKind): Subject | null {
@@ -164,39 +181,97 @@ const SPEC_STOPWORDS = new Set([
 ]);
 
 function specificityPenalty(queryText: string, name: string): number {
-  const q = new Set(lc(queryText).split(" ").filter(Boolean));
+  const q = new Set(tokenize(queryText));
   let extra = 0;
-  for (const tok of lc(stripSettle(name)).split(" ")) {
-    if (!tok || SPEC_STOPWORDS.has(tok) || q.has(tok)) continue;
+  for (const tok of tokenize(name)) {
+    if (SPEC_STOPWORDS.has(tok) || q.has(tok)) continue;
     extra++;
   }
   return Math.min(extra, SPEC_CAP) * SPEC_PENALTY;
 }
 
-// ---- lexical token cover (the lexical booster) ----
-// Fraction of the query's CONTENT tokens (stopwords dropped, lightly singularized) that appear in the
-// candidate name. Raw cosine under-weights exact lexical overlap, so this rewards a candidate that
-// literally contains the query's words — the channel that rescues "goal in stoppage time" against
-// "Goal scored - Stoppage Time" (3/3 tokens) where cosine alone stalls below threshold. Symmetric stem
-// (drop a trailing "s" on tokens >3 chars) so assist≈assists, card≈cards. Returns 0..1.
+// ---- lexical token cover (the lexical booster) + BM25 retrieval (the recall channel) ----
+// Both read the query's CONTENT tokens (stopwords dropped, lightly singularized). Symmetric stem (drop a
+// trailing "s" on tokens >3 chars) so assist≈assists, card≈cards.
 function stem(t: string): string {
   return t.length > 3 && t.endsWith("s") ? t.slice(0, -1) : t;
 }
-function contentTokens(s: string): Set<string> {
-  return new Set(
-    lc(stripSettle(s))
-      .split(" ")
-      .filter((t) => t && !SPEC_STOPWORDS.has(t))
-      .map(stem),
-  );
+// The catalog spells the same concept two ways — "Top Goal Scorer" (15 names) vs "...Top Goalscorer" (29) —
+// so a one-word query token must split to match the two-word names. Decompound the known football compounds
+// so cover, BM25 and the specificity penalty all see the same tokens on both sides. Fixes a real catalog
+// inconsistency, not one query: without it "top goalscorer" under-covers the true "Top Goal Scorer" AND the
+// penalty counts its "goal"/"scorer" as unrequested extras — a double demotion that drops it from the cluster.
+const DECOMPOUND: Record<string, string[]> = { goalscorer: ["goal", "scorer"], goalscorers: ["goal", "scorer"] };
+function tokenize(s: string): string[] {
+  return lc(stripSettle(s)).split(" ").filter(Boolean).flatMap((t) => DECOMPOUND[t] ?? [t]);
 }
+function contentTokens(s: string): Set<string> {
+  return new Set(tokenize(s).filter((t) => !SPEC_STOPWORDS.has(t)).map(stem));
+}
+
+// Corpus statistics for the lexical channel (IDF + BM25's avg doc length), memoized over criterion names.
+// Raw cosine has no notion of word RARITY — matching "team" (in 557 names) and "stoppage" (in 15) score
+// the same. IDF fixes that. Each criterion name is one "document"; df is over the stemmed content tokens,
+// so the booster, the BM25 score and df all tokenize identically. Global (whole catalog, not per-bucket):
+// rarity is a corpus property. Smoothed idf = log((N+1)/(df+0.5)); an unseen query token gets the maximal
+// weight (it's maximally distinctive). avgdl feeds BM25's length normalization.
+type CorpusStats = { idf: Map<string, number>; avgdl: number; maxIdf: number };
+let corpusCache: CorpusStats | undefined;
+function corpusStats(): CorpusStats {
+  if (corpusCache) return corpusCache;
+  const names = loadCatalog().list;
+  const N = names.length || 1;
+  const df = new Map<string, number>();
+  let totalLen = 0;
+  for (const c of names) {
+    const toks = contentTokens(c.name);
+    totalLen += toks.size;
+    for (const t of toks) df.set(t, (df.get(t) ?? 0) + 1);
+  }
+  const idf = new Map<string, number>();
+  for (const [t, d] of df) idf.set(t, Math.log((N + 1) / (d + 0.5)));
+  return (corpusCache = { idf, avgdl: totalLen / N, maxIdf: Math.log((N + 1) / 0.5) });
+}
+function idfWeight(t: string): number {
+  const { idf, maxIdf } = corpusStats();
+  return idf.get(t) ?? maxIdf;
+}
+
+// IDF-weighted token cover: the share of the QUERY's IDF mass the candidate name covers. Replaces the old
+// flat fraction so a rare distinctive token ("stoppage", "nil") dominates a common one ("team", "match").
+// Stays in 0..1, so `LEX_WEIGHT * cover` is a bounded nudge in cosine units — the confident THRESHOLD is
+// still anchored on cosine, never manufactured by lexical overlap alone. Rescues "goal in stoppage time"
+// against "Goal scored - Stoppage Time" where raw cosine stalls below threshold.
 function lexicalCover(queryText: string, name: string): number {
   const q = contentTokens(queryText);
   if (!q.size) return 0;
   const n = contentTokens(name);
-  let hit = 0;
-  for (const t of q) if (n.has(t)) hit++;
-  return hit / q.size;
+  let num = 0;
+  let den = 0;
+  for (const t of q) {
+    const w = idfWeight(t);
+    den += w;
+    if (n.has(t)) num += w;
+  }
+  return den === 0 ? 0 : num / den;
+}
+
+// BM25 over criterion names — the sparse RETRIEVAL channel running alongside cosine. Cosine ranks by
+// meaning; BM25 ranks by rare-word overlap, so it surfaces a true market whose NAME literally contains the
+// query's words even when cosine buried it below the candidate cut (Q23). Its top-K NOMINATE candidates
+// into the pool; it never sets the grounding score (that stays cosine + bounded idf-cover), so it can only
+// ADD recall. Standard BM25(k1,b); on short names TF≈1 and length-norm is mild, so it tracks idf-cover
+// closely but stays faithful/robust if names lengthen.
+function bm25(queryTokens: Set<string>, name: string): number {
+  const { avgdl } = corpusStats();
+  const doc = contentTokens(name);
+  const dl = doc.size || 1;
+  let score = 0;
+  for (const t of queryTokens) {
+    if (!doc.has(t)) continue; // deduped tokens → tf = 1
+    score += (idfWeight(t) * (BM25_K1 + 1)) / (1 + BM25_K1 * (1 - BM25_B + BM25_B * (dl / avgdl)));
+  }
+  return score;
 }
 
 // ---- stat-type core (decision 20 step 4) ----
@@ -267,7 +342,7 @@ function cosine(a: number[], b: number[]): number {
   return denom === 0 ? 0 : dot / denom;
 }
 
-type Scored = { id: number; name: string; raw: number; gate: number; adj: number; boTypeNames: string[]; core: string };
+type Scored = { id: number; name: string; raw: number; gate: number; adj: number; boTypeNames: string[]; core: string; cover: number; bm25: number };
 
 async function vectorGround(text: string, opts: GroundOpts): Promise<GroundResult> {
   const idx = loadIndex();
@@ -290,35 +365,64 @@ async function vectorGround(text: string, opts: GroundOpts): Promise<GroundResul
     .sort((a, b) => b.raw - a.raw);
   const candidates = allScored.slice(0, TOP_K).map(({ id, name, raw }) => ({ id, name, score: raw }));
 
+  // BM25 retrieval channel: rank the whole bucket by sparse rare-word overlap and nominate its top-K, so a
+  // lexically-strong true market the cosine ranked below the candidate cut still enters the pool (recall).
+  // Nominees are admitted past the raw pre-filter and the FLOOR below, but their cold cosine keeps gate <
+  // THRESHOLD — they can reach `shortlist`, never `confident`, so recall can't manufacture a false confident.
+  const qTokens = contentTokens(text);
+  const nominees = new Set(
+    pool
+      .map((e) => ({ id: e.id, s: bm25(qTokens, e.name) }))
+      .filter((x) => x.s > 0)
+      .sort((a, b) => b.s - a.s)
+      .slice(0, TOP_K)
+      .map((x) => x.id),
+  );
+
   // line→boType HARD gate, then the lexical booster + period/specificity penalties fold into the score.
-  // gateScore = raw + lexical-cover bonus (promotes a token-identical near-miss the cosine under-scores);
+  // gateScore = raw + IDF-weighted cover bonus (promotes a token-identical near-miss the cosine under-scores);
   // adj subtracts the period/specificity penalties for ranking/tiering. The confident cut is on gateScore
   // (so the lexical booster can lift a near-miss over THRESHOLD); the recall floor keeps [FLOOR, THRESHOLD)
-  // as a shortlist; below FLOOR we abstain. The raw pre-filter bounds the lexical work (a candidate with
-  // raw < FLOOR-LEX_WEIGHT can't reach FLOOR even at full cover). `isBinary` gates the yes/no tie-break below.
+  // as a shortlist; below FLOOR we abstain. A candidate enters if cosine is warm (raw ≥ FLOOR−LEX_WEIGHT) OR
+  // it's a BM25 nominee; the FLOOR then admits a cold nominee only when it covers ≥ LEX_COVER_FLOOR of the
+  // query's IDF mass (a strong literal match worth clarifying). `isBinary` gates the yes/no tie-break below.
   const isBinary = opts.line?.kind === "binary";
   const gated: Scored[] = allScored
-    .filter((s) => s.raw >= FLOOR - LEX_WEIGHT && passesGate(s.boTypeNames, required))
+    .filter((s) => (s.raw >= FLOOR - LEX_WEIGHT || nominees.has(s.id)) && passesGate(s.boTypeNames, required))
     .map((s) => {
-      const gate = s.raw + LEX_WEIGHT * lexicalCover(text, s.name);
+      const cover = lexicalCover(text, s.name);
+      const gate = s.raw + LEX_WEIGHT * cover;
       return {
         ...s,
+        cover,
+        bm25: bm25(qTokens, s.name),
         gate,
         adj: gate - (periodOf(s.name) === qPeriod ? 0 : PERIOD_PENALTY) - specificityPenalty(text, s.name),
         core: statCore(s.name),
       };
     })
-    .filter((s) => s.gate >= FLOOR)
+    .filter((s) => s.gate >= FLOOR || (nominees.has(s.id) && s.cover >= LEX_COVER_FLOOR))
     .sort((a, b) => b.adj - a.adj);
 
   if (gated.length === 0) return { ids: [], method: "none", candidates };
 
   // recall floor: nothing cleared the confident THRESHOLD → return the top-few as a `shortlist` (clarify),
-  // neither a guess nor silence. Ranked by adj, capped at SHORTLIST_CAP. (Abstain — gate < FLOOR — already dropped.)
+  // neither a guess nor silence. A STRONG lexical rescue (near-full IDF cover ≥ LEX_COVER_FLOOR — a true
+  // market the cosine buried, Q23) leads the clarify set; everything else is ordered by cosine-anchored adj.
+  // So a partial-cover rare-token false friend ("...does not result in a goal" for "match result", cover
+  // 0.70) can't hijack the shortlist, while a full-cover buried market still surfaces. Capped at SHORTLIST_CAP.
   const confident = gated.filter((s) => s.gate >= THRESHOLD);
   if (confident.length === 0) {
-    const ids = gated.slice(0, SHORTLIST_CAP).map((s) => s.id);
-    return { ids, method: "vector", tier: "shortlist", score: gated[0]!.adj, candidates };
+    // Strong rescues lead, but ORDER WITHIN each group by its trustworthy signal: a strong group (near-full
+    // cover) is a lexical collision where cosine is unreliable ("to score first" hits ~8 score-first markets
+    // at cover 1.0), so order it by BM25 — the most exact name leads. The non-strong group has no real lexical
+    // signal ("match result"), so order it by cosine-anchored adj. This keeps Match Odds atop its shortlist
+    // while letting the score-first family lead theirs, most-exact first.
+    const strong = (s: Scored) => s.cover >= LEX_COVER_FLOOR;
+    const ranked = [...gated]
+      .sort((a, b) => (strong(a) !== strong(b) ? (strong(a) ? -1 : 1) : strong(a) ? b.bm25 - a.bm25 : b.adj - a.adj))
+      .slice(0, SHORTLIST_CAP);
+    return { ids: ranked.map((s) => s.id), method: "vector", tier: "shortlist", score: ranked[0]!.adj, candidates };
   }
 
   const top = confident[0]!;
