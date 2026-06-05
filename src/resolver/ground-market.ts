@@ -17,9 +17,10 @@
 //          a confident hit. Alongside, a BM25 retrieval channel nominates the top lexical names into the
 //          pool — surfacing a true market cosine ranked below the candidate cut (Q23) — but a cold nominee
 //          can reach at most the `shortlist` tier, so this added recall never mints a false confident.
-//       3. line→boType HARD gate (a numeric over/under line can only ground an over/under market;
-//          a yes/no can only ground a yes/no one) + period & specificity SOFT penalties (down-rank,
-//          never drop; specificity demotes a name padded with words the query never asked for).
+//       3. line→boType SOFT penalty (a numeric over/under line prefers an over/under market; a yes/no
+//          prefers a yes/no one — but a mismatch is demoted by GATE_PENALTY, not dropped, so a count
+//          stat the snapshot tagged only `head` still surfaces — KE-5) + period & specificity penalties
+//          (all down-rank, never drop; specificity demotes a name padded with words the query never asked for).
 //       4. tier by stat-type core: one clear winner (gap > ε) → `confident`; survivors sharing a
 //          core → `variants` (returns ALL their ids — this is how the home/away side-split is
 //          produced); a different-core rival within ε → `ambiguous` (the executor clarifies).
@@ -77,11 +78,15 @@ const NONE: GroundResult = { ids: [], method: "none" };
 //   — the scoped Option-1 rerank that demotes an over-specified false friend ("Any Team to win without
 //   conceding a goal" for "to win the tournament"). Set to EPSILON so one unrequested content word ≈ one
 //   near-tie band of doubt; SPEC_CAP ceilings it so a very long name can't be obliterated. Uncalibrated.
+// GATE_PENALTY: a boType-mismatched candidate loses this much (the SOFT line→boType gate — KE-5). Set well
+//   above PERIOD/SPEC so a properly-typed market almost always wins, yet small enough that a much-stronger
+//   off-type match (head-tagged count stat the snapshot lacks an over/under for) can still overcome it.
 const THRESHOLD = 0.55;
 const EPSILON = 0.03;
 const PERIOD_PENALTY = 0.05;
 const SPEC_PENALTY = 0.03;
 const SPEC_CAP = 5;
+const GATE_PENALTY = 0.1;
 const TOP_K = 8;
 // Recall floor (the shortlist band): a gateScore in [FLOOR, THRESHOLD) returns the top-SHORTLIST_CAP
 // candidates as a `shortlist` (clarify) instead of `none`; below FLOOR we still abstain. FLOOR is set
@@ -118,12 +123,16 @@ function bucketFor(kind?: SubjectKind): Subject | null {
   return null;
 }
 
-// ---- line → boType gate (decision 20 step 3, HARD) ----
+// ---- line → boType gate (decision 20 step 3, now SOFT — a penalty, not a drop) ----
 // The betoffertypes that realize each line shape. A numeric over/under needs an over/under-style
 // line type (incl. the player-occurrence line); a binary needs yes/no — or `outright`, since a
 // named subject's outright (to win the group/tournament, to reach a stage) is itself a yes/no, and
 // Kambi tags those markets `outright`, sometimes without `yesno`. A `selection` (HT/FT, correct
 // score) has no single clean boType, so it imposes no gate. `null` = no constraint.
+// A mismatch used to HARD-drop the candidate; it now costs GATE_PENALTY (KE-5): a count/occurrence
+// market the snapshot tagged only `head` (no over/under mapping) is demoted, not deleted, so a strong
+// match ("Player's successful dribbles" for "dribbles completed over 3.5") surfaces instead of falling
+// to a same-family false friend, while a genuinely off-type market stays heavily out-ranked.
 const NUMERIC_BOTYPES = new Set(["overunder", "asianoverunder", "playeroccurrenceline"]);
 const BINARY_BOTYPES = new Set(["yesno", "outright"]);
 
@@ -388,10 +397,15 @@ async function vectorGround(text: string, opts: GroundOpts): Promise<GroundResul
   // query's IDF mass (a strong literal match worth clarifying). `isBinary` gates the yes/no tie-break below.
   const isBinary = opts.line?.kind === "binary";
   const gated: Scored[] = allScored
-    .filter((s) => (s.raw >= FLOOR - LEX_WEIGHT || nominees.has(s.id)) && passesGate(s.boTypeNames, required))
+    .filter((s) => s.raw >= FLOOR - LEX_WEIGHT || nominees.has(s.id))
     .map((s) => {
       const cover = lexicalCover(text, s.name);
-      const gate = s.raw + LEX_WEIGHT * cover;
+      // SOFT line→boType gate: a candidate that doesn't offer the required boType is penalized, not dropped
+      // (KE-5). Empty boTypeNames are never penalized (unknown → keep, the "leak rather than wrongly drop"
+      // stance). Folded into `gate`, so a mismatched market needs more cosine to stay confident — but a much
+      // stronger off-type match still clears the floor and leads its shortlist.
+      const gateMiss = required && !passesGate(s.boTypeNames, required) ? GATE_PENALTY : 0;
+      const gate = s.raw + LEX_WEIGHT * cover - gateMiss;
       return {
         ...s,
         cover,

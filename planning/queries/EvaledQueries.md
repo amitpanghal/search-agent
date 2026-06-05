@@ -38,8 +38,13 @@ weaknesses (update a status when revisiting).
 20. France to score the first goal, an own goal, a penalty awarded, and Mbappé to score from the spot vs Germany
 21. first goal before the 15th minute in Brazil's opener, no own goal, VAR overturn, and Vinicius to score the opener
 22. France to win to nil vs Mexico, win by exactly 2 goals, Mbappé brace, and a clean sheet for France
+23. WC 26 match with Mbappé shots on target over 2.5 and team to score first
+24. games with Bellingham starting, his passes completed over 40, plus anytime scorer
+25. matches with Modrić in the lineup (self-correction from "Haaland-less Norway") and his assist markets above 4.0
+26. every Yamal appearance in WC 26 with shot markets, dribbles completed over 3.5, and his team match result
+27. fixtures where Bruno Fernandes is captain with his free kick specials and shots on target over 1.5
 
-_Last probed: 2026-06-04 — extractor `claude-haiku-4-5`, grounding `voyage-3`._
+_Last probed: 2026-06-05 (grounding re-probe) — extractor `claude-haiku-4-5` (2026-06-04), grounding `voyage-3` + IDF/BM25 cover + soft boType gate._
 
 ---
 
@@ -177,6 +182,36 @@ _Last probed: 2026-06-04 — extractor `claude-haiku-4-5`, grounding `voyage-3`.
 - **Grounding:** "to win to nil" → **Home/Away Team to Win to Nil** (per-side pair); "win by exactly 2 goals" → **Exact Winning Margin**; "brace" → **To Score At Least 2 Goals**; "clean sheet" → **To keep a clean sheet**.
 - **Status:** ✅ Correct.
 
+### Q23 — Mbappé shots on target over 2.5, team to score first
+- **Query:** Find any WC 26 match featuring Mbappé with his shots on target markets over 2.5 and team to score first odds.
+- **Extractor:** Two bets — comp "World Cup 2026", players=[Mbappé]. Mbappé shots on target (numeric over 2.5); either_match_team "to score first" (binary yes).
+- **Grounding:** "shots on target" → **Player Shots on Target** (name/confident). "to score first" → **shortlist** [Team to score first | To Score his first goal against | Team to score first goal in season] (vector, score 0.367).
+- **Status:** ⚠️ Improved (2026-06-05) — selector 1 right. Selector 2's shortlist is now **led by Team to score first** (`1001828740`) — the exact `[head]` match the soft boType gate now surfaces instead of hard-dropping — with the score-first family pulled in by the BM25 recall channel, no longer junk. Still a `shortlist` (not confident): "to score first" is a genuine collision of near-identical score-first markets, so clarify is correct. (Was: junk shortlist; the canonical `1001271977` sat below the top-8 cosine cut.)
+
+### Q24 — Bellingham passes completed over 40, anytime scorer
+- **Query:** Show all games with Bellingham starting and his passes completed over 40 plus anytime scorer markets.
+- **Extractor:** Two bets — players=[Bellingham], comp null. "starting" correctly a lineup condition, not a market. Bellingham passes completed (numeric over 40); "anytime scorer" (subject=event).
+- **Grounding:** "passes completed" → **Player's passes completed** (`1001159617`, name/confident — exact-name path, so the numeric-line→boType gate is bypassed). "anytime scorer" → **To Score** (alias/variants).
+- **Status:** ✅ Correct (markets). Minor: "anytime scorer" got subject=event, not Bellingham — the antecedent ("his … plus anytime scorer") arguably scopes it to Bellingham; grounding is right either way.
+
+### Q25 — self-correction to Modrić, assist markets above 4.0
+- **Query:** Pull up matches with Haaland-less Norway out — sorry, with Modrić in the lineup and his assist markets above 4.0.
+- **Extractor:** One bet — the self-correction is handled: players=[Modrić] only, no Haaland, no Norway, comp null. "above 4.0" read as a price filter (odds min 4), not a line.
+- **Grounding:** "assists" → **Player Assists (Settled by Opta Data)** (name/confident).
+- **Status:** ✅ Correct — the headline (mid-sentence retraction) resolves cleanly.
+
+### Q26 — Yamal shots, dribbles completed over 3.5, his team match result
+- **Query:** Give me every Yamal appearance in WC 26 with shot markets, dribbles completed over 3.5, and his team match result odds.
+- **Extractor:** Three bets — comp "World Cup 2026", players=[Yamal]; "his team" inferred to team=Spain. Yamal shots (no line); Yamal dribbles completed (numeric over 3.5); Spain match result (no line).
+- **Grounding:** "shots" → **Player's shots** (name/confident). "dribbles completed" → **shortlist** led by **Player's successful dribbles** (`1007694778`) (vector, score 0.404). "match result" → **shortlist** led by **Match Odds** (vector, score 0.397).
+- **Status:** ⚠️ Improved (2026-06-05). Selector 1 right; nice "his team"→Spain inference. Selector 2 now **surfaces the true market**: the soft boType gate (KE-5) demotes rather than drops the `[head]`-tagged **Player's successful dribbles** (`1007694778`), so it leads the shortlist (was: fell to a passes-completed Opta false friend). Selector 3 **Match Odds** still leads its shortlist (sub-threshold — a semantic, not lexical, near-miss). Both stay `shortlist` (clarify), which is correct: the over/under line can't be priced on a `head` market, so we surface rather than over-claim.
+
+### Q27 — Bruno Fernandes free kick specials, shots on target over 1.5
+- **Query:** List fixtures where Bruno Fernandes is captain with his free kick specials and shots on target over 1.5.
+- **Extractor:** Two bets — players=[Bruno Fernandes], comp null. "is captain" correctly a lineup condition. "free kick specials" (no line); shots on target (numeric over 1.5).
+- **Grounding:** "free kick specials" → **shortlist** [To take a direct free kick | To score from a direct free kick | Number of player goals scored from a direct free-kick in the Tournament/League] (vector, score 0.478). "shots on target" → **Player Shots on Target** (name/confident).
+- **Status:** ✅ Correct — selector 2 clean; selector 1's shortlist is the right behaviour for a deliberately vague "specials" (a family of direct-free-kick player markets to clarify against), not a miss.
+
 ---
 
 ## Known Errors / Known Issues
@@ -205,3 +240,11 @@ revisiting; add new ones as probes surface them.
 
 ### KE-4 — group-outright instance baked into concept — RESOLVED (2026-06-04)
 - **Status:** RESOLVED. The field-outright + enumerated-instance rule now emits `market_concept "group winner"` + a `selection` line per group (Group A…L) instead of baking the letter into the concept. All 12 ground to **Group Winner** (Q8). (Was an open drift note from regression `7e7a815`.)
+
+### KE-5 — numeric line gate drops a count-stat market that only carries a `head` boType — RESOLVED (2026-06-05)
+- **Status:** RESOLVED (2026-06-05) — option (a), soft boType gate. Logged 2026-06-04 (Q26).
+- **Severity:** wrong grounding (no crash) — lands on a same-family false friend instead of the true market.
+- **Trigger:** a player count-stat whose only catalog market is tagged boType `head` (no over/under mapping in this snapshot), queried **with** a numeric over/under line. Repro: `"dribbles completed over 3.5"` → the only dribbles market **Player's successful dribbles** (`1007694778`, `[head]`) is removed by the line→boType HARD gate (needs overunder/asianoverunder/playeroccurrenceline), so the vector tail falls to **Player's Passes completed (Settled using Opta data)** (`playeroccurrenceline`).
+- **Asymmetry:** the same class is invisible when the concept **exact-name matches** the catalog — `"passes completed over 40"` resolves to **Player's passes completed** (`1001159617`, also `[head]`) via the exact-name path, which never applies the gate (Q24). The bug only bites when the concept misses exact-name and reaches `vectorGround` (here: catalog name is "successful dribbles", not "dribbles completed").
+- **Options (parked):** (a) soften the numeric gate from HARD-drop to a penalty for `head`-only count markets; (b) treat `head` as numeric-compatible for player count stats; (c) let exact-name near-matches reach the count market before the gate. Needs calibration — don't tweak blind.
+- **Resolution (2026-06-05):** took **option (a)**, applied uniformly. The line→boType gate is now **SOFT** — a mismatch costs `GATE_PENALTY` (0.10) in `ground-market.ts` instead of hard-dropping. The right market is demoted, not deleted, so a much-stronger off-type match still wins through (dribbles cosine 0.506 beats its passes-completed rival by 0.13 > 0.10). `"dribbles completed over 3.5"` now surfaces **Player's successful dribbles** leading the shortlist; the same class is fixed for **Q23**'s `"to score first"` → **Team to score first** (`1001828740`, `[head]`). Lands `shortlist` not `confident` by design — the over/under line can't be priced on a `head` market, so clarify rather than over-claim. Measured: **0 regressions** on the 32-case grounding snapshot; ship-gate g002/g003 unchanged.
