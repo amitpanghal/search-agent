@@ -82,8 +82,9 @@ function loadMeta(): { schemaVersion?: string; catalogVersion?: string } {
 async function groundSelectors(plan: QueryPlan): Promise<(GroundResult | null)[] | undefined> {
   if (plan.status !== "resolved") return undefined;
   const grounded: (GroundResult | null)[] = [];
+  const level = plan.event_scope.level;
   for (const sel of plan.selectors) {
-    const g = await groundMarket(sel.market_concept, { subjectKind: sel.subject.kind, line: sel.line });
+    const g = await groundMarket(sel.market_concept, { subjectKind: sel.subject.kind, line: sel.line, level });
     grounded.push(g.ids.length ? g : null);
   }
   return grounded;

@@ -48,8 +48,43 @@ weaknesses (update a status when revisiting).
 30. upcoming WC 26 games in the next 48 hours with player shot markets and BTTS odds over 1.90
 31. every Spain fixture with passing-related player props and possession over 60% markets
 32. late kick-offs at WC 26 with over 3.5 goals markets, anytime scorer for strikers, and clean sheet odds under 3.0
+33. Build me Brazil to win, Vinicius to score, and over 2.5 goals in their opener
+34. Back France to win the World Cup outright
+35. Argentina to win to nil with Messi anytime scorer in their R16
+36. Stack France winning HT/FT with Mbappé scoring twice
+37. Give me Argentina -1.5 Asian handicap for their group opener
+38. Pull up France draw-no-bet odds against the highest-ranked side in their group
+39. Show me alternative handicaps where Brazil are priced under 2.0 to cover -2
+40. Do we have European handicap markets for the England Round of 16 tie
+41. Find me Spain -0.5 spreads across all their group stage games
+42. Show me correct score markets for Germany vs Mexico with 2-1 priced under 8.0
+43. Pull up method of victory for the final — penalties vs extra time vs 90 minutes
+44. Give me scorecast specials with Mbappé as first scorer in a 2-0 France win
+45. Do we have winning margin markets for Brazil's group games over 2 goals
+46. I want exact half-time score odds for the Spain opener
+47. Show me first-10-minute goal markets for Saudi Arabia vs USA
+48. Pull up second-half BTTS odds across every WC 26 group game today
+49. Give me race-to-2-goals markets for France vs Germany in the knockouts
+50. Do we have first-half corners over 4.5 for the Argentina game
+51. Find me 15-minute interval scorer markets in the Portugal vs Brazil quarter
+52. Show me Mbappé vs Vinicius head-to-head for tournament top scorer
+53. Pull up Bellingham vs Pedri matchup odds for most assists in the group stage
+54. Give me a same-game player duel — Saka vs Foden, most shots on target
+55. Do we have a goalkeeper saves matchup between Donnarumma and Courtois
+56. Find me defender matchup markets — Saliba vs Van Dijk, most clearances across the groups
+57. Show me today's WC 26 acca builder with every favourite priced under 1.50
+58. Pull up a 4-fold across Saturday's group matches with BTTS yes on each leg
+59. Give me an over 2.5 goals acca for every CONMEBOL nation's opening fixture
+60. Do we have a draw acca builder across the Round of 16 weekend
+61. Find me a clean sheet acca for the top three FIFA-ranked sides across the group stage
+62. Show me today's featured boost on Mbappé to score 2+ against any African nation
+63. Pull up the daily price boost for the WC 26 marquee fixture
+64. Give me request-a-bet options for the England game — Bellingham brace plus Kane assist
+65. Do we have any specials boosted on the host nation's opening match
+66. Find me the enhanced odds section for WC 26 final week
 
-_Last probed: 2026-06-05 (grounding re-probe) — extractor `claude-haiku-4-5` (2026-06-04), grounding `voyage-3` + IDF/BM25 cover + soft boType gate._
+_Last probed: 2026-06-06 (re-probe on the **adopted decision-24 `main`-sentinel** build; Q37–Q66) — extractor `claude-haiku-4-5`, grounding `voyage-3`. **28/30 now carry a real market selector** (was ~13 dropped under the `fixture_lookup` WIP). Only **Q40** (European handicap) still wrongly → `main`; **Q65** correctly → `main`. 0 regressions vs the already-resolved set; ship gate PASS. **Q48 + Q46 since fixed** (Q48: grounding-layer acronym expansion `BTTS`/`GG`/`DNB`; Q46: `half time score` alias → Correct Score - 1st Half). Remaining grounding-axis misses: Q43/Q49/Q51._
+_Earlier (2026-06-06): decision-23 result-family aliases; Q33–Q36 — grounding `voyage-3` + `level`-aware aliases + soft boType gate._
 
 ---
 
@@ -247,6 +282,210 @@ _Last probed: 2026-06-05 (grounding re-probe) — extractor `claude-haiku-4-5` (
 - **Grounding:** "total goals" over 3.5 → **Total Goals** (`1001159926`, name/confident). "anytime scorer" (striker) → **To Score** (`1001159886` + variant `1006478338`, alias/variants). "clean sheet" → **To keep a clean sheet** (`1003971484`, alias/confident).
 - **Status:** ✅ Correct. "late kick-offs" → kickoff band; post-decision-21 "anytime scorer" is a nameless `player` with "strikers" as its `attrFilter`; still grounds `To Score`. All three clean.
 
+### Q33 — Brazil to win, Vinicius to score, over 2.5 goals in their opener
+- **Query:** Build me Brazil to win, Vinicius to score, and over 2.5 goals in their opener.
+- **Extractor:** *(probed 2026-06-06, post-decision-23.)* Three bets — level fixture, teams [Brazil], stage `{ordinal: first}` ("opener"). Sel1 `subject: team:Brazil` "to win" binary yes. Sel2 `subject: player:Vinicius` "to score" binary yes. Sel3 `subject: event` "total goals" numeric over 2.5.
+- **Grounding:** "to win" (team, **level=fixture**) → **Match Odds** (`1004712874`, alias/confident) — the decision-23 `level`-aware alias. "to score" → To Score (`1001159886` + `1006478338`, name/variants). "total goals" over 2.5 → Total Goals (`1001159926`, name/confident).
+- **Status:** ✅ Correct (post-decision-23). "to win" at fixture level now aliases to **Match Odds** — was a shortlist of `To win a Medal | To win Group | To Win The Trophy` (decision-23 blind spot). Executor picks Brazil's win outcome within Match Odds.
+
+### Q34 — France to win the World Cup outright
+- **Query:** Back France to win the World Cup outright.
+- **Extractor:** One bet — level competition, comp "World Cup", `subject: team:France` "to win the World Cup".
+- **Grounding:** "to win the World Cup" (**level=competition**) → the `to win` alias is **gated off** (fixture-only) → vector path → **To qualify for the World Cup** (`1004315271`, vector/confident 0.570).
+- **Status:** 🟡 Gating correct, outright grounding imperfect. The `level`-gate correctly keeps the *competition* "to win" off the Match-Odds alias (decision 23 targets only the *fixture* result family). The outright itself still mis-grounds ("to qualify" vs `Winner`/`To Win The Trophy`) — a separate, pre-existing outright-grounding weakness, unchanged here.
+
+### Q35 — Argentina to win to nil, Messi anytime scorer, R16
+- **Query:** Argentina to win to nil with Messi as anytime scorer in their R16.
+- **Extractor:** Two bets — level fixture, teams [Argentina], players [Messi], stage `{round: round of 16}`. Sel1 `subject: team:Argentina` "to win to nil" binary yes. Sel2 `subject: player:Messi` "anytime scorer" binary yes.
+- **Grounding:** "to win to nil" (team, fixture) → **Home/Away Team to Win to Nil** (`1001642867`/`1001642866` + combo, vector/shortlist 0.382) via the per-side divert — the decision-23 `to win` alias correctly did **not** steal it (level-aliases are exact-only, skipped by the subset fallback). "anytime scorer" → To Score (alias/variants).
+- **Status:** ✅ Correct — confirms the **non-steal**: "to win to nil" reaches the Win-to-Nil divert, not Match Odds. Side stays shortlist (home/away unresolved without fixture context, as before).
+
+### Q36 — France HT/FT, Mbappé scoring twice
+- **Query:** Stack France winning HT/FT with Mbappé scoring twice.
+- **Extractor:** Two bets — level fixture, teams [France]. Sel1 `subject: team:France` "HT/FT" selection "France/France". Sel2 `subject: player:Mbappé` "to score a brace".
+- **Grounding:** "HT/FT" (fixture) → **Half Time/Full Time** (`1001159830`, alias/confident) — decision-23 `level`-aware alias. "to score a brace" → To Score At Least 2 Goals (`1001160026`, alias/confident).
+- **Status:** ✅ Correct (post-decision-23). "HT/FT" now aliases to **Half Time/Full Time** — was **GROUND→none** (the abbreviation cosined 0.305, below the recall floor). Fixes the abbreviation miss for free.
+
+### Q37 — Argentina -1.5 Asian handicap, group opener
+- **Query:** Give me Argentina -1.5 Asian handicap for their group opener.
+- **Extractor:** `resolved`. level fixture, teams [Argentina], stage {group stage, ordinal first}. One sel `team:Argentina` "Asian handicap" `selection "-1.5"`.
+- **Grounding:** → **Asian Handicap** (`1002135397`,`1002275572`, name/variants).
+- **Status:** ✅ Correct. `-1.5` rides as the selection string; right criterion (line value not differentiated at grounding, as designed).
+
+### Q38 — France draw-no-bet vs highest-ranked side
+- **Query:** Pull up France draw-no-bet odds against the highest-ranked side in their group.
+- **Extractor:** `resolved`. level fixture, teams [France, "highest-ranked side in their group"]. One sel `team:France` "draw-no-bet" `binary yes`.
+- **Grounding:** → **Draw No Bet** (`1001159666`, name/confident).
+- **Status:** ✅ Correct — **recovered** (was a `fixture_lookup` drop pre-decision-24). The descriptive opponent is kept as a literal team string.
+
+### Q39 — alternative handicaps Brazil under 2.0 to cover -2
+- **Query:** Show me alternative handicaps where Brazil are priced under 2.0 to cover -2.
+- **Extractor:** `resolved`. level fixture, teams [Brazil]. One sel `team:Brazil` "Asian handicap" `selection "-2"` `odds {max: 2}`.
+- **Grounding:** → **Asian Handicap** (`1002135397`,`1002275572`, name/variants).
+- **Status:** ✅ Correct (family) — `-2` + odds≤2 captured; "alternative" nuance folded into Asian Handicap.
+
+### Q40 — European handicap, England R16 tie
+- **Query:** Do we have European handicap markets for the England Round of 16 tie.
+- **Extractor:** `resolved`. level fixture, teams [England], stage {round of 16}. One sel `event` **`main`** — the market dropped to the sentinel.
+- **Grounding:** → none (`main`).
+- **Status:** ❌ **The one residual drop** post-decision-24. "European handicap" (= **3-Way Handicap**, exists) buried under a list-verb + event-noun ("do we have … the … tie") still reads as marketless. Worst-case unfamiliar-term + fixture-flavour combo; everything else in the handicap/margin/BTTS families recovered.
+
+### Q41 — Spain -0.5 spreads, group stage
+- **Query:** Find me Spain -0.5 spreads across all their group stage games.
+- **Extractor:** `resolved`. level fixture, teams [Spain], stage {group stage}. One sel `team:Spain` "Asian handicap" `selection "-0.5"`.
+- **Grounding:** → **Asian Handicap** (`1002135397`,`1002275572`, name/variants).
+- **Status:** ✅ Correct — "spreads"/`-0.5` → Asian Handicap (right family).
+
+### Q42 — correct score Germany vs Mexico, 2-1 under 8.0
+- **Query:** Show me correct score markets for Germany vs Mexico with 2-1 priced under 8.0.
+- **Extractor:** `resolved`. level fixture, teams [Germany, Mexico]. One sel `event` "correct score" `selection "2-1"` `odds {max: 8}`.
+- **Grounding:** → **Correct Score** (`1001159780`, name/confident).
+- **Status:** ✅ Correct. Clean two-team fixture; scoreline + odds filter captured.
+
+### Q43 — method of victory, the final
+- **Query:** Pull up method of victory for the final — penalties vs extra time vs 90 minutes.
+- **Extractor:** `resolved`. level fixture, no teams, stage {final}. One sel `event` "method of victory".
+- **Grounding:** → **Method of First Goal** (`1004552272`, vector/confident 0.527).
+- **Status:** ⚠️ Extractor **recovered** (was a `fixture_lookup` drop) but **mis-grounds**: "method of victory" (pens/ET/90) lands on *Method of First Goal*; the closer **Way of winning** (`1001159495`) was a candidate (0.474) but lost. Grounding axis, not an extractor drop.
+
+### Q44 — scorecast Mbappé first scorer in 2-0 France win
+- **Query:** Give me scorecast specials with Mbappé as first scorer in a 2-0 France win.
+- **Extractor:** `resolved`. level fixture, teams [France]. Two sels: (1) `player:Mbappé` "first goalscorer"; (2) `team:France` "correct score" `selection "2-0"`.
+- **Grounding:** (1) → **First Goal Scorer** (`1005153918`, vector/confident 0.737). (2) → **Correct Score** (`1001159780`, name/confident).
+- **Status:** ✅ **Improved** — now decomposes the scorecast into scorer × correct-score, both confident. (Pre-decision-24 leg 2 was a vague generic-scorecast cluster at 0.405.)
+
+### Q45 — winning margin, Brazil group games over 2
+- **Query:** Do we have winning margin markets for Brazil's group games over 2 goals.
+- **Extractor:** `resolved`. level fixture, teams [Brazil], stage {group stage}. One sel `team:Brazil` "winning margin" `numeric over 2`.
+- **Grounding:** → **Exact Winning Margin** (`1001475014`, vector/confident 0.573).
+- **Status:** ✅ Correct — **recovered** (was a `fixture_lookup` drop).
+
+### Q46 — exact half-time score, Spain opener
+- **Query:** I want exact half-time score odds for the Spain opener.
+- **Extractor:** `resolved`. level fixture, teams [Spain], stage {ordinal first}. One sel `event` "half-time exact score".
+- **Grounding:** → **Correct Score - 1st Half** (`1000505272`, alias/confident).
+- **Status:** ✅ Correct (**fixed** — alias). The "half-time" phrasing lexically collides with the **Half Time** (1X2 *result*) market, which won the rerank on full lexical-cover + no specificity penalty — demoting the right market *despite its higher raw cosine* (so a pure-vector tweak was unreliable; `Correct Score - 2nd Half` even out-cosined `1st Half`). Fix: a deterministic alias `half time score` → **Correct Score - 1st Half** (unscoped, so subset-matching also covers "exact half-time score"). Guards verified: "half time result" / bare "half time" → Half Time, "to score in the first half" → scorer — none contain all of `{half, time, score}`. (The explicit "first half correct score" already grounded confidently at 0.738.)
+
+### Q47 — first-10-minute goal, Saudi Arabia vs USA
+- **Query:** Show me first-10-minute goal markets for Saudi Arabia vs USA.
+- **Extractor:** `resolved`. level fixture, teams [Saudi Arabia, USA]. One sel `either_match_team` "goal in first 10 minutes".
+- **Grounding:** → **Total Goal Minutes by Home/Away Team** (`1001652795`,`1001652796`, vector/variants).
+- **Status:** ⚠️ Extractor **recovered** (was a `fixture_lookup` drop); grounding **approximate** — "Total Goal Minutes" is *when* goals fall, not a first-10-min market (the catalog has no exact one). Surfaced for the executor rather than dropped.
+
+### Q48 — second-half BTTS, every WC26 group game today
+- **Query:** Pull up second-half BTTS odds across every WC 26 group game today.
+- **Extractor:** `resolved`. comp World Cup 2026, level fixture, stage {group stage}, time {today}. One sel `event` "second-half BTTS".
+- **Grounding:** → **Both Teams To Score - 2nd Half** (`1001642868`, vector/confident 0.616).
+- **Status:** ✅ Correct (**fixed** — grounding-layer acronym expansion). A whole-word `abbreviations` map in `aliases.json` (`btts`/`gg`→`both teams to score`, `dnb`→`draw no bet`) expands the opaque acronym *before* matching, so it reaches the right family and the period facet picks the 2nd-half variant. Abbreviated and expanded phrasings now ground **identically** (both 0.616) — the run-to-run sensitivity is gone. Same change also fixed **bare `BTTS`** (previously grounded to **none**) and **`second-half DNB`** (previously the wrong *base* Draw No Bet).
+
+### Q49 — race-to-2-goals, France vs Germany knockouts
+- **Query:** Give me race-to-2-goals markets for France vs Germany in the knockouts.
+- **Extractor:** `resolved`. level fixture, teams [France, Germany], stage {knockout}. One sel `either_match_team` "race to 2 goals".
+- **Grounding:** → **Total Goals / Exact Total Goals / Number of team goals** (`1001159926`,…, vector/shortlist 0.405).
+- **Status:** ❌ Mis-grounded (false friend). No "race to X goals" criterion exists → should abstain, but lands on **Total Goals**. Grounding axis. Candidate KE.
+
+### Q50 — first-half corners over 4.5, Argentina
+- **Query:** Do we have first-half corners over 4.5 for the Argentina game.
+- **Extractor:** `resolved`. level fixture, teams [Argentina]. One sel `event` "first-half corners" `numeric over 4.5`.
+- **Grounding:** → **Total Corners - 1st Half** (`1001159820`, vector/confident 0.513).
+- **Status:** ✅ Correct — **recovered** (was a `fixture_lookup` drop).
+
+### Q51 — 15-minute interval scorer, Portugal vs Brazil QF
+- **Query:** Find me 15-minute interval scorer markets in the Portugal vs Brazil quarter.
+- **Extractor:** `resolved`. level fixture, teams [Portugal, Brazil], stage {quarterfinal}. One sel **nameless** `player` "15-minute interval scorer".
+- **Grounding:** → **Goal Scorer / To Score / To Score** (`1001582442`,…, vector/shortlist 0.350).
+- **Status:** ❌ Mis-grounded. Interval markets exist (**Goal Interval**, **Total Goals Interval**, **Player Intervals**) but it lands on plain anytime-scorer, dropping the interval dimension. Grounding axis. Candidate KE.
+
+### Q52 — Mbappé vs Vinicius H2H, tournament top scorer
+- **Query:** Show me Mbappé vs Vinicius head-to-head for tournament top scorer.
+- **Extractor:** `resolved`. level competition, players [Mbappé, Vinicius]. One sel `event` "tournament top scorer".
+- **Grounding:** → **Top Goal Scorer / Goal Scorer** (`1001284857`,`1001582442`, vector/ambiguous 0.630).
+- **Status:** ✅ **Recovered** — both player names now retained (pre-decision-24 it dropped both names *and* the market). Top scorer is a tournament outright, so a single `event` selector is reasonable; no player-vs-player H2H market exists, so the duel framing collapses to the shared outright (executor clarifies).
+
+### Q53 — Bellingham vs Pedri, most assists, group stage
+- **Query:** Pull up Bellingham vs Pedri matchup odds for most assists in the group stage.
+- **Extractor:** `resolved`. level competition, stage {group stage}. Two sels: `player:Bellingham` / `player:Pedri` "most assists".
+- **Grounding:** both → **To give most assists (Opta)** (`1003002064`, vector/confident 0.556).
+- **Status:** ✅ **Recovered** + grounds confidently (was a `fixture_lookup` drop). Clean per-player decomposition.
+
+### Q54 — Saka vs Foden, most shots on target
+- **Query:** Give me a same-game player duel — Saka vs Foden, most shots on target.
+- **Extractor:** `resolved`. level fixture, players [Saka, Foden]. Two sels: `player:Saka` / `player:Foden` "most shots on target".
+- **Grounding:** both → **Most Shots on Target (Opta)** (`1002035664`, name/confident).
+- **Status:** ✅ **Recovered** + confident (was a `fixture_lookup` drop).
+
+### Q55 — goalkeeper saves matchup, Donnarumma vs Courtois
+- **Query:** Do we have a goalkeeper saves matchup between Donnarumma and Courtois.
+- **Extractor:** `resolved`. level fixture, players [Donnarumma, Courtois]. Two sels: `player:Donnarumma` / `player:Courtois` "saves".
+- **Grounding:** both → **Player Saves (Opta)** (`2100039302`, name/confident).
+- **Status:** ✅ **Recovered** + confident (was a `fixture_lookup` drop). Per-player decomposition.
+
+### Q56 — Saliba vs Van Dijk, most clearances, groups
+- **Query:** Find me defender matchup markets — Saliba vs Van Dijk, most clearances across the groups.
+- **Extractor:** `resolved`. level competition, players [Saliba, Van Dijk], stage {group stage}. **Three** sels: `player:Saliba` "clearances", `player:Van Dijk` "clearances", and a nameless `player` "most clearances" `attr {position: defender}`.
+- **Grounding:** the two "clearances" → **none** (correct — no player clearances market; only *Team with most clearance completed*). The "most clearances" → **To cover most distance** (vector/shortlist 0.305, wrong).
+- **Status:** ⚠️ Clearances correctly abstain, but the extra nameless "most clearances" selector is **noise** (weak false-friend grounding) — a minor tidiness regression vs the prior 2-selector state.
+
+### Q57 — today's WC26 acca, every favourite under 1.50
+- **Query:** Show me today's WC 26 acca builder with every favourite priced under 1.50.
+- **Extractor:** `resolved`. comp World Cup 2026, level competition, time {today}. One sel `event` "acca builder" `odds {max: 1.5}`.
+- **Grounding:** → **Enhanced Acca** (`1003584781`, vector/shortlist 0.399).
+- **Status:** ⚠️ Now extracts (was `fixture_lookup`). "acca builder" → the real **Enhanced Acca** market (shortlist); favourite≤1.50 → odds.max. An acca is really a bet-builder surface, so the executor still assembles the legs.
+
+### Q58 — 4-fold, Saturday group matches, BTTS each leg
+- **Query:** Pull up a 4-fold across Saturday's group matches with BTTS yes on each leg.
+- **Extractor:** `resolved`. level fixture, time {Saturday}. One sel `event` "both teams to score".
+- **Grounding:** → **Both Teams To Score** (`1001642858`, name/confident).
+- **Status:** ✅ Sensible — grounds the **BTTS leg** (the real market); the 4-fold/acca wrapper is the executor's to assemble. ("group matches" → stage not set.)
+
+### Q59 — over 2.5 goals acca, CONMEBOL opening fixtures
+- **Query:** Give me an over 2.5 goals acca for every CONMEBOL nation's opening fixture.
+- **Extractor:** `resolved`. level fixture, stage {ordinal first}. One sel `event` "total goals" `numeric over 2.5` `attr {region: CONMEBOL}`.
+- **Grounding:** → **Total Goals** (`1001159926`, name/confident).
+- **Status:** ✅ **Improved** — over-2.5 grounds confidently and **CONMEBOL is captured as a region attrFilter** (pre-decision-24 the whole query dropped).
+
+### Q60 — draw acca, Round of 16 weekend
+- **Query:** Do we have a draw acca builder across the Round of 16 weekend.
+- **Extractor:** `resolved`. level fixture, stage {round of 16}, time {date_window "weekend", anchor tournament}. One sel `event` "draw acca builder".
+- **Grounding:** → **Enhanced Acca** (`1003584781`, vector/shortlist 0.350).
+- **Status:** ⚠️ Now extracts (was `fixture_lookup`). "draw acca builder" → Enhanced Acca (shortlist); the *draw* leg isn't separately captured. Good R16 + tournament-anchored time parse.
+
+### Q61 — clean sheet acca, top three FIFA-ranked sides, group stage
+- **Query:** Find me a clean sheet acca for the top three FIFA-ranked sides across the group stage.
+- **Extractor:** `resolved`. level competition, teams **["top three FIFA-ranked sides"]** (literal), stage {group stage}. One sel `either_match_team` "clean sheet".
+- **Grounding:** → **To keep a clean sheet** (`1003971484`, alias/confident).
+- **Status:** ✅ **Improved** — clean-sheet market grounds confidently (was `fixture_lookup`). "top three FIFA-ranked sides" still a literal team string (entity-parse quirk, cf Q65).
+
+### Q62 — featured boost, Mbappé 2+ vs an African nation
+- **Query:** Show me today's featured boost on Mbappé to score 2+ against any African nation.
+- **Extractor:** `resolved`. level fixture, teams ["African nation"] (literal), players [Mbappé], time {today}. One sel `player:Mbappé` "to score 2+" `binary yes`.
+- **Grounding:** → shortlist **To Score At Least 2 Goals / Any player to score at least 2 goals / …** (`1001160026`,…, vector/shortlist 0.423).
+- **Status:** ✅ **Recovered** — Mbappé + the 2+ market are back (pre-decision-24 the boost wrapper dropped both). The right market (`1001160026`) leads the shortlist. "African nation" kept literal.
+
+### Q63 — daily price boost, WC26 marquee fixture
+- **Query:** Pull up the daily price boost for the WC 26 marquee fixture.
+- **Extractor:** `resolved`. comp World Cup 2026, level fixture, time {daily}. One sel `event` "price boost".
+- **Grounding:** → **Boosted Odds** (`1003584867`,…, vector/shortlist 0.349).
+- **Status:** ⚠️ Now extracts (was `fixture_lookup`). "price boost" → the real **Boosted Odds** family (shortlist) — reasonable for a boost surface; the executor picks the live boost.
+
+### Q64 — request-a-bet, England, Bellingham brace + Kane assist
+- **Query:** Give me request-a-bet options for the England game — Bellingham brace plus Kane assist.
+- **Extractor:** `resolved`. level fixture, teams [England]. Two sels: `player:Bellingham` "to score a brace" `binary yes`; `player:Kane` "to assist" `binary yes`.
+- **Grounding:** "to score a brace" → **To Score At Least 2 Goals** (`1001160026`, alias/confident). "to assist" → **To Assist** (`2100034146`, name/confident).
+- **Status:** ✅ Correct. RAB decomposed into its two legs, both confident.
+
+### Q65 — specials boosted, host nation opener
+- **Query:** Do we have any specials boosted on the host nation's opening match.
+- **Extractor:** `resolved`. level fixture, teams ["host nation"] (literal), stage {ordinal first}. One sel `event` **`main`**.
+- **Grounding:** → none (`main`).
+- **Status:** ✅ Correctly marketless — "specials" is a surface, not a bettable market → the `main` sentinel (executor shows the opener's main betoffer). "host nation" kept literal.
+
+### Q66 — enhanced odds section, WC26 final week
+- **Query:** Find me the enhanced odds section for WC 26 final week.
+- **Extractor:** `resolved`. comp World Cup 2026, level competition, stage {final}, time {date_window "final week", anchor tournament}. One sel `event` "enhanced odds".
+- **Grounding:** → **Boosted Odds** (8 ids, vector/variants 0.528).
+- **Status:** ✅ Now extracts (was `fixture_lookup`). "enhanced odds" → the **Boosted Odds** family (variants); good tournament-anchored time + stage parse.
+
 ---
 
 ## Known Errors / Known Issues
@@ -292,3 +531,17 @@ revisiting; add new ones as probes surface them.
 - **Contrast (why it's a rule gap, not random):** when a **position qualifier is present** the extractor does the right thing — `"forwards under 25"` (Q28) and `"strikers"` (Q32) both → `subject: event` + `attrFilter`. The miss is specifically the *bare* `"player <market>"` with no position to anchor the event+attrFilter path; the literal word "player" pulls it to `subject: player`, which then has no name to give.
 - **Secondary (Q31):** optional selector fields emitted as explicit `null` (`line: null, odds: null, attrFilter: null`) instead of omitted — `.optional()` accepts *undefined*, not `null`. Same family as KE-1 / rule #6 ("omit any field rather than fill it with a guess or placeholder"); fails validation independently of the name issue.
 - **Resolution (decision 21, 2026-06-05 — implemented + verified):** made `player.name` **optional** so a generic player market stays a **nameless `player` subject** (keeps the player bucket — *better* than routing to `event`, which the probe showed leaks team/per-player markets). The player-vs-event cut is rewritten around a **per-player-line test** (each player priced → `player`; one match/tournament outcome → `event` + attr), which root-causes the inconsistency and carves out awards without naming them — so the Contrast above is **unified**, not special-cased (per-match scorers flip from `event` to nameless `player`+attr, to be re-probed). The blank secondary is fixed by **dropping a `null` or empty `{}`** on `line`/`odds`/`attrFilter` at the parse boundary (`dropBlankSelectorLeaves` in `extract.ts`; Haiku emitted `attrFilter: {}` here), scoped so `stage`/`time`/`competition` are untouched. Topic phrasings ("passing props") ground to the **head stat**; family-expansion is deferred to the shared no-result **suggestions** engine. Full rationale + rejected alternatives: **decision 21** in `docs/architecture.md`.
+
+### KE-7 — fixture match-result derivatives ground to tournament outrights — RESOLVED (2026-06-06)
+- **Status:** RESOLVED (2026-06-06) — decision 23. Surfaced in a 30-query probe (batch 4).
+- **Severity:** wrong grounding (no crash) — a fixture result bet lands on a tournament outright (confident-wrong or shortlist), or misses entirely.
+- **Trigger:** the fixture match-result family at level fixture — "to win" (Q33), "match winner", "draw after 90", "HT/FT" (Q36), "win to nil" (Q35).
+- **Symptom:** "to win" cosined to the ~80 tournament `To win …` outrights (`Winner` 0.513 top); the real fixture market **Match Odds** (`1004712874`) is lexically disjoint — not even top-6. "HT/FT" cosined 0.305, **below the recall floor → none**. Grounding was `level`-blind (`GroundOpts` had only `subjectKind`, `line`).
+- **Resolution (decision 23):** carry `level` into `groundMarket` (`GroundOpts.level`, threaded from `event_scope.level`); add **`level`-aware `criterion_concept` aliases** — `to win`/`match result`/`1X2`/`match winner` → **Match Odds**, `HT/FT` → **Half Time/Full Time** (`1001159830`) — gated to `level: fixture` and **exact-only** (skipped by the subset fallback, so "to win" can't steal "to win to nil"). Verified: Q33 "to win" → Match Odds confident; Q36 "HT/FT" → Half Time/Full Time confident; Q35 "to win to nil" still reaches the per-side Win-to-Nil divert; Q34 competition "to win the World Cup" correctly **not** aliased. Scope (fixture vs tournament) is **not** a static catalog property (categories/boTypes/raw feed all fail) → enforcement deferred to the executor (re-ground within the offered betoffer menu). Full rationale: **decision 23** in `docs/architecture.md`.
+
+### KE-8 — marketless / fixture-only query crashes or fabricates a market — RESOLVED (2026-06-06)
+- **Status:** RESOLVED (2026-06-06) — decision 22. Surfaced in the same 30-query probe (batch 1 + live).
+- **Severity:** crash + grounding noise. The `selectors.min(1)` invariant left no honest encoding for a query naming no market.
+- **Trigger:** a query naming **no bettable market** — "the France opener", "Brazil vs Argentina group-stage match", "show me what's live now".
+- **Symptom:** the extractor fabricated a `"match"` concept (→ grounding noise Fantasy Match / Match Odds), emitted `selectors: []` (→ schema crash), or bailed to `unsupported`.
+- **Resolution (decision 22):** a 4th plan status **`fixture_lookup`** (`{sport, event_scope}`, no selectors), decided by an event-noun-vs-outcome rule (an event noun "match/fixture/game" or a list verb is not a market); grounding doesn't run; the executor shows each event under its main betoffer. Eval grades the fixture-selecting facets (teams/stage/time) HARD on these records. Verified via gold gf01–gf05 (ship gate PASS). Full rationale: **decision 22** in `docs/architecture.md`.

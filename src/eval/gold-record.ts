@@ -59,13 +59,16 @@ const AttrFilter = z
   )
   .refine((a) => a.ageMin == null || a.ageMax == null || a.ageMin <= a.ageMax, "ageMin <= ageMax");
 
-// A market_concept is graded one of two ways. EXACT (`id`): the criterion id(s) the grounder must
+// A market_concept is graded one of three ways. EXACT (`id`): the criterion id(s) the grounder must
 // contain at a clean confident|variants tier (the normal case). OFFER (`offer`): no exact market exists
 // for the *stated subject*, so the right outcome is the grounder SURFACING these real alternatives as a
 // `shortlist` for the executor to clarify — never a confident guess at a market that isn't there. The
 // canonical case is g001's "Bruno Fernandes corners": a `player` subject with no player corners-count
 // market, where the honest answer is "that isn't offered; here are the player corner markets that are".
-// Exactly one of id|offer; accept[] stays diagnostic. (Resolves the architecture line-486 open item.)
+// MAIN (`main: true`): the marketless sentinel (decision 24) — the query named no market, so the lone
+// selector is `{ subject: event, market_concept: "main" }` and the grounder returns method "main" (no
+// id; the executor shows the event's main betoffer). Exactly one of id|offer|main; accept[] stays
+// diagnostic. (Resolves the architecture line-486 open item.)
 const MarketConcept = z.union([
   z.object({
     id: z.union([z.number(), z.array(z.number()).min(1)]),
@@ -75,6 +78,7 @@ const MarketConcept = z.union([
     offer: z.array(z.number()).min(1),
     accept: z.array(z.string()).default([]),
   }),
+  z.object({ main: z.literal(true), accept: z.array(z.string()).default([]) }),
 ]);
 
 const GoldSelector = z.object({
@@ -117,6 +121,9 @@ const GoldEventScope = z.object({
 // the expected plan: status-discriminated, exactly like decision 18.
 // `sport` is a free string here, validated against the runtime BUILT_SPORTS on load (E11).
 const GoldPlan = z.discriminatedUnion("status", [
+  // resolved (decision 24): always >=1 selector. A marketless query is the lone `main` sentinel
+  // selector (market_concept {main:true}), not a separate status — the scorer grades that case like
+  // the former fixture_lookup (fixture-selecting facets HARD, Option A).
   z.object({
     status: z.literal("resolved"),
     sport: z.string().min(1),

@@ -5,6 +5,25 @@ newest on top. A sprint's plan lives in its own `sprint-N.md`.
 
 ---
 
+## Sprint 4 — Self-improving test loop: Tier-1 catalog grounding sweep (+ Tier-2 behavior corpus)
+
+Plan: [sprint-4.md](sprint-4.md)
+
+### 2026-06-06 — Plan drafted (not started)
+
+Designed a two-tier, self-improving test strategy (architecture **decision 25**, extending eval E1–E13).
+**Tier 1** (this iteration): a no-LLM **catalog round-trip sweep** — feed a concept built from each of the
+2486 groundable criterions, assert it grounds back to that id (E13 containment), report coverage +
+plain-English shortcomings, one disciplined fix-round, retest. Delivers "maximum catalog coverage"; the
+answer-key is the catalog row, so the grounder never grades itself (E8-clean). **Tier 2** (next, gated):
+big-model-proposed / human-labeled behavior×shape gold toward ≥5/tag, a locked held-out slice, a semi-auto
+human-gated loop. **Alias discipline locked as a hard rule** (decision 25): alias only to bridge a
+lexically-disjoint gap vectors can't, never to patch a tuning miss; track alias-table growth. Scope = market
+grounder only; live/in-play pinned as a tracked abstain case; odds/time tested as capture. Runs on a **fresh
+branch**. Implementation pending.
+
+---
+
 ## Sprint 3 — Collision handling: catalog rebuild + subject-filtered, tiered grounding
 
 Plan: [sprint-3.md](sprint-3.md)

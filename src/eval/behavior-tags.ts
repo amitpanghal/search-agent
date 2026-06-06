@@ -26,6 +26,7 @@ export const BEHAVIOR_TAG_IDS = [
   "self-correction",
   "age-normalize",
   "sport-default",
+  "fixture-lookup",
 ] as const;
 
 export type BehaviorTag = (typeof BEHAVIOR_TAG_IDS)[number];
@@ -118,6 +119,11 @@ export const BEHAVIOR_TAGS: Record<
     tier: "critical",
     desc: "No sport named -> resolve to the sole built sport (FOOTBALL today). Proposed this session; not in the original E7 list. Sport is a costly facet (E5), hence critical.",
     example: "\"Both teams to score markets priced over 1.90\" -> sport FOOTBALL.",
+  },
+  "fixture-lookup": {
+    tier: "critical",
+    desc: "A marketless / 'show me the fixtures' query -> status resolved with a single sentinel selector { subject: event, market_concept: \"main\" }; never a fabricated 'match' market or a crash (decision 24, replacing the fixture_lookup status). On these records the fixture-selecting facets (teams/stage/time) grade HARD (Option A).",
+    example: "\"is England's next match listed yet\" -> resolved, one \"main\" selector; \"match result\" would instead be a real market selector.",
   },
 };
 

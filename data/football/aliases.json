@@ -14,14 +14,18 @@
     "both teams score": { "type": "category_concept", "id": 10027880, "boTypeId": 18, "name": "Both Teams To Score" },
     "AH":               { "type": "botype", "id": 7, "label": "Asian Handicap" },
     "DNB":              { "type": "criterion_concept", "name": "Draw No Bet" },
-    "1X2":              { "type": "botype", "id": 2, "label": "Match Result" },
-    "match result":     { "type": "botype", "id": 2, "label": "Match Result" },
     "O/U":              { "type": "botype", "id": 6, "label": "Over/Under" },
     "over under":       { "type": "botype", "id": 6, "label": "Over/Under" },
     "CS":               { "type": "botype", "id": 3, "label": "Result" },
-    "HT/FT":            { "type": "botype", "id": 8, "label": "Half Time / Full Time" },
+
+    "to win":           { "type": "criterion_concept", "name": "Match Odds", "level": "fixture" },
+    "match winner":     { "type": "criterion_concept", "name": "Match Odds", "level": "fixture" },
+    "match result":     { "type": "criterion_concept", "name": "Match Odds", "level": "fixture" },
+    "1X2":              { "type": "criterion_concept", "name": "Match Odds", "level": "fixture" },
+    "HT/FT":            { "type": "criterion_concept", "name": "Half Time/Full Time", "level": "fixture" },
 
     "clean sheet":           { "type": "criterion_concept", "name": "To keep a clean sheet" },
+    "half time score":       { "type": "criterion_concept", "name": "Correct Score - 1st Half" },
     "brace":                 { "type": "criterion_concept", "name": "To Score At Least 2 Goals" },
     "to score a brace":      { "type": "criterion_concept", "name": "To Score At Least 2 Goals" },
     "hat-trick":             { "type": "criterion_concept", "name": "To score a hat-trick in the Competition" },
@@ -55,6 +59,11 @@
     "scorer by nation":      { "type": "criterion_concept", "name": "Nationality of Top Goalscorer" },
     "goalscorer by nation":  { "type": "criterion_concept", "name": "Nationality of Top Goalscorer" },
     "defensive record":      { "type": "criterion_concept", "name": "Team to Concede Least Goals" }
+  },
+  "abbreviations": {
+    "BTTS": "both teams to score",
+    "GG":   "both teams to score",
+    "DNB":  "draw no bet"
   },
   "periodQualifiers": {
     "1st half":    "FIRST_HALF",

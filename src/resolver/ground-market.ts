@@ -40,7 +40,7 @@
 import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { loadCatalog, type Subject, type Catalog, type MarketAlias } from "./catalog";
+import { loadCatalog, type Subject, type Catalog, type MarketAlias, type Level } from "./catalog";
 import { embed, EMBED_MODEL } from "./embed";
 import { normalize } from "../eval/structural-scorer";
 import type { QueryPlan } from "./schema";
@@ -51,17 +51,17 @@ type ResolvedPlan = Extract<QueryPlan, { status: "resolved" }>;
 export type SubjectKind = ResolvedPlan["selectors"][number]["subject"]["kind"];
 type SelectorLine = NonNullable<ResolvedPlan["selectors"][number]["line"]>;
 
-export type GroundMethod = "alias" | "name" | "vector" | "none";
+export type GroundMethod = "alias" | "name" | "vector" | "none" | "main";
 // `shortlist` is the recall-floor tier: below the confident THRESHOLD but above FLOOR we return the
 // top-few candidates for the executor to clarify against, instead of silently abstaining. Like
 // `ambiguous` it is a non-pass (the scorer greens only confident|variants), but it carries up to
 // SHORTLIST_CAP ids, not a near-tie cluster.
 export type Tier = "confident" | "variants" | "ambiguous" | "shortlist";
 
-export type GroundOpts = { subjectKind?: SubjectKind; line?: SelectorLine };
+export type GroundOpts = { subjectKind?: SubjectKind; line?: SelectorLine; level?: Level };
 
 export type GroundResult = {
-  ids: number[]; // [] iff method === "none"
+  ids: number[]; // [] iff method is "none" or "main"
   method: GroundMethod;
   tier?: Tier; // present iff ids.length > 0
   score?: number; // adjusted cosine of the winning candidate (vector path only)
@@ -69,6 +69,10 @@ export type GroundResult = {
 };
 
 const NONE: GroundResult = { ids: [], method: "none" };
+// Marketless sentinel: the extractor emits market_concept "main" when a query names no market. It is
+// NOT a static catalog criterion — the executor resolves it to each event's main betoffer — so we
+// short-circuit here rather than vector-search "main" into junk. Distinct from NONE (a real miss).
+const MAIN: GroundResult = { ids: [], method: "main" };
 
 // ---- knobs (decision 20 "still uncalibrated"; each fails safe — abstain / over-clarify) ----
 // THRESHOLD: a cosine win must clear this to count as a grounding; below it we abstain (E5).
@@ -571,15 +575,28 @@ function exactNameIds(key: string, opts: GroundOpts): number[] | null {
 
 const memo = new Map<string, GroundResult>();
 
+// Whole-word acronym expansion (sport betting vocabulary lives in the grounding layer, not the
+// sport-agnostic extractor prompt). "second-half BTTS" → "second half both teams to score" so the
+// opaque acronym reaches the right family; the period facet then picks the 2nd-half variant. Only
+// rewrites when a token actually expands, so non-acronym concepts pass through unchanged.
+function expandAbbrevs(text: string, abbr: Catalog["abbreviations"]): string {
+  if (!abbr.size) return text;
+  const toks = normalize(text).split(" ").filter(Boolean);
+  if (!toks.some((t) => abbr.has(t))) return text;
+  return toks.map((t) => abbr.get(t) ?? t).join(" ");
+}
+
 export async function groundMarket(text: string, opts: GroundOpts = {}): Promise<GroundResult> {
-  const key = normalize(text);
+  const expanded = expandAbbrevs(text, loadCatalog().abbreviations);
+  const key = normalize(expanded);
   if (!key) return NONE;
+  if (key === "main") return MAIN; // marketless sentinel → executor's main betoffer; never vector-grounds
   // key on the raw subjectKind, not the bucket: `team` and `event` share a bucket but `team` triggers
   // the per-side divert, so they must not alias to the same memo entry.
   const memoKey = `${key}|${opts.subjectKind ?? ""}|${lineClass(opts.line)}`;
   const hit = memo.get(memoKey);
   if (hit) return hit;
-  const res = applyPerSideDivert(await resolveMarket(key, text, opts), key, opts);
+  const res = applyPerSideDivert(await resolveMarket(key, expanded, opts), key, opts);
   memo.set(memoKey, res);
   return res;
 }
@@ -587,12 +604,14 @@ export async function groundMarket(text: string, opts: GroundOpts = {}): Promise
 // Token-subset alias fallback: the most-specific criterion_concept alias whose every key-token
 // appears in the concept's tokens. Single-token keys ("brace") match the exact token only
 // ("braces" ≠ "brace"), so the curated, distinctive keys can't over-fire. criterion_concept only.
+// Level-scoped aliases (decision 23) are EXACT-only — skipped here — so "to win" can't subset-steal
+// "to win to nil" (which must reach the per-side Win-to-Nil divert, not Match Odds).
 function subsetAlias(cat: Catalog, key: string): MarketAlias | undefined {
   const tokens = new Set(key.split(" ").filter(Boolean));
   if (!tokens.size) return undefined;
   let best: { alias: MarketAlias; n: number } | undefined;
   for (const [k, alias] of cat.marketAliases) {
-    if (alias.type !== "criterion_concept") continue;
+    if (alias.type !== "criterion_concept" || alias.level != null) continue;
     const kt = k.split(" ").filter(Boolean);
     if (kt.length && kt.every((t) => tokens.has(t)) && (!best || kt.length > best.n)) {
       best = { alias, n: kt.length };
@@ -610,7 +629,9 @@ async function resolveMarket(key: string, text: string, opts: GroundOpts): Promi
   // ("to score a brace" → key "brace") — most-specific (most key-tokens) wins. Restricted to
   // criterion_concept so a botype/category alias can never hijack the phrase.
   const alias = cat.marketAliases.get(key) ?? subsetAlias(cat, key);
-  if (alias?.type === "criterion_concept") {
+  // A level-scoped alias (decision 23) fires only when the query's level matches — "to win" -> Match
+  // Odds for a fixture, but stays a tournament-outright cosine for a competition (or unknown level).
+  if (alias?.type === "criterion_concept" && (alias.level == null || alias.level === opts.level)) {
     const ids = cat.byName.get(normalize(alias.name)) ?? [];
     if (ids.length) return { ids, method: "alias", tier: ids.length > 1 ? "variants" : "confident" };
   }

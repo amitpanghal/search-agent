@@ -86,15 +86,19 @@ const EventScope = z.object({
   time: Time.nullable(),
 });
 
-// Status-discriminated: no event_scope/selectors exist unless status === "resolved", so
-// grounding can never run on an unconfirmed sport. ambiguous/unsupported are abstentions.
+// A confirmed football plan always carries sport + event_scope + >=1 selector — there is no
+// marketless status. A query that names no market still `resolved`s: it gets one sentinel selector
+// `{ subject: event, market_concept: "main" }` meaning "this fixture's main betoffer". Folding the
+// marketless case into `resolved` (instead of a separate `fixture_lookup` status) removes the second
+// output shape the small extractor over-used — it always emits >=1 selector now, which is the
+// always-resolve behaviour that had recall, minus the fabricated "match" market it used to invent.
+const footballPlan = { sport: z.enum(BUILT_SPORTS), event_scope: EventScope };
+
+// Status-discriminated "kind of resolver outcome": decide the sport first (ambiguous/unsupported are
+// abstentions carrying no scope); a built-sport query is always `resolved` with >=1 selector. The
+// marketless case is the `main` sentinel selector, not a status.
 export const QueryPlan = z.discriminatedUnion("status", [
-  z.object({
-    status: z.literal("resolved"),
-    sport: z.enum(BUILT_SPORTS),
-    event_scope: EventScope,
-    selectors: z.array(Selector).min(1),
-  }),
+  z.object({ status: z.literal("resolved"), ...footballPlan, selectors: z.array(Selector).min(1) }),
   z.object({ status: z.literal("ambiguous"), candidates: z.array(z.enum(BUILT_SPORTS)).min(2) }),
   z.object({ status: z.literal("unsupported"), recognizedAs: z.string().nullable() }),
 ]);

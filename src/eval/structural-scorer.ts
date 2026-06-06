@@ -138,42 +138,59 @@ function timeNote(g: TimeVal | null, p: TimeVal | null): string | null {
   return diffs.length ? `time: ${diffs.join(", ")}` : null;
 }
 
-function softEventScope(g: ResolvedGold, p: ResolvedPlan): string[] {
-  const soft: string[] = [];
-  const ge = g.event_scope;
-  const pe = p.event_scope;
+// All event_scope diffs, tagged by facet. On a market `resolved` plan every diff is a soft note (the
+// market id is the costly facet); on a marketless `main`-sentinel plan the event_scope IS the answer,
+// so the fixture-selecting facets are promoted to hard failures (decision 24 / Option A).
+type ScopeFacet = "level" | "teams" | "competition" | "players" | "stage" | "time";
+const HARD_FIXTURE_FACETS = new Set<ScopeFacet>(["teams", "stage", "time"]);
 
-  if (ge.level !== pe.level) soft.push(`level: expected ${ge.level}, got ${pe.level}`);
+// A marketless plan/gold is the lone `main` sentinel selector (decision 24): exactly one selector,
+// concept "main" (gold encodes it as {main:true}). Detecting it on both sides lets the scorer grade
+// this case the way the former `fixture_lookup` status did — the event_scope IS the deliverable.
+function isGoldMarketless(e: ResolvedGold): boolean {
+  return e.selectors.length === 1 && "main" in e.selectors[0]!.market_concept;
+}
+function isPlanMarketless(p: ResolvedPlan): boolean {
+  return p.selectors.length === 1 && p.selectors[0]!.market_concept === "main";
+}
+
+function eventScopeDiffs(
+  ge: ResolvedGold["event_scope"],
+  pe: ResolvedPlan["event_scope"],
+): { facet: ScopeFacet; msg: string }[] {
+  const out: { facet: ScopeFacet; msg: string }[] = [];
+
+  if (ge.level !== pe.level) out.push({ facet: "level", msg: `level: expected ${ge.level}, got ${pe.level}` });
 
   for (const gt of ge.teams) {
     if (!pe.teams.some((t) => looseMatch(t, gt.accept))) {
-      soft.push(`team missing: ~${JSON.stringify(gt.accept)}`);
+      out.push({ facet: "teams", msg: `team missing: ~${JSON.stringify(gt.accept)}` });
     }
   }
   for (const pt of pe.teams) {
-    if (!ge.teams.some((gt) => looseMatch(pt, gt.accept))) soft.push(`unexpected team: "${pt}"`);
+    if (!ge.teams.some((gt) => looseMatch(pt, gt.accept))) out.push({ facet: "teams", msg: `unexpected team: "${pt}"` });
   }
 
   if (ge.competition === null) {
-    if (pe.competition !== null) soft.push(`unexpected competition: "${pe.competition}"`);
+    if (pe.competition !== null) out.push({ facet: "competition", msg: `unexpected competition: "${pe.competition}"` });
   } else if (pe.competition === null || !looseMatch(pe.competition, ge.competition.accept)) {
-    soft.push(`competition: expected ~${JSON.stringify(ge.competition.accept)}, got ${JSON.stringify(pe.competition)}`);
+    out.push({ facet: "competition", msg: `competition: expected ~${JSON.stringify(ge.competition.accept)}, got ${JSON.stringify(pe.competition)}` });
   }
 
   for (const gp of ge.players) {
     const match = pe.players.find((pp) => looseMatch(pp.name, gp.name.accept));
-    if (!match) soft.push(`player missing: ~${JSON.stringify(gp.name.accept)}`);
+    if (!match) out.push({ facet: "players", msg: `player missing: ~${JSON.stringify(gp.name.accept)}` });
     else if (match.role !== gp.role) {
-      soft.push(`player role: ~${JSON.stringify(gp.name.accept)} expected ${gp.role}, got ${match.role}`);
+      out.push({ facet: "players", msg: `player role: ~${JSON.stringify(gp.name.accept)} expected ${gp.role}, got ${match.role}` });
     }
   }
 
   const sn = stageNote(ge.stage, pe.stage);
-  if (sn) soft.push(sn);
+  if (sn) out.push({ facet: "stage", msg: sn });
   const tn = timeNote(ge.time, pe.time);
-  if (tn) soft.push(tn);
+  if (tn) out.push({ facet: "time", msg: tn });
 
-  return soft;
+  return out;
 }
 
 // ---- main entry ----
@@ -207,6 +224,22 @@ export function scoreRun(
   if (plan.status !== "resolved") {
     failures.push("internal: status narrowing failed");
     return { pass: false, failures, soft };
+  }
+
+  // marketless sentinel (decision 24): a query naming no market resolves to a single
+  // { subject: event, market_concept: "main" } selector (gold encodes it {main:true}). Grade it like
+  // the former fixture_lookup — the event_scope IS the deliverable, so fixture-selecting facets
+  // (teams/stage/time) are HARD; sport stays costly; the plan must itself be the lone `main` selector
+  // (a fabricated market or extra selector here is the Option-A failure nothing downstream catches).
+  if (isGoldMarketless(expect)) {
+    if (plan.sport !== expect.sport) failures.push(`sport: expected "${expect.sport}", got "${plan.sport}"`);
+    if (!isPlanMarketless(plan)) {
+      failures.push(`marketless: expected a single "main" selector, got ${JSON.stringify(plan.selectors.map((s) => s.market_concept))}`);
+    }
+    for (const d of eventScopeDiffs(expect.event_scope, plan.event_scope)) {
+      (HARD_FIXTURE_FACETS.has(d.facet) ? failures : soft).push(d.msg);
+    }
+    return { pass: failures.length === 0, failures, soft };
   }
 
   // 2. sport (costly)
@@ -284,7 +317,7 @@ export function scoreRun(
       // A pred that grounded to `none` is already implied by the gold-side "not grounded"
       // failures; only a pred that grounded to a real-but-unwanted id adds new information.
       const got = grounded[pi]?.ids ?? null;
-      if (got) failures.push(`unexpected market: "${p.market_concept}" grounded ${JSON.stringify(got)}`);
+      if (got && got.length) failures.push(`unexpected market: "${p.market_concept}" grounded ${JSON.stringify(got)}`);
     } else {
       failures.push(`unexpected market: "${p.market_concept}"`);
     }
@@ -302,8 +335,8 @@ export function scoreRun(
     }
   }
 
-  // 5. event_scope (soft, tracked only)
-  soft.push(...softEventScope(expect, plan));
+  // 5. event_scope (soft, tracked only — on a market query the market id is the costly facet)
+  soft.push(...eventScopeDiffs(expect.event_scope, plan.event_scope).map((d) => d.msg));
 
   return { pass: failures.length === 0, failures, soft };
 }

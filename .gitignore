@@ -5,5 +5,8 @@ node_modules/
 __pycache__/
 *.pyc
 
+# Machine-local Claude Code settings/permissions.
+.claude/settings.local.json
+
 # Derived vector index (rebuild with `npm run build:index`; needs VOYAGE_API_KEY).
 src/resolver/index/

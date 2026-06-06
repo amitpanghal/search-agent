@@ -79,9 +79,10 @@ async function main(): Promise<void> {
 
     const es = plan.event_scope;
     const stage = es.stage ? `stage=${JSON.stringify(es.stage)}` : "";
+    const time = es.time ? `time=${JSON.stringify(es.time)}` : "";
     console.log(
       `scope: sport=${plan.sport} level=${es.level} comp=${es.competition ?? "null"} ` +
-        `teams=[${es.teams.join(", ")}] players=[${es.players.map((p: any) => p.name).join(", ")}] ${stage}`,
+        `teams=[${es.teams.join(", ")}] players=[${es.players.map((p: any) => p.name).join(", ")}] ${stage} ${time}`.trim(),
     );
     console.log(`selectors: ${plan.selectors.length}`);
 
@@ -96,7 +97,7 @@ async function main(): Promise<void> {
         `\n  [${j + 1}] subject=${subjStr(sel.subject)}  concept="${sel.market_concept}"  line=${lineStr(sel.line)}  ${extras}`,
       );
 
-      const r = await groundMarket(sel.market_concept, { subjectKind: sel.subject.kind, line: sel.line });
+      const r = await groundMarket(sel.market_concept, { subjectKind: sel.subject.kind, line: sel.line, level: es.level });
       if (!r.ids.length) {
         console.log(`      GROUND -> none (${r.method})`);
       } else {

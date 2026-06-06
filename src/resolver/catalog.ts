@@ -25,6 +25,9 @@ export type Subject = "player" | "team_or_match";
 // Per-side ownership of a team_or_match market ("... by Home/Away Team"). Drives the named-team
 // divert (decision 20): a single-team query lands on its per-side twins, not the match total.
 export type Side = "home" | "away" | null;
+// Query event-scope level (mirrors event_scope.level). A `criterion_concept` alias may be scoped to
+// one level (decision 23): "to win" aliases to Match Odds only for a fixture, not a tournament outright.
+export type Level = "fixture" | "competition";
 
 export type Criterion = {
   id: number;
@@ -42,7 +45,7 @@ export type Criterion = {
 // single criterion (resolved to an id by exact criterion-name). `category_concept` and `botype`
 // are coarser — they are SCOPING hints for the vector path, not groundings on their own.
 export type MarketAlias =
-  | { type: "criterion_concept"; name: string }
+  | { type: "criterion_concept"; name: string; level?: Level }
   | { type: "category_concept"; id: number; boTypeId?: number; name?: string }
   | { type: "botype"; id: number; label?: string };
 
@@ -53,6 +56,7 @@ export type Catalog = {
   bySubject: Record<Subject, Criterion[]>; // pre-filter buckets (decision 20)
   version: string; // content hash stamped by build-catalog; build-market-index records it (E11)
   marketAliases: Map<string, MarketAlias>; // normalized alias key -> concept
+  abbreviations: Map<string, string>; // normalized acronym token -> normalized full phrase (e.g. btts -> both teams to score)
 };
 
 function readJson(file: string): any {
@@ -89,8 +93,11 @@ function coerceAlias(v: unknown): MarketAlias | null {
   if (!v || typeof v !== "object") return null;
   const o = v as Record<string, unknown>;
   switch (o.type) {
-    case "criterion_concept":
-      return typeof o.name === "string" ? { type: "criterion_concept", name: o.name } : null;
+    case "criterion_concept": {
+      if (typeof o.name !== "string") return null;
+      const level = o.level === "fixture" || o.level === "competition" ? o.level : undefined;
+      return { type: "criterion_concept", name: o.name, level };
+    }
     case "category_concept":
       return typeof o.id === "number"
         ? { type: "category_concept", id: o.id, boTypeId: o.boTypeId as number | undefined, name: o.name as string | undefined }
@@ -115,10 +122,22 @@ function loadMarketAliases(): Map<string, MarketAlias> {
   return map;
 }
 
+// Acronym/short-form expansions (curated only). Opaque betting acronyms ("BTTS", "DNB") embed to
+// noise, so the grounder whole-word-expands them to their full phrase BEFORE matching — keeping the
+// sport-agnostic extractor prompt out of it. Both sides normalized so they match the grounder's tokens.
+function loadAbbreviations(): Map<string, string> {
+  const map = new Map<string, string>();
+  const abbr = (readJson("aliases.json").abbreviations ?? {}) as Record<string, unknown>;
+  for (const [k, v] of Object.entries(abbr)) {
+    if (typeof v === "string") map.set(normalize(k), normalize(v));
+  }
+  return map;
+}
+
 let cached: Catalog | null = null;
 
 export function loadCatalog(): Catalog {
   if (cached) return cached;
-  cached = { ...loadCriterions(), marketAliases: loadMarketAliases() };
+  cached = { ...loadCriterions(), marketAliases: loadMarketAliases(), abbreviations: loadAbbreviations() };
   return cached;
 }

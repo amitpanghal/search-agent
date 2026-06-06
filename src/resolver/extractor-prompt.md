@@ -20,8 +20,9 @@ Work in three steps.
 
 Built sports today: **FOOTBALL** (the only one). Decide `status`:
 
-- The query is about football, **or names no sport at all** → `status: "resolved"`,
-  `sport: "FOOTBALL"`. (A sport-silent query defaults to the only built sport.)
+- The query is about football, **or names no sport at all** → a **football plan**,
+  `status: "resolved"`, `sport: "FOOTBALL"`. (A sport-silent query defaults to the only built
+  sport.) A football plan is **always** `resolved`; Step 3 fills its `selectors[]`.
 - The query is about a sport that is **not** built (tennis, basketball, cricket, F1, NFL, …)
   → `status: "unsupported"`, `recognizedAs:` that sport as text. Do **not** invent a plan.
 - The query mixes football **with** an unbuilt sport → `status: "unsupported"` as well
@@ -35,8 +36,11 @@ Built sports today: **FOOTBALL** (the only one). Decide `status`:
   `teams`; grounding enumerates it. `recognizedAs` is the unbuilt sport's **name only** (e.g.
   "tennis") or null — never a sentence, a reason, or "ambiguous query".
 
-Only when `status` is `"resolved"` do you continue to Step 2 and Step 3. A `resolved` plan
-carries `sport`, `event_scope`, and `selectors[]`.
+Only a **football plan** continues to Step 2 and Step 3; `unsupported` and `ambiguous` stop
+here and carry no scope or selectors. A football plan always carries `sport`, `event_scope`, and
+**≥1 selector** — there is no marketless status. A query that names no market still resolves: it
+gets one sentinel selector `{ subject: event, market_concept: "main" }` (Step 3), meaning "this
+fixture's main market". **Never emit zero selectors.**
 
 Neutral examples:
 - "corner markets priced over 1.5" → resolved, FOOTBALL (no sport named → the built one).
@@ -92,6 +96,48 @@ Neutral examples:
 
 Each market in the query becomes one selector: `{ subject, market_concept, line?, odds?,
 attrFilter? }`.
+
+### First: name the market for each request — the `main` fallback
+
+Each thing the user asks for becomes one selector. A **market** is a *bettable outcome*: a price
+someone can take — a match result, both-teams-to-score, a player prop, an outright, a card/corner
+total. Two things are **never** markets — they describe the *event*, not an outcome:
+- a noun naming the **event itself** — "match", "fixture", "game", "tie", "clash";
+- a verb that only **asks to see/list** events — "show me", "pull up", "do we have", "what's on".
+
+Name the concrete market each request states. If a request names **no** market — after stripping
+the two never-markets above and the scope words (teams/competition/stage/time/players), nothing
+bettable is left — emit a **single** sentinel selector
+`{ subject: { kind: "event" }, market_concept: "main" }` ("this fixture's main market"). Never drop
+a request, never emit zero selectors, and **never invent a "match"/"fixture" market** (rule 6) — the
+bare event *is* `main`.
+
+The cut is *event-noun vs outcome-noun*: "their next **fixture**" / "the group-stage **match**" name
+only the event → `main`; "**match result**", "**match** winner", "outright **winner**" name an
+outcome → that concept. A named market always wins on its own, **however fixture-flavoured the rest
+of the query reads** — an adjacent list verb ("show me", "do we have") or event noun ("tie", "game")
+never downgrades a named market to `main`.
+
+_Neutral examples:_
+- "is the Italy opener on the schedule yet" → one selector `{ subject: { kind: "event" }, market_concept: "main" }`.
+- "what games are on this weekend" → one `main` selector; `event_scope.time =
+  { date_window: { value: "this weekend", anchor: "now" }, kickoff_time_of_day: null }`.
+- "Germany vs Italy match result" → one selector
+  `{ subject: { kind: "event" }, market_concept: "match result" }` (an outcome, not the event).
+
+```json
+{
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+    "teams": ["Italy"], "players": [], "competition": null,
+    "level": "fixture",
+    "stage": { "round": null, "ordinal": "first", "conditional": false },
+    "time": null
+  },
+  "selectors": [{ "subject": { "kind": "event" }, "market_concept": "main" }]
+}
+```
 
 ### subject — who owns this market
 
@@ -238,7 +284,9 @@ attrFilter `{ position: "fullback" }`.
    and never swap a vague concept for a different or narrower concrete market. **Record only what
    the query states, as text** — keep a vague concept's own words as the `market_concept`
    (grounding decides whether a market exists), and **omit any field rather than fill it with a
-   guess or a placeholder**.
+   guess or a placeholder**. A query that names **no market** still resolves — to the single
+   `main` sentinel selector (Step 3) — never zero selectors and never a fabricated
+   "match"/"fixture" market.
 
 ---
 
