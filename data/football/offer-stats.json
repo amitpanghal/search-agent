@@ -1,0 +1,1250 @@
+{
+ "source": "kambi",
+ "groupId": 2010133908,
+ "pulledAt": "2026-06-07T21:31:26.261Z",
+ "nFixtureEvents": 72,
+ "nCompEvents": 67,
+ "nDistinctCriterions": 177,
+ "totalBetOffers": 40280,
+ "stats": {
+  "1000316018": {
+   "level": "fixture",
+   "fixtureFreq": 1,
+   "compFreq": 0,
+   "fixtureEvents": 72,
+   "compEvents": 0
+  },
+  "1000505272": {
+   "level": "fixture",
+   "fixtureFreq": 1,
+   "compFreq": 0,
+   "fixtureEvents": 72,
+   "compEvents": 0
+  },
+  "1001159487": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1001159499": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.716,
+   "fixtureEvents": 0,
+   "compEvents": 48
+  },
+  "1001159529": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1001159532": {
+   "level": "fixture",
+   "fixtureFreq": 1,
+   "compFreq": 0,
+   "fixtureEvents": 72,
+   "compEvents": 0
+  },
+  "1001159598": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1001159600": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.134,
+   "fixtureEvents": 0,
+   "compEvents": 9
+  },
+  "1001159610": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1001159620": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1001159628": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1001159633": {
+   "level": "fixture",
+   "fixtureFreq": 1,
+   "compFreq": 0,
+   "fixtureEvents": 72,
+   "compEvents": 0
+  },
+  "1001159666": {
+   "level": "fixture",
+   "fixtureFreq": 0.986,
+   "compFreq": 0,
+   "fixtureEvents": 71,
+   "compEvents": 0
+  },
+  "1001159667": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1001159668": {
+   "level": "fixture",
+   "fixtureFreq": 1,
+   "compFreq": 0,
+   "fixtureEvents": 72,
+   "compEvents": 0
+  },
+  "1001159697": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1001159711": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1001159730": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1001159750": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1001159780": {
+   "level": "fixture",
+   "fixtureFreq": 1,
+   "compFreq": 0,
+   "fixtureEvents": 72,
+   "compEvents": 0
+  },
+  "1001159807": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1001159808": {
+   "level": "fixture",
+   "fixtureFreq": 0.5,
+   "compFreq": 0,
+   "fixtureEvents": 36,
+   "compEvents": 0
+  },
+  "1001159820": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1001159826": {
+   "level": "fixture",
+   "fixtureFreq": 1,
+   "compFreq": 0,
+   "fixtureEvents": 72,
+   "compEvents": 0
+  },
+  "1001159830": {
+   "level": "fixture",
+   "fixtureFreq": 1,
+   "compFreq": 0,
+   "fixtureEvents": 72,
+   "compEvents": 0
+  },
+  "1001159858": {
+   "level": "fixture",
+   "fixtureFreq": 1,
+   "compFreq": 0,
+   "fixtureEvents": 72,
+   "compEvents": 0
+  },
+  "1001159884": {
+   "level": "fixture",
+   "fixtureFreq": 1,
+   "compFreq": 0,
+   "fixtureEvents": 72,
+   "compEvents": 0
+  },
+  "1001159886": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1001159897": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1001159922": {
+   "level": "fixture",
+   "fixtureFreq": 0.986,
+   "compFreq": 0,
+   "fixtureEvents": 71,
+   "compEvents": 0
+  },
+  "1001159926": {
+   "level": "fixture",
+   "fixtureFreq": 1,
+   "compFreq": 0,
+   "fixtureEvents": 72,
+   "compEvents": 0
+  },
+  "1001159938": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1001159951": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1001159964": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.716,
+   "fixtureEvents": 0,
+   "compEvents": 48
+  },
+  "1001159967": {
+   "level": "fixture",
+   "fixtureFreq": 1,
+   "compFreq": 0,
+   "fixtureEvents": 72,
+   "compEvents": 0
+  },
+  "1001159972": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1001159997": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1001160024": {
+   "level": "fixture",
+   "fixtureFreq": 0.5,
+   "compFreq": 0,
+   "fixtureEvents": 36,
+   "compEvents": 0
+  },
+  "1001160038": {
+   "level": "fixture",
+   "fixtureFreq": 0.5,
+   "compFreq": 0,
+   "fixtureEvents": 36,
+   "compEvents": 0
+  },
+  "1001224081": {
+   "level": "fixture",
+   "fixtureFreq": 1,
+   "compFreq": 0,
+   "fixtureEvents": 72,
+   "compEvents": 0
+  },
+  "1001225055": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1001228506": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1001228509": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1001232823": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.716,
+   "fixtureEvents": 0,
+   "compEvents": 48
+  },
+  "1001239605": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1001241010": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.716,
+   "fixtureEvents": 0,
+   "compEvents": 48
+  },
+  "1001241013": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1001241014": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.194,
+   "fixtureEvents": 0,
+   "compEvents": 13
+  },
+  "1001241016": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1001241017": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1001241028": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.716,
+   "fixtureEvents": 0,
+   "compEvents": 48
+  },
+  "1001241031": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.179,
+   "fixtureEvents": 0,
+   "compEvents": 12
+  },
+  "1001241033": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1001241034": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1001243173": {
+   "level": "fixture",
+   "fixtureFreq": 1,
+   "compFreq": 0,
+   "fixtureEvents": 72,
+   "compEvents": 0
+  },
+  "1001263164": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1001264082": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1001304945": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1001318149": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1001370411": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.716,
+   "fixtureEvents": 0,
+   "compEvents": 48
+  },
+  "1001376413": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.716,
+   "fixtureEvents": 0,
+   "compEvents": 48
+  },
+  "1001421320": {
+   "level": "fixture",
+   "fixtureFreq": 1,
+   "compFreq": 0,
+   "fixtureEvents": 72,
+   "compEvents": 0
+  },
+  "1001421321": {
+   "level": "fixture",
+   "fixtureFreq": 1,
+   "compFreq": 0,
+   "fixtureEvents": 72,
+   "compEvents": 0
+  },
+  "1001475014": {
+   "level": "fixture",
+   "fixtureFreq": 0.5,
+   "compFreq": 0,
+   "fixtureEvents": 36,
+   "compEvents": 0
+  },
+  "1001518952": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1001568619": {
+   "level": "fixture",
+   "fixtureFreq": 0.5,
+   "compFreq": 0,
+   "fixtureEvents": 36,
+   "compEvents": 0
+  },
+  "1001568620": {
+   "level": "fixture",
+   "fixtureFreq": 0.889,
+   "compFreq": 0,
+   "fixtureEvents": 64,
+   "compEvents": 0
+  },
+  "1001568621": {
+   "level": "fixture",
+   "fixtureFreq": 0.5,
+   "compFreq": 0,
+   "fixtureEvents": 36,
+   "compEvents": 0
+  },
+  "1001613138": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1001613139": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1001621941": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1001642858": {
+   "level": "fixture",
+   "fixtureFreq": 1,
+   "compFreq": 0,
+   "fixtureEvents": 72,
+   "compEvents": 0
+  },
+  "1001642863": {
+   "level": "fixture",
+   "fixtureFreq": 1,
+   "compFreq": 0,
+   "fixtureEvents": 72,
+   "compEvents": 0
+  },
+  "1001642864": {
+   "level": "fixture",
+   "fixtureFreq": 0.5,
+   "compFreq": 0,
+   "fixtureEvents": 36,
+   "compEvents": 0
+  },
+  "1001642865": {
+   "level": "fixture",
+   "fixtureFreq": 0.5,
+   "compFreq": 0,
+   "fixtureEvents": 36,
+   "compEvents": 0
+  },
+  "1001642866": {
+   "level": "fixture",
+   "fixtureFreq": 0.944,
+   "compFreq": 0,
+   "fixtureEvents": 68,
+   "compEvents": 0
+  },
+  "1001642867": {
+   "level": "fixture",
+   "fixtureFreq": 0.944,
+   "compFreq": 0,
+   "fixtureEvents": 68,
+   "compEvents": 0
+  },
+  "1001642868": {
+   "level": "fixture",
+   "fixtureFreq": 1,
+   "compFreq": 0,
+   "fixtureEvents": 72,
+   "compEvents": 0
+  },
+  "1001657419": {
+   "level": "fixture",
+   "fixtureFreq": 1,
+   "compFreq": 0,
+   "fixtureEvents": 72,
+   "compEvents": 0
+  },
+  "1001657420": {
+   "level": "fixture",
+   "fixtureFreq": 1,
+   "compFreq": 0,
+   "fixtureEvents": 72,
+   "compEvents": 0
+  },
+  "1001692499": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.269,
+   "fixtureEvents": 0,
+   "compEvents": 18
+  },
+  "1001711098": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.716,
+   "fixtureEvents": 0,
+   "compEvents": 48
+  },
+  "1001711099": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.716,
+   "fixtureEvents": 0,
+   "compEvents": 48
+  },
+  "1001774496": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1001774497": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1001774532": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1001876097": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1001892836": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1001892837": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1001892861": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1001892862": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1001957106": {
+   "level": "fixture",
+   "fixtureFreq": 0.917,
+   "compFreq": 0,
+   "fixtureEvents": 66,
+   "compEvents": 0
+  },
+  "1001957108": {
+   "level": "fixture",
+   "fixtureFreq": 0.889,
+   "compFreq": 0,
+   "fixtureEvents": 64,
+   "compEvents": 0
+  },
+  "1002023771": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1002035662": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1002035664": {
+   "level": "fixture",
+   "fixtureFreq": 0.653,
+   "compFreq": 0,
+   "fixtureEvents": 47,
+   "compEvents": 0
+  },
+  "1002035667": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1002035671": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1002035672": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1002044186": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.164,
+   "fixtureEvents": 0,
+   "compEvents": 11
+  },
+  "1002057621": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1002057636": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1002082908": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1002082909": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1002082910": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1002084318": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1002086269": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1002098459": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1002098460": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1002244276": {
+   "level": "fixture",
+   "fixtureFreq": 1,
+   "compFreq": 0,
+   "fixtureEvents": 72,
+   "compEvents": 0
+  },
+  "1002275572": {
+   "level": "fixture",
+   "fixtureFreq": 1,
+   "compFreq": 0,
+   "fixtureEvents": 72,
+   "compEvents": 0
+  },
+  "1002275573": {
+   "level": "fixture",
+   "fixtureFreq": 1,
+   "compFreq": 0,
+   "fixtureEvents": 72,
+   "compEvents": 0
+  },
+  "1002363220": {
+   "level": "fixture",
+   "fixtureFreq": 0.486,
+   "compFreq": 0,
+   "fixtureEvents": 35,
+   "compEvents": 0
+  },
+  "1002363221": {
+   "level": "fixture",
+   "fixtureFreq": 1,
+   "compFreq": 0,
+   "fixtureEvents": 72,
+   "compEvents": 0
+  },
+  "1002483456": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1002506037": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1002506038": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1002506039": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1002558602": {
+   "level": "fixture",
+   "fixtureFreq": 1,
+   "compFreq": 0,
+   "fixtureEvents": 72,
+   "compEvents": 0
+  },
+  "1002581664": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1002688087": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1002702963": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1002731614": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1003194956": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1003194957": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1003194958": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1003194959": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1003303515": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1003314795": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1004119509": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.03,
+   "fixtureEvents": 0,
+   "compEvents": 2
+  },
+  "1004122750": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1004240929": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1004240933": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.179,
+   "fixtureEvents": 0,
+   "compEvents": 12
+  },
+  "1004544389": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1004544390": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1004544391": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1004544421": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1004713969": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1004714547": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1005153918": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1005153925": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1007632233": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "1007684521": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1007684525": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1007684541": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "1007684754": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "2100017823": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "2100017824": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "2100017825": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "2100018081": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "2100018083": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "2100018084": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "2100018085": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "2100034871": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "2100034872": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "2100034873": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "2100044964": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "2100044965": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "2100044966": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "2100044967": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "2100044968": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "2100044969": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "2100045383": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "2100045460": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.194,
+   "fixtureEvents": 0,
+   "compEvents": 13
+  },
+  "2100047249": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "2100047425": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "2100086017": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "2100086018": {
+   "level": "fixture",
+   "fixtureFreq": 0.625,
+   "compFreq": 0,
+   "fixtureEvents": 45,
+   "compEvents": 0
+  },
+  "2100086019": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "2100089307": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "2100091656": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "2100091955": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "2100109198": {
+   "level": "fixture",
+   "fixtureFreq": 0.667,
+   "compFreq": 0,
+   "fixtureEvents": 48,
+   "compEvents": 0
+  },
+  "2100114226": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "2100114227": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  },
+  "2100114235": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.716,
+   "fixtureEvents": 0,
+   "compEvents": 48
+  },
+  "2100116561": {
+   "level": "competition",
+   "fixtureFreq": 0,
+   "compFreq": 0.015,
+   "fixtureEvents": 0,
+   "compEvents": 1
+  }
+ }
+}

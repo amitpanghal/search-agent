@@ -10,3 +10,7 @@ __pycache__/
 
 # Derived vector index (rebuild with `npm run build:index`; needs VOYAGE_API_KEY).
 src/resolver/index/
+
+# Transient doc-view generation scratch (Sprint 6): plan + per-batch subagent outputs.
+# Durable artifacts are data/football/{criterion-doc-views,doc-views-gen-cache}.json.
+.docviews/

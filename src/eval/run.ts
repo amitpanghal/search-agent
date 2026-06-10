@@ -84,7 +84,7 @@ async function groundSelectors(plan: QueryPlan): Promise<(GroundResult | null)[]
   const grounded: (GroundResult | null)[] = [];
   const level = plan.event_scope.level;
   for (const sel of plan.selectors) {
-    const g = await groundMarket(sel.market_concept, { subjectKind: sel.subject.kind, line: sel.line, level });
+    const g = await groundMarket(sel.market_concept, { subjectKind: sel.subject.kind, line: sel.line, level, period: sel.period });
     grounded.push(g.ids.length ? g : null);
   }
   return grounded;

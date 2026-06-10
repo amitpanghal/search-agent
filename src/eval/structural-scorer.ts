@@ -86,7 +86,7 @@ function oddsEqual(a: OddsVal | undefined, b: OddsVal | undefined): boolean {
 // *contains* the gold id(s) — this is how the side-split pair {1001159967,1001159633} passes. The
 // tier check (clean vs ambiguous) is the caller's; containment alone is deliberately not enough (an
 // ambiguous tie that happens to contain the gold id must not score green).
-function idsContainGold(pred: number[] | null, gold: number | number[]): boolean {
+export function idsContainGold(pred: number[] | null, gold: number | number[]): boolean {
   if (!pred) return false;
   const want = Array.isArray(gold) ? gold : [gold];
   const have = new Set(pred);

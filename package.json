@@ -9,6 +9,7 @@
     "build:categories": "tsx src/resolver/build-categories.ts",
     "build:catalog": "tsx src/resolver/build-catalog.ts",
     "build:index": "tsx src/resolver/build-market-index.ts",
+    "gen:doc-views": "tsx scripts/gen-doc-views.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

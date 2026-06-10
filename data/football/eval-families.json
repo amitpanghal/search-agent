@@ -1,0 +1,30 @@
+{
+  "_comment": "Sprint 6 (decision 27) — stratification spec for the doc-views eval set. The generator authors ~`quota` realistic USER queries per family, each targeting a sampled criterion id in that family (by-construction label, E8). Goal: exercise the vector tail ACROSS the catalog, not in proportion to real query frequency. DRAFT v1 — judgment calls flagged below; tweak quotas/patterns freely.",
+  "_judgment_calls": [
+    "PERIOD IS ORTHOGONAL: there is no 'halves' family. A period-suffixed stat market ('Total Corners - 1st Half') buckets to its STAT family (corners), not a period bucket — period is a facet, not an intent.",
+    "ORDERED = PRIORITY: a criterion joins the FIRST family whose subject matches and whose name contains any pattern. Specific stat families precede the generic 'result' / 'other_specials' catch-alls (so 'Corners Handicap' lands in corners, not result).",
+    "MAINSTREAM-WEIGHTED: result/goals/scorers/corners/cards get bigger quotas; the huge Specials/novelty tail is down-weighted to a small 'other_specials' catch-all so it's covered but doesn't drown the signal.",
+    "BLIND: within a family the generator sees only the target market (name+category+subject) — never the doc-views, never the failure list."
+  ],
+  "targetTotal": 401,
+  "patternMatch": "case-insensitive substring on the criterion name; first matching family (in array order) wins, scoped to subject",
+  "families": [
+    { "name": "btts",                     "subject": "team_or_match", "quota": 12, "patterns": ["both teams to score"] },
+    { "name": "corners",                  "subject": "team_or_match", "quota": 28, "patterns": ["corner"] },
+    { "name": "cards_bookings",           "subject": "team_or_match", "quota": 25, "patterns": ["card", "booking", "sent off"] },
+    { "name": "penalties_setpieces",      "subject": "team_or_match", "quota": 18, "patterns": ["penalty", "penalties", "shoot out", "shootout", "free kick", "spot kick"] },
+    { "name": "team_stats",               "subject": "team_or_match", "quota": 28, "patterns": ["offside", "foul", "possession", "substitution", "throw-in", "shot", "tackle", "goal kick"] },
+    { "name": "correct_score",            "subject": "team_or_match", "quota": 20, "patterns": ["correct score", "winning margin", "margin of goal", "finishing order", "scoreline"] },
+    { "name": "goalscorer_event",         "subject": "team_or_match", "quota": 20, "patterns": ["to score first", "team to score", "first goal", "last goal", "goal scored -", "time of", "next goal", "goal scorer -"] },
+    { "name": "goals_totals",             "subject": "team_or_match", "quota": 35, "patterns": ["total goals", "goals odd", "number of team goals", "number of goals", "goals scored", "grand salami", "odd/even"] },
+    { "name": "tournament_outright",      "subject": "team_or_match", "quota": 35, "patterns": ["to win the", "win group", "qualify", "group", "finish in", "relegat", "promot", "trophy", "champion", "top ", "bottom ", "competition", "tournament", "reach the", "semi", "final", "quarter", "round of", "place", "way of"] },
+    { "name": "management_specials",      "subject": "team_or_match", "quota": 15, "patterns": ["coach", "manager", "chairperson", "transfer", "signing", "attendance", "spectator", "squad", "eligible", "head coach"] },
+    { "name": "result",                   "subject": "team_or_match", "quota": 40, "patterns": ["winner", "match odds", "double chance", "draw no bet", "1x2", "handicap", "half time/full time", "ht/ft", "kick off", "way of winning"] },
+    { "name": "player_shooting",          "subject": "player",        "quota": 25, "patterns": ["shot", "on target"] },
+    { "name": "player_cards_discipline",  "subject": "player",        "quota": 15, "patterns": ["card", "booked", "sent off", "red card"] },
+    { "name": "player_passing_defending", "subject": "player",        "quota": 25, "patterns": ["pass", "tackle", "foul", "offside", "dribble", "clearance", "interception", "recover"] },
+    { "name": "player_scoring",           "subject": "player",        "quota": 30, "patterns": ["to score", "goal scorer", "hat-trick", "brace", "header", "anytime", "number of player goals", "to assist", "volley"] },
+    { "name": "player_achievement_misc",  "subject": "player",        "quota": 20, "patterns": ["clean sheet", "man of the match", "play", "minute", "captain", "golden", "glove", "save", "starting xi", "appearance", "rating", "award"] },
+    { "name": "other_specials",           "subject": "any",           "quota": 10, "patterns": [] }
+  ]
+}

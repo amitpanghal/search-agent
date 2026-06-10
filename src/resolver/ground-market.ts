@@ -1,12 +1,18 @@
 // groundMarket: the market grounding stage (decision 20). Maps a selector's text `market_concept`
 // to real catalog criterion id(s) — the star hub (decision 4) — and TIERS the answer instead of
 // forcing one id. Pipeline:
-//   - alias fast-path: a curated `criterion_concept` alias short-circuits (confident).
+//   - EXACT alias-key fast-path: a curated `criterion_concept` alias keyed on the whole concept
+//     short-circuits (confident). Only the exact key fires here.
 //   - exact catalog-name match (layered; confident; E8-safe — matches the catalog's own names,
 //     never gold accept[]). Tries the bare text, then a settlement-suffix-stripped index (reaches
 //     markets that only exist as "... (Settled using Opta data)"), then — for a player subject —
 //     the catalog's two registers "Player X"/"Player's X". Bare-first, so a prop ("to score")
-//     matches its own name before any "player" prefix is tried.
+//     matches its own name before any "player" prefix is tried. Runs ABOVE the subset-alias
+//     fallback (decision 25): the catalog's own name outranks a loose subset alias, so a long market
+//     that is itself a catalog entry ("Match to go into Extra Time") is never shadowed by a shorter
+//     subset alias ("extra time" -> "Extra Time").
+//   - subset-alias fallback: the most-specific `criterion_concept` alias whose key-tokens are all in
+//     the concept ("to score a brace" -> "brace") fires only after the exact paths miss.
 //   - vector tail, now the decision-20 chain on an alias/name miss:
 //       1. HARD subject pre-filter — restrict candidates to the query subject's bucket (the
 //          load-bearing cut: a `player` query never sees team/match criterions, nor v.v.).
@@ -58,7 +64,7 @@ export type GroundMethod = "alias" | "name" | "vector" | "none" | "main";
 // SHORTLIST_CAP ids, not a near-tie cluster.
 export type Tier = "confident" | "variants" | "ambiguous" | "shortlist";
 
-export type GroundOpts = { subjectKind?: SubjectKind; line?: SelectorLine; level?: Level };
+export type GroundOpts = { subjectKind?: SubjectKind; line?: SelectorLine; level?: Level; period?: Period };
 
 export type GroundResult = {
   ids: number[]; // [] iff method is "none" or "main"
@@ -88,6 +94,10 @@ const MAIN: GroundResult = { ids: [], method: "main" };
 const THRESHOLD = 0.55;
 const EPSILON = 0.03;
 const PERIOD_PENALTY = 0.05;
+// Scope penalty (scope-awareness): demote a competition/tournament-scoped market when the query is
+// explicitly fixture-level (decision-23 `level`). Like PERIOD_PENALTY it touches `adj` only — it can
+// reorder survivors but never drops one from the pool nor below THRESHOLD (same fail-safe envelope).
+const SCOPE_PENALTY = 0.08;
 const SPEC_PENALTY = 0.03;
 const SPEC_CAP = 5;
 const GATE_PENALTY = 0.1;
@@ -172,12 +182,41 @@ function lc(s: string): string {
     .replace(/\s+/g, " ");
 }
 
+// Canonical catalog names use literal period strings ("- 1st Half", "Including Extra Time"); paraphrased
+// queries use colloquial idioms ("at the break"/"before half time" = 1st half, "after the break" = 2nd half,
+// "the 120"/"120 minutes"/"extra 30" = extra time, "opening 45" = 1st half). Both sides are read through this
+// one function (concept AND candidate name), so the idiom alternates must be query-only — verified that none
+// occur in any of the 4898 catalog names, so they never mis-tag a candidate.
 function periodOf(text: string): Period {
   const t = lc(text);
-  if (/\bincluding extra time\b|\bextra time\b|\bet\b/.test(t)) return "extra_time";
-  if (/\b1st half\b|\bfirst half\b/.test(t)) return "first_half";
-  if (/\b2nd half\b|\bsecond half\b/.test(t)) return "second_half";
+  if (/\bincluding extra time\b|\bextra time\b|\bet\b/.test(t) || /\b120 (minutes|mins)\b|\b(over|after|whole|past) (the )?120\b|\bextra (30|thirty)\b/.test(t)) return "extra_time";
+  if (/\b1st half\b|\bfirst half\b/.test(t) || /\bbefore half ?time\b|\b(at|before) the break\b|\b(opening|first) 45\b/.test(t)) return "first_half";
+  if (/\b2nd half\b|\bsecond half\b/.test(t) || /\bafter half ?time\b|\bafter the break\b|\bsecond 45\b/.test(t)) return "second_half";
   return "full"; // intervals/regular time fall here; they separate by core string instead
+}
+
+// ---- scope facet (scope-awareness): text-derived, mirrors periodOf ----
+// A market NAME that settles over the whole competition/tournament/league/season (or the group stage) is
+// competition-scoped; everything else defaults to a single match. The catalog vectors carry no level, so
+// we read scope from the NAME — exactly like periodOf reads the period — to demote a competition-scoped
+// candidate when the query is explicitly fixture-level. (An authoritative offer-registry filter is later.)
+type Scope = "competition" | "match";
+function scopeOf(text: string): Scope {
+  const t = lc(text);
+  if (/\b(competition|tournament|league|season)\b/.test(t) || /\bgroup stage\b/.test(t)) return "competition";
+  return "match";
+}
+
+// period-stripped stat core: statCore with the period qualifier removed, so a market and its OWN period
+// variant share a key ("offside infringements - Including Extra Time" ≡ "offside infringements"). Used by
+// the period-collapse below — when the query names no period, a period variant yields to its full sibling.
+export function periodCore(name: string): string {
+  return statCore(name)
+    .replace(/\bincluding\b/g, " ")
+    .replace(/\b(1st|2nd|first|second) half\b/g, " ")
+    .replace(/\bextra time\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 // ---- query-coverage specificity penalty (decision 20, Option 1 — the deferred rerank, scoped) ----
@@ -292,7 +331,7 @@ function bm25(queryTokens: Set<string>, name: string): number {
 // the stat noun are SEMANTIC and stay, so a full-match vs a 1st-half twin keep DISTINCT cores. The
 // home/away polarity is collapsed (not removed) so "...by Home Team"/"...by Away Team" share a core
 // ("...by team") yet stay distinct from a no-side match total.
-function statCore(name: string): string {
+export function statCore(name: string): string {
   let t = lc(name.replace(/\(settled[^)]*\)/gi, "")); // drop settlement-source parenthetical
   t = t.replace(/^(the\s+)?(players?|player s)\s+/, ""); // leading player subject marker
   t = t.replace(/\s+by\s+(the\s+)?players?$/, ""); // trailing "... by (the) player"
@@ -370,7 +409,12 @@ async function vectorGround(text: string, opts: GroundOpts): Promise<GroundResul
   const bucket = bucketFor(opts.subjectKind);
   const pool = bucket ? idx.bySubject[bucket] : idx.entries;
   const required = requiredBoTypes(opts.line);
-  const qPeriod = periodOf(text);
+  // Query period: the LLM-emitted facet (decision 20.x) when present, else the catalog-name regex fallback.
+  // The candidate side stays `periodOf(s.name)` — the LLM never sees catalog names. Same Period enum both sides.
+  const qPeriod = opts.period ?? periodOf(text);
+  // scope-awareness: only demote competition-scoped candidates when we KNOW the query is a single match
+  // (explicit fixture level). Unknown/competition level → no scope penalty (fail-safe, like the soft gate).
+  const penalizeScope = opts.level === "fixture";
 
   // score the whole bucket (raw cosine), keep top-k for triage before any gating
   const allScored = pool
@@ -400,7 +444,7 @@ async function vectorGround(text: string, opts: GroundOpts): Promise<GroundResul
   // it's a BM25 nominee; the FLOOR then admits a cold nominee only when it covers ≥ LEX_COVER_FLOOR of the
   // query's IDF mass (a strong literal match worth clarifying). `isBinary` gates the yes/no tie-break below.
   const isBinary = opts.line?.kind === "binary";
-  const gated: Scored[] = allScored
+  let gated: Scored[] = allScored
     .filter((s) => s.raw >= FLOOR - LEX_WEIGHT || nominees.has(s.id))
     .map((s) => {
       const cover = lexicalCover(text, s.name);
@@ -415,12 +459,24 @@ async function vectorGround(text: string, opts: GroundOpts): Promise<GroundResul
         cover,
         bm25: bm25(qTokens, s.name),
         gate,
-        adj: gate - (periodOf(s.name) === qPeriod ? 0 : PERIOD_PENALTY) - specificityPenalty(text, s.name),
+        adj:
+          gate -
+          (periodOf(s.name) === qPeriod ? 0 : PERIOD_PENALTY) -
+          specificityPenalty(text, s.name) -
+          (penalizeScope && scopeOf(s.name) === "competition" ? SCOPE_PENALTY : 0),
         core: statCore(s.name),
       };
     })
     .filter((s) => s.gate >= FLOOR || (nominees.has(s.id) && s.cover >= LEX_COVER_FLOOR))
     .sort((a, b) => b.adj - a.adj);
+
+  // period-collapse: when the query names NO period, a period-specific market loses to its own full-match
+  // sibling (same period-stripped core). Drop the period variant ONLY when a full-match sibling is present
+  // (a period-only stat with no full sibling is untouched) — "demote, don't drop" with no wrong abstain.
+  if (qPeriod === "full") {
+    const fullCores = new Set(gated.filter((s) => periodOf(s.name) === "full").map((s) => periodCore(s.name)));
+    gated = gated.filter((s) => periodOf(s.name) === "full" || !fullCores.has(periodCore(s.name)));
+  }
 
   if (gated.length === 0) return { ids: [], method: "none", candidates };
 
@@ -437,8 +493,19 @@ async function vectorGround(text: string, opts: GroundOpts): Promise<GroundResul
     // signal ("match result"), so order it by cosine-anchored adj. This keeps Match Odds atop its shortlist
     // while letting the score-first family lead theirs, most-exact first.
     const strong = (s: Scored) => s.cover >= LEX_COVER_FLOOR;
+    // Facet-match leads (Sprint 5.1, load-bearing): a period-matched candidate must not be buried under a
+    // lexically-strong period-MISMATCH, because the strong group orders by BM25 — which ignores the period
+    // penalty in `adj`. Inert when the query names no period (all full candidates match equally, and period
+    // variants are already dropped by the collapse above); active only for an explicit-period query.
+    const periodHit = (s: Scored) => periodOf(s.name) === qPeriod;
     const ranked = [...gated]
-      .sort((a, b) => (strong(a) !== strong(b) ? (strong(a) ? -1 : 1) : strong(a) ? b.bm25 - a.bm25 : b.adj - a.adj))
+      .sort((a, b) =>
+        periodHit(a) !== periodHit(b)
+          ? periodHit(a) ? -1 : 1
+          : strong(a) !== strong(b)
+            ? strong(a) ? -1 : 1
+            : strong(a) ? b.bm25 - a.bm25 : b.adj - a.adj,
+      )
       .slice(0, SHORTLIST_CAP);
     return { ids: ranked.map((s) => s.id), method: "vector", tier: "shortlist", score: ranked[0]!.adj, candidates };
   }
@@ -571,6 +638,25 @@ function exactNameIds(key: string, opts: GroundOpts): number[] | null {
   return null;
 }
 
+// ---- recall-ceiling instrumentation (additive; NOT in any grounding path) ----
+// Embed the query and return the FULL in-bucket cosine ranking — every candidate the vector tail could
+// ever see, in raw-cosine order, with NO gate/tier/penalty applied. A probe reads the gold's rank here to
+// measure recall@k: the ceiling a doc-view (embedding enrichment) could win, since enrichment only reorders
+// this cosine ranking. Mirrors vectorGround's scoring head (same bucket, same raw cosine) so the ranking is
+// faithful, but is a separate read-only function — it never affects what groundMarket returns. `event`/no
+// hint scores BOTH buckets, exactly like the live pool. Abbrevs are expanded so the query text matches the
+// live path. Returns [] if the index/embedding is unavailable.
+export async function candidatePool(text: string, opts: GroundOpts = {}): Promise<{ id: number; name: string; score: number }[]> {
+  const idx = loadIndex();
+  if (!idx) return [];
+  const [qv] = await embed([expandAbbrevs(text, loadCatalog().abbreviations)], "query");
+  if (!qv || qv.length !== idx.dim) return [];
+  const pool = bucketFor(opts.subjectKind) ? idx.bySubject[bucketFor(opts.subjectKind)!] : idx.entries;
+  return pool
+    .map((e) => ({ id: e.id, name: e.name, score: cosine(qv, e.vec) }))
+    .sort((a, b) => b.score - a.score);
+}
+
 // ---- public entry ----
 
 const memo = new Map<string, GroundResult>();
@@ -592,8 +678,10 @@ export async function groundMarket(text: string, opts: GroundOpts = {}): Promise
   if (!key) return NONE;
   if (key === "main") return MAIN; // marketless sentinel → executor's main betoffer; never vector-grounds
   // key on the raw subjectKind, not the bucket: `team` and `event` share a bucket but `team` triggers
-  // the per-side divert, so they must not alias to the same memo entry.
-  const memoKey = `${key}|${opts.subjectKind ?? ""}|${lineClass(opts.line)}`;
+  // the per-side divert, so they must not alias to the same memo entry. period + level are in the key for
+  // the same reason: both feed `adj` (period & scope penalties), so the same concept/subject/line at a
+  // different period or fixture/competition level is a different grounding and must not share a cache entry.
+  const memoKey = `${key}|${opts.subjectKind ?? ""}|${lineClass(opts.line)}|${opts.period ?? ""}|${opts.level ?? ""}`;
   const hit = memo.get(memoKey);
   if (hit) return hit;
   const res = applyPerSideDivert(await resolveMarket(key, expanded, opts), key, opts);
@@ -623,23 +711,32 @@ function subsetAlias(cat: Catalog, key: string): MarketAlias | undefined {
 async function resolveMarket(key: string, text: string, opts: GroundOpts): Promise<GroundResult> {
   const cat = loadCatalog();
 
-  // 1. alias fast-path — only a criterion_concept grounds (a category/botype alias is the wrong
-  // granularity and falls through to the vector path as a scope hint). Exact key first; on a miss,
-  // a token-subset fallback lets a curated criterion_concept alias fire on a longer phrasing
-  // ("to score a brace" → key "brace") — most-specific (most key-tokens) wins. Restricted to
-  // criterion_concept so a botype/category alias can never hijack the phrase.
-  const alias = cat.marketAliases.get(key) ?? subsetAlias(cat, key);
-  // A level-scoped alias (decision 23) fires only when the query's level matches — "to win" -> Match
-  // Odds for a fixture, but stays a tournament-outright cosine for a competition (or unknown level).
-  if (alias?.type === "criterion_concept" && (alias.level == null || alias.level === opts.level)) {
-    const ids = cat.byName.get(normalize(alias.name)) ?? [];
-    if (ids.length) return { ids, method: "alias", tier: ids.length > 1 ? "variants" : "confident" };
-  }
+  // Resolve a criterion_concept alias to id(s), honoring its level scope (decision 23): a level-scoped
+  // alias fires only when the query's level matches — "to win" -> Match Odds for a fixture, but stays a
+  // tournament-outright cosine for a competition (or unknown level). A non-criterion_concept alias is the
+  // wrong granularity (a category/botype scope hint), so it resolves to nothing here and falls through.
+  const aliasIds = (a: MarketAlias | undefined): number[] =>
+    a?.type === "criterion_concept" && (a.level == null || a.level === opts.level) ? cat.byName.get(normalize(a.name)) ?? [] : [];
+
+  // 1. EXACT alias-key fast-path — a curated bare-phrase alias short-circuits (confident). Only the exact
+  // key fires here; the token-subset fallback is deferred to step 3 so it can never outrank an exact name.
+  const exactAlias = aliasIds(cat.marketAliases.get(key));
+  if (exactAlias.length) return { ids: exactAlias, method: "alias", tier: exactAlias.length > 1 ? "variants" : "confident" };
 
   // 2. exact catalog-name match (layered: bare -> player registers -> settlement-stripped). E8-safe.
+  // The catalog's OWN name outranks a loose subset alias (decision 25): a long market that is itself a
+  // catalog entry ("Match to go into Extra Time") must ground to itself, never be shadowed by a shorter
+  // subset alias ("extra time" -> "Extra Time"). Putting exact-name above the subset fallback enforces that.
   const exact = exactNameIds(key, opts);
   if (exact?.length) return { ids: exact, method: "name", tier: exact.length > 1 ? "variants" : "confident" };
 
-  // 3. vector tail — the decision-20 subject→cosine→gate→tier chain.
+  // 3. subset-alias fallback — the most-specific criterion_concept alias whose every key-token appears in
+  // the concept ("to score a brace" -> key "brace"); most-specific (most key-tokens) wins. Fires only now
+  // that no exact alias key and no exact catalog name matched, so a curated phrasing still resolves while
+  // the catalog's own names keep precedence.
+  const subset = aliasIds(subsetAlias(cat, key));
+  if (subset.length) return { ids: subset, method: "alias", tier: subset.length > 1 ? "variants" : "confident" };
+
+  // 4. vector tail — the decision-20 subject→cosine→gate→tier chain.
   return vectorGround(text, opts);
 }

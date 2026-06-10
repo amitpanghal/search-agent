@@ -1,0 +1,9413 @@
+{
+ "outright winner market for the World Cup": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "competition"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "outright winner"
+   }
+  ]
+ },
+ "Germany to win or draw their game": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "fixture"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "Germany"
+    },
+    "market_concept": "to win or draw"
+   }
+  ]
+ },
+ "back France over Spain with my stake refunded if it's a draw": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "fixture"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "France"
+    },
+    "market_concept": "to win with stake refunded on draw"
+   }
+  ]
+ },
+ "will both teams score in the final": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "fixture"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "both teams to score"
+   }
+  ]
+ },
+ "how many goals total in the Brazil match": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "fixture"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "total goals"
+   }
+  ]
+ },
+ "what will the exact final score be in France vs Spain": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "fixture"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "correct score"
+   }
+  ]
+ },
+ "by how many goals will Brazil win the game": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "fixture"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "Brazil"
+    },
+    "market_concept": "winning margin"
+   }
+  ]
+ },
+ "half time full time result for the Germany game": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "fixture"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "half time full time result"
+   }
+  ]
+ },
+ "odd or even number of goals in the match": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "fixture"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "odd or even goals"
+   }
+  ]
+ },
+ "how many corners in the Brazil game": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "fixture"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "total corners"
+   }
+  ]
+ },
+ "how many cards will be shown in the match": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "fixture"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "total cards"
+   }
+  ]
+ },
+ "who scores first in France vs Brazil": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "fixture"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "first goalscorer"
+   }
+  ]
+ },
+ "who gets the last goal of the match": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "fixture"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "last goalscorer"
+   }
+  ]
+ },
+ "which team opens the scoring in the Germany match": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "fixture"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "to score first"
+   }
+  ]
+ },
+ "both teams to score in the first half": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "fixture"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "both teams to score in the first half",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "a goal in stoppage time of the match": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "fixture"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "goal in stoppage time"
+   }
+  ]
+ },
+ "will a penalty be given in the France game": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "fixture"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "penalty to be given"
+   }
+  ]
+ },
+ "a red card to be shown in the match": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "fixture"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "red card to be shown",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "France to win the World Cup outright": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "competition"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "France"
+    },
+    "market_concept": "to win the World Cup"
+   }
+  ]
+ },
+ "France to shut out their opponents": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "fixture"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "France"
+    },
+    "market_concept": "to win to nil",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "will the match go to extra time": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "fixture"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "to go to extra time"
+   }
+  ]
+ },
+ "total booking points in the game": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "fixture"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "total booking points"
+   }
+  ]
+ },
+ "how many offsides in the match": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "fixture"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "offsides"
+   }
+  ]
+ },
+ "Mbappe to score in the final": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "fixture"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Mbappe"
+    },
+    "market_concept": "to score",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "Mbappe to set up a goal": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "fixture"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Mbappe"
+    },
+    "market_concept": "to set up a goal",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "Mbappe to score with a header": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "fixture"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Mbappe"
+    },
+    "market_concept": "to score with a header",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "Mbappe shots on target": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "fixture"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Mbappe"
+    },
+    "market_concept": "shots on target"
+   }
+  ]
+ },
+ "how many shots will Mbappe take": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "fixture"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Mbappe"
+    },
+    "market_concept": "shots"
+   }
+  ]
+ },
+ "Mbappe completed passes": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "fixture"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Mbappe"
+    },
+    "market_concept": "completed passes"
+   }
+  ]
+ },
+ "how many tackles will Kante make": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "fixture"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Kante"
+    },
+    "market_concept": "tackles"
+   }
+  ]
+ },
+ "fouls won by Mbappe": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "fixture"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Mbappe"
+    },
+    "market_concept": "fouls won"
+   }
+  ]
+ },
+ "how many times will Mbappe be caught offside": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "fixture"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Mbappe"
+    },
+    "market_concept": "times caught offside"
+   }
+  ]
+ },
+ "Mbappe to be booked": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "fixture"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Mbappe"
+    },
+    "market_concept": "to be booked",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "Mbappe passing accuracy percentage": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "fixture"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Mbappe"
+    },
+    "market_concept": "passing accuracy percentage"
+   }
+  ]
+ },
+ "tournament top scorer market": {
+  "status": "resolved",
+  "event_scope": {
+   "level": "competition"
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "tournament top scorer"
+   }
+  ]
+ },
+ "who comes out on top in Brazil vs France": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "Brazil",
+    "France"
+   ],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "match winner"
+   }
+  ]
+ },
+ "both sides to find the net before half time": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "both sides to score before half time",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "goals at both ends after the break": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "goals at both ends after the break"
+   }
+  ]
+ },
+ "each team scoring in the first AND the second half": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "to score in the first half and the second half"
+   }
+  ]
+ },
+ "home team to win with goals at both ends": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "to win",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "both teams to score",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "away side wins it but both find the net": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "away win",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "both teams to score",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "score draw tonight, like 1-1 or 2-2": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": {
+    "date_window": {
+     "value": "tonight",
+     "anchor": "now"
+    },
+    "kickoff_time_of_day": null
+   }
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "correct score",
+    "line": {
+     "kind": "selection",
+     "value": "draw"
+    }
+   }
+  ]
+ },
+ "both teams scoring with extra time counting too": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "both teams scoring with extra time counting"
+   }
+  ]
+ },
+ "will the two sides each score during the extra 30 minutes": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "both teams to score during extra 30 minutes",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "hosts avoid defeat and each team scores": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "hosts"
+   ],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "hosts"
+    },
+    "market_concept": "avoid defeat"
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "both teams to score"
+   }
+  ]
+ },
+ "visitors don't lose plus goals for both": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "visitors"
+    },
+    "market_concept": "don't lose",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "both teams to score",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "no draw and both teams get a goal": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "no draw",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "both teams to score",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "milan or the draw, plus both ends scoring": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "Milan"
+   ],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "match result",
+    "line": {
+     "kind": "selection",
+     "value": "Milan or draw"
+    }
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "both teams to score",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "who takes the next corner, money back if there isn't one": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "next corner taker"
+   }
+  ]
+ },
+ "which team gets more corners": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "total corners"
+   }
+  ]
+ },
+ "how many corners in the arsenal game": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "Arsenal"
+   ],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "total corners"
+   }
+  ]
+ },
+ "first half corner count with one team spotted a head start": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "first half corner count with one team spotted a head start"
+   }
+  ]
+ },
+ "number of corners after half time": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "corners after half time"
+   }
+  ]
+ },
+ "which side reaches three corners first": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "race to 3 corners",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "corners between the 60th and 75th minute": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "corners between the 60th and 75th minute"
+   }
+  ]
+ },
+ "corner count over the full 120 if it goes to extra time": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "corner count over full 120 if it goes to extra time",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "corners across the whole matchday added together": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "total corners across the whole matchday"
+   }
+  ]
+ },
+ "second half corners if you give one team a couple start": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "second half corners",
+    "line": {
+     "kind": "numeric",
+     "value": 2,
+     "direction": "over"
+    }
+   }
+  ]
+ },
+ "corners with a -1 start and the draw as a third option": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "corners",
+    "line": {
+     "kind": "selection",
+     "value": "-1"
+    }
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "corners",
+    "line": {
+     "kind": "selection",
+     "value": "draw"
+    }
+   }
+  ]
+ },
+ "result plus more or fewer than 10.5 corners": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "match result"
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "total corners",
+    "line": {
+     "kind": "numeric",
+     "value": 10.5,
+     "direction": "over"
+    }
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "total corners",
+    "line": {
+     "kind": "numeric",
+     "value": 10.5,
+     "direction": "under"
+    }
+   }
+  ]
+ },
+ "first corner between the 50th and 60th minute, could be neither": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "first corner between the 50th and 60th minute",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "who wins the first corner in a window during the second period of extra time": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "first corner during second period of extra time"
+   }
+  ]
+ },
+ "will there be a corner between the 70th and 80th minute": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "corner between 70th and 80th minute"
+   }
+  ]
+ },
+ "any corner in a ten minute spell of extra time's opening period": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "any corner in opening ten minutes of extra time",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "home win in extra time with 12+ corners but under 3 cards": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "home win in extra time",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "total corners",
+    "line": {
+     "kind": "numeric",
+     "value": 12,
+     "direction": "over"
+    }
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "total cards",
+    "line": {
+     "kind": "numeric",
+     "value": 3,
+     "direction": "under"
+    }
+   }
+  ]
+ },
+ "the 2.5 goals and 9.5 corners combo": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "total goals",
+    "line": {
+     "kind": "numeric",
+     "value": 2.5,
+     "direction": "over"
+    }
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "total corners",
+    "line": {
+     "kind": "numeric",
+     "value": 9.5,
+     "direction": "over"
+    }
+   }
+  ]
+ },
+ "every game on today's card combined, how many corners": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": {
+    "date_window": {
+     "value": "today",
+     "anchor": "now"
+    },
+    "kickoff_time_of_day": null
+   }
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "total corners"
+   }
+  ]
+ },
+ "anyone scoring an olimpico, straight in from the corner flag": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "olimpico goal"
+   }
+  ]
+ },
+ "home team wins with 6+ on-target efforts and 6+ corners": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "shots on target",
+    "line": {
+     "kind": "numeric",
+     "value": 6,
+     "direction": "over"
+    }
+   },
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "total corners",
+    "line": {
+     "kind": "numeric",
+     "value": 6,
+     "direction": "over"
+    }
+   },
+   {
+    "subject": {
+     "kind": "team",
+     "name": "home team"
+    },
+    "market_concept": "to win",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "full time result together with a corners line": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "full time result"
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "corners"
+   }
+  ]
+ },
+ "pick a goals line and a corners line in one bet": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "total goals"
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "total corners"
+   }
+  ]
+ },
+ "all the corners across today's fixtures added up": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": {
+    "date_window": {
+     "value": "today",
+     "anchor": "now"
+    },
+    "kickoff_time_of_day": null
+   }
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "total corners"
+   }
+  ]
+ },
+ "how many corners do the hosts win after the interval": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "the hosts"
+   ],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "the hosts"
+    },
+    "market_concept": "corners after the interval"
+   }
+  ]
+ },
+ "arsenal to net within a quarter of a minute of winning a corner": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "Arsenal"
+   ],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "Arsenal"
+    },
+    "market_concept": "to net within a quarter of a minute of winning a corner"
+   }
+  ]
+ },
+ "who gets more corners during extra time": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "corners during extra time"
+   }
+  ]
+ },
+ "next booking goes to which team, stake back if nobody gets carded": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "next booking"
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "to be carded",
+    "line": {
+     "kind": "binary",
+     "direction": "no"
+    }
+   }
+  ]
+ },
+ "a booking between the 30th and 39th minute": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "booking between 30th and 39th minute"
+   }
+  ]
+ },
+ "card points after half time": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "card points after half time"
+   }
+  ]
+ },
+ "how many card points do the home side rack up": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "card points"
+   }
+  ]
+ },
+ "more bookings before or after the break, points wise": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "bookings before the break"
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "bookings after the break"
+   }
+  ]
+ },
+ "number of yellows in the match": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "total yellows"
+   }
+  ]
+ },
+ "will the home team have a man sent off": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "home team"
+    },
+    "market_concept": "to be sent off"
+   }
+  ]
+ },
+ "a red inside the first ten minutes": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "red card inside the first ten minutes"
+   }
+  ]
+ },
+ "which player gets booked earliest across these games": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "first to be carded"
+   }
+  ]
+ },
+ "anyone sent off in extra time": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "sent off in extra time"
+   }
+  ]
+ },
+ "card points with one team given a head start": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "card points with head start"
+   }
+  ]
+ },
+ "first team to reach 30 card points": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "first team to reach 30 card points",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "how many sendings off across the two semifinals combined": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": {
+    "round": "semifinal",
+    "ordinal": null,
+    "conditional": false
+   },
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "total sendings off"
+   }
+  ]
+ },
+ "bookings count in the second half": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "bookings count in the second half"
+   }
+  ]
+ },
+ "ref accidentally showing the same guy three yellows in one game": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "someone on the bench getting a red": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "to be sent off",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    },
+    "attrFilter": {
+     "position": "substitute"
+    }
+   }
+  ]
+ },
+ "dirtiest team of the tournament, most bookings overall": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "most bookings overall"
+   }
+  ]
+ },
+ "any coach getting marched off the touchline this season": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "coach to be sent off"
+   }
+  ]
+ },
+ "hamsik to score and get booked with kucka setting one up": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Hamsik",
+     "role": "plays"
+    },
+    {
+     "name": "Kucka",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Hamsik"
+    },
+    "market_concept": "to score"
+   },
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Hamsik"
+    },
+    "market_concept": "to be carded",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   },
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Kucka"
+    },
+    "market_concept": "to assist"
+   }
+  ]
+ },
+ "hamsik scores plus a card, and mak with the assist": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Hamsik"
+    },
+    "market_concept": "to score",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   },
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Hamsik"
+    },
+    "market_concept": "to be carded",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   },
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Mak"
+    },
+    "market_concept": "to assist",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "jota scoring and assisting while vertonghen and alderweireld both get booked": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Jota",
+     "role": "plays"
+    },
+    {
+     "name": "Vertonghen",
+     "role": "plays"
+    },
+    {
+     "name": "Alderweireld",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Jota"
+    },
+    "market_concept": "to score and assist",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   },
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Vertonghen"
+    },
+    "market_concept": "to be carded",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   },
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Alderweireld"
+    },
+    "market_concept": "to be carded",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "spain win, morata nets, pedri sets one up and busquets goes in the book": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "Spain"
+   ],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "match winner"
+   },
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Morata"
+    },
+    "market_concept": "to score",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   },
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Pedri"
+    },
+    "market_concept": "to assist",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   },
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Busquets"
+    },
+    "market_concept": "to be carded",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "pedri scores and assists with chiellini and bonucci both booked": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Pedri"
+    },
+    "market_concept": "to score"
+   },
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Pedri"
+    },
+    "market_concept": "to assist"
+   },
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Chiellini"
+    },
+    "market_concept": "to be carded"
+   },
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Bonucci"
+    },
+    "market_concept": "to be carded"
+   }
+  ]
+ },
+ "yellows added up across every match today": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": {
+    "date_window": {
+     "value": "today",
+     "anchor": "now"
+    },
+    "kickoff_time_of_day": null
+   }
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "total yellows"
+   }
+  ]
+ },
+ "do the visitors convert the next pen": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "visitors"
+    },
+    "market_concept": "to convert the next penalty"
+   }
+  ]
+ },
+ "will they give away a spot kick at some point this season": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "next goal to come from the spot, refund if no more goals": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "next goal from the spot"
+   }
+  ]
+ },
+ "which team wins more free kicks before half time": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "free kicks before half time"
+   }
+  ]
+ },
+ "more free kicks between minute 15 and 30, which side": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "free kicks between minute 15 and 30"
+   }
+  ]
+ },
+ "free kick count for the hosts in the opening 45": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "the hosts"
+   ],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "the hosts"
+    },
+    "market_concept": "free kick count opening 45"
+   }
+  ]
+ },
+ "who gets awarded the next free kick, void if none": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "how many goals straight from free kicks this tournament": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "goals straight from free kicks"
+   }
+  ]
+ },
+ "if a pen is given in extra time does it get scored": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "how many does the away side stick away in the shootout": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "exact shootout score, like 4-3": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "shootout score"
+   }
+  ]
+ },
+ "tournament goal count, extra time counts but shootout pens don't": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "tournament goal count, extra time counts but shootout pens don't"
+   }
+  ]
+ },
+ "a keeper scoring from his own box, own goals not counted": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "to score from own box",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    },
+    "attrFilter": {
+     "position": "goalkeeper"
+    }
+   }
+  ]
+ },
+ "will england finally win a shootout this tournament": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "England"
+   ],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "England"
+    },
+    "market_concept": "to win a shootout"
+   }
+  ]
+ },
+ "bale to convert his pen in the shootout": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Bale",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Bale"
+    },
+    "market_concept": "to convert penalty in shootout",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "does kroos put his shootout penalty away": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Kroos",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Kroos"
+    },
+    "market_concept": "shootout penalty to score"
+   }
+  ]
+ },
+ "how many pens does the ref give in the match": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "penalties awarded"
+   }
+  ]
+ },
+ "which team gets flagged offside more": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "foul count for the home side": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "foul count"
+   }
+  ]
+ },
+ "what share of the ball do the hosts have": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "the hosts"
+   ],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "the hosts"
+    },
+    "market_concept": "possession"
+   }
+  ]
+ },
+ "who takes the opening throw of the game": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "main"
+   }
+  ]
+ },
+ "anyone rattling the woodwork without it going in": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "to hit the woodwork without scoring",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "how many efforts miss the goal completely": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "efforts miss the goal completely"
+   }
+  ]
+ },
+ "more offsides for which side, extra time included": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "more offsides"
+   }
+  ]
+ },
+ "which of today's games has the most attempts on goal": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": {
+    "date_window": {
+     "value": "today",
+     "anchor": "now"
+    },
+    "kickoff_time_of_day": null
+   }
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "most attempts on goal"
+   }
+  ]
+ },
+ "first throw between the 5th and 15th minute, or none at all": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "first throw between 5th and 15th minute"
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "no throw",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "earliest throw in inside a set window, extra time counting": {
+  "status": "unsupported",
+  "recognizedAs": "rugby"
+ },
+ "who's awarded the next throw after the 60 minute mark": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "next throw in once we're into the first period of extra time": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "next throw in once into first period of extra time"
+   }
+  ]
+ },
+ "team taking the next throw late on in extra time's second half": {
+  "status": "unsupported",
+  "recognizedAs": "rugby"
+ },
+ "which keeper takes more goal kicks before the break": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "goal kicks before the break",
+    "attrFilter": {
+     "position": "goalkeeper"
+    }
+   }
+  ]
+ },
+ "goal kicks for the visitors between minutes 30 and 45": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "goal kicks between minutes 30 and 45"
+   }
+  ]
+ },
+ "race to five goal kicks, extra time counts, could be neither": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "race to five goal kicks",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "a goalie scoring direct from his own goal kick": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "to score direct from own goal kick",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    },
+    "attrFilter": {
+     "position": "goalkeeper"
+    }
+   }
+  ]
+ },
+ "will the shot count end up odd or even": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "shot count odd or even"
+   }
+  ]
+ },
+ "attempts by the away team over the full 120": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "attempts over the full 120"
+   }
+  ]
+ },
+ "on-target efforts between minute 20 and 29": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "shots on target between minute 20 and 29"
+   }
+  ]
+ },
+ "how early does the first sub come on": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "time of first substitution"
+   }
+  ]
+ },
+ "fouls given away by the hosts with extra time on top": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "the hosts"
+   ],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "the hosts"
+    },
+    "market_concept": "fouls given away with extra time"
+   }
+  ]
+ },
+ "dzyuba and cheryshev combined efforts on goal": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Dzyuba",
+     "role": "plays"
+    },
+    {
+     "name": "Cheryshev",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "combined efforts on goal"
+   }
+  ]
+ },
+ "11 plus on target and the away team lifting the cup": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "total shots on target",
+    "line": {
+     "kind": "numeric",
+     "value": 11,
+     "direction": "over"
+    }
+   },
+   {
+    "subject": {
+     "kind": "team",
+     "name": "away team"
+    },
+    "market_concept": "to win"
+   }
+  ]
+ },
+ "ibra and rebic together, how many times do they test the keeper": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Ibra",
+     "role": "plays"
+    },
+    {
+     "name": "Rebic",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "shots on target"
+   }
+  ]
+ },
+ "tiago thomas to trouble the goalkeeper how many times": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Tiago Thomas",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Tiago Thomas"
+    },
+    "market_concept": "shots on target"
+   }
+  ]
+ },
+ "both teams managing an effort on goal before half time": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "to have a shot on target before half time"
+   }
+  ]
+ },
+ "exact scoreline at the break": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "exact scoreline at the break"
+   }
+  ]
+ },
+ "predict the final score, 2-1 to united": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "United"
+   ],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "correct score",
+    "line": {
+     "kind": "selection",
+     "value": "2-1 to United"
+    }
+   }
+  ]
+ },
+ "the precise goal gap between the teams at full time": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "winning margin"
+   }
+  ]
+ },
+ "name the champion and the runner up in the right order": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "top four in the exact right order": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "who nets last combined with the exact final result": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "last goalscorer"
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "exact final result"
+   }
+  ]
+ },
+ "winning by exactly two": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "winning margin",
+    "line": {
+     "kind": "selection",
+     "value": "2"
+    }
+   }
+  ]
+ },
+ "second half only, what's the exact score": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "exact score second half"
+   }
+  ]
+ },
+ "exact score after 120 minutes": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "exact score after 120 minutes"
+   }
+  ]
+ },
+ "predict the top five league spots in order": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "places two through four, exact order": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "the podium in order, first second and third": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "exact final score in the group match": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": {
+    "round": "group stage",
+    "ordinal": null,
+    "conditional": false
+   },
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "exact final score"
+   }
+  ]
+ },
+ "champion and runner up exactly, playoffs count": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "champion and runner up exactly"
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "playoffs"
+   }
+  ]
+ },
+ "first and second in order, regular season only": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "leading at the break by exactly how many": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "leading at the break by exactly how many"
+   }
+  ]
+ },
+ "second half won by exactly what margin": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "second half winning margin"
+   }
+  ]
+ },
+ "exact margin of victory after extra time": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "exact margin of victory after extra time"
+   }
+  ]
+ },
+ "extra time on its own, exact score": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "extra time"
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "exact score"
+   }
+  ]
+ },
+ "who scores the opener, money back in a 0-0": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "first goalscorer"
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "money back in a 0-0"
+   }
+  ]
+ },
+ "which team gets the game's final goal, or none at all": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "last goalscorer team"
+   }
+  ]
+ },
+ "what minute do the hosts break through for their first": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "hosts"
+   ],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "hosts"
+    },
+    "market_concept": "time of first goal"
+   }
+  ]
+ },
+ "which of these teams ends up scoring fewest": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "which team draws first blood in the game": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "first goal"
+   }
+  ]
+ },
+ "do the visitors find the net at all": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "to score"
+   }
+  ]
+ },
+ "a goal inside the first half hour": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "goal inside the first half hour",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "late late goal in added time": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "goal in added time"
+   }
+  ]
+ },
+ "opening scorer plus the exact final score, the double": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "opening scorer plus exact final score"
+   }
+  ]
+ },
+ "anyone putting five past their opponent this weekend": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": {
+    "date_window": {
+     "value": "this weekend",
+     "anchor": "now"
+    },
+    "kickoff_time_of_day": null
+   }
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "to score 5 goals"
+   }
+  ]
+ },
+ "first on the board in each of these fixtures": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "first goalscorer"
+   }
+  ]
+ },
+ "how's the next goal scored, header pen or open play, void if none": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "next goal scored method",
+    "line": {
+     "kind": "selection",
+     "value": "header"
+    }
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "next goal scored method",
+    "line": {
+     "kind": "selection",
+     "value": "penalty"
+    }
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "next goal scored method",
+    "line": {
+     "kind": "selection",
+     "value": "open play"
+    }
+   }
+  ]
+ },
+ "the tournament's very last goal, header penalty or what": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": {
+    "round": null,
+    "ordinal": "last",
+    "conditional": false
+   },
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "last goal"
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "header"
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "penalty"
+   }
+  ]
+ },
+ "fewest goals over the regular season, which club": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": {
+    "round": "regular season",
+    "ordinal": null,
+    "conditional": false
+   },
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "fewest goals"
+   }
+  ]
+ },
+ "home side to nod one in": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "home side"
+    },
+    "market_concept": "to score",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "away team scoring with a header": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "to score with a header"
+   }
+  ]
+ },
+ "a goal in the dying added minutes of extra time": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "goal in the dying added minutes of extra time"
+   }
+  ]
+ },
+ "hosts strike first before the break, visitors first after, and five goals plus": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "to score first before the break"
+   },
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "to score first after the break"
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "total goals",
+    "line": {
+     "kind": "numeric",
+     "value": 5,
+     "direction": "over"
+    }
+   }
+  ]
+ },
+ "first side to put one past copenhagen over their next three league games": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "Copenhagen"
+   ],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": {
+    "date_window": {
+     "value": "next three league games",
+     "anchor": "now"
+    },
+    "kickoff_time_of_day": null
+   }
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "first to score"
+   }
+  ]
+ },
+ "how many do the visitors score": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "visitors"
+    },
+    "market_concept": "total goals"
+   }
+  ]
+ },
+ "how many goals in the game tonight": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": {
+    "date_window": {
+     "value": "tonight",
+     "anchor": "now"
+    },
+    "kickoff_time_of_day": null
+   }
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "total goals"
+   }
+  ]
+ },
+ "goal count for the home team": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "goal count"
+   }
+  ]
+ },
+ "combined goals in the made up matchup between the two": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "how many will united score all season": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "United"
+   ],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "United"
+    },
+    "market_concept": "total goals"
+   }
+  ]
+ },
+ "more goals before or after the break": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "more goals before or after the break"
+   }
+  ]
+ },
+ "add up every game on the card, goals overall": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "total goals"
+   }
+  ]
+ },
+ "city's goal tally for the whole champions league run": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "City"
+   ],
+   "players": [],
+   "competition": "Champions League",
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "City"
+    },
+    "market_concept": "total goals"
+   }
+  ]
+ },
+ "how many goals at the world cup overall": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": "World Cup",
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "total goals"
+   }
+  ]
+ },
+ "own goal count for the entire euros": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": "Euros",
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "own goal count"
+   }
+  ]
+ },
+ "match goals counting the extra half hour": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "goals counting the extra half hour"
+   }
+  ]
+ },
+ "home side's goals across 120 minutes": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "home side"
+    },
+    "market_concept": "goals across 120 minutes"
+   }
+  ]
+ },
+ "which stadium sees the fewest goals this tournament": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "fewest goals by stadium"
+   }
+  ]
+ },
+ "goals added together across the whole round of fixtures": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "total goals"
+   }
+  ]
+ },
+ "visitors to score exactly two": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "visitors"
+    },
+    "market_concept": "to score exactly two",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "away goals before half time, how many": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "away goals before half time"
+   }
+  ]
+ },
+ "hosts' goal count in the opening 45": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "hosts"
+   ],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "hosts"
+    },
+    "market_concept": "goal count in the opening 45"
+   }
+  ]
+ },
+ "how many do the home team get after the restart": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "their goal tally just for the group games": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": {
+    "round": "group stage",
+    "ordinal": null,
+    "conditional": false
+   },
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "total goals"
+   }
+  ]
+ },
+ "team goals over the regular campaign, playoffs not counted": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "total goals over the regular campaign"
+   }
+  ]
+ },
+ "league wide goals this season ignoring the playoff round": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": {
+    "round": "league",
+    "ordinal": null,
+    "conditional": false
+   },
+   "time": {
+    "date_window": {
+     "value": "this season",
+     "anchor": "now"
+    },
+    "kickoff_time_of_day": null
+   }
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "total goals"
+   }
+  ]
+ },
+ "how many do they let in over the regular season": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "match to have exactly three goals": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "total goals",
+    "line": {
+     "kind": "selection",
+     "value": "3"
+    }
+   }
+  ]
+ },
+ "combined goals just in the listed fixtures": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "combined goals"
+   }
+  ]
+ },
+ "first half goals across every game today, added up": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": {
+    "date_window": {
+     "value": "today",
+     "anchor": "now"
+    },
+    "kickoff_time_of_day": null
+   }
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "first half goals total"
+   }
+  ]
+ },
+ "the khalili brothers' combined allsvenskan goals": {
+  "status": "unsupported",
+  "recognizedAs": "football"
+ },
+ "how many does malmö score in their group": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "Malmö"
+   ],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": {
+    "round": "group stage",
+    "ordinal": null,
+    "conditional": false
+   },
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "Malmö"
+    },
+    "market_concept": "total goals"
+   }
+  ]
+ },
+ "how many different players get on the scoresheet": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "different players to score"
+   }
+  ]
+ },
+ "goal count in the 15 to 30 minute window": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "goal count in the 15 to 30 minute window"
+   }
+  ]
+ },
+ "all of today's away sides, goals between them": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": {
+    "date_window": {
+     "value": "today",
+     "anchor": "now"
+    },
+    "kickoff_time_of_day": null
+   }
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "<UNKNOWN>"
+    },
+    "market_concept": "total goals"
+   }
+  ]
+ },
+ "visitor goals during a ten minute spell of the game": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "visitor"
+    },
+    "market_concept": "goals during a ten minute spell"
+   }
+  ]
+ },
+ "haaland or salah, who hits double figures in the league first": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Haaland",
+     "role": "plays"
+    },
+    {
+     "name": "Salah",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Haaland"
+    },
+    "market_concept": "to reach 10 league goals first"
+   },
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Salah"
+    },
+    "market_concept": "to reach 10 league goals first"
+   }
+  ]
+ },
+ "how many in extra time alone": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "home team goals just in the extra 30": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "home team"
+    },
+    "market_concept": "goals in extra 30 minutes"
+   }
+  ]
+ },
+ "away side to score how many during extra time": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "goals during extra time"
+   }
+  ]
+ },
+ "will they get out of their group": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": {
+    "round": "group stage",
+    "ordinal": null,
+    "conditional": false
+   },
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "to progress from group"
+   }
+  ]
+ },
+ "which sides end up in the bottom two": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "bottom two"
+   }
+  ]
+ },
+ "can they make the last eight": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "to reach the last eight"
+   }
+  ]
+ },
+ "where do spurs end up in the table": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "Spurs"
+   ],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "Spurs"
+    },
+    "market_concept": "final league position"
+   }
+  ]
+ },
+ "name every relegated club exactly": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "who takes third spot in the league": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "third place in league"
+   }
+  ]
+ },
+ "which english side goes furthest in the competition": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "England"
+   ],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "England"
+    },
+    "market_concept": "to go furthest in the competition"
+   }
+  ]
+ },
+ "furthest run by a german club this tournament": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "furthest run by a german club"
+   }
+  ]
+ },
+ "biggest points haul across the groups, which team": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": {
+    "round": "group stage",
+    "ordinal": null,
+    "conditional": false
+   },
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "biggest points haul"
+   }
+  ]
+ },
+ "will a swedish player put through his own net at the tournament": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "own goal",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    },
+    "attrFilter": {
+     "region": "Sweden"
+    }
+   }
+  ]
+ },
+ "all three drop teams named correctly": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "do they sneak into the playoff spots": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "how many of the promoted sides open against a top four club": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": {
+    "round": null,
+    "ordinal": "first",
+    "conditional": false
+   },
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "main"
+   }
+  ]
+ },
+ "can they wrap up the title this weekend": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": {
+    "date_window": {
+     "value": "this weekend",
+     "anchor": "now"
+    },
+    "kickoff_time_of_day": null
+   }
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "main"
+   }
+  ]
+ },
+ "the exact pair going through from the group": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": {
+    "round": "group stage",
+    "ordinal": null,
+    "conditional": false
+   },
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "exact pair going through from the group"
+   }
+  ]
+ },
+ "which two make the final": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": {
+    "round": "final",
+    "ordinal": null,
+    "conditional": false
+   },
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "main"
+   }
+  ]
+ },
+ "total assists across the whole tournament": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "total assists"
+   }
+  ]
+ },
+ "going the entire season winless, derby county style": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "to go the entire season winless"
+   }
+  ]
+ },
+ "the team that lands exactly seventh": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "seventh place",
+    "line": {
+     "kind": "selection",
+     "value": "seventh"
+    }
+   }
+  ]
+ },
+ "will italy actually make it to the world cup this time": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "Italy"
+   ],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "Italy"
+    },
+    "market_concept": "to qualify for world cup"
+   }
+  ]
+ },
+ "getting through to the next round of the playoffs": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "to reach the next round of the playoffs"
+   }
+  ]
+ },
+ "how many norwegian top flight clubs crash out in the cup's opening round": {
+  "status": "unsupported",
+  "recognizedAs": "Norwegian football"
+ },
+ "every single side scoring on the first group matchday, all 16 games": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": {
+    "round": "group stage",
+    "ordinal": "first",
+    "conditional": false
+   },
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "both teams to score"
+   }
+  ]
+ },
+ "pick the champion and the leading scorer together": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "tournament winner"
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "tournament top scorer"
+   }
+  ]
+ },
+ "bottom two after the regular season only": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": {
+    "round": "regular season",
+    "ordinal": "last",
+    "conditional": false
+   },
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "main"
+   }
+  ]
+ },
+ "who's taking the cup home": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "outright winner"
+   }
+  ]
+ },
+ "top three finish plus the most shutouts in allsvenskan": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": "Allsvenskan",
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "top three finish"
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "most shutouts"
+   }
+  ]
+ },
+ "how many swedish clubs reach a european group phase": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "swedish clubs reaching european group phase"
+   }
+  ]
+ },
+ "an all italian final": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": {
+    "round": "final",
+    "ordinal": null,
+    "conditional": false
+   },
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "main"
+   }
+  ]
+ },
+ "city to win literally everything, the quadruple": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "City"
+   ],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "City"
+    },
+    "market_concept": "to win the quadruple",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "league title and the league cup in the same season": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "league title and league cup in same season"
+   }
+  ]
+ },
+ "champions league plus both domestic cups": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "the domestic treble, league and both cups": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "domestic treble"
+   }
+  ]
+ },
+ "spain winning all three of europe's cups in the same season": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "Spain"
+   ],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "Spain"
+    },
+    "market_concept": "to win all three of Europe's cups in the same season",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "arsenal bottling the title while spurs avoid the drop": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "Arsenal",
+    "Spurs"
+   ],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "Arsenal"
+    },
+    "market_concept": "to win the title"
+   },
+   {
+    "subject": {
+     "kind": "team",
+     "name": "Spurs"
+    },
+    "market_concept": "to avoid the drop"
+   }
+  ]
+ },
+ "who ends up as club chairman": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "who'll be the number two on the bench": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "emptiest ground on average this season": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "biggest overall crowds, which club": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "best home gates on average": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "two managers sharing the job, will it happen": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "will he join city while guardiola is still in charge": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "who gets the manager job next": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "a boss getting banished to the stands at some point": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "last scorer for the home side": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "last goalscorer"
+   }
+  ]
+ },
+ "final goal for the visitors, who gets it": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "final goal"
+   }
+  ]
+ },
+ "will the world record fee get smashed this window": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "eredivisie manager of the year": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": "Eredivisie",
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "manager of the year"
+   }
+  ]
+ },
+ "is zlatan making sweden's euros squad": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "Sweden"
+   ],
+   "players": [
+    {
+     "name": "Zlatan",
+     "role": "plays"
+    }
+   ],
+   "competition": "Euros",
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "main"
+   }
+  ]
+ },
+ "zlatan called up for the qualifiers against georgia and kosovo": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "Georgia",
+    "Kosovo"
+   ],
+   "players": [
+    {
+     "name": "Zlatan",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": {
+    "round": "qualifiers",
+    "ordinal": null,
+    "conditional": false
+   },
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "main"
+   }
+  ]
+ },
+ "betting with a one goal head start": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "Asian handicap",
+    "line": {
+     "kind": "selection",
+     "value": "-1"
+    }
+   }
+  ]
+ },
+ "made up fixture where my team just needs to not lose": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "my team"
+   ],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "my team"
+    },
+    "market_concept": "to not lose",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "first half line spotting one team a goal, with the draw included": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "first half line spotting one team a goal with the draw included",
+    "line": {
+     "kind": "selection",
+     "value": "draw"
+    }
+   }
+  ]
+ },
+ "who wins it all once the playoffs are done": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": {
+    "round": "knockout",
+    "ordinal": "last",
+    "conditional": false
+   },
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "outright winner"
+   }
+  ]
+ },
+ "the champion comes from which country": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "goal head start applied over the full 120": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "goal head start applied over the full 120"
+   }
+  ]
+ },
+ "outright winner once the head starts are applied": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "outright winner once the head starts are applied"
+   }
+  ]
+ },
+ "quarter goal line for the opening half": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "quarter goal line for the opening half"
+   }
+  ]
+ },
+ "serie a winner if juve and roma don't count": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": "Serie A",
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "winner if Juve and Roma don't count"
+   }
+  ]
+ },
+ "mls champ excluding galaxy and the red bulls": {
+  "status": "unsupported",
+  "recognizedAs": "MLS"
+ },
+ "who tops the eredivisie leaving ajax out": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": "Eredivisie",
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "top scorer excluding Ajax"
+   }
+  ]
+ },
+ "ligue 1 title with psg removed": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": "Ligue 1",
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "title winner with PSG removed"
+   }
+  ]
+ },
+ "scottish title ignoring the old firm": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": "Scottish Title",
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "winner ignoring the old firm"
+   }
+  ]
+ },
+ "who wins it if stuttgart are excluded": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "turkish league winner, fener not counted": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": "Turkish League",
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "winner",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    },
+    "attrFilter": {
+     "region": "not Fenerbahçe"
+    }
+   }
+  ]
+ },
+ "champion with besiktas taken out of the running": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "champion",
+    "line": {
+     "kind": "binary",
+     "direction": "no"
+    },
+    "attrFilter": {
+     "region": "Besiktas"
+    }
+   }
+  ]
+ },
+ "finland's league, best of the rest behind hjk and sjk": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "who finishes top if you ignore dalkurd": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "mls cup minus seattle and toronto": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": "MLS Cup",
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "main"
+   }
+  ]
+ },
+ "team to win plus a player to score, the double up": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "regular season winner with fcsb not counted": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "regular season winner",
+    "line": {
+     "kind": "binary",
+     "direction": "no"
+    },
+    "attrFilter": {
+     "region": "FCSB"
+    }
+   }
+  ]
+ },
+ "dutch title excluding the big three": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": "Dutch title",
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "outright winner excluding the big three"
+   }
+  ]
+ },
+ "danish league best of the rest, no fck or brondby": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "Danish league best of the rest"
+   ],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "outright winner"
+   }
+  ]
+ },
+ "champion if düsseldorf are left out": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "champion if Düsseldorf are left out"
+   }
+  ]
+ },
+ "norwegian title ignoring rosenborg and molde": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": "Norwegian title",
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "outright winner",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    },
+    "attrFilter": {
+     "region": "excluding Rosenborg and Molde"
+    }
+   }
+  ]
+ },
+ "romanian league with the top two removed": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": "Romanian League",
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "main",
+    "attrFilter": {
+     "region": "Romanian League with the top two removed"
+    }
+   }
+  ]
+ },
+ "allsvenskan winner excluding helsingborg": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": "Allsvenskan",
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "winner",
+    "line": {
+     "kind": "binary",
+     "direction": "no"
+    },
+    "attrFilter": {
+     "region": "Helsingborg"
+    }
+   }
+  ]
+ },
+ "the tournament's top scorer getting every one of his goals with his head": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "tournament top scorer to score all goals with head"
+   }
+  ]
+ },
+ "who wins the league if hammarby don't count": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "map head start for the underdog": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "map head start for the underdog"
+   }
+  ]
+ },
+ "the boosted price on tonight's winner": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": {
+    "date_window": {
+     "value": "tonight",
+     "anchor": "now"
+    },
+    "kickoff_time_of_day": null
+   }
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "match winner"
+   }
+  ]
+ },
+ "premier league best of the rest behind city and liverpool": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": "Premier League",
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "best of the rest behind City and Liverpool"
+   }
+  ]
+ },
+ "bundesliga winner leaving köln out": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "Köln"
+   ],
+   "players": [],
+   "competition": "Bundesliga",
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "winner",
+    "line": {
+     "kind": "binary",
+     "direction": "no"
+    }
+   }
+  ]
+ },
+ "spanish league winner with malaga and depor removed": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": "Spanish League",
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "winner",
+    "attrFilter": {
+     "region": "excluding Malaga and Depor"
+    }
+   }
+  ]
+ },
+ "which confederation does the winner come from, uefa or conmebol": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "winner confederation",
+    "line": {
+     "kind": "selection",
+     "value": "UEFA"
+    }
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "winner confederation",
+    "line": {
+     "kind": "selection",
+     "value": "CONMEBOL"
+    }
+   }
+  ]
+ },
+ "top spot if halmstad and örgryte are excluded": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "top spot",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    },
+    "attrFilter": {
+     "region": "excluding Halmstad and Örgryte"
+    }
+   }
+  ]
+ },
+ "league winner not counting molde": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "league winner",
+    "attrFilter": {
+     "region": "not Molde"
+    }
+   }
+  ]
+ },
+ "eredivisie regular season, best team outside the big four": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": "Eredivisie",
+   "level": "competition",
+   "stage": {
+    "round": "regular season",
+    "ordinal": null,
+    "conditional": false
+   },
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "best team outside the big four"
+   }
+  ]
+ },
+ "south african title with sundowns taken out": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": "South African title",
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "outright winner",
+    "line": {
+     "kind": "selection",
+     "value": "excluding Sundowns"
+    }
+   }
+  ]
+ },
+ "goal head start just for the extra time period": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "goal head start just for the extra time period"
+   }
+  ]
+ },
+ "who lets fly the most times in the match": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "shots"
+   }
+  ]
+ },
+ "papu gomez, how often does he hit the target": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Papu Gomez",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Papu Gomez"
+    },
+    "market_concept": "shots on target"
+   }
+  ]
+ },
+ "haaland to test the keeper from outside the area": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Haaland",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Haaland"
+    },
+    "market_concept": "to test the keeper from outside the area",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "kane forcing a save with a header, how many times": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Kane",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Kane"
+    },
+    "market_concept": "headers forcing a save"
+   }
+  ]
+ },
+ "pandev to work the goalkeeper, how many times": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Pandev",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Pandev"
+    },
+    "market_concept": "shots on target"
+   }
+  ]
+ },
+ "raphinha attempts that hit the target": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Raphinha",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Raphinha"
+    },
+    "market_concept": "attempts that hit the target"
+   }
+  ]
+ },
+ "how often does ryan kent force a save": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Ryan Kent",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Ryan Kent"
+    },
+    "market_concept": "shots forcing saves"
+   }
+  ]
+ },
+ "thiago alcantara efforts on goal": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Thiago Alcantara",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Thiago Alcantara"
+    },
+    "market_concept": "efforts on goal"
+   }
+  ]
+ },
+ "piatek shots that test the keeper": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Piatek",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Piatek"
+    },
+    "market_concept": "shots that test the keeper"
+   }
+  ]
+ },
+ "beto on target how many times tonight": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Beto",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": {
+    "date_window": {
+     "value": "tonight",
+     "anchor": "now"
+    },
+    "kickoff_time_of_day": null
+   }
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Beto"
+    },
+    "market_concept": "shots on target"
+   }
+  ]
+ },
+ "msakni to hit the target in the game": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Msakni",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Msakni"
+    },
+    "market_concept": "to hit the target",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "issam jebali, efforts the keeper has to deal with": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Issam Jebali",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Issam Jebali"
+    },
+    "market_concept": "efforts the keeper has to deal with"
+   }
+  ]
+ },
+ "jaziri attempts on goal count": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Jaziri",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Jaziri"
+    },
+    "market_concept": "attempts on goal"
+   }
+  ]
+ },
+ "darko lazovic, any efforts forcing a stop": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Darko Lazovic",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Darko Lazovic"
+    },
+    "market_concept": "efforts forcing a stop"
+   }
+  ]
+ },
+ "maxi gomez to trouble the goalkeeper": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Maxi Gomez",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Maxi Gomez"
+    },
+    "market_concept": "to trouble the goalkeeper",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "richarlison and raphinha combined attempts on target": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "combined attempts on target"
+   }
+  ]
+ },
+ "al-buraikan total attempts, on or off": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Al-Buraikan",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Al-Buraikan"
+    },
+    "market_concept": "total attempts",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   },
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Al-Buraikan"
+    },
+    "market_concept": "total attempts",
+    "line": {
+     "kind": "binary",
+     "direction": "no"
+    }
+   }
+  ]
+ },
+ "how many times does selim amallah shoot": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Selim Amallah",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Selim Amallah"
+    },
+    "market_concept": "shots"
+   }
+  ]
+ },
+ "hwang hee-chan shot count": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Hwang Hee-chan",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Hwang Hee-chan"
+    },
+    "market_concept": "shots"
+   }
+  ]
+ },
+ "number of efforts richarlison gets away": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Richarlison",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Richarlison"
+    },
+    "market_concept": "efforts"
+   }
+  ]
+ },
+ "tim weah attempts in the match": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Tim Weah",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Tim Weah"
+    },
+    "market_concept": "attempts"
+   }
+  ]
+ },
+ "vinicius efforts that make the keeper work": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Vinicius",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Vinicius"
+    },
+    "market_concept": "efforts that make the keeper work"
+   }
+  ]
+ },
+ "next player to force a save, refund if nobody does": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "next player to force a save"
+   }
+  ]
+ },
+ "bellingham how many shots all game": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Bellingham",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Bellingham"
+    },
+    "market_concept": "shots"
+   }
+  ]
+ },
+ "pedri and raphinha both to manage at least one on target": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Pedri"
+    },
+    "market_concept": "shots on target",
+    "line": {
+     "kind": "numeric",
+     "value": 1,
+     "direction": "over"
+    }
+   },
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Raphinha"
+    },
+    "market_concept": "shots on target",
+    "line": {
+     "kind": "numeric",
+     "value": 1,
+     "direction": "over"
+    }
+   }
+  ]
+ },
+ "will casemiro go in the book tonight": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Casemiro",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": {
+    "date_window": {
+     "value": "tonight",
+     "anchor": "now"
+    },
+    "kickoff_time_of_day": null
+   }
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Casemiro"
+    },
+    "market_concept": "to be carded"
+   }
+  ]
+ },
+ "mbappé to score and pick up a yellow in the same game": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Mbappé"
+    },
+    "market_concept": "to score"
+   },
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Mbappé"
+    },
+    "market_concept": "to be carded",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "ramos to be the first one shown red": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Ramos",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Ramos"
+    },
+    "market_concept": "first to be shown red",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "which player collects the most bookings this season": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "most bookings"
+   }
+  ]
+ },
+ "starts on the bench but still gets sent off": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "main"
+   }
+  ]
+ },
+ "neymar booked for a dive": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Neymar",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Neymar"
+    },
+    "market_concept": "to be booked for a dive",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "earliest booking of the match, which player": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "pepe to see red at some point in the groups": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Pepe",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "competition",
+   "stage": {
+    "round": "group stage",
+    "ordinal": null,
+    "conditional": false
+   },
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Pepe"
+    },
+    "market_concept": "to be sent off"
+   }
+  ]
+ },
+ "how many yellows does casemiro rack up this tournament": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Casemiro",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Casemiro"
+    },
+    "market_concept": "total yellows"
+   }
+  ]
+ },
+ "comes off the bench, scores, gets booked and his team still wins": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "to score"
+   },
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "to be carded",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "match winner"
+   }
+  ]
+ },
+ "super sub scores and gets carded but they lose anyway": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "to score",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   },
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "to be carded",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "match result"
+   }
+  ]
+ },
+ "bookings tally for xhaka across the whole competition": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Xhaka"
+    },
+    "market_concept": "bookings tally"
+   }
+  ]
+ },
+ "haaland to score, set one up and go in the book": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Haaland",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Haaland"
+    },
+    "market_concept": "to score",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   },
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Haaland"
+    },
+    "market_concept": "to set up",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   },
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Haaland"
+    },
+    "market_concept": "to be carded",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "how many times does fernandinho get carded this campaign": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Fernandinho",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Fernandinho"
+    },
+    "market_concept": "cards"
+   }
+  ]
+ },
+ "any player off the bench picking up a booking": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "to be carded",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    },
+    "attrFilter": {
+     "position": "substitute"
+    }
+   }
+  ]
+ },
+ "who completes the most passes in the match": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "most passes"
+   }
+  ]
+ },
+ "most kicked player on the pitch, grealish?": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Grealish",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Grealish"
+    },
+    "market_concept": "most kicked player on the pitch"
+   }
+  ]
+ },
+ "dirtiest player tonight, most fouls given away": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": {
+    "date_window": {
+     "value": "tonight",
+     "anchor": "now"
+    },
+    "kickoff_time_of_day": null
+   }
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "most fouls given away",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "fouls conceded by rodri tonight": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Rodri",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": {
+    "date_window": {
+     "value": "tonight",
+     "anchor": "now"
+    },
+    "kickoff_time_of_day": null
+   }
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Rodri"
+    },
+    "market_concept": "fouls conceded"
+   }
+  ]
+ },
+ "how many times does messi get fouled": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Messi",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Messi"
+    },
+    "market_concept": "fouls against"
+   }
+  ]
+ },
+ "who's pulled up for the most fouls per opta": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "most fouls per opta"
+   }
+  ]
+ },
+ "kanté tackle count for the game": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Kanté"
+    },
+    "market_concept": "tackles"
+   }
+  ]
+ },
+ "how many times is werner caught offside": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Werner",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Werner"
+    },
+    "market_concept": "times caught offside"
+   }
+  ]
+ },
+ "times saka gets fouled, extra time included": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Saka",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Saka"
+    },
+    "market_concept": "times fouled, extra time included"
+   }
+  ]
+ },
+ "kroos passing accuracy over the whole 120": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Kroos"
+    },
+    "market_concept": "passing accuracy over the whole 120",
+    "line": {
+     "kind": "numeric",
+     "value": 120,
+     "direction": "over"
+    }
+   }
+  ]
+ },
+ "offside flags against lukaku, extra time counting": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Lukaku",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Lukaku"
+    },
+    "market_concept": "offside flags"
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "extra time counting"
+   }
+  ]
+ },
+ "the match's biggest fouler with extra time included": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "biggest fouler with extra time included",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "most fouled man over 120 minutes": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "most fouled over 120 minutes",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "best passing accuracy on the pitch, who": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "highest passing accuracy"
+   }
+  ]
+ },
+ "how often does mbappé get flagged across the tournament": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Mbappé",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Mbappé"
+    },
+    "market_concept": "to be carded"
+   }
+  ]
+ },
+ "modric challenges won and lost": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Modrić",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Modrić"
+    },
+    "market_concept": "challenges won"
+   },
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Modrić"
+    },
+    "market_concept": "challenges lost"
+   }
+  ]
+ },
+ "top tackler of the game with extra time counted": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "top tackler of the game with extra time counted",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "free kicks given away by fred, extra time included": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Fred",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Fred"
+    },
+    "market_concept": "free kicks given away, extra time included"
+   }
+  ]
+ },
+ "fouls drawn by neymar in the game": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Neymar",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Neymar"
+    },
+    "market_concept": "fouls drawn"
+   }
+  ]
+ },
+ "how many fouls does vinicius win over the 120": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Vinicius",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Vinicius"
+    },
+    "market_concept": "fouls won",
+    "line": {
+     "kind": "numeric",
+     "value": 120,
+     "direction": "over"
+    }
+   }
+  ]
+ },
+ "player drawing the most fouls, extra time too": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "most fouls drawn"
+   },
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "most fouls drawn in extra time"
+   }
+  ]
+ },
+ "bruno's fouls both ways, given and won": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Bruno",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Bruno"
+    },
+    "market_concept": "fouls given"
+   },
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Bruno"
+    },
+    "market_concept": "fouls won"
+   }
+  ]
+ },
+ "number of free kicks pedri earns": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Pedri",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Pedri"
+    },
+    "market_concept": "free kicks earned"
+   }
+  ]
+ },
+ "rodri completed pass total per opta": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Rodri",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Rodri"
+    },
+    "market_concept": "completed pass total per opta"
+   }
+  ]
+ },
+ "who outscores everyone else on the pitch": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "top scorer"
+   }
+  ]
+ },
+ "lewandowski to bag a hat trick": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Lewandowski"
+    },
+    "market_concept": "to score a hat trick",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "haaland scoring a screamer from distance": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Haaland",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Haaland"
+    },
+    "market_concept": "to score a screamer from distance",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "kane to net twice or more": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Kane"
+    },
+    "market_concept": "to score 2 or more",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "salah to score after the break": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Salah",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Salah"
+    },
+    "market_concept": "to score after the break"
+   }
+  ]
+ },
+ "will mbappé convert from the spot": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Mbappé",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Mbappé"
+    },
+    "market_concept": "to convert from the spot",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "who ends the season as united's leading scorer": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "United"
+   ],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "leading scorer"
+   }
+  ]
+ },
+ "messi curling one in from a free kick": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Messi",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Messi"
+    },
+    "market_concept": "free kick goal"
+   }
+  ]
+ },
+ "new signing to score on his first appearance": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "to score on first appearance",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "club's leading scorer across all competitions, who": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "club leading scorer across all competitions"
+   }
+  ]
+ },
+ "anyone in the match grabbing a brace": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "to score a brace",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "maguire scoring at the wrong end at some point this season": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Maguire",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": {
+    "date_window": {
+     "value": "this season",
+     "anchor": "now"
+    },
+    "kickoff_time_of_day": null
+   }
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Maguire"
+    },
+    "market_concept": "to score an own goal"
+   }
+  ]
+ },
+ "leading scorer to be a frenchman, mbappé or griezmann": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "leading scorer",
+    "line": {
+     "kind": "selection",
+     "value": "Mbappé"
+    },
+    "attrFilter": {
+     "region": "France"
+    }
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "leading scorer",
+    "line": {
+     "kind": "selection",
+     "value": "Griezmann"
+    },
+    "attrFilter": {
+     "region": "France"
+    }
+   }
+  ]
+ },
+ "a proper poacher's finish from point blank range": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "main"
+   }
+  ]
+ },
+ "the perfect hat trick, left foot right foot and a header": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "perfect hat trick"
+   }
+  ]
+ },
+ "top scorer race with higuain not counted": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "top scorer race",
+    "line": {
+     "kind": "binary",
+     "direction": "no"
+    },
+    "attrFilter": {
+     "region": "not Higuain"
+    }
+   }
+  ]
+ },
+ "scoring with his very first touch of the tournament": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "to score with first touch of tournament",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "lafferty to grab northern ireland's next goal": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "Northern Ireland"
+   ],
+   "players": [
+    {
+     "name": "Lafferty",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Lafferty"
+    },
+    "market_concept": "next goal scorer"
+   }
+  ]
+ },
+ "the winner to come from someone off the bench": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "goalscorer from the bench",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "who tops the scoring charts in the group phase": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": {
+    "round": "group stage",
+    "ordinal": null,
+    "conditional": false
+   },
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "top scorer"
+   }
+  ]
+ },
+ "someone scoring then necking a beer in the celebration": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "who nets the game's final goal": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "last goalscorer"
+   }
+  ]
+ },
+ "isak to score anytime, extra time counts": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Isak",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Isak"
+    },
+    "market_concept": "to score anytime",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "the top scorer to play his club football in france": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "top scorer",
+    "attrFilter": {
+     "region": "France"
+    }
+   }
+  ]
+ },
+ "leading scorer to come from a german club": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "leading scorer to come from a german club",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "to bag at least a couple as long as he gets on the pitch": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "son to score or set one up during extra time": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Son",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Son"
+    },
+    "market_concept": "to score or assist during extra time",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "an assist from either de bruyne or odegaard": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "De Bruyne"
+    },
+    "market_concept": "to assist"
+   },
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Odegaard"
+    },
+    "market_concept": "to assist"
+   }
+  ]
+ },
+ "de frutos or alemão, one of them to find the net": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "de Frutos"
+    },
+    "market_concept": "to score",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   },
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Alemão"
+    },
+    "market_concept": "to score",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "carnejy antoine or wilde-donald guerrier to get a goal between them": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Carnejy Antoine",
+     "role": "plays"
+    },
+    {
+     "name": "Wilde-Donald Guerrier",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Carnejy Antoine"
+    },
+    "market_concept": "to score"
+   },
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Wilde-Donald Guerrier"
+    },
+    "market_concept": "to score"
+   }
+  ]
+ },
+ "which league is mbappé in once the window shuts": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "alisson to keep out a pen": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Alisson",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Alisson"
+    },
+    "market_concept": "to keep out a pen",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "who do the players vote as england's best this season": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "England"
+   ],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "players vote best player"
+   }
+  ]
+ },
+ "gyökeres in the starting lineup for the opener": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Gyökeres",
+     "role": "starts"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": {
+    "round": null,
+    "ordinal": "first",
+    "conditional": false
+   },
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "main"
+   }
+  ]
+ },
+ "will the new lad be in the first eleven on opening day": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": {
+    "round": null,
+    "ordinal": "first",
+    "conditional": false
+   },
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "main"
+   }
+  ]
+ },
+ "the tournament's best youngster award, who takes it": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "tournament best youngster award"
+   }
+  ]
+ },
+ "first man hooked, who comes off earliest": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "first man hooked"
+   },
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "who comes off earliest"
+   }
+  ]
+ },
+ "who's the next player to get sold overseas": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "how many shutouts does courtois keep this season": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Courtois",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Courtois"
+    },
+    "market_concept": "shutouts"
+   }
+  ]
+ },
+ "who's the next signing cleared to play in this league once the window closes": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "assist king of the competition, playoffs included": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "assists king of the competition"
+   }
+  ]
+ },
+ "most assists over the regular season only": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": {
+    "round": "regular season",
+    "ordinal": null,
+    "conditional": false
+   },
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "most assists"
+   }
+  ]
+ },
+ "what country is the leading scorer from, regular season": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "leading scorer country",
+    "line": {
+     "kind": "selection",
+     "value": "regular season"
+    }
+   }
+  ]
+ },
+ "de bruyne assist total for the whole campaign": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "De Bruyne",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "De Bruyne"
+    },
+    "market_concept": "total assists"
+   }
+  ]
+ },
+ "long range goals by the player across league, cups and europe combined": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "long range goals"
+   }
+  ]
+ },
+ "how many sprints does mbappé clock in the match": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "a tournament goal from someone who's never scored for his country": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "tournament goal from someone who's never scored for his country"
+   }
+  ]
+ },
+ "leading scorer at the women's world cup": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": "Women's World Cup",
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "leading scorer"
+   }
+  ]
+ },
+ "his assist count for anderlecht with the playoffs counting": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "how many does mbappé get just in the group games": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "Mbappé",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "fixture",
+   "stage": {
+    "round": "group stage",
+    "ordinal": null,
+    "conditional": false
+   },
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Mbappé"
+    },
+    "market_concept": "main"
+   }
+  ]
+ },
+ "will he get on the pitch at some point during the 90": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "to play"
+   }
+  ]
+ },
+ "player to score anytime and his team to take the win": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "to score anytime",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   },
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "to win",
+    "line": {
+     "kind": "binary",
+     "direction": "yes"
+    }
+   }
+  ]
+ },
+ "league and cup double in the same season": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "league and cup double in the same season"
+   }
+  ]
+ },
+ "anyone dishing out three assists in a single game": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player"
+    },
+    "market_concept": "assists",
+    "line": {
+     "kind": "numeric",
+     "value": 3,
+     "direction": "over"
+    }
+   }
+  ]
+ },
+ "every one of these teams failing to win this weekend": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "that boosted combo offer on the match": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "main"
+   }
+  ]
+ },
+ "doing the double over union berlin this season": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "Union Berlin"
+   ],
+   "players": [],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "Union Berlin"
+    },
+    "market_concept": "double"
+   }
+  ]
+ },
+ "any swede making the tournament's all star eleven": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [
+    {
+     "name": "any Swede",
+     "role": "plays"
+    }
+   ],
+   "competition": null,
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "tournament all star eleven",
+    "attrFilter": {
+     "region": "Sweden"
+    }
+   }
+  ]
+ },
+ "which of the listed events happens first": {
+  "status": "unsupported",
+  "recognizedAs": null
+ },
+ "malmö going the whole allsvenskan season unbeaten": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [
+    "Malmö"
+   ],
+   "players": [],
+   "competition": "Allsvenskan",
+   "level": "competition",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "Malmö"
+    },
+    "market_concept": "to go the whole season unbeaten"
+   }
+  ]
+ },
+ "which team wins the next free kick": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "next free kick winner"
+   }
+  ]
+ },
+ "how many penalties does the away team score in the shootout": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "team",
+     "name": "away team"
+    },
+    "market_concept": "penalties scored in shootout"
+   }
+  ]
+ },
+ "total off-target shots if the game goes to extra time": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "event"
+    },
+    "market_concept": "total off-target shots if the game goes to extra time"
+   }
+  ]
+ },
+ "which team scores the fastest goal from kickoff": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "either_match_team"
+    },
+    "market_concept": "fastest goal from kickoff"
+   }
+  ]
+ },
+ "casemiro's total fouls if the match goes to extra time": {
+  "status": "resolved",
+  "sport": "FOOTBALL",
+  "event_scope": {
+   "teams": [],
+   "players": [],
+   "competition": null,
+   "level": "fixture",
+   "stage": null,
+   "time": null
+  },
+  "selectors": [
+   {
+    "subject": {
+     "kind": "player",
+     "name": "Casemiro"
+    },
+    "market_concept": "total fouls if the match goes to extra time"
+   }
+  ]
+ }
+}

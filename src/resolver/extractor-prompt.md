@@ -112,9 +112,12 @@ bettable is left — emit a **single** sentinel selector
 a request, never emit zero selectors, and **never invent a "match"/"fixture" market** (rule 6) — the
 bare event *is* `main`.
 
-The cut is *event-noun vs outcome-noun*: "their next **fixture**" / "the group-stage **match**" name
-only the event → `main`; "**match result**", "**match** winner", "outright **winner**" name an
-outcome → that concept. A named market always wins on its own, **however fixture-flavoured the rest
+The cut is *event-reference vs outcome*, where an outcome may be a **noun or a question**: "their next
+**fixture**" / "the group-stage **match**" name only the event → `main`; "**match result**", "**match**
+winner", "outright **winner**" — **and a question asking which side wins or comes out ahead (e.g. "who
+wins", "who comes out on top") — name the result outcome → that concept (e.g. "match winner")**. Keep
+the stated scope: a question about winning the **whole competition** is the outright, not the
+single-match result. A named market always wins on its own, **however fixture-flavoured the rest
 of the query reads** — an adjacent list verb ("show me", "do we have") or event noun ("tie", "game")
 never downgrades a named market to `main`.
 
@@ -183,6 +186,12 @@ the query's wording, not a noun ("<X> scorer" → "to score"). Strip **generic t
 ("anytime", "ever", "at any point") — they don't change the market; **keep ordinals**
 ("first"/"last") — they do. Do **not** paraphrase sport-specific slang into its underlying count
 or method yourself — keep the query's own term; the per-sport lexicon maps it downstream.
+
+### period (optional) — which **match-period** the query restricts to
+
+A match runs in periods; when the query confines the market to one, emit the normalized facet
+(`first_half` / `second_half` / `extra_time`), else **omit** (= full match). Read the meaning, not a
+fixed word list. This is additive — **keep the period words in `market_concept` too**, don't strip them.
 
 ### line (optional) — by **answer-type**, not the nouns
 

@@ -82,6 +82,7 @@ weaknesses (update a status when revisiting).
 64. Give me request-a-bet options for the England game — Bellingham brace plus Kane assist
 65. Do we have any specials boosted on the host nation's opening match
 66. Find me the enhanced odds section for WC 26 final week
+67. Tier-1 extraction-failure probes — "who wins"→main, "shut out"→win-to-nil (6 variants)
 
 _Last probed: 2026-06-06 (re-probe on the **adopted decision-24 `main`-sentinel** build; Q37–Q66) — extractor `claude-haiku-4-5`, grounding `voyage-3`. **28/30 now carry a real market selector** (was ~13 dropped under the `fixture_lookup` WIP). Only **Q40** (European handicap) still wrongly → `main`; **Q65** correctly → `main`. 0 regressions vs the already-resolved set; ship gate PASS. **Q48 + Q46 since fixed** (Q48: grounding-layer acronym expansion `BTTS`/`GG`/`DNB`; Q46: `half time score` alias → Correct Score - 1st Half). Remaining grounding-axis misses: Q43/Q49/Q51._
 _Earlier (2026-06-06): decision-23 result-family aliases; Q33–Q36 — grounding `voyage-3` + `level`-aware aliases + soft boType gate._
@@ -486,6 +487,22 @@ _Earlier (2026-06-06): decision-23 result-family aliases; Q33–Q36 — groundin
 - **Grounding:** → **Boosted Odds** (8 ids, vector/variants 0.528).
 - **Status:** ✅ Now extracts (was `fixture_lookup`). "enhanced odds" → the **Boosted Odds** family (variants); good tournament-anchored time + stage parse.
 
+### Q67 — Tier-1 extraction-failure probes: "who wins"→main, "shut out"→win-to-nil
+- **Query:** diagnostic batch via `scripts/probe-both.ts` — 6 variants root-causing the 2 extractor failures from the Tier-1 extractor→ground probe (`tier_1_automation.md`). Each is a new (uncached) extractor call.
+- **#1 — interrogative match-result → marketless `main`** (target 1004712874 "Match Odds"):
+  - "who wins Brazil vs France" → `event:"main"` → none (main)
+  - "who comes out on top in Brazil vs France" *(cached)* → `event:"main"` → none (main)
+  - "who prevails in Brazil vs France" → `event:"main"` → none (main)
+  - "Brazil vs France winner" *(noun control)* → `event:"match winner"` → **Match Odds** (`1004712874`, alias/confident) ✓
+  - **Boundary:** the **"who [verb]s" question form** ("wins/comes out on top/prevails") collapses to the marketless `main` sentinel; the **noun "winner"** yields `"match winner"`, which the **decision-23 fixture alias** already lands on Match Odds. So bare match-result *questions* are mis-classified as naming no market.
+- **#2 — "shut out" paraphrased to the wrong market "win to nil"** (rule-6 violation; target 1003971484 "To keep a clean sheet"):
+  - "France to shut out their opponents" *(cached)* → `team:"to win to nil"`/binary yes → Away/Home Team to Win to Nil (vector/shortlist) ✗
+  - "France to shut out Spain" → `team:"to win to nil"`/binary yes → Win-to-Nil markets (vector/shortlist) ✗
+  - "France to keep a clean sheet" *(control)* → `team:"clean sheet"`/binary yes → **To keep a clean sheet** (`1003971484`, alias/confident) ✓
+  - "France to not concede" → `team:"to not concede"`/binary **no** → Winner / Winning Confederation junk (vector/shortlist 0.36) ✗
+  - **Boundary:** "shut out" is consistently swapped for the *different* concrete market "win to nil" (win **and** concede zero), so grounding never sees the clean-sheet intent. Explicit "clean sheet" grounds correctly via an existing alias. Negated "not concede" is kept faithfully but has no clean-sheet bridge.
+- **Status:** ⚠️ Resolved 2026-06-08 (Tier-1) — split outcome. **#1 FIXED & shipped:** sport-agnostic Step-3 rewrite (event-noun-vs-outcome-**noun** → event-reference-vs-outcome, an outcome may be a **noun or a question**; a who-wins question → `"match winner"`, which the decision-23 fixture alias lands on Match Odds — no grounder change). Verified regression-clean (outright / `main` / fixture_lookup / first-goalscorer all untouched); Tier-1 extractor→ground probe **27 → 28/36**, "who comes out on top in Brazil vs France" now clean. **#2 REVERTED (not fixed):** two sport-agnostic prompt rewrites (broaden anti-paraphrase → "different market name"; then "don't add an unstated outcome / compound market") **both failed to move Haiku** off `"shut out"`→`"to win to nil"`. On reflection "shut out" is a **defensible ambiguity** (American "shutout" implies a win = win-to-nil) and the by-construction label (player clean-sheet for a *team* query) is shaky — so per *stop-tweaking* we reverted both the prompt edits **and** the alias. Net shipped diff from this round = **#1 only**.
+
 ---
 
 ## Known Errors / Known Issues
@@ -545,3 +562,33 @@ revisiting; add new ones as probes surface them.
 - **Trigger:** a query naming **no bettable market** — "the France opener", "Brazil vs Argentina group-stage match", "show me what's live now".
 - **Symptom:** the extractor fabricated a `"match"` concept (→ grounding noise Fantasy Match / Match Odds), emitted `selectors: []` (→ schema crash), or bailed to `unsupported`.
 - **Resolution (decision 22):** a 4th plan status **`fixture_lookup`** (`{sport, event_scope}`, no selectors), decided by an event-noun-vs-outcome rule (an event noun "match/fixture/game" or a list verb is not a market); grounding doesn't run; the executor shows each event under its main betoffer. Eval grades the fixture-selecting facets (teams/stage/time) HARD on these records. Verified via gold gf01–gf05 (ship gate PASS). Full rationale: **decision 22** in `docs/architecture.md`.
+
+### Probe (2026-06-09, family-gate design) — "Mexico to Win and Both Teams To Score"
+- **Query:** Mexico to Win and Both Teams To Score
+- **Extractor:** `resolved`. level fixture, teams [Mexico]. **Splits the combo into 2 selectors** — `[1] team:Mexico "to win" binary yes`, `[2] event "both teams to score" binary yes`.
+- **Grounding:** sel 1 → `1004712874` Match Odds (alias/confident, fixture-scoped "to win" alias, KE-7). sel 2 → `1001642858` Both Teams To Score (name/confident).
+- **Finding:** the combined catalog rows `1001957106`/`1001957108` "Home/Away Team to Win and Both Teams To Score" are **never reached** — the extractor tears "X and Y" into two atomic legs before grounding. This is an **extractor-decomposition / combined-market reachability** gap, *orthogonal to the family gate* (both legs resolve on alias/name fast-paths, and fixture win/BTTS are outside the competition-outcome cluster the gate is scoped to). Confirms families are per-selector and that catalog combos need no family-set handling (a split query never reaches the combo row).
+
+### Probe batch (2026-06-09, combined-market investigation)
+- **"scorecast"** → `resolved`, **1 selector** `event "scorecast"` → Scorecast rows (vector/shortlist 0.419). Unit-named combo **stays together** → fixable by a simple alias.
+- **"Home Team to Win and Both Teams To Score"** (verbatim catalog name `1001957106`) → **2 selectors** `event "home team to win"` (→ `1002794495`) + `event "both teams to score"` (→ `1001642858`). **Smoking gun:** even a verbatim combined name is split; the combined row is never reached.
+- **"draw and both teams to score"** → **2 selectors** `draw` (→ Draw No Bet) + `both teams to score` (→ BTTS). The real combined `1002363220 "Draw and Both Teams To Score"` sits in the `draw` candidate list at 0.372, **outranked by the split**.
+- **"England to win to nil and over 2.5 goals"** / **"first goalscorer and correct score"** / **"Mbappe to score and France to win"** → all **split per leg** (genuine multi-leg / cross-subject).
+- **"win both halves"** → **1 selector** (the "and" is internal to one market name) → `Away Team to Win Both Halves`.
+- **Finding:** top-level "X and Y" between separately-nameable outcomes → always split (even verbatim); "and" internal to one market name → kept. Drives the **combined-market recombination** Stage-2 sub-feature in [sprint-7.md](../sprints/sprint-7.md). Sizing: 306/2486 combined rows, ~4–6 ever live.
+
+### Probe batch (2026-06-10, Sprint 5.1 — new `period` facet prompt rule)
+Step-0 sanity of the added `### period` rule (`scripts/probe-period-facet.ts`, real Haiku). Columns: emitted `market_concept` | `period`(LLM) | expect.
+- "exact scoreline at the break" → `exact scoreline at the break` | **first_half** | first_half ✓
+- "second half corners over 4.5" → `second half corners` | **second_half** | second_half ✓
+- "away goals before half time, how many" → `away goals before half time` | **first_half** | first_half ✓
+- "offside flags against lukaku, extra time counting" → player `offside flags` | **extra_time** | extra_time ✓
+- "total shots in the 120 minutes" → `total shots in 120 minutes` | **extra_time** | extra_time ✓
+- "opening 45 goals" → `opening 45 goals` | **—** | first_half ✗ (LLM omitted; `periodOf` `/(opening|first) 45/` fallback recovers → first_half)
+- "bookings after the break" → `bookings after the break` | **second_half** | second_half ✓
+- "first half both teams to score" → `both teams to score` | **first_half** | first_half ✓
+- "a goal in the dying added minutes of extra time" → `goal in the dying added minutes of extra time` | **—** | extra_time ✗ (LLM omitted; `periodOf` `\bextra time\b` fallback recovers → extra_time)
+- "total goals" → `total goals` | **—** | (omit) ✓
+- "mbappe shots on target" → player `shots on target` | **—** | (omit) ✓
+- "who wins the second half" → `second half winner` | **second_half** | second_half ✓
+- **Finding:** 10/12 period idioms normalized by the LLM; `market_concept` stays **rich** (period words not stripped); no-period queries omit. The 2 LLM misses both carry the literal idiom in the concept text, so the grounder's `opts.period ?? periodOf(text)` regex fallback recovers them — validating the LLM-first / regex-fallback design. Grounder mechanism check (`offside flags` + `extra_time`): promotes "Player's offside infringements - **Including Extra Time**" from a wrong-period shortlist to a **confident** grounding (regex on the bare concept saw no period → period-collapse killed the ET variant; the LLM facet rescues it). Zero-drop holds (penalties touch `adj` only; `gate`/THRESHOLD untouched). Ship gate g001–g003 PASS; 32-case `ground-snapshot.ts` 0 regressions. Memo key extended to include `period`+`level` (`ground-market.ts`) so facet-differing calls don't collide.

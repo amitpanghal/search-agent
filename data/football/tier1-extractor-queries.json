@@ -1,0 +1,1424 @@
+{
+  "queries": [
+    {
+      "id": 1001642863,
+      "q": "both sides to find the net before half time"
+    },
+    {
+      "id": 1001642868,
+      "q": "goals at both ends after the break"
+    },
+    {
+      "id": 1001657421,
+      "q": "each team scoring in the first AND the second half"
+    },
+    {
+      "id": 1001957106,
+      "q": "home team to win with goals at both ends"
+    },
+    {
+      "id": 1001957108,
+      "q": "away side wins it but both find the net"
+    },
+    {
+      "id": 1002363220,
+      "q": "score draw tonight, like 1-1 or 2-2"
+    },
+    {
+      "id": 1004808233,
+      "q": "both teams scoring with extra time counting too"
+    },
+    {
+      "id": 2100100122,
+      "q": "will the two sides each score during the extra 30 minutes"
+    },
+    {
+      "id": 2100111420,
+      "q": "hosts avoid defeat and each team scores"
+    },
+    {
+      "id": 2100111421,
+      "q": "visitors don't lose plus goals for both"
+    },
+    {
+      "id": 2100111422,
+      "q": "no draw and both teams get a goal"
+    },
+    {
+      "id": 2100111705,
+      "q": "milan or the draw, plus both ends scoring"
+    },
+    {
+      "id": 1001159610,
+      "q": "who takes the next corner, money back if there isn't one"
+    },
+    {
+      "id": 1001159807,
+      "q": "which team gets more corners"
+    },
+    {
+      "id": 1001159897,
+      "q": "how many corners in the arsenal game"
+    },
+    {
+      "id": 1001159899,
+      "q": "first half corner count with one team spotted a head start"
+    },
+    {
+      "id": 1001159951,
+      "q": "number of corners after half time"
+    },
+    {
+      "id": 1001239604,
+      "q": "which side reaches three corners first"
+    },
+    {
+      "id": 1001967052,
+      "q": "corners between the 60th and 75th minute"
+    },
+    {
+      "id": 1001980238,
+      "q": "corner count over the full 120 if it goes to extra time"
+    },
+    {
+      "id": 1002114152,
+      "q": "corners across the whole matchday added together"
+    },
+    {
+      "id": 1002483414,
+      "q": "second half corners if you give one team a couple start"
+    },
+    {
+      "id": 1002483456,
+      "q": "corners with a -1 start and the draw as a third option"
+    },
+    {
+      "id": 1003016277,
+      "q": "result plus more or fewer than 10.5 corners"
+    },
+    {
+      "id": 1003226217,
+      "q": "first corner between the 50th and 60th minute, could be neither"
+    },
+    {
+      "id": 1003226219,
+      "q": "who wins the first corner in a window during the second period of extra time"
+    },
+    {
+      "id": 1003246244,
+      "q": "will there be a corner between the 70th and 80th minute"
+    },
+    {
+      "id": 1003246271,
+      "q": "any corner in a ten minute spell of extra time's opening period"
+    },
+    {
+      "id": 1003303619,
+      "q": "home win in extra time with 12+ corners but under 3 cards"
+    },
+    {
+      "id": 1004556491,
+      "q": "the 2.5 goals and 9.5 corners combo"
+    },
+    {
+      "id": 1004670636,
+      "q": "every game on today's card combined, how many corners"
+    },
+    {
+      "id": 1004702150,
+      "q": "anyone scoring an olimpico, straight in from the corner flag"
+    },
+    {
+      "id": 1004727049,
+      "q": "home team wins with 6+ on-target efforts and 6+ corners"
+    },
+    {
+      "id": 1005189536,
+      "q": "full time result together with a corners line"
+    },
+    {
+      "id": 1005189537,
+      "q": "pick a goals line and a corners line in one bet"
+    },
+    {
+      "id": 2100011878,
+      "q": "all the corners across today's fixtures added up"
+    },
+    {
+      "id": 2100044967,
+      "q": "how many corners do the hosts win after the interval"
+    },
+    {
+      "id": 2100092354,
+      "q": "arsenal to net within a quarter of a minute of winning a corner"
+    },
+    {
+      "id": 2100109403,
+      "q": "who gets more corners during extra time"
+    },
+    {
+      "id": 1001159493,
+      "q": "next booking goes to which team, stake back if nobody gets carded"
+    },
+    {
+      "id": 1001159573,
+      "q": "a booking between the 30th and 39th minute"
+    },
+    {
+      "id": 1001159706,
+      "q": "card points after half time"
+    },
+    {
+      "id": 1001159856,
+      "q": "how many card points do the home side rack up"
+    },
+    {
+      "id": 1001239612,
+      "q": "more bookings before or after the break, points wise"
+    },
+    {
+      "id": 1001770648,
+      "q": "number of yellows in the match"
+    },
+    {
+      "id": 1001774532,
+      "q": "will the home team have a man sent off"
+    },
+    {
+      "id": 1001774541,
+      "q": "a red inside the first ten minutes"
+    },
+    {
+      "id": 1002114163,
+      "q": "which player gets booked earliest across these games"
+    },
+    {
+      "id": 1002133405,
+      "q": "anyone sent off in extra time"
+    },
+    {
+      "id": 1002506035,
+      "q": "card points with one team given a head start"
+    },
+    {
+      "id": 1002506161,
+      "q": "first team to reach 30 card points"
+    },
+    {
+      "id": 1002603598,
+      "q": "how many sendings off across the two semifinals combined"
+    },
+    {
+      "id": 1002702960,
+      "q": "bookings count in the second half"
+    },
+    {
+      "id": 1003269244,
+      "q": "someone on the bench getting a red"
+    },
+    {
+      "id": 1003430635,
+      "q": "which club picks up the fewest reds this season"
+    },
+    {
+      "id": 1004713992,
+      "q": "dirtiest team of the tournament, most bookings overall"
+    },
+    {
+      "id": 1005579232,
+      "q": "any coach getting marched off the touchline this season"
+    },
+    {
+      "id": 1007667999,
+      "q": "hamsik to score and get booked with kucka setting one up"
+    },
+    {
+      "id": 1007748376,
+      "q": "hamsik scores plus a card, and mak with the assist"
+    },
+    {
+      "id": 1007764420,
+      "q": "jota scoring and assisting while vertonghen and alderweireld both get booked"
+    },
+    {
+      "id": 1007794449,
+      "q": "spain win, morata nets, pedri sets one up and busquets goes in the book"
+    },
+    {
+      "id": 1007794460,
+      "q": "pedri scores and assists with chiellini and bonucci both booked"
+    },
+    {
+      "id": 2100011876,
+      "q": "yellows added up across every match today"
+    },
+    {
+      "id": 1001159978,
+      "q": "do the visitors convert the next pen"
+    },
+    {
+      "id": 1001877372,
+      "q": "will they give away a spot kick at some point this season"
+    },
+    {
+      "id": 1003146082,
+      "q": "next goal to come from the spot, refund if no more goals"
+    },
+    {
+      "id": 1003247833,
+      "q": "which team wins more free kicks before half time"
+    },
+    {
+      "id": 1003247835,
+      "q": "more free kicks between minute 15 and 30, which side"
+    },
+    {
+      "id": 1003247843,
+      "q": "free kick count for the hosts in the opening 45"
+    },
+    {
+      "id": 1003249042,
+      "q": "which team wins the next free kick"
+    },
+    {
+      "id": 1003258903,
+      "q": "how many goals straight from free kicks this tournament"
+    },
+    {
+      "id": 1004411242,
+      "q": "how many penalties does the away team score in the shootout"
+    },
+    {
+      "id": 1004411244,
+      "q": "exact shootout score, like 4-3"
+    },
+    {
+      "id": 1004459437,
+      "q": "tournament goal count, extra time counts but shootout pens don't"
+    },
+    {
+      "id": 1004702194,
+      "q": "a keeper scoring from his own box, own goals not counted"
+    },
+    {
+      "id": 1007676980,
+      "q": "will england finally win a shootout this tournament"
+    },
+    {
+      "id": 1007764603,
+      "q": "bale to convert his pen in the shootout"
+    },
+    {
+      "id": 1007764866,
+      "q": "does kroos put his shootout penalty away"
+    },
+    {
+      "id": 2100097662,
+      "q": "how many pens does the ref give in the match"
+    },
+    {
+      "id": 1001159861,
+      "q": "which team gets flagged offside more"
+    },
+    {
+      "id": 1001239638,
+      "q": "foul count for the home side"
+    },
+    {
+      "id": 1001239657,
+      "q": "what share of the ball do the hosts have"
+    },
+    {
+      "id": 1001240971,
+      "q": "who takes the opening throw of the game"
+    },
+    {
+      "id": 1001772887,
+      "q": "anyone rattling the woodwork without it going in"
+    },
+    {
+      "id": 1001957110,
+      "q": "how many efforts miss the goal completely"
+    },
+    {
+      "id": 1002153710,
+      "q": "total off-target shots if the game goes to extra time"
+    },
+    {
+      "id": 1002153721,
+      "q": "more offsides for which side, extra time included"
+    },
+    {
+      "id": 1002615262,
+      "q": "which of today's games has the most attempts on goal"
+    },
+    {
+      "id": 1002940287,
+      "q": "first throw between the 5th and 15th minute, or none at all"
+    },
+    {
+      "id": 1003042068,
+      "q": "next throw in once we're into the first period of extra time"
+    },
+    {
+      "id": 1003247808,
+      "q": "which keeper takes more goal kicks before the break"
+    },
+    {
+      "id": 1003247825,
+      "q": "goal kicks for the visitors between minutes 30 and 45"
+    },
+    {
+      "id": 1003247830,
+      "q": "race to five goal kicks, extra time counts, could be neither"
+    },
+    {
+      "id": 1003264116,
+      "q": "a goalie scoring direct from his own goal kick"
+    },
+    {
+      "id": 1004544392,
+      "q": "will the shot count end up odd or even"
+    },
+    {
+      "id": 1004673892,
+      "q": "attempts by the away team over the full 120"
+    },
+    {
+      "id": 1005064680,
+      "q": "on-target efforts between minute 20 and 29"
+    },
+    {
+      "id": 1007674387,
+      "q": "how early does the first sub come on"
+    },
+    {
+      "id": 1007684539,
+      "q": "fouls given away by the hosts with extra time on top"
+    },
+    {
+      "id": 1007694616,
+      "q": "dzyuba and cheryshev combined efforts on goal"
+    },
+    {
+      "id": 1007817310,
+      "q": "11 plus on target and the away team lifting the cup"
+    },
+    {
+      "id": 1008060971,
+      "q": "ibra and rebic together, how many times do they test the keeper"
+    },
+    {
+      "id": 2100014579,
+      "q": "tiago thomas to trouble the goalkeeper how many times"
+    },
+    {
+      "id": 2100041233,
+      "q": "both teams managing an effort on goal before half time"
+    },
+    {
+      "id": 1000505272,
+      "q": "exact scoreline at the break"
+    },
+    {
+      "id": 1001159780,
+      "q": "predict the final score, 2-1 to united"
+    },
+    {
+      "id": 1001240988,
+      "q": "the precise goal gap between the teams at full time"
+    },
+    {
+      "id": 1001293208,
+      "q": "who nets last combined with the exact final result"
+    },
+    {
+      "id": 1001475014,
+      "q": "winning by exactly two"
+    },
+    {
+      "id": 1001568619,
+      "q": "second half only, what's the exact score"
+    },
+    {
+      "id": 1001980219,
+      "q": "exact score after 120 minutes"
+    },
+    {
+      "id": 1004552219,
+      "q": "exact final score in the group match"
+    },
+    {
+      "id": 1004829690,
+      "q": "champion and runner up exactly, playoffs count"
+    },
+    {
+      "id": 1005046923,
+      "q": "leading at the break by exactly how many"
+    },
+    {
+      "id": 1005046925,
+      "q": "second half won by exactly what margin"
+    },
+    {
+      "id": 1005046963,
+      "q": "exact margin of victory after extra time"
+    },
+    {
+      "id": 2100109401,
+      "q": "extra time on its own, exact score"
+    },
+    {
+      "id": 1000105110,
+      "q": "who scores the opener, money back in a 0-0"
+    },
+    {
+      "id": 1001239590,
+      "q": "which team gets the game's final goal, or none at all"
+    },
+    {
+      "id": 1001240977,
+      "q": "what minute do the hosts break through for their first"
+    },
+    {
+      "id": 1001241016,
+      "q": "which of these teams ends up scoring fewest"
+    },
+    {
+      "id": 1001271977,
+      "q": "which team draws first blood in the game"
+    },
+    {
+      "id": 1001642860,
+      "q": "do the visitors find the net at all"
+    },
+    {
+      "id": 1001642861,
+      "q": "a goal inside the first half hour"
+    },
+    {
+      "id": 1001774526,
+      "q": "late late goal in added time"
+    },
+    {
+      "id": 1001903232,
+      "q": "opening scorer plus the exact final score, the double"
+    },
+    {
+      "id": 1001956104,
+      "q": "anyone putting five past their opponent this weekend"
+    },
+    {
+      "id": 1001961573,
+      "q": "first on the board in each of these fixtures"
+    },
+    {
+      "id": 1002114354,
+      "q": "which team scores the fastest goal from kickoff"
+    },
+    {
+      "id": 1003146061,
+      "q": "how's the next goal scored, header pen or open play, void if none"
+    },
+    {
+      "id": 1003267632,
+      "q": "the tournament's very last goal, header penalty or what"
+    },
+    {
+      "id": 1003337557,
+      "q": "fewest goals over the regular season, which club"
+    },
+    {
+      "id": 1004154937,
+      "q": "home side to nod one in"
+    },
+    {
+      "id": 1004154943,
+      "q": "away team scoring with a header"
+    },
+    {
+      "id": 1004699015,
+      "q": "a goal in the dying added minutes of extra time"
+    },
+    {
+      "id": 1004728665,
+      "q": "hosts strike first before the break, visitors first after, and five goals plus"
+    },
+    {
+      "id": 2100006003,
+      "q": "first side to put one past copenhagen over their next three league games"
+    },
+    {
+      "id": 1001159633,
+      "q": "how many do the visitors score"
+    },
+    {
+      "id": 1001159926,
+      "q": "how many goals in the game tonight"
+    },
+    {
+      "id": 1001159967,
+      "q": "goal count for the home team"
+    },
+    {
+      "id": 1001241025,
+      "q": "how many will united score all season"
+    },
+    {
+      "id": 1001242984,
+      "q": "more goals before or after the break"
+    },
+    {
+      "id": 1001537187,
+      "q": "add up every game on the card, goals overall"
+    },
+    {
+      "id": 1001711098,
+      "q": "city's goal tally for the whole champions league run"
+    },
+    {
+      "id": 1001892836,
+      "q": "how many goals at the world cup overall"
+    },
+    {
+      "id": 1001892837,
+      "q": "own goal count for the entire euros"
+    },
+    {
+      "id": 1001980239,
+      "q": "match goals counting the extra half hour"
+    },
+    {
+      "id": 1001980242,
+      "q": "home side's goals across 120 minutes"
+    },
+    {
+      "id": 1002109521,
+      "q": "which stadium sees the fewest goals this tournament"
+    },
+    {
+      "id": 1002114151,
+      "q": "goals added together across the whole round of fixtures"
+    },
+    {
+      "id": 1002567388,
+      "q": "visitors to score exactly two"
+    },
+    {
+      "id": 1003194956,
+      "q": "away goals before half time, how many"
+    },
+    {
+      "id": 1003194958,
+      "q": "hosts' goal count in the opening 45"
+    },
+    {
+      "id": 1003194959,
+      "q": "how many do the home team get after the restart"
+    },
+    {
+      "id": 1003272613,
+      "q": "their goal tally just for the group games"
+    },
+    {
+      "id": 1003371562,
+      "q": "team goals over the regular campaign, playoffs not counted"
+    },
+    {
+      "id": 1003831128,
+      "q": "league wide goals this season ignoring the playoff round"
+    },
+    {
+      "id": 1004552220,
+      "q": "match to have exactly three goals"
+    },
+    {
+      "id": 1004561501,
+      "q": "combined goals just in the listed fixtures"
+    },
+    {
+      "id": 1004670634,
+      "q": "first half goals across every game today, added up"
+    },
+    {
+      "id": 1008020145,
+      "q": "how many does malmö score in their group"
+    },
+    {
+      "id": 2100047425,
+      "q": "how many different players get on the scoresheet"
+    },
+    {
+      "id": 2100092368,
+      "q": "goal count in the 15 to 30 minute window"
+    },
+    {
+      "id": 2100093908,
+      "q": "all of today's away sides, goals between them"
+    },
+    {
+      "id": 2100095461,
+      "q": "visitor goals during a ten minute spell of the game"
+    },
+    {
+      "id": 2100095625,
+      "q": "haaland or salah, who hits double figures in the league first"
+    },
+    {
+      "id": 2100097912,
+      "q": "how many in extra time alone"
+    },
+    {
+      "id": 2100100120,
+      "q": "home team goals just in the extra 30"
+    },
+    {
+      "id": 2100100121,
+      "q": "away side to score how many during extra time"
+    },
+    {
+      "id": 1001241028,
+      "q": "will they get out of their group"
+    },
+    {
+      "id": 1001320509,
+      "q": "which sides end up in the bottom two"
+    },
+    {
+      "id": 1001370411,
+      "q": "can they make the last eight"
+    },
+    {
+      "id": 1001518843,
+      "q": "where do spurs end up in the table"
+    },
+    {
+      "id": 1001627244,
+      "q": "who takes third spot in the league"
+    },
+    {
+      "id": 1001728706,
+      "q": "which english side goes furthest in the competition"
+    },
+    {
+      "id": 1001728707,
+      "q": "furthest run by a german club this tournament"
+    },
+    {
+      "id": 1001955975,
+      "q": "biggest points haul across the groups, which team"
+    },
+    {
+      "id": 1002055416,
+      "q": "will a swedish player put through his own net at the tournament"
+    },
+    {
+      "id": 1002520396,
+      "q": "do they sneak into the playoff spots"
+    },
+    {
+      "id": 1002703415,
+      "q": "how many of the promoted sides open against a top four club"
+    },
+    {
+      "id": 1003217206,
+      "q": "can they wrap up the title this weekend"
+    },
+    {
+      "id": 1003218195,
+      "q": "the exact pair going through from the group"
+    },
+    {
+      "id": 1003245296,
+      "q": "which two make the final"
+    },
+    {
+      "id": 1003267513,
+      "q": "total assists across the whole tournament"
+    },
+    {
+      "id": 1003369598,
+      "q": "going the entire season winless, derby county style"
+    },
+    {
+      "id": 1003884431,
+      "q": "the team that lands exactly seventh"
+    },
+    {
+      "id": 1004315271,
+      "q": "will italy actually make it to the world cup this time"
+    },
+    {
+      "id": 1004331841,
+      "q": "getting through to the next round of the playoffs"
+    },
+    {
+      "id": 1004699099,
+      "q": "every single side scoring on the first group matchday, all 16 games"
+    },
+    {
+      "id": 1004829693,
+      "q": "pick the champion and the leading scorer together"
+    },
+    {
+      "id": 1005608989,
+      "q": "bottom two after the regular season only"
+    },
+    {
+      "id": 1006793528,
+      "q": "who's taking the cup home"
+    },
+    {
+      "id": 1007477783,
+      "q": "top three finish plus the most shutouts in allsvenskan"
+    },
+    {
+      "id": 2100030087,
+      "q": "how many swedish clubs reach a european group phase"
+    },
+    {
+      "id": 2100054822,
+      "q": "an all italian final"
+    },
+    {
+      "id": 2100062245,
+      "q": "city to win literally everything, the quadruple"
+    },
+    {
+      "id": 2100062476,
+      "q": "league title and the league cup in the same season"
+    },
+    {
+      "id": 2100062480,
+      "q": "the domestic treble, league and both cups"
+    },
+    {
+      "id": 2100108271,
+      "q": "spain winning all three of europe's cups in the same season"
+    },
+    {
+      "id": 2100112425,
+      "q": "arsenal bottling the title while spurs avoid the drop"
+    },
+    {
+      "id": 1004974858,
+      "q": "last scorer for the home side"
+    },
+    {
+      "id": 1004974866,
+      "q": "final goal for the visitors, who gets it"
+    },
+    {
+      "id": 1006032756,
+      "q": "eredivisie manager of the year"
+    },
+    {
+      "id": 1007012955,
+      "q": "is zlatan making sweden's euros squad"
+    },
+    {
+      "id": 1007383398,
+      "q": "zlatan called up for the qualifiers against georgia and kosovo"
+    },
+    {
+      "id": 1001159711,
+      "q": "betting with a one goal head start"
+    },
+    {
+      "id": 1001224738,
+      "q": "made up fixture where my team just needs to not lose"
+    },
+    {
+      "id": 1001568620,
+      "q": "first half line spotting one team a goal, with the draw included"
+    },
+    {
+      "id": 1001604934,
+      "q": "who wins it all once the playoffs are done"
+    },
+    {
+      "id": 1001980224,
+      "q": "goal head start applied over the full 120"
+    },
+    {
+      "id": 1002208811,
+      "q": "outright winner once the head starts are applied"
+    },
+    {
+      "id": 1002254479,
+      "q": "quarter goal line for the opening half"
+    },
+    {
+      "id": 1002750017,
+      "q": "serie a winner if juve and roma don't count"
+    },
+    {
+      "id": 1003300562,
+      "q": "who tops the eredivisie leaving ajax out"
+    },
+    {
+      "id": 1003318821,
+      "q": "ligue 1 title with psg removed"
+    },
+    {
+      "id": 1003324068,
+      "q": "scottish title ignoring the old firm"
+    },
+    {
+      "id": 1003387674,
+      "q": "turkish league winner, fener not counted"
+    },
+    {
+      "id": 1003729324,
+      "q": "champion with besiktas taken out of the running"
+    },
+    {
+      "id": 1003826304,
+      "q": "mls cup minus seattle and toronto"
+    },
+    {
+      "id": 1004010822,
+      "q": "regular season winner with fcsb not counted"
+    },
+    {
+      "id": 1004046367,
+      "q": "dutch title excluding the big three"
+    },
+    {
+      "id": 1004115279,
+      "q": "danish league best of the rest, no fck or brondby"
+    },
+    {
+      "id": 1004289607,
+      "q": "champion if düsseldorf are left out"
+    },
+    {
+      "id": 1004461601,
+      "q": "norwegian title ignoring rosenborg and molde"
+    },
+    {
+      "id": 1004523520,
+      "q": "romanian league with the top two removed"
+    },
+    {
+      "id": 1004532894,
+      "q": "allsvenskan winner excluding helsingborg"
+    },
+    {
+      "id": 1004681720,
+      "q": "the tournament's top scorer getting every one of his goals with his head"
+    },
+    {
+      "id": 1004712875,
+      "q": "map head start for the underdog"
+    },
+    {
+      "id": 1004714521,
+      "q": "the boosted price on tonight's winner"
+    },
+    {
+      "id": 1004825852,
+      "q": "premier league best of the rest behind city and liverpool"
+    },
+    {
+      "id": 1004851312,
+      "q": "bundesliga winner leaving köln out"
+    },
+    {
+      "id": 1004879795,
+      "q": "spanish league winner with malaga and depor removed"
+    },
+    {
+      "id": 1005211214,
+      "q": "which confederation does the winner come from, uefa or conmebol"
+    },
+    {
+      "id": 1006086031,
+      "q": "top spot if halmstad and örgryte are excluded"
+    },
+    {
+      "id": 1006158146,
+      "q": "league winner not counting molde"
+    },
+    {
+      "id": 1006673629,
+      "q": "eredivisie regular season, best team outside the big four"
+    },
+    {
+      "id": 2100062844,
+      "q": "south african title with sundowns taken out"
+    },
+    {
+      "id": 2100109405,
+      "q": "goal head start just for the extra time period"
+    },
+    {
+      "id": 1004544407,
+      "q": "who lets fly the most times in the match"
+    },
+    {
+      "id": 1006674743,
+      "q": "papu gomez, how often does he hit the target"
+    },
+    {
+      "id": 1007684725,
+      "q": "haaland to test the keeper from outside the area"
+    },
+    {
+      "id": 1007684752,
+      "q": "kane forcing a save with a header, how many times"
+    },
+    {
+      "id": 1007714003,
+      "q": "pandev to work the goalkeeper, how many times"
+    },
+    {
+      "id": 2100005175,
+      "q": "raphinha attempts that hit the target"
+    },
+    {
+      "id": 2100009212,
+      "q": "how often does ryan kent force a save"
+    },
+    {
+      "id": 2100009600,
+      "q": "thiago alcantara efforts on goal"
+    },
+    {
+      "id": 2100010166,
+      "q": "piatek shots that test the keeper"
+    },
+    {
+      "id": 2100014175,
+      "q": "beto on target how many times tonight"
+    },
+    {
+      "id": 2100018174,
+      "q": "msakni to hit the target in the game"
+    },
+    {
+      "id": 2100018175,
+      "q": "issam jebali, efforts the keeper has to deal with"
+    },
+    {
+      "id": 2100018178,
+      "q": "jaziri attempts on goal count"
+    },
+    {
+      "id": 2100018248,
+      "q": "darko lazovic, any efforts forcing a stop"
+    },
+    {
+      "id": 2100018273,
+      "q": "maxi gomez to trouble the goalkeeper"
+    },
+    {
+      "id": 2100018547,
+      "q": "richarlison and raphinha combined attempts on target"
+    },
+    {
+      "id": 2100018667,
+      "q": "al-buraikan total attempts, on or off"
+    },
+    {
+      "id": 2100018760,
+      "q": "how many times does selim amallah shoot"
+    },
+    {
+      "id": 2100018841,
+      "q": "hwang hee-chan shot count"
+    },
+    {
+      "id": 2100018854,
+      "q": "number of efforts richarlison gets away"
+    },
+    {
+      "id": 2100019512,
+      "q": "tim weah attempts in the match"
+    },
+    {
+      "id": 2100034283,
+      "q": "vinicius efforts that make the keeper work"
+    },
+    {
+      "id": 2100085317,
+      "q": "next player to force a save, refund if nobody does"
+    },
+    {
+      "id": 2100088730,
+      "q": "bellingham how many shots all game"
+    },
+    {
+      "id": 2100094011,
+      "q": "pedri and raphinha both to manage at least one on target"
+    },
+    {
+      "id": 1001159667,
+      "q": "will casemiro go in the book tonight"
+    },
+    {
+      "id": 1001240965,
+      "q": "mbappé to score and pick up a yellow in the same game"
+    },
+    {
+      "id": 1001489271,
+      "q": "ramos to be the first one shown red"
+    },
+    {
+      "id": 1001517978,
+      "q": "which player collects the most bookings this season"
+    },
+    {
+      "id": 1001839907,
+      "q": "starts on the bench but still gets sent off"
+    },
+    {
+      "id": 1002003246,
+      "q": "neymar booked for a dive"
+    },
+    {
+      "id": 1002077068,
+      "q": "earliest booking of the match, which player"
+    },
+    {
+      "id": 1002100940,
+      "q": "pepe to see red at some point in the groups"
+    },
+    {
+      "id": 1002188949,
+      "q": "how many yellows does casemiro rack up this tournament"
+    },
+    {
+      "id": 1002661913,
+      "q": "comes off the bench, scores, gets booked and his team still wins"
+    },
+    {
+      "id": 1002661914,
+      "q": "super sub scores and gets carded but they lose anyway"
+    },
+    {
+      "id": 1003170347,
+      "q": "bookings tally for xhaka across the whole competition"
+    },
+    {
+      "id": 1004799267,
+      "q": "haaland to score, set one up and go in the book"
+    },
+    {
+      "id": 1004833953,
+      "q": "how many times does fernandinho get carded this campaign"
+    },
+    {
+      "id": 2100018341,
+      "q": "any player off the bench picking up a booking"
+    },
+    {
+      "id": 1001159656,
+      "q": "who completes the most passes in the match"
+    },
+    {
+      "id": 1001159690,
+      "q": "most kicked player on the pitch, grealish?"
+    },
+    {
+      "id": 1001159742,
+      "q": "dirtiest player tonight, most fouls given away"
+    },
+    {
+      "id": 1001240968,
+      "q": "fouls conceded by rodri tonight"
+    },
+    {
+      "id": 1001240969,
+      "q": "how many times does messi get fouled"
+    },
+    {
+      "id": 1001243170,
+      "q": "who's pulled up for the most fouls per opta"
+    },
+    {
+      "id": 1001809658,
+      "q": "kanté tackle count for the game"
+    },
+    {
+      "id": 1001809659,
+      "q": "how many times is werner caught offside"
+    },
+    {
+      "id": 1002154385,
+      "q": "casemiro's total fouls if the match goes to extra time"
+    },
+    {
+      "id": 1002154386,
+      "q": "times saka gets fouled, extra time included"
+    },
+    {
+      "id": 1002154387,
+      "q": "kroos passing accuracy over the whole 120"
+    },
+    {
+      "id": 1002154388,
+      "q": "offside flags against lukaku, extra time counting"
+    },
+    {
+      "id": 1002154390,
+      "q": "the match's biggest fouler with extra time included"
+    },
+    {
+      "id": 1002154391,
+      "q": "most fouled man over 120 minutes"
+    },
+    {
+      "id": 1003002182,
+      "q": "best passing accuracy on the pitch, who"
+    },
+    {
+      "id": 1003400481,
+      "q": "how often does mbappé get flagged across the tournament"
+    },
+    {
+      "id": 1004670974,
+      "q": "modric challenges won and lost"
+    },
+    {
+      "id": 1004784651,
+      "q": "top tackler of the game with extra time counted"
+    },
+    {
+      "id": 1007684756,
+      "q": "free kicks given away by fred, extra time included"
+    },
+    {
+      "id": 1007684761,
+      "q": "fouls drawn by neymar in the game"
+    },
+    {
+      "id": 1007684762,
+      "q": "how many fouls does vinicius win over the 120"
+    },
+    {
+      "id": 1007684769,
+      "q": "player drawing the most fouls, extra time too"
+    },
+    {
+      "id": 1007684777,
+      "q": "bruno's fouls both ways, given and won"
+    },
+    {
+      "id": 2100015083,
+      "q": "number of free kicks pedri earns"
+    },
+    {
+      "id": 2100112504,
+      "q": "rodri completed pass total per opta"
+    },
+    {
+      "id": 1001159641,
+      "q": "who outscores everyone else on the pitch"
+    },
+    {
+      "id": 1001159803,
+      "q": "lewandowski to bag a hat trick"
+    },
+    {
+      "id": 1001159997,
+      "q": "haaland scoring a screamer from distance"
+    },
+    {
+      "id": 1001160026,
+      "q": "kane to net twice or more"
+    },
+    {
+      "id": 1001326635,
+      "q": "salah to score after the break"
+    },
+    {
+      "id": 1001337423,
+      "q": "will mbappé convert from the spot"
+    },
+    {
+      "id": 1001376413,
+      "q": "who ends the season as united's leading scorer"
+    },
+    {
+      "id": 1001482031,
+      "q": "messi curling one in from a free kick"
+    },
+    {
+      "id": 1001489270,
+      "q": "new signing to score on his first appearance"
+    },
+    {
+      "id": 1001651914,
+      "q": "club's leading scorer across all competitions, who"
+    },
+    {
+      "id": 1001774492,
+      "q": "anyone in the match grabbing a brace"
+    },
+    {
+      "id": 1002090442,
+      "q": "maguire scoring at the wrong end at some point this season"
+    },
+    {
+      "id": 1002804695,
+      "q": "leading scorer to be a frenchman, mbappé or griezmann"
+    },
+    {
+      "id": 1002899070,
+      "q": "a proper poacher's finish from point blank range"
+    },
+    {
+      "id": 1002899074,
+      "q": "the perfect hat trick, left foot right foot and a header"
+    },
+    {
+      "id": 1003113374,
+      "q": "top scorer race with higuain not counted"
+    },
+    {
+      "id": 1003269668,
+      "q": "scoring with his very first touch of the tournament"
+    },
+    {
+      "id": 1003296986,
+      "q": "lafferty to grab northern ireland's next goal"
+    },
+    {
+      "id": 1003584792,
+      "q": "the winner to come from someone off the bench"
+    },
+    {
+      "id": 1004556266,
+      "q": "who tops the scoring charts in the group phase"
+    },
+    {
+      "id": 1005153919,
+      "q": "who nets the game's final goal"
+    },
+    {
+      "id": 1007621203,
+      "q": "isak to score anytime, extra time counts"
+    },
+    {
+      "id": 2100018082,
+      "q": "the top scorer to play his club football in france"
+    },
+    {
+      "id": 2100018083,
+      "q": "leading scorer to come from a german club"
+    },
+    {
+      "id": 2100109433,
+      "q": "son to score or set one up during extra time"
+    },
+    {
+      "id": 2100112498,
+      "q": "an assist from either de bruyne or odegaard"
+    },
+    {
+      "id": 2100115368,
+      "q": "de frutos or alemão, one of them to find the net"
+    },
+    {
+      "id": 2100116178,
+      "q": "carnejy antoine or wilde-donald guerrier to get a goal between them"
+    },
+    {
+      "id": 1001587771,
+      "q": "alisson to keep out a pen"
+    },
+    {
+      "id": 1001665324,
+      "q": "who do the players vote as england's best this season"
+    },
+    {
+      "id": 1001800539,
+      "q": "gyökeres in the starting lineup for the opener"
+    },
+    {
+      "id": 1002055355,
+      "q": "will the new lad be in the first eleven on opening day"
+    },
+    {
+      "id": 1002110722,
+      "q": "the tournament's best youngster award, who takes it"
+    },
+    {
+      "id": 1002119104,
+      "q": "first man hooked, who comes off earliest"
+    },
+    {
+      "id": 1002476925,
+      "q": "how many shutouts does courtois keep this season"
+    },
+    {
+      "id": 1003354328,
+      "q": "assist king of the competition, playoffs included"
+    },
+    {
+      "id": 1003366829,
+      "q": "most assists over the regular season only"
+    },
+    {
+      "id": 1003367081,
+      "q": "what country is the leading scorer from, regular season"
+    },
+    {
+      "id": 1004119509,
+      "q": "de bruyne assist total for the whole campaign"
+    },
+    {
+      "id": 1004136022,
+      "q": "long range goals by the player across league, cups and europe combined"
+    },
+    {
+      "id": 1004670973,
+      "q": "how many sprints does mbappé clock in the match"
+    },
+    {
+      "id": 1004681724,
+      "q": "a tournament goal from someone who's never scored for his country"
+    },
+    {
+      "id": 1005192434,
+      "q": "leading scorer at the women's world cup"
+    },
+    {
+      "id": 1007637397,
+      "q": "how many does mbappé get just in the group games"
+    },
+    {
+      "id": 1001576426,
+      "q": "will he get on the pitch at some point during the 90"
+    },
+    {
+      "id": 1001903237,
+      "q": "player to score anytime and his team to take the win"
+    },
+    {
+      "id": 1002215582,
+      "q": "league and cup double in the same season"
+    },
+    {
+      "id": 1003269321,
+      "q": "anyone dishing out three assists in a single game"
+    },
+    {
+      "id": 1003871142,
+      "q": "that boosted combo offer on the match"
+    },
+    {
+      "id": 1004105470,
+      "q": "doing the double over union berlin this season"
+    },
+    {
+      "id": 1004450517,
+      "q": "any swede making the tournament's all star eleven"
+    },
+    {
+      "id": 1007465489,
+      "q": "malmö going the whole allsvenskan season unbeaten"
+    }
+  ]
+}

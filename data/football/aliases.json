@@ -36,6 +36,10 @@
     "anytime goalscorer":    { "type": "criterion_concept", "name": "To Score" },
     "score the opener":      { "type": "criterion_concept", "name": "First Goal Scorer" },
 
+    "win or draw":           { "type": "criterion_concept", "name": "Double Chance" },
+    "set up a goal":         { "type": "criterion_concept", "name": "To Assist" },
+    "booked":                { "type": "criterion_concept", "name": "To Get a Card" },
+
     "passing":               { "type": "criterion_concept", "name": "Player's passes completed" },
     "passing accuracy":      { "type": "criterion_concept", "name": "Player's pass completion %" },
     "pass completion":       { "type": "criterion_concept", "name": "Player's pass completion %" },
@@ -54,7 +58,8 @@
     "golden glove":          { "type": "criterion_concept", "name": "Golden Glove Winner" },
     "asian total":           { "type": "criterion_concept", "name": "Asian Total" },
     "asian goals":           { "type": "criterion_concept", "name": "Asian Total" },
-    "go to extra time":      { "type": "criterion_concept", "name": "Extra Time" },
+    "go to extra time":      { "type": "criterion_concept", "name": "Match to go into Extra Time" },
+    "penalty to be given":   { "type": "criterion_concept", "name": "Penalty Kick awarded" },
     "penalty awarded":       { "type": "criterion_concept", "name": "Penalty Kick awarded" },
     "scorer by nation":      { "type": "criterion_concept", "name": "Nationality of Top Goalscorer" },
     "goalscorer by nation":  { "type": "criterion_concept", "name": "Nationality of Top Goalscorer" },

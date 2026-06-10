@@ -55,6 +55,9 @@ const AttrFilter = z
 const Selector = z.object({
   subject: Subject,
   market_concept: z.string().min(1),
+  // Normalized match-period facet (sport-agnostic). The grounder's period penalty consumes it; omitted ->
+  // the grounder falls back to its catalog-name regex (`periodOf`). Enum MUST mirror ground-market's `Period`.
+  period: z.enum(["full", "first_half", "second_half", "extra_time"]).optional(),
   line: Line.optional(),
   odds: Odds.optional(),
   attrFilter: AttrFilter.optional(),
