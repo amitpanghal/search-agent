@@ -1,5 +1,5 @@
 {
- "updatedAt": "2026-06-08T12:15:33.336Z",
+ "updatedAt": "2026-06-11T19:40:35.939Z",
  "competitions": {
   "1000093381": {
    "label": "Champions League",
@@ -686,10 +686,10 @@
    "nCompEvents": 0
   },
   "2010133908": {
-   "label": "World Cup 2026",
-   "lastPulled": "2026-06-08T12:15:33.336Z",
-   "nFixtureEvents": 72,
-   "nCompEvents": 67
+   "label": "WC 2026",
+   "lastPulled": "2026-06-11T19:40:35.939Z",
+   "nFixtureEvents": 71,
+   "nCompEvents": 60
   },
   "2010134225": {
    "label": "Australia / NSW League 1",
@@ -749,7 +749,7 @@
  "criterions": {
   "1000316018": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093399": {
      "fixtureEvents": 8,
@@ -1060,7 +1060,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 72,
+     "fixtureEvents": 71,
      "compEvents": 0
     },
     "2010134225": {
@@ -1080,7 +1080,7 @@
   },
   "1000505272": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093399": {
      "fixtureEvents": 8,
@@ -1391,7 +1391,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 72,
+     "fixtureEvents": 71,
      "compEvents": 0
     },
     "2010134225": {
@@ -1411,18 +1411,18 @@
   },
   "1001159487": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
-   "label": "Total Offsides by Netherlands (Settled using Opta data)"
+   "label": "Total Offsides by South Korea (Settled using Opta data)"
   },
   "1001159495": {
    "firstSeen": "2026-06-08T12:15:33.336Z",
@@ -1437,18 +1437,18 @@
   },
   "1001159499": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
      "fixtureEvents": 0,
-     "compEvents": 48
+     "compEvents": 44
     }
    },
    "label": "Group Stage points"
   },
   "1001159529": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 4,
@@ -1463,7 +1463,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -1471,7 +1471,7 @@
   },
   "1001159532": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093399": {
      "fixtureEvents": 8,
@@ -1782,7 +1782,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 72,
+     "fixtureEvents": 71,
      "compEvents": 0
     },
     "2010134225": {
@@ -1802,7 +1802,7 @@
   },
   "1001159598": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 12,
@@ -1861,11 +1861,11 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
-   "label": "Total Corners by Liverpool FC Montevideo"
+   "label": "Total Corners by South Korea"
   },
   "1001159599": {
    "firstSeen": "2026-06-08T12:15:33.336Z",
@@ -1880,7 +1880,7 @@
   },
   "1001159600": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000449742": {
      "fixtureEvents": 1,
@@ -1895,7 +1895,7 @@
   },
   "1001159610": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 12,
@@ -1954,7 +1954,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -1962,29 +1962,29 @@
   },
   "1001159620": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
-   "label": "Total Offsides by Uzbekistan (Settled using Opta data)"
+   "label": "Total Offsides by Czech Republic (Settled using Opta data)"
   },
   "1001159628": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -1992,7 +1992,7 @@
   },
   "1001159633": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093399": {
      "fixtureEvents": 8,
@@ -2303,7 +2303,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 72,
+     "fixtureEvents": 71,
      "compEvents": 0
     },
     "2010134225": {
@@ -2319,11 +2319,22 @@
      "compEvents": 0
     }
    },
-   "label": "Total Goals by Union Omaha"
+   "label": "Total Goals by Bosnia & Herzegovina"
+  },
+  "1001159641": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 6,
+     "compEvents": 1
+    }
+   },
+   "label": "To score most goals"
   },
   "1001159666": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093399": {
      "fixtureEvents": 8,
@@ -2662,7 +2673,7 @@
   },
   "1001159667": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
@@ -2673,7 +2684,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -2681,7 +2692,7 @@
   },
   "1001159668": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093399": {
      "fixtureEvents": 8,
@@ -2992,7 +3003,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 72,
+     "fixtureEvents": 71,
      "compEvents": 0
     },
     "2010134225": {
@@ -3012,7 +3023,7 @@
   },
   "1001159697": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 12,
@@ -3071,15 +3082,15 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
-   "label": "Total Corners by Cerro Largo FC"
+   "label": "Total Corners by Czech Republic"
   },
   "1001159711": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 12,
@@ -3138,7 +3149,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -3146,7 +3157,7 @@
   },
   "1001159730": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
@@ -3161,7 +3172,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -3169,7 +3180,7 @@
   },
   "1001159750": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 14,
@@ -3540,7 +3551,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     },
     "2010134225": {
@@ -3572,7 +3583,7 @@
   },
   "1001159780": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093399": {
      "fixtureEvents": 8,
@@ -3891,7 +3902,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 72,
+     "fixtureEvents": 71,
      "compEvents": 0
     },
     "2010134225": {
@@ -3911,7 +3922,7 @@
   },
   "1001159807": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 12,
@@ -3970,7 +3981,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -3978,10 +3989,10 @@
   },
   "1001159808": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
-     "fixtureEvents": 36,
+     "fixtureEvents": 25,
      "compEvents": 0
     }
    },
@@ -3989,7 +4000,7 @@
   },
   "1001159820": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
@@ -4004,7 +4015,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -4012,7 +4023,7 @@
   },
   "1001159826": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093399": {
      "fixtureEvents": 8,
@@ -4323,7 +4334,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 72,
+     "fixtureEvents": 71,
      "compEvents": 0
     },
     "2010134225": {
@@ -4343,7 +4354,7 @@
   },
   "1001159830": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093399": {
      "fixtureEvents": 8,
@@ -4654,7 +4665,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 72,
+     "fixtureEvents": 71,
      "compEvents": 0
     },
     "2010134225": {
@@ -4672,9 +4683,20 @@
    },
    "label": "Half Time/Full Time"
   },
+  "1001159836": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 2,
+     "compEvents": 0
+    }
+   },
+   "label": "To be included in starting XI"
+  },
   "1001159858": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093399": {
      "fixtureEvents": 8,
@@ -5081,7 +5103,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 72,
+     "fixtureEvents": 71,
      "compEvents": 0
     },
     "2010134225": {
@@ -5117,7 +5139,7 @@
   },
   "1001159884": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093399": {
      "fixtureEvents": 8,
@@ -5188,7 +5210,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 72,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -5196,7 +5218,7 @@
   },
   "1001159886": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 7,
@@ -5223,7 +5245,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -5231,7 +5253,7 @@
   },
   "1001159897": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 12,
@@ -5290,7 +5312,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -5298,7 +5320,7 @@
   },
   "1001159922": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093399": {
      "fixtureEvents": 8,
@@ -5741,7 +5763,7 @@
   },
   "1001159926": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093399": {
      "fixtureEvents": 8,
@@ -6148,7 +6170,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 72,
+     "fixtureEvents": 71,
      "compEvents": 0
     },
     "2010134225": {
@@ -6184,7 +6206,7 @@
   },
   "1001159938": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
@@ -6195,7 +6217,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -6203,7 +6225,7 @@
   },
   "1001159951": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
@@ -6218,7 +6240,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -6226,18 +6248,18 @@
   },
   "1001159964": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
      "fixtureEvents": 0,
-     "compEvents": 48
+     "compEvents": 44
     }
    },
    "label": "Tournament progress by the team"
   },
   "1001159967": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093399": {
      "fixtureEvents": 8,
@@ -6548,7 +6570,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 72,
+     "fixtureEvents": 71,
      "compEvents": 0
     },
     "2010134225": {
@@ -6564,11 +6586,11 @@
      "compEvents": 0
     }
    },
-   "label": "Total Goals by Charlotte Independence"
+   "label": "Total Goals by Canada"
   },
   "1001159972": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
@@ -6583,7 +6605,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -6591,7 +6613,7 @@
   },
   "1001159997": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
@@ -6606,7 +6628,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -6614,10 +6636,10 @@
   },
   "1001160024": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
-     "fixtureEvents": 36,
+     "fixtureEvents": 25,
      "compEvents": 0
     }
    },
@@ -6625,7 +6647,7 @@
   },
   "1001160038": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093399": {
      "fixtureEvents": 8,
@@ -6640,7 +6662,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 36,
+     "fixtureEvents": 25,
      "compEvents": 0
     }
    },
@@ -6648,7 +6670,7 @@
   },
   "1001224081": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093399": {
      "fixtureEvents": 8,
@@ -6959,7 +6981,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 72,
+     "fixtureEvents": 71,
      "compEvents": 0
     },
     "2010134225": {
@@ -6980,12 +7002,7 @@
   "1001225055": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Best Finishing Position"
   },
   "1001228447": {
@@ -7002,17 +7019,12 @@
   "1001228506": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Team to Concede Most Goals"
   },
   "1001228509": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
      "fixtureEvents": 0,
@@ -7023,18 +7035,18 @@
   },
   "1001232823": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
      "fixtureEvents": 0,
-     "compEvents": 48
+     "compEvents": 43
     }
    },
    "label": "To reach the Final"
   },
   "1001239605": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
@@ -7049,7 +7061,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -7057,11 +7069,11 @@
   },
   "1001241010": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
      "fixtureEvents": 0,
-     "compEvents": 48
+     "compEvents": 43
     }
    },
    "label": "To reach the Semi Final"
@@ -7069,21 +7081,16 @@
   "1001241013": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Teams to contest the Final"
   },
   "1001241014": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
      "fixtureEvents": 0,
-     "compEvents": 13
+     "compEvents": 11
     }
    },
    "label": "Exact Finishing Order (1st & 2nd placed)"
@@ -7091,43 +7098,33 @@
   "1001241016": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Team to Score Least Goals"
   },
   "1001241017": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Team to Concede Least Goals"
   },
   "1001241028": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
      "fixtureEvents": 0,
-     "compEvents": 48
+     "compEvents": 44
     }
    },
    "label": "To qualify from Group Stage"
   },
   "1001241031": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
      "fixtureEvents": 0,
-     "compEvents": 12
+     "compEvents": 11
     }
    },
    "label": "Team in bottom place"
@@ -7135,28 +7132,18 @@
   "1001241033": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Group to feature Tournament Winner"
   },
   "1001241034": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Tournament Winner to be a First Time Winner"
   },
   "1001243173": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 14,
@@ -7455,7 +7442,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 72,
+     "fixtureEvents": 71,
      "compEvents": 0
     },
     "2010134225": {
@@ -7486,7 +7473,7 @@
   },
   "1001263164": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 4,
@@ -7505,7 +7492,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -7513,7 +7500,7 @@
   },
   "1001264082": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
@@ -7528,7 +7515,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -7536,7 +7523,7 @@
   },
   "1001304945": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000094569": {
      "fixtureEvents": 0,
@@ -7560,39 +7547,34 @@
   "1001318149": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Number of penalties awarded"
   },
   "1001370411": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
      "fixtureEvents": 0,
-     "compEvents": 48
+     "compEvents": 43
     }
    },
    "label": "To reach the Quarter Final"
   },
   "1001376413": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
      "fixtureEvents": 0,
-     "compEvents": 48
+     "compEvents": 44
     }
    },
    "label": "To score most goals in the Competition for the Team"
   },
   "1001421320": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 12,
@@ -7663,7 +7645,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 72,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -7671,7 +7653,7 @@
   },
   "1001421321": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 12,
@@ -7730,7 +7712,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 72,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -7738,10 +7720,10 @@
   },
   "1001475014": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
-     "fixtureEvents": 36,
+     "fixtureEvents": 25,
      "compEvents": 0
     }
    },
@@ -7750,17 +7732,12 @@
   "1001518952": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "To give most assists in the Competition"
   },
   "1001568619": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093399": {
      "fixtureEvents": 8,
@@ -7775,7 +7752,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 36,
+     "fixtureEvents": 25,
      "compEvents": 0
     }
    },
@@ -7783,7 +7760,7 @@
   },
   "1001568620": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093399": {
      "fixtureEvents": 6,
@@ -7826,7 +7803,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 64,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -7834,10 +7811,10 @@
   },
   "1001568621": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
-     "fixtureEvents": 36,
+     "fixtureEvents": 25,
      "compEvents": 0
     }
    },
@@ -7845,7 +7822,7 @@
   },
   "1001613138": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
      "fixtureEvents": 0,
@@ -7857,17 +7834,12 @@
   "1001613139": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Golden Glove Winner"
   },
   "1001621941": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
      "fixtureEvents": 0,
@@ -7889,7 +7861,7 @@
   },
   "1001642858": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093399": {
      "fixtureEvents": 8,
@@ -8176,7 +8148,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 72,
+     "fixtureEvents": 71,
      "compEvents": 0
     },
     "2010134225": {
@@ -8196,7 +8168,7 @@
   },
   "1001642863": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 12,
@@ -8255,7 +8227,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 72,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -8263,29 +8235,29 @@
   },
   "1001642864": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
-     "fixtureEvents": 36,
+     "fixtureEvents": 25,
      "compEvents": 0
     }
    },
-   "label": "Switzerland To Score - 1st Half"
+   "label": "Czech Republic To Score - 1st Half"
   },
   "1001642865": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
-     "fixtureEvents": 36,
+     "fixtureEvents": 25,
      "compEvents": 0
     }
    },
-   "label": "Bosnia & Herzegovina To Score - 1st Half"
+   "label": "South Africa To Score - 1st Half"
   },
   "1001642866": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 12,
@@ -8344,15 +8316,15 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 68,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
-   "label": "Liverpool FC Montevideo to Win to Nil"
+   "label": "Canada to Win to Nil"
   },
   "1001642867": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 12,
@@ -8411,15 +8383,15 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 68,
+     "fixtureEvents": 69,
      "compEvents": 0
     }
    },
-   "label": "Cerro Largo FC to Win to Nil"
+   "label": "Bosnia & Herzegovina to Win to Nil"
   },
   "1001642868": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 12,
@@ -8478,7 +8450,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 72,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -8486,7 +8458,7 @@
   },
   "1001657419": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 12,
@@ -8545,15 +8517,15 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 72,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
-   "label": "Liverpool FC Montevideo to Win At Least One Half"
+   "label": "Canada to Win At Least One Half"
   },
   "1001657420": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 12,
@@ -8612,41 +8584,41 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 72,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
-   "label": "Cerro Largo FC to Win At Least One Half"
+   "label": "Bosnia & Herzegovina to Win At Least One Half"
   },
   "1001692499": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
      "fixtureEvents": 0,
-     "compEvents": 18
+     "compEvents": 4
     }
    },
    "label": "Number of goals scored by the player in the Competition"
   },
   "1001711098": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
      "fixtureEvents": 0,
-     "compEvents": 48
+     "compEvents": 4
     }
    },
    "label": "Number of goals scored by the team in the Competition"
   },
   "1001711099": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
      "fixtureEvents": 0,
-     "compEvents": 48
+     "compEvents": 4
     }
    },
    "label": "Number of goals conceded by the team in the Competition"
@@ -8686,7 +8658,7 @@
   },
   "1001774496": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
@@ -8701,7 +8673,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -8709,7 +8681,7 @@
   },
   "1001774497": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 4,
@@ -8724,15 +8696,15 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
-   "label": "Botafogo-SP given a Red Card"
+   "label": "Czech Republic given a Red Card"
   },
   "1001774532": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 4,
@@ -8747,70 +8719,67 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
-   "label": "América-MG given a Red Card"
+   "label": "South Korea given a Red Card"
+  },
+  "1001809658": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 6,
+     "compEvents": 0
+    }
+   },
+   "label": "Player's tackles completed (Settled using Opta data)"
+  },
+  "1001809659": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 1,
+     "compEvents": 0
+    }
+   },
+   "label": "Player's offside infringements (Settled using Opta Data)"
   },
   "1001876097": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Best European Team"
   },
   "1001892836": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Number of goals scored in the Competition"
   },
   "1001892837": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Number of Own Goals Scored in the Competition"
   },
   "1001892861": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Number of matches to go to Extra Time"
   },
   "1001892862": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Number of matches to be decided after a Penalty Shootout"
   },
   "1001957106": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093399": {
      "fixtureEvents": 8,
@@ -8881,15 +8850,15 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 66,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
-   "label": "Liverpool FC Montevideo to Win and Both Teams To Score"
+   "label": "Canada to Win and Both Teams To Score"
   },
   "1001957108": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093399": {
      "fixtureEvents": 6,
@@ -8960,19 +8929,19 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 65,
+     "fixtureEvents": 68,
      "compEvents": 0
     }
    },
-   "label": "Cerro Largo FC to Win and Both Teams To Score"
+   "label": "Bosnia & Herzegovina to Win and Both Teams To Score"
   },
   "1002009649": {
    "firstSeen": "2026-06-08T12:15:33.336Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
      "fixtureEvents": 0,
-     "compEvents": 6
+     "compEvents": 14
     }
    },
    "label": "To give most assists in the Competition for the Team"
@@ -8980,17 +8949,12 @@
   "1002023771": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Number of corners in the Tournament/League"
   },
   "1002035662": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
@@ -9005,7 +8969,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -9013,7 +8977,7 @@
   },
   "1002035664": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
@@ -9028,15 +8992,26 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 47,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
    "label": "Most Shots on Target (Settled using Opta data)"
   },
+  "1002035666": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 6,
+     "compEvents": 1
+    }
+   },
+   "label": "To have most Shots on Target (Settled using Opta data)"
+  },
   "1002035667": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
@@ -9051,7 +9026,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -9059,7 +9034,7 @@
   },
   "1002035671": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
@@ -9074,15 +9049,15 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
-   "label": "Total Shots on Target by Atlético-GO (Settled using Opta data)"
+   "label": "Total Shots on Target by Czech Republic (Settled using Opta data)"
   },
   "1002035672": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
@@ -9097,15 +9072,15 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
-   "label": "Total Shots on Target by América-MG (Settled using Opta data)"
+   "label": "Total Shots on Target by South Korea (Settled using Opta data)"
   },
   "1002044186": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
      "fixtureEvents": 0,
@@ -9117,116 +9092,82 @@
   "1002057621": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Team to score most goals in Group Stage"
   },
   "1002057636": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Number of hat-tricks (3 goals by a single player during the match) in the Competition"
   },
   "1002082908": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Number of penalties scored in the Competition"
   },
   "1002082909": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Number of Red Cards shown in the Competition"
   },
   "1002082910": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Number of Yellow Cards shown in the Competition"
   },
   "1002084318": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Number of goals scored during Extra Time in the Competition"
   },
   "1002086269": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Number of goals scored in the Group Stage"
   },
   "1002098459": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Number of goals scored from a Header in the Competition"
   },
   "1002098460": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
+   "byComp": {},
+   "label": "Number of goals scored from outside the penalty box in the Competition"
+  },
+  "1002114154": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
      "fixtureEvents": 0,
      "compEvents": 1
     }
    },
-   "label": "Number of goals scored from outside the penalty box in the Competition"
+   "label": "Match to feature the fastest goal from kick off"
   },
   "1002117475": {
    "firstSeen": "2026-06-08T12:15:33.336Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
      "fixtureEvents": 0,
-     "compEvents": 3
+     "compEvents": 12
     }
    },
    "label": "Player to receive most Cards in the Competition for the Team"
   },
   "1002244276": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093399": {
      "fixtureEvents": 8,
@@ -9297,7 +9238,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 72,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -9305,7 +9246,7 @@
   },
   "1002275572": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093399": {
      "fixtureEvents": 8,
@@ -9376,7 +9317,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 72,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -9384,7 +9325,7 @@
   },
   "1002275573": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093399": {
      "fixtureEvents": 8,
@@ -9455,7 +9396,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 72,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -9463,7 +9404,7 @@
   },
   "1002363220": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093399": {
      "fixtureEvents": 8,
@@ -9478,7 +9419,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 35,
+     "fixtureEvents": 24,
      "compEvents": 0
     }
    },
@@ -9486,7 +9427,7 @@
   },
   "1002363221": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093399": {
      "fixtureEvents": 8,
@@ -9557,7 +9498,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 72,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -9565,7 +9506,7 @@
   },
   "1002483456": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 12,
@@ -9624,7 +9565,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -9632,7 +9573,7 @@
   },
   "1002506037": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 4,
@@ -9647,7 +9588,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -9655,7 +9596,7 @@
   },
   "1002506038": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 4,
@@ -9670,15 +9611,15 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
-   "label": "Total Cards - Vila Nova-GO"
+   "label": "Total Cards - South Korea"
   },
   "1002506039": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 4,
@@ -9693,15 +9634,15 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
-   "label": "Total Cards - Botafogo-SP"
+   "label": "Total Cards - Czech Republic"
   },
   "1002558602": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093399": {
      "fixtureEvents": 8,
@@ -9772,7 +9713,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 72,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -9780,7 +9721,7 @@
   },
   "1002581664": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
      "fixtureEvents": 0,
@@ -9789,20 +9730,37 @@
    },
    "label": "Number of goals scored from a free kick in the Competition"
   },
+  "1002679231": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 6,
+     "compEvents": 0
+    }
+   },
+   "label": "To score with the left foot"
+  },
+  "1002679232": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 6,
+     "compEvents": 0
+    }
+   },
+   "label": "To score with the right foot"
+  },
   "1002688087": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Highest Scoring Group"
   },
   "1002702963": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 4,
@@ -9817,7 +9775,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -9826,12 +9784,7 @@
   "1002731614": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Exact Combination of Competition Winner & Top Goalscorer"
   },
   "1002954353": {
@@ -9845,9 +9798,20 @@
    },
    "label": "To be their Head Coach/Manager on this date"
   },
+  "1003002064": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 6,
+     "compEvents": 1
+    }
+   },
+   "label": "To give most assists (Settled using Opta data)"
+  },
   "1003194956": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 14,
@@ -10146,7 +10110,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     },
     "2010134225": {
@@ -10162,11 +10126,11 @@
      "compEvents": 0
     }
    },
-   "label": "Total Goals by Fort Wayne - 1st Half"
+   "label": "Total Goals by Czech Republic - 1st Half"
   },
   "1003194957": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
@@ -10181,15 +10145,15 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
-   "label": "Total Goals by Atlético-GO - 2nd Half"
+   "label": "Total Goals by Czech Republic - 2nd Half"
   },
   "1003194958": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 14,
@@ -10488,7 +10452,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     },
     "2010134225": {
@@ -10504,11 +10468,11 @@
      "compEvents": 0
     }
    },
-   "label": "Total Goals by Charlotte Independence - 1st Half"
+   "label": "Total Goals by South Korea - 1st Half"
   },
   "1003194959": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
@@ -10523,26 +10487,21 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
-   "label": "Total Goals by América-MG - 2nd Half"
+   "label": "Total Goals by South Korea - 2nd Half"
   },
   "1003303515": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Young Player of the Tournament"
   },
   "1003314795": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
@@ -10557,7 +10516,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -10565,11 +10524,11 @@
   },
   "1004119509": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
      "fixtureEvents": 0,
-     "compEvents": 2
+     "compEvents": 1
     }
    },
    "label": "Number of assists by the player in the Competition"
@@ -10577,17 +10536,12 @@
   "1004122750": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Number of goals scored by the player from outside the penalty box in the competition"
   },
   "1004240929": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093381": {
      "fixtureEvents": 0,
@@ -10715,7 +10669,7 @@
   },
   "1004240933": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
      "fixtureEvents": 0,
@@ -10737,14 +10691,14 @@
   },
   "1004544389": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -10752,44 +10706,55 @@
   },
   "1004544390": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
-   "label": "Total Shots by Netherlands (Settled using Opta data)"
+   "label": "Total Shots by South Korea (Settled using Opta data)"
   },
   "1004544391": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
-   "label": "Total Shots by Uzbekistan (Settled using Opta data)"
+   "label": "Total Shots by Czech Republic (Settled using Opta data)"
+  },
+  "1004544407": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 6,
+     "compEvents": 0
+    }
+   },
+   "label": "To have most Shots (Settled using Opta data)"
   },
   "1004544421": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -10798,17 +10763,12 @@
   "1004713969": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "At least 1 goal to be scored within the first 59 seconds in any match in the Competition"
   },
   "1004714547": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
      "fixtureEvents": 0,
@@ -10819,7 +10779,7 @@
   },
   "1005153918": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 6,
@@ -10846,7 +10806,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -10854,7 +10814,7 @@
   },
   "1005153925": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 7,
@@ -10881,7 +10841,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -10927,20 +10887,15 @@
   "1007632233": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Team to concede most goals in Group Stage"
   },
   "1007684521": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -10948,10 +10903,10 @@
   },
   "1007684525": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -10959,10 +10914,10 @@
   },
   "1007684541": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -10970,95 +10925,71 @@
   },
   "1007684754": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
    "label": "Player's fouls conceded (Settled using Opta data)"
   },
+  "1007684761": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 5,
+     "compEvents": 0
+    }
+   },
+   "label": "Player's fouls won (Settled using Opta data)"
+  },
   "2100017823": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Best African Team"
   },
   "2100017824": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Best South American Team"
   },
   "2100017825": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Winning Continent"
   },
   "2100018081": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "English Premier League player to score most goals in the competition"
   },
   "2100018083": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "German Bundesliga player to score most goals in the competition"
   },
   "2100018084": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Italian Serie A player to score most goals in the competition"
   },
   "2100018085": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Spanish La Liga player to score most goals in the competition"
   },
   "2100034871": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
@@ -11073,7 +11004,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -11081,7 +11012,7 @@
   },
   "2100034872": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
@@ -11096,15 +11027,15 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
-   "label": "Vila Nova-GO to Hit the Woodwork in the Match (Settled using Opta data)"
+   "label": "South Korea to Hit the Woodwork in the Match (Settled using Opta data)"
   },
   "2100034873": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
@@ -11119,18 +11050,40 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
-   "label": "Atlético-GO to Hit the Woodwork in the Match (Settled using Opta data)"
+   "label": "Czech Republic to Hit the Woodwork in the Match (Settled using Opta data)"
+  },
+  "2100044706": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 0,
+     "compEvents": 1
+    }
+   },
+   "label": "Total Daily Goals"
+  },
+  "2100044707": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 0,
+     "compEvents": 1
+    }
+   },
+   "label": "Highest Scoring Game of the Day"
   },
   "2100044964": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -11138,10 +11091,10 @@
   },
   "2100044965": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -11149,7 +11102,7 @@
   },
   "2100044966": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
@@ -11164,15 +11117,15 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
-   "label": "Total Corners By América-MG - 1st Half"
+   "label": "Total Corners By South Korea - 1st Half"
   },
   "2100044967": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
@@ -11187,15 +11140,15 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
-   "label": "Total Corners By América-MG - 2nd Half"
+   "label": "Total Corners By South Korea - 2nd Half"
   },
   "2100044968": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
@@ -11210,15 +11163,15 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
-   "label": "Total Corners By Botafogo-SP - 1st Half"
+   "label": "Total Corners By Czech Republic - 1st Half"
   },
   "2100044969": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
@@ -11233,59 +11186,132 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
-   "label": "Total Corners By Atlético-GO - 2nd Half"
+   "label": "Total Corners By Czech Republic - 2nd Half"
   },
   "2100045383": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Number of Teams to score"
   },
   "2100045460": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
      "fixtureEvents": 0,
-     "compEvents": 13
+     "compEvents": 3
     }
    },
    "label": "Number of different goalscorers for the Team in the Competition"
   },
-  "2100047249": {
-   "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+  "2100045806": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
      "fixtureEvents": 0,
      "compEvents": 1
     }
    },
+   "label": "Match to feature the latest goal from kick off"
+  },
+  "2100047249": {
+   "firstSeen": "2026-06-08T07:00:53.764Z",
+   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "byComp": {},
    "label": "Any player to score a goal from his own half during the tournament"
+  },
+  "2100047421": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 0,
+     "compEvents": 1
+    }
+   },
+   "label": "Goal Scored from a Direct Free Kick"
+  },
+  "2100047422": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 0,
+     "compEvents": 1
+    }
+   },
+   "label": "Goal Scored from a Header"
+  },
+  "2100047423": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 6,
+     "compEvents": 1
+    }
+   },
+   "label": "Goalkeeper to make the Most Saves (Settled using Opta data)"
   },
   "2100047425": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
+   "byComp": {},
+   "label": "Number of Goalscorers"
+  },
+  "2100047486": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
      "fixtureEvents": 0,
      "compEvents": 1
     }
    },
-   "label": "Number of Goalscorers"
+   "label": "Team with Most Shots on Target (Settled using Opta data)"
+  },
+  "2100047487": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 0,
+     "compEvents": 1
+    }
+   },
+   "label": "Team with Most Shots (Settled using Opta data)"
+  },
+  "2100048338": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 0,
+     "compEvents": 1
+    }
+   },
+   "label": "Total Daily Corners"
+  },
+  "2100048339": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 0,
+     "compEvents": 1
+    }
+   },
+   "label": "Total Daily Cards"
   },
   "2100086017": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
@@ -11300,15 +11326,15 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
-   "label": "Goalkeeper Saves - Atlético-GO (Settled using Opta data)"
+   "label": "Goalkeeper Saves - Czech Republic (Settled using Opta data)"
   },
   "2100086018": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
@@ -11323,15 +11349,15 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 45,
+     "fixtureEvents": 70,
      "compEvents": 0
     }
    },
-   "label": "Goalkeeper Saves - América-MG (Settled using Opta data)"
+   "label": "Goalkeeper Saves - South Korea (Settled using Opta data)"
   },
   "2100086019": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
@@ -11346,7 +11372,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -11354,7 +11380,7 @@
   },
   "2100089307": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 5,
@@ -11369,7 +11395,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -11377,7 +11403,7 @@
   },
   "2100091656": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 7,
@@ -11404,7 +11430,7 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
@@ -11412,7 +11438,7 @@
   },
   "2100091955": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "1000093570": {
      "fixtureEvents": 7,
@@ -11439,63 +11465,207 @@
      "compEvents": 0
     },
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
    "label": "To score at least 2 goals (Fielded Anytime)"
   },
-  "2100109198": {
-   "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+  "2100097567": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
-     "fixtureEvents": 48,
+     "fixtureEvents": 23,
+     "compEvents": 0
+    }
+   },
+   "label": "Penalties Awarded - Canada"
+  },
+  "2100097568": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 23,
+     "compEvents": 0
+    }
+   },
+   "label": "Penalties Awarded - Bosnia & Herzegovina"
+  },
+  "2100097662": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 23,
+     "compEvents": 0
+    }
+   },
+   "label": "Total Penalties Awarded"
+  },
+  "2100097667": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 23,
+     "compEvents": 0
+    }
+   },
+   "label": "Total Penalties Scored - Canada"
+  },
+  "2100097668": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 23,
+     "compEvents": 0
+    }
+   },
+   "label": "Total Penalties Scored - Bosnia & Herzegovina"
+  },
+  "2100109198": {
+   "firstSeen": "2026-06-08T07:00:53.764Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 71,
      "compEvents": 0
     }
    },
    "label": "To Score or Get a Card"
   },
-  "2100112503": {
-   "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+  "2100111448": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
-     "fixtureEvents": 1,
+     "fixtureEvents": 6,
+     "compEvents": 0
+    }
+   },
+   "label": "Either Player To Score"
+  },
+  "2100112498": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 6,
+     "compEvents": 0
+    }
+   },
+   "label": "Either Player to Assist (Settled using Opta data)"
+  },
+  "2100112499": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 6,
+     "compEvents": 0
+    }
+   },
+   "label": "Either Player to Get a Card (Settled using Opta data)"
+  },
+  "2100112500": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 6,
+     "compEvents": 0
+    }
+   },
+   "label": "Either Player to Score First"
+  },
+  "2100112501": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 6,
+     "compEvents": 0
+    }
+   },
+   "label": "Either Player to Score or Assist (Settled using Opta data)"
+  },
+  "2100112502": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 6,
+     "compEvents": 0
+    }
+   },
+   "label": "Player's Headed Shots on Target"
+  },
+  "2100112503": {
+   "firstSeen": "2026-06-08T07:00:53.764Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 6,
      "compEvents": 0
     }
    },
    "label": "Player's Shots on Target Outside the Box"
   },
+  "2100112504": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 4,
+     "compEvents": 0
+    }
+   },
+   "label": "Player's Passes completed (Settled using Opta data)"
+  },
+  "2100112655": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 23,
+     "compEvents": 0
+    }
+   },
+   "label": "Total Penalties Scored"
+  },
   "2100114226": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
-   "byComp": {
-    "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
-    }
-   },
+   "byComp": {},
    "label": "Best CONCACAF Team"
   },
   "2100114227": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
+   "byComp": {},
+   "label": "Best Asian Team"
+  },
+  "2100114229": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
      "fixtureEvents": 0,
      "compEvents": 1
     }
    },
-   "label": "Best Asian Team"
+   "label": "Total Daily Shots on Target"
   },
   "2100114235": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
-   "lastSeen": "2026-06-08T12:15:33.336Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
      "fixtureEvents": 0,
-     "compEvents": 48
+     "compEvents": 44
     }
    },
    "label": "Eliminated in Penalty Shootout"
@@ -11503,13 +11673,107 @@
   "2100116561": {
    "firstSeen": "2026-06-08T07:00:53.764Z",
    "lastSeen": "2026-06-08T12:15:33.336Z",
+   "byComp": {},
+   "label": "Brazil Serie A player to score most goals in the competition"
+  },
+  "2100116688": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
    "byComp": {
     "2010133908": {
-     "fixtureEvents": 0,
-     "compEvents": 1
+     "fixtureEvents": 1,
+     "compEvents": 0
     }
    },
-   "label": "Brazil Serie A player to score most goals in the competition"
+   "label": "Total combined Shots on Target by Son Heung-Min & Patrik Schick"
+  },
+  "2100116689": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 1,
+     "compEvents": 0
+    }
+   },
+   "label": "Total combined Shots on Target by Jonathan David & Edin Dzeko"
+  },
+  "2100116690": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 1,
+     "compEvents": 0
+    }
+   },
+   "label": "Total combined Shots on Target by Christian Pulisic & Julio Enciso"
+  },
+  "2100116691": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 1,
+     "compEvents": 0
+    }
+   },
+   "label": "Total combined Shots on Target by Akram Afif & Breel Embolo"
+  },
+  "2100116692": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 1,
+     "compEvents": 0
+    }
+   },
+   "label": "Total combined Shots on Target by Vinicius Junior & Ayoub El Kaabi"
+  },
+  "2100116693": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 1,
+     "compEvents": 0
+    }
+   },
+   "label": "Total combined Shots on Target by Raphinha & Brahim Díaz"
+  },
+  "2100116694": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 1,
+     "compEvents": 0
+    }
+   },
+   "label": "Total combined Shots on Target by Scott McTominay & Wilson Isidor"
+  },
+  "2100116695": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 1,
+     "compEvents": 0
+    }
+   },
+   "label": "Total combined Shots on Target by Mohamed Toure & Arda Guler"
+  },
+  "2100117218": {
+   "firstSeen": "2026-06-11T19:11:26.513Z",
+   "lastSeen": "2026-06-11T19:40:35.939Z",
+   "byComp": {
+    "2010133908": {
+     "fixtureEvents": 1,
+     "compEvents": 0
+    }
+   },
+   "label": "Sweden to win and Isak or Gyökeres to score"
   }
  }
 }
