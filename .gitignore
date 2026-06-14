@@ -14,3 +14,7 @@ src/resolver/index/
 # Transient doc-view generation scratch (Sprint 6): plan + per-batch subagent outputs.
 # Durable artifacts are data/football/{criterion-doc-views,doc-views-gen-cache}.json.
 .docviews/
+
+# Transient probe-script scratch dumps (dot-prefixed JSON/txt under scripts/).
+scripts/.*.json
+scripts/.*.txt
