@@ -23,10 +23,9 @@
 //          a confident hit. Alongside, a BM25 retrieval channel nominates the top lexical names into the
 //          pool — surfacing a true market cosine ranked below the candidate cut (Q23) — but a cold nominee
 //          can reach at most the `shortlist` tier, so this added recall never mints a false confident.
-//       3. line→boType SOFT penalty (a numeric over/under line prefers an over/under market; a yes/no
-//          prefers a yes/no one — but a mismatch is demoted by GATE_PENALTY, not dropped, so a count
-//          stat the snapshot tagged only `head` still surfaces — KE-5) + period & specificity penalties
-//          (all down-rank, never drop; specificity demotes a name padded with words the query never asked for).
+//       3. (Ranking is cosine + the lexical bonus only. The period / specificity / scope / line→boType
+//          penalties and the period-collapse + outright/yesno tie-break were REMOVED 2026-06-11 — an
+//          ablation over the 346-query set showed all six net-harmful or inert; see scripts/ablate-layers.ts.)
 //       4. tier by stat-type core: one clear winner (gap > ε) → `confident`; survivors sharing a
 //          core → `variants` (returns ALL their ids — this is how the home/away side-split is
 //          produced); a different-core rival within ε → `ambiguous` (the executor clarifies).
@@ -46,7 +45,8 @@
 import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { loadCatalog, type Subject, type Catalog, type MarketAlias, type Level } from "./catalog";
+import { loadCatalog, catalogSubset, type Subject, type Catalog, type MarketAlias, type Level } from "./catalog";
+import { eligibleCombos } from "./combos";
 import { embed, EMBED_MODEL } from "./embed";
 import { normalize } from "../eval/structural-scorer";
 import type { QueryPlan } from "./schema";
@@ -57,14 +57,19 @@ type ResolvedPlan = Extract<QueryPlan, { status: "resolved" }>;
 export type SubjectKind = ResolvedPlan["selectors"][number]["subject"]["kind"];
 type SelectorLine = NonNullable<ResolvedPlan["selectors"][number]["line"]>;
 
-export type GroundMethod = "alias" | "name" | "vector" | "none" | "main";
+export type GroundMethod = "alias" | "name" | "vector" | "none" | "main" | "combo";
 // `shortlist` is the recall-floor tier: below the confident THRESHOLD but above FLOOR we return the
 // top-few candidates for the executor to clarify against, instead of silently abstaining. Like
 // `ambiguous` it is a non-pass (the scorer greens only confident|variants), but it carries up to
 // SHORTLIST_CAP ids, not a near-tie cluster.
 export type Tier = "confident" | "variants" | "ambiguous" | "shortlist";
 
-export type GroundOpts = { subjectKind?: SubjectKind; line?: SelectorLine; level?: Level; period?: Period };
+// Ablation switches (MEASUREMENT ONLY; default undefined = every layer ON = production behavior). Each
+// flag DISABLES one post-cosine layer so scripts/ablate-layers.ts can measure its contribution. The 6
+// net-harmful/inert layers found by the 2026-06-11 ablation were since DELETED (specificity, scope,
+// yesno-tiebreak, period-penalty, line-gate, period-collapse); only the two survivors stay toggleable.
+export type AblationFlag = "lexical" | "bm25";
+export type GroundOpts = { subjectKind?: SubjectKind; line?: SelectorLine; level?: Level; period?: Period; side?: "home" | "away"; ablate?: Set<AblationFlag> };
 
 export type GroundResult = {
   ids: number[]; // [] iff method is "none" or "main"
@@ -83,24 +88,11 @@ const MAIN: GroundResult = { ids: [], method: "main" };
 // ---- knobs (decision 20 "still uncalibrated"; each fails safe — abstain / over-clarify) ----
 // THRESHOLD: a cosine win must clear this to count as a grounding; below it we abstain (E5).
 // EPSILON: the near-tie band. A different-core rival within ε of the top → `ambiguous`, not a guess.
-// PERIOD_PENALTY: a period-mismatched candidate loses this much score for ranking/tiering only.
-// SPEC_PENALTY: per query-absent CONTENT word, a candidate name loses this much (ranking/tiering only)
-//   — the scoped Option-1 rerank that demotes an over-specified false friend ("Any Team to win without
-//   conceding a goal" for "to win the tournament"). Set to EPSILON so one unrequested content word ≈ one
-//   near-tie band of doubt; SPEC_CAP ceilings it so a very long name can't be obliterated. Uncalibrated.
-// GATE_PENALTY: a boType-mismatched candidate loses this much (the SOFT line→boType gate — KE-5). Set well
-//   above PERIOD/SPEC so a properly-typed market almost always wins, yet small enough that a much-stronger
-//   off-type match (head-tagged count stat the snapshot lacks an over/under for) can still overcome it.
+// (The period / specificity / scope / line→boType penalties were REMOVED 2026-06-11 — an ablation over the
+// 346-query set showed they were net-harmful or inert; dropping all six = +8 recall, flat precision. See
+// scripts/ablate-layers.ts. Ranking is now cosine + the lexical bonus only.)
 const THRESHOLD = 0.55;
 const EPSILON = 0.03;
-const PERIOD_PENALTY = 0.05;
-// Scope penalty (scope-awareness): demote a competition/tournament-scoped market when the query is
-// explicitly fixture-level (decision-23 `level`). Like PERIOD_PENALTY it touches `adj` only — it can
-// reorder survivors but never drops one from the pool nor below THRESHOLD (same fail-safe envelope).
-const SCOPE_PENALTY = 0.08;
-const SPEC_PENALTY = 0.03;
-const SPEC_CAP = 5;
-const GATE_PENALTY = 0.1;
 const TOP_K = 8;
 // Recall floor (the shortlist band): a gateScore in [FLOOR, THRESHOLD) returns the top-SHORTLIST_CAP
 // candidates as a `shortlist` (clarify) instead of `none`; below FLOOR we still abstain. FLOOR is set
@@ -137,38 +129,19 @@ function bucketFor(kind?: SubjectKind): Subject | null {
   return null;
 }
 
-// ---- line → boType gate (decision 20 step 3, now SOFT — a penalty, not a drop) ----
-// The betoffertypes that realize each line shape. A numeric over/under needs an over/under-style
-// line type (incl. the player-occurrence line); a binary needs yes/no — or `outright`, since a
-// named subject's outright (to win the group/tournament, to reach a stage) is itself a yes/no, and
-// Kambi tags those markets `outright`, sometimes without `yesno`. A `selection` (HT/FT, correct
-// score) has no single clean boType, so it imposes no gate. `null` = no constraint.
-// A mismatch used to HARD-drop the candidate; it now costs GATE_PENALTY (KE-5): a count/occurrence
-// market the snapshot tagged only `head` (no over/under mapping) is demoted, not deleted, so a strong
-// match ("Player's successful dribbles" for "dribbles completed over 3.5") surfaces instead of falling
-// to a same-family false friend, while a genuinely off-type market stays heavily out-ranked.
-const NUMERIC_BOTYPES = new Set(["overunder", "asianoverunder", "playeroccurrenceline"]);
-const BINARY_BOTYPES = new Set(["yesno", "outright"]);
-
-function requiredBoTypes(line?: SelectorLine): Set<string> | null {
-  if (!line) return null;
-  if (line.kind === "numeric") return NUMERIC_BOTYPES;
-  if (line.kind === "binary") return BINARY_BOTYPES;
-  return null; // selection -> no gate
-}
-
+// `line` no longer gates grounding (the line→boType soft penalty was removed in the 2026-06-11 ablation
+// cleanup); it survives only as a memo-key component so a different line shape doesn't alias a cache entry.
 function lineClass(line?: SelectorLine): string {
   return line ? line.kind : "none";
 }
 
-// A candidate passes the gate if it offers a required boType — OR if its boTypeNames are unknown
-// (empty), in which case we can't gate it out (fail toward keeping, consistent with the catalog's
-// "leak rather than wrongly drop" stance; criterions whose only mappings were unnamed boTypes 5/15).
-function passesGate(boTypeNames: string[], required: Set<string> | null): boolean {
-  if (!required) return true;
-  if (boTypeNames.length === 0) return true;
-  return boTypeNames.some((b) => required.has(b));
-}
+// Level eligibility, shared by every resolution path (vector pool, name/alias hits, per-side twins):
+// a candidate passes when the query named no level, or its observed level is unobserved (unset) or
+// equals the query's. Only the OPPOSITE concrete level is excluded — fixture never sees competition,
+// and vice-versa. No-op when the query carries no level.
+const levelOk = (cand: Level | undefined, want: Level | undefined): boolean => !want || cand == null || cand === want;
+const keepLevel = (ids: number[], cat: Catalog, want: Level | undefined): number[] =>
+  ids.filter((id) => levelOk(cat.byId.get(id)?.level, want));
 
 // ---- period facet (decision 20 steps 3 & 4): text-derived, no structured field exists ----
 type Period = "full" | "first_half" | "second_half" | "extra_time";
@@ -182,34 +155,9 @@ function lc(s: string): string {
     .replace(/\s+/g, " ");
 }
 
-// Canonical catalog names use literal period strings ("- 1st Half", "Including Extra Time"); paraphrased
-// queries use colloquial idioms ("at the break"/"before half time" = 1st half, "after the break" = 2nd half,
-// "the 120"/"120 minutes"/"extra 30" = extra time, "opening 45" = 1st half). Both sides are read through this
-// one function (concept AND candidate name), so the idiom alternates must be query-only — verified that none
-// occur in any of the 4898 catalog names, so they never mis-tag a candidate.
-function periodOf(text: string): Period {
-  const t = lc(text);
-  if (/\bincluding extra time\b|\bextra time\b|\bet\b/.test(t) || /\b120 (minutes|mins)\b|\b(over|after|whole|past) (the )?120\b|\bextra (30|thirty)\b/.test(t)) return "extra_time";
-  if (/\b1st half\b|\bfirst half\b/.test(t) || /\bbefore half ?time\b|\b(at|before) the break\b|\b(opening|first) 45\b/.test(t)) return "first_half";
-  if (/\b2nd half\b|\bsecond half\b/.test(t) || /\bafter half ?time\b|\bafter the break\b|\bsecond 45\b/.test(t)) return "second_half";
-  return "full"; // intervals/regular time fall here; they separate by core string instead
-}
-
-// ---- scope facet (scope-awareness): text-derived, mirrors periodOf ----
-// A market NAME that settles over the whole competition/tournament/league/season (or the group stage) is
-// competition-scoped; everything else defaults to a single match. The catalog vectors carry no level, so
-// we read scope from the NAME — exactly like periodOf reads the period — to demote a competition-scoped
-// candidate when the query is explicitly fixture-level. (An authoritative offer-registry filter is later.)
-type Scope = "competition" | "match";
-function scopeOf(text: string): Scope {
-  const t = lc(text);
-  if (/\b(competition|tournament|league|season)\b/.test(t) || /\bgroup stage\b/.test(t)) return "competition";
-  return "match";
-}
-
 // period-stripped stat core: statCore with the period qualifier removed, so a market and its OWN period
-// variant share a key ("offside infringements - Including Extra Time" ≡ "offside infringements"). Used by
-// the period-collapse below — when the query names no period, a period variant yields to its full sibling.
+// variant share a key ("offside infringements - Including Extra Time" ≡ "offside infringements"). Exported
+// for scripts/gen-doc-views.ts (cluster keying); the in-grounder period-collapse that used it was removed.
 export function periodCore(name: string): string {
   return statCore(name)
     .replace(/\bincluding\b/g, " ")
@@ -219,28 +167,12 @@ export function periodCore(name: string): string {
     .trim();
 }
 
-// ---- query-coverage specificity penalty (decision 20, Option 1 — the deferred rerank, scoped) ----
-// Raw cosine rewards semantic closeness, but a long, over-specified name can out-cosine the tight true
-// twin: "Any Team to win without conceding a goal" (0.584) beats "To Win The Trophy" (0.553) for the
-// query "to win the tournament". Penalize a candidate for the CONTENT words in its name the query never
-// mentioned — the constraints it didn't ask for ("team", "without", "conceding", "goal"). Like the period
-// penalty this touches `adj` (ranking/tiering) only, never `raw` (the THRESHOLD), so it can reorder
-// survivors but never drops one from the pool nor resurrects a below-threshold name — the same fail-safe
-// envelope. Function words aren't content, and a word the query DID use is free, so a pure synonym swap
-// ("competition"/"trophy" vs "tournament") costs ≤1 and leaves genuine twins clustered.
+// Function-word stoplist for the lexical channel: tokens that carry no content, dropped from the IDF
+// token-cover and BM25 so only meaningful words count. (Also formerly fed a specificity penalty, removed
+// in the 2026-06-11 ablation cleanup — it demoted real golds more than false friends, costing net recall.)
 const SPEC_STOPWORDS = new Set([
   "the", "a", "an", "to", "of", "in", "on", "at", "by", "for", "and", "or", "with", "is", "are", "be", "s", "any", "all", "their",
 ]);
-
-function specificityPenalty(queryText: string, name: string): number {
-  const q = new Set(tokenize(queryText));
-  let extra = 0;
-  for (const tok of tokenize(name)) {
-    if (SPEC_STOPWORDS.has(tok) || q.has(tok)) continue;
-    extra++;
-  }
-  return Math.min(extra, SPEC_CAP) * SPEC_PENALTY;
-}
 
 // ---- lexical token cover (the lexical booster) + BM25 retrieval (the recall channel) ----
 // Both read the query's CONTENT tokens (stopwords dropped, lightly singularized). Symmetric stem (drop a
@@ -250,9 +182,8 @@ function stem(t: string): string {
 }
 // The catalog spells the same concept two ways — "Top Goal Scorer" (15 names) vs "...Top Goalscorer" (29) —
 // so a one-word query token must split to match the two-word names. Decompound the known football compounds
-// so cover, BM25 and the specificity penalty all see the same tokens on both sides. Fixes a real catalog
-// inconsistency, not one query: without it "top goalscorer" under-covers the true "Top Goal Scorer" AND the
-// penalty counts its "goal"/"scorer" as unrequested extras — a double demotion that drops it from the cluster.
+// so the IDF cover and BM25 see the same tokens on both sides. Fixes a real catalog inconsistency, not one
+// query: without it "top goalscorer" under-covers the true "Top Goal Scorer".
 const DECOMPOUND: Record<string, string[]> = { goalscorer: ["goal", "scorer"], goalscorers: ["goal", "scorer"] };
 function tokenize(s: string): string[] {
   return lc(stripSettle(s)).split(" ").filter(Boolean).flatMap((t) => DECOMPOUND[t] ?? [t]);
@@ -294,18 +225,23 @@ function idfWeight(t: string): number {
 // Stays in 0..1, so `LEX_WEIGHT * cover` is a bounded nudge in cosine units — the confident THRESHOLD is
 // still anchored on cosine, never manufactured by lexical overlap alone. Rescues "goal in stoppage time"
 // against "Goal scored - Stoppage Time" where raw cosine stalls below threshold.
-function lexicalCover(queryText: string, name: string): number {
-  const q = contentTokens(queryText);
-  if (!q.size) return 0;
-  const n = contentTokens(name);
+// IDF cover: the share of the WANT set's IDF mass that the HAVE set covers (0..1). Shared by the per-candidate
+// lexical booster (lexicalCover: want = query tokens, have = candidate name) and the combo-assembly pass
+// (assembleCombos: want = combo core tokens, have = pooled leg tokens).
+function idfCover(have: Set<string>, want: Set<string>): number {
+  if (!want.size) return 0;
   let num = 0;
   let den = 0;
-  for (const t of q) {
+  for (const t of want) {
     const w = idfWeight(t);
     den += w;
-    if (n.has(t)) num += w;
+    if (have.has(t)) num += w;
   }
   return den === 0 ? 0 : num / den;
+}
+
+function lexicalCover(queryText: string, name: string): number {
+  return idfCover(contentTokens(name), contentTokens(queryText));
 }
 
 // BM25 over criterion names — the sparse RETRIEVAL channel running alongside cosine. Cosine ranks by
@@ -373,7 +309,10 @@ function loadIndex(): VectorIndex | null {
   if (catVersion && raw.catalogVersion && raw.catalogVersion !== catVersion) {
     console.warn(`[ground-market] index catalogVersion "${raw.catalogVersion}" != catalog "${catVersion}" — STALE, run \`npm run build:index\`.`);
   }
-  const entries = raw.criterions as IndexEntry[];
+  // Index follows the catalog subset (CATALOG_SUBSET, default off): drop vectors for any id the
+  // restricted catalog no longer carries, so the cosine/BM25 pool sees the same smaller market set.
+  const subset = catalogSubset();
+  const entries = (raw.criterions as IndexEntry[]).filter((e) => !subset || subset.has(e.id));
   const bySubject: Record<Subject, IndexEntry[]> = { player: [], team_or_match: [] };
   for (const e of entries) (bySubject[e.subject] ??= []).push(e);
   return (indexCache = { dim: raw.dim, entries, bySubject });
@@ -396,25 +335,33 @@ function cosine(a: number[], b: number[]): number {
 
 type Scored = { id: number; name: string; raw: number; gate: number; adj: number; boTypeNames: string[]; core: string; cover: number; bm25: number };
 
+// Query-embedding cache (keyed by the embedded text). Embeddings are deterministic per text+model, so
+// this is harmless in production; it lets the ablation harness re-ground the same concept across many
+// layer-configs with a SINGLE Voyage pass (one embed per unique concept, reused by every variant).
+const qEmbedCache = new Map<string, number[]>();
+async function embedQuery(text: string): Promise<number[] | undefined> {
+  const hit = qEmbedCache.get(text);
+  if (hit) return hit;
+  const [qv] = await embed([text], "query");
+  if (qv) qEmbedCache.set(text, qv);
+  return qv;
+}
+
 async function vectorGround(text: string, opts: GroundOpts): Promise<GroundResult> {
   const idx = loadIndex();
   if (!idx) return NONE;
-  const [qv] = await embed([text], "query");
+  const qv = await embedQuery(text);
   if (!qv) return NONE;
   if (qv.length !== idx.dim) {
     console.warn(`[ground-market] query dim ${qv.length} != index dim ${idx.dim} — rebuild index.`);
     return NONE;
   }
 
+  const byId = loadCatalog().byId;
   const bucket = bucketFor(opts.subjectKind);
-  const pool = bucket ? idx.bySubject[bucket] : idx.entries;
-  const required = requiredBoTypes(opts.line);
-  // Query period: the LLM-emitted facet (decision 20.x) when present, else the catalog-name regex fallback.
-  // The candidate side stays `periodOf(s.name)` — the LLM never sees catalog names. Same Period enum both sides.
-  const qPeriod = opts.period ?? periodOf(text);
-  // scope-awareness: only demote competition-scoped candidates when we KNOW the query is a single match
-  // (explicit fixture level). Unknown/competition level → no scope penalty (fail-safe, like the soft gate).
-  const penalizeScope = opts.level === "fixture";
+  const pool0 = bucket ? idx.bySubject[bucket] : idx.entries;
+  // Drop candidates at the opposite concrete level (see levelOk) before any scoring.
+  const pool = opts.level ? pool0.filter((e) => levelOk(byId.get(e.id)?.level, opts.level)) : pool0;
 
   // score the whole bucket (raw cosine), keep top-k for triage before any gating
   const allScored = pool
@@ -427,56 +374,34 @@ async function vectorGround(text: string, opts: GroundOpts): Promise<GroundResul
   // Nominees are admitted past the raw pre-filter and the FLOOR below, but their cold cosine keeps gate <
   // THRESHOLD — they can reach `shortlist`, never `confident`, so recall can't manufacture a false confident.
   const qTokens = contentTokens(text);
-  const nominees = new Set(
-    pool
-      .map((e) => ({ id: e.id, s: bm25(qTokens, e.name) }))
-      .filter((x) => x.s > 0)
-      .sort((a, b) => b.s - a.s)
-      .slice(0, TOP_K)
-      .map((x) => x.id),
-  );
+  const nominees = opts.ablate?.has("bm25")
+    ? new Set<number>()
+    : new Set(
+        pool
+          .map((e) => ({ id: e.id, s: bm25(qTokens, e.name) }))
+          .filter((x) => x.s > 0)
+          .sort((a, b) => b.s - a.s)
+          .slice(0, TOP_K)
+          .map((x) => x.id),
+      );
 
-  // line→boType HARD gate, then the lexical booster + period/specificity penalties fold into the score.
-  // gateScore = raw + IDF-weighted cover bonus (promotes a token-identical near-miss the cosine under-scores);
-  // adj subtracts the period/specificity penalties for ranking/tiering. The confident cut is on gateScore
-  // (so the lexical booster can lift a near-miss over THRESHOLD); the recall floor keeps [FLOOR, THRESHOLD)
-  // as a shortlist; below FLOOR we abstain. A candidate enters if cosine is warm (raw ≥ FLOOR−LEX_WEIGHT) OR
-  // it's a BM25 nominee; the FLOOR then admits a cold nominee only when it covers ≥ LEX_COVER_FLOOR of the
-  // query's IDF mass (a strong literal match worth clarifying). `isBinary` gates the yes/no tie-break below.
-  const isBinary = opts.line?.kind === "binary";
-  let gated: Scored[] = allScored
+  // Score = raw cosine + the IDF-weighted lexical-cover bonus (promotes a token-identical near-miss the
+  // cosine under-scores, e.g. "goal in stoppage time" ⊆ "Goal scored - Stoppage Time"). `adj` (ranking) now
+  // equals `gate` — the period/specificity/scope/line→boType penalties were removed (2026-06-11 ablation:
+  // net-harmful or inert). The confident cut is on `gate` (the lexical bonus can lift a near-miss over
+  // THRESHOLD); the recall floor keeps [FLOOR, THRESHOLD) as a shortlist; below FLOOR we abstain. A candidate
+  // enters if cosine is warm (raw ≥ FLOOR−LEX_WEIGHT) OR it's a BM25 nominee; the FLOOR then admits a cold
+  // nominee only when it covers ≥ LEX_COVER_FLOOR of the query's IDF mass (a strong literal match to clarify).
+  const gated: Scored[] = allScored
     .filter((s) => s.raw >= FLOOR - LEX_WEIGHT || nominees.has(s.id))
     .map((s) => {
       const cover = lexicalCover(text, s.name);
-      // SOFT line→boType gate: a candidate that doesn't offer the required boType is penalized, not dropped
-      // (KE-5). Empty boTypeNames are never penalized (unknown → keep, the "leak rather than wrongly drop"
-      // stance). Folded into `gate`, so a mismatched market needs more cosine to stay confident — but a much
-      // stronger off-type match still clears the floor and leads its shortlist.
-      const gateMiss = required && !passesGate(s.boTypeNames, required) ? GATE_PENALTY : 0;
-      const gate = s.raw + LEX_WEIGHT * cover - gateMiss;
-      return {
-        ...s,
-        cover,
-        bm25: bm25(qTokens, s.name),
-        gate,
-        adj:
-          gate -
-          (periodOf(s.name) === qPeriod ? 0 : PERIOD_PENALTY) -
-          specificityPenalty(text, s.name) -
-          (penalizeScope && scopeOf(s.name) === "competition" ? SCOPE_PENALTY : 0),
-        core: statCore(s.name),
-      };
+      const bonus = opts.ablate?.has("lexical") ? 0 : LEX_WEIGHT * cover;
+      const gate = s.raw + bonus;
+      return { ...s, cover, bm25: bm25(qTokens, s.name), gate, adj: gate, core: statCore(s.name) };
     })
     .filter((s) => s.gate >= FLOOR || (nominees.has(s.id) && s.cover >= LEX_COVER_FLOOR))
     .sort((a, b) => b.adj - a.adj);
-
-  // period-collapse: when the query names NO period, a period-specific market loses to its own full-match
-  // sibling (same period-stripped core). Drop the period variant ONLY when a full-match sibling is present
-  // (a period-only stat with no full sibling is untouched) — "demote, don't drop" with no wrong abstain.
-  if (qPeriod === "full") {
-    const fullCores = new Set(gated.filter((s) => periodOf(s.name) === "full").map((s) => periodCore(s.name)));
-    gated = gated.filter((s) => periodOf(s.name) === "full" || !fullCores.has(periodCore(s.name)));
-  }
 
   if (gated.length === 0) return { ids: [], method: "none", candidates };
 
@@ -492,26 +417,20 @@ async function vectorGround(text: string, opts: GroundOpts): Promise<GroundResul
     // at cover 1.0), so order it by BM25 — the most exact name leads. The non-strong group has no real lexical
     // signal ("match result"), so order it by cosine-anchored adj. This keeps Match Odds atop its shortlist
     // while letting the score-first family lead theirs, most-exact first.
+    // Period is now folded into the embed text (withPeriod), so period-matched candidates already lead on
+    // cosine/adj — no separate period tie-break needed. Strong rescues still lead, ordered by BM25.
     const strong = (s: Scored) => s.cover >= LEX_COVER_FLOOR;
-    // Facet-match leads (Sprint 5.1, load-bearing): a period-matched candidate must not be buried under a
-    // lexically-strong period-MISMATCH, because the strong group orders by BM25 — which ignores the period
-    // penalty in `adj`. Inert when the query names no period (all full candidates match equally, and period
-    // variants are already dropped by the collapse above); active only for an explicit-period query.
-    const periodHit = (s: Scored) => periodOf(s.name) === qPeriod;
     const ranked = [...gated]
       .sort((a, b) =>
-        periodHit(a) !== periodHit(b)
-          ? periodHit(a) ? -1 : 1
-          : strong(a) !== strong(b)
-            ? strong(a) ? -1 : 1
-            : strong(a) ? b.bm25 - a.bm25 : b.adj - a.adj,
+        strong(a) !== strong(b)
+          ? strong(a) ? -1 : 1
+          : strong(a) ? b.bm25 - a.bm25 : b.adj - a.adj,
       )
       .slice(0, SHORTLIST_CAP);
     return { ids: ranked.map((s) => s.id), method: "vector", tier: "shortlist", score: ranked[0]!.adj, candidates };
   }
 
   const top = confident[0]!;
-  const byId = loadCatalog().byId;
   const catsOf = (id: number): string[] => byId.get(id)?.categoryNames ?? [];
   const topCats = new Set(catsOf(top.id));
 
@@ -521,25 +440,10 @@ async function vectorGround(text: string, opts: GroundOpts): Promise<GroundResul
   const sameCoreIds = new Set(sameCore.map((s) => s.id));
   const nearestDiff = confident.find((s) => !sameCoreIds.has(s.id));
 
-  // a different-market rival within ε of the top is a collision → clarify, don't guess — UNLESS a yes/no
-  // tie-break resolves it (binary line only): when the WHOLE near-tie cluster is outright-type and only
-  // some members ALSO offer `yesno`, that subset is the truer single-subject yes/no, so prefer it (e.g.
-  // "to reach the semi-finals": the `outright`-only "Teams to reach the Semi-Finals" yields to the
-  // `outright`+`yesno` "To reach the Semi Final"). The `allOutright` guard is essential — it stops a
-  // `yesno`-only false-friend (one that LACKS `outright`, e.g. "Any Team to win without conceding a goal"
-  // for "to win the tournament") from triggering the preference and crowning itself a false confident.
+  // a different-market rival within ε of the top is a collision → clarify, don't guess (the outright/yesno
+  // tie-break that used to resolve some of these was removed in the 2026-06-11 ablation cleanup — inert).
   if (nearestDiff && top.adj - nearestDiff.adj <= EPSILON) {
     const cluster = confident.filter((s) => top.adj - s.adj <= EPSILON);
-    if (isBinary) {
-      const yesno = cluster.filter((s) => s.boTypeNames.includes("yesno"));
-      const allOutright = cluster.every((s) => s.boTypeNames.includes("outright"));
-      if (allOutright && yesno.length > 0 && yesno.length < cluster.length) {
-        const cores = new Set(yesno.map((s) => s.core));
-        const ids = yesno.map((s) => s.id);
-        const tier = cores.size > 1 ? "ambiguous" : ids.length > 1 ? "variants" : "confident";
-        return { ids, method: "vector", tier, score: yesno[0]!.adj, candidates };
-      }
-    }
     return { ids: cluster.map((s) => s.id), method: "vector", tier: "ambiguous", score: top.adj, candidates };
   }
 
@@ -577,14 +481,29 @@ function applyPerSideDivert(res: GroundResult, key: string, opts: GroundOpts): G
   if (opts.subjectKind !== "team" && opts.subjectKind !== "either_match_team") return res;
   const cat = loadCatalog();
 
-  // (a) swap a clean match-level hit for its per-side twins (never a low-confidence shortlist)
+  // Narrow per-side twins to the query: drop the wrong level (hard), then to the named side ("home
+  // team" -> home only); with no side named ("Arsenal" — could be either) keep both for the executor to
+  // bind. Side falls back to all if the tag is missing, so a mis-tagged twin is never dropped to nothing.
+  const pick = (ids: number[]): number[] => {
+    const lvl = keepLevel(ids, cat, opts.level);
+    if (!opts.side) return lvl;
+    const only = lvl.filter((id) => cat.byId.get(id)?.side === opts.side);
+    return only.length ? only : lvl;
+  };
+  // Same-category per-side twins of a match-level market (shared category = corroboration guard),
+  // narrowed to the named side. [] if the market is already per-side or has no twins.
+  const twinsOf = (id: number): number[] => {
+    const m = cat.byId.get(id);
+    if (!m || m.side != null) return [];
+    const twinIds = perSideIndex().get(baseStatCore(m.name));
+    if (!twinIds?.length) return [];
+    const mCats = new Set(m.categoryNames);
+    return pick(twinIds.filter((t) => cat.byId.get(t)?.categoryNames.some((cn) => mCats.has(cn))));
+  };
+
+  // (a) swap a clean confident match-level hit for its per-side twins.
   if (res.ids.length === 1 && res.tier !== "shortlist") {
-    const top = cat.byId.get(res.ids[0]!);
-    if (!top || top.side != null) return res; // unknown id, or already a per-side market
-    const twinIds = perSideIndex().get(baseStatCore(top.name));
-    if (!twinIds?.length) return res;
-    const topCats = new Set(top.categoryNames);
-    const ids = twinIds.filter((id) => cat.byId.get(id)?.categoryNames.some((cn) => topCats.has(cn))).sort((a, b) => a - b);
+    const ids = twinsOf(res.ids[0]!).sort((a, b) => a - b);
     if (!ids.length) return res;
     return { ids, method: res.method, tier: ids.length > 1 ? "variants" : "confident", candidates: res.candidates };
   }
@@ -593,9 +512,18 @@ function applyPerSideDivert(res: GroundResult, key: string, opts: GroundOpts): G
   if (res.ids.length === 0) {
     const twinIds = perSideIndex().get(baseStatCore(key));
     if (twinIds?.length) {
-      const ids = [...twinIds].sort((a, b) => a - b);
-      return { ids, method: "name", tier: ids.length > 1 ? "variants" : "confident", candidates: res.candidates };
+      const ids = pick([...twinIds]).sort((a, b) => a - b);
+      if (ids.length) return { ids, method: "name", tier: ids.length > 1 ? "variants" : "confident", candidates: res.candidates };
     }
+  }
+
+  // (c) shortlist: the base is unsure but a team WAS the subject — surface the per-side twins of any
+  // shortlisted market that has them, staying a shortlist (no false confidence) so the side variant the
+  // executor needs is in the candidate set. Fires only when it actually introduces a per-side market.
+  if (res.tier === "shortlist") {
+    const out = res.ids.flatMap((id) => { const t = twinsOf(id); return t.length ? t : [id]; });
+    const ids = [...new Set(out)];
+    if (ids.some((id) => cat.byId.get(id)?.side != null)) return { ...res, ids };
   }
   return res;
 }
@@ -672,8 +600,17 @@ function expandAbbrevs(text: string, abbr: Catalog["abbreviations"]): string {
   return toks.map((t) => abbr.get(t) ?? t).join(" ");
 }
 
+// Fold the extractor's period facet back into the embed text. The catalog carries period in the NAME
+// string ("Correct Score - 2nd Half"); the plan carries it in a separate field — so a bare concept
+// ("correct score") cosine-ties its full-match twin and the period never breaks the tie. Appending the
+// period value (the enum's own words, e.g. "second_half" -> "second half") lets the period-specific name
+// out-cosine its full-match sibling. No-op when no period is emitted or it's `full` (whole match).
+function withPeriod(text: string, period?: Period): string {
+  return period && period !== "full" ? `${text} ${period.replace(/_/g, " ")}` : text;
+}
+
 export async function groundMarket(text: string, opts: GroundOpts = {}): Promise<GroundResult> {
-  const expanded = expandAbbrevs(text, loadCatalog().abbreviations);
+  const expanded = expandAbbrevs(withPeriod(text, opts.period), loadCatalog().abbreviations);
   const key = normalize(expanded);
   if (!key) return NONE;
   if (key === "main") return MAIN; // marketless sentinel → executor's main betoffer; never vector-grounds
@@ -681,7 +618,8 @@ export async function groundMarket(text: string, opts: GroundOpts = {}): Promise
   // the per-side divert, so they must not alias to the same memo entry. period + level are in the key for
   // the same reason: both feed `adj` (period & scope penalties), so the same concept/subject/line at a
   // different period or fixture/competition level is a different grounding and must not share a cache entry.
-  const memoKey = `${key}|${opts.subjectKind ?? ""}|${lineClass(opts.line)}|${opts.period ?? ""}|${opts.level ?? ""}`;
+  const ablateKey = opts.ablate?.size ? [...opts.ablate].sort().join(",") : "";
+  const memoKey = `${key}|${opts.subjectKind ?? ""}|${lineClass(opts.line)}|${opts.period ?? ""}|${opts.level ?? ""}|${opts.side ?? ""}|${ablateKey}`;
   const hit = memo.get(memoKey);
   if (hit) return hit;
   const res = applyPerSideDivert(await resolveMarket(key, expanded, opts), key, opts);
@@ -720,23 +658,104 @@ async function resolveMarket(key: string, text: string, opts: GroundOpts): Promi
 
   // 1. EXACT alias-key fast-path — a curated bare-phrase alias short-circuits (confident). Only the exact
   // key fires here; the token-subset fallback is deferred to step 3 so it can never outrank an exact name.
-  const exactAlias = aliasIds(cat.marketAliases.get(key));
+  const exactAlias = keepLevel(aliasIds(cat.marketAliases.get(key)), cat, opts.level);
   if (exactAlias.length) return { ids: exactAlias, method: "alias", tier: exactAlias.length > 1 ? "variants" : "confident" };
 
   // 2. exact catalog-name match (layered: bare -> player registers -> settlement-stripped). E8-safe.
   // The catalog's OWN name outranks a loose subset alias (decision 25): a long market that is itself a
   // catalog entry ("Match to go into Extra Time") must ground to itself, never be shadowed by a shorter
   // subset alias ("extra time" -> "Extra Time"). Putting exact-name above the subset fallback enforces that.
-  const exact = exactNameIds(key, opts);
-  if (exact?.length) return { ids: exact, method: "name", tier: exact.length > 1 ? "variants" : "confident" };
+  const exact = keepLevel(exactNameIds(key, opts) ?? [], cat, opts.level);
+  if (exact.length) return { ids: exact, method: "name", tier: exact.length > 1 ? "variants" : "confident" };
 
   // 3. subset-alias fallback — the most-specific criterion_concept alias whose every key-token appears in
   // the concept ("to score a brace" -> key "brace"); most-specific (most key-tokens) wins. Fires only now
   // that no exact alias key and no exact catalog name matched, so a curated phrasing still resolves while
   // the catalog's own names keep precedence.
-  const subset = aliasIds(subsetAlias(cat, key));
+  const subset = keepLevel(aliasIds(subsetAlias(cat, key)), cat, opts.level);
   if (subset.length) return { ids: subset, method: "alias", tier: subset.length > 1 ? "variants" : "confident" };
 
   // 4. vector tail — the decision-20 subject→cosine→gate→tier chain.
   return vectorGround(text, opts);
+}
+
+// ---- combined-market assembly (Sprint 7) ----
+// The extractor is catalog-blind and splits a top-level "X and Y" into one selector per leg, so a combined
+// catalog row ("Home Team to Win and Both Teams To Score") is never reached by per-leg grounding. This pass
+// re-surfaces it from the catalog — no extractor change, no live-menu fetch, no re-embed. It is ADDITIVE
+// (returned alongside the legs), driven by the small ever-offered combo set (`eligibleCombos`, registry-
+// filtered so the ~288 legacy combo rows can't leak), matched by IDF token cover over the legs.
+
+// One eligible combo: its outcome id(s) and the side-stripped core tokens its name reduces to. Per-side combos
+// ("…Win and BTTS" home/away) collapse to a single entry holding both twin ids — paired via the existing
+// per-side divert index (`perSideIndex`), so no new side logic.
+type ComboEntry = { ids: number[]; core: Set<string> };
+let comboIndexCache: ComboEntry[] | undefined;
+function comboIndex(): ComboEntry[] {
+  if (comboIndexCache) return comboIndexCache;
+  const seen = new Set<string>();
+  const out: ComboEntry[] = [];
+  for (const { id, name } of eligibleCombos()) {
+    const core = baseStatCore(name); // drops the "Home/Away Team" prefix so twins share a key
+    const twins = perSideIndex().get(core);
+    const ids = (twins?.length ? [...twins] : [id]).sort((a, b) => a - b);
+    const key = ids.join(",");
+    if (seen.has(key)) continue; // the home + away rows reduce to the same core → one entry
+    seen.add(key);
+    out.push({ ids, core: contentTokens(core) });
+  }
+  return (comboIndexCache = out);
+}
+
+// Surface any eligible combined market whose side-stripped core is (near-)fully covered by the UNION of the
+// query's leg concepts. Gated to ≥2 legs (a 1-selector query that IS a combo grounds normally through the
+// name/vector path) and the LEX_COVER_FLOOR near-full-cover bar — so the legs that justify the combo must
+// actually be present (a lone "both teams to score" can't covet "…Win and BTTS": the "win" tokens are
+// missing). Per-side combos return their home/away twin pair as `variants`; the executor binds the side
+// against the live event, exactly like decision-20's per-side divert. Pure token cover — no embed.
+// The leg token pool the combo cover is measured against. A NEGATED leg ("no draw") must not seed a positive
+// combo — its tokens are dropped, so "no draw and both teams score" can't match "Draw and BTTS" on the bare
+// token "draw". (Token cover is blind to polarity; this is the one principled exception.)
+const NEGATION = /^(no|not|without)\b/i;
+function comboPool(legConcepts: string[]): Set<string> {
+  const pool = new Set<string>();
+  for (const c of legConcepts) {
+    if (NEGATION.test(c.trim())) continue;
+    for (const t of contentTokens(c)) pool.add(t);
+  }
+  return pool;
+}
+
+export function assembleCombos(legConcepts: string[]): GroundResult[] {
+  if (legConcepts.length < 2) return [];
+  const pool = comboPool(legConcepts);
+  const out: GroundResult[] = [];
+  for (const combo of comboIndex()) {
+    if (idfCover(pool, combo.core) >= LEX_COVER_FLOOR) {
+      out.push({ ids: combo.ids, method: "combo", tier: combo.ids.length > 1 ? "variants" : "confident" });
+    }
+  }
+  return out;
+}
+
+// Diagnostic (probe/tuning only; NOT in any grounding path): the IDF cover of EVERY eligible combo by the
+// leg pool, gate aside — so a probe can see the separation between a true combo and the near-miss tail and
+// validate the LEX_COVER_FLOOR bar. Read-only.
+export function comboCovers(legConcepts: string[]): { ids: number[]; cover: number }[] {
+  const pool = comboPool(legConcepts);
+  return comboIndex().map((combo) => ({ ids: combo.ids, cover: idfCover(pool, combo.core) }));
+}
+
+// Query-level grounding: ground every selector as today, then run the combo-assembly pass over the whole leg
+// set. `combos` is ADDITIVE (per-selector grounding is byte-identical), so a caller sees the legs AND any
+// ready-made combined market. The eval harness grades `perSelector`; combo grading is a later step.
+export type PlanLeg = { concept: string; subjectKind?: SubjectKind; line?: SelectorLine; period?: Period; side?: "home" | "away" };
+export type GroundedPlan = { perSelector: (GroundResult | null)[]; combos: GroundResult[] };
+export async function groundPlan(legs: PlanLeg[], level?: Level): Promise<GroundedPlan> {
+  const perSelector: (GroundResult | null)[] = [];
+  for (const leg of legs) {
+    const g = await groundMarket(leg.concept, { subjectKind: leg.subjectKind, line: leg.line, level, period: leg.period, side: leg.side });
+    perSelector.push(g.ids.length ? g : null);
+  }
+  return { perSelector, combos: assembleCombos(legs.map((l) => l.concept)) };
 }

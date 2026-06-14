@@ -19,7 +19,7 @@ import { BEHAVIOR_TAGS, CRITICAL_TAGS, SOFT_TAGS, BEHAVIOR_TAG_IDS, type Behavio
 import { extract, EXTRACTION_MODEL } from "../resolver/extract";
 import { scoreRun, type RunResult } from "./structural-scorer";
 import type { QueryPlan } from "../resolver/schema";
-import { groundMarket, type GroundOpts, type GroundResult, type SubjectKind } from "../resolver/ground-market";
+import { groundMarket, groundPlan, type GroundOpts, type GroundResult, type SubjectKind } from "../resolver/ground-market";
 import { loadCatalog } from "../resolver/catalog";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -81,13 +81,11 @@ function loadMeta(): { schemaVersion?: string; catalogVersion?: string } {
 // becomes null. Abstentions have no selectors -> nothing to ground.
 async function groundSelectors(plan: QueryPlan): Promise<(GroundResult | null)[] | undefined> {
   if (plan.status !== "resolved") return undefined;
-  const grounded: (GroundResult | null)[] = [];
-  const level = plan.event_scope.level;
-  for (const sel of plan.selectors) {
-    const g = await groundMarket(sel.market_concept, { subjectKind: sel.subject.kind, line: sel.line, level, period: sel.period });
-    grounded.push(g.ids.length ? g : null);
-  }
-  return grounded;
+  const legs = plan.selectors.map((sel) => ({ concept: sel.market_concept, subjectKind: sel.subject.kind, line: sel.line, period: sel.period }));
+  // groundPlan also assembles any combined market over the whole leg set (Sprint 7); the scorer grades the
+  // per-selector groundings (combo grading is a later step), so we pass `perSelector` through unchanged.
+  const { perSelector } = await groundPlan(legs, plan.event_scope.level);
+  return perSelector;
 }
 
 async function runQuery(rec: GoldRecord, n: number): Promise<QueryReport> {

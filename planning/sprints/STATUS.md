@@ -21,32 +21,45 @@ Fix (documented, not built): feed facets from the LLM (`opts.period ?? periodOf`
 demote-don't-drop (`adj` only → 0 golds dropped). Offline-validated: LLM facets ~90% accurate; rejected the
 strip+hard-filter arm (recall@3 73→40); winning soft-demote arm shallow recall@3 **25→33–37%**, recall@10
 **54→68%**, 0 drops. **Honest scope:** period+side are **32/132 (~24%)** of the shallow band by cause-tag — the
-plurality (near-synonym 29) is Sprint-6 doc-views, combined 15 is Sprint-7 Stage-2; the **SIDE arm is
+plurality (near-synonym 29) is Sprint-6 doc-views, combined 15 is Sprint-7 grounder combo-assembly; the **SIDE arm is
 validate-first** (10/273 misses; the `Criterion.side` tag only marks per-side twins). No code.
 
 ---
 
-## Sprint 7 — Outcome-family gate: same-level meaning-tightness so the executor's live-menu collapse is safe
+## Sprint 7 — Combined markets: grounder-owned recombination of split legs
 
 Plan: [sprint-7.md](sprint-7.md)
 
-### 2026-06-09 — Designed via grill (Q1–Q7); plan recorded
+### 2026-06-11 — Re-scoped to combined markets; built + offline-validated
 
-Root-caused "to win the world cup" → a **qualify** market: the embedding melts win/qualify, and **Stage 2
-can't fix it** because `To qualify from Group Stage` is genuinely live in the WC (48 comp-events vs the winner
-market's 9). So tightness must come **upstream**: a Stage-1 **outcome-family gate** in the grounder (decision
-20's vector tail), partnering decision-23's deferred executor live-menu collapse (Stage 2). Settled design
-(see [sprint-7.md](sprint-7.md), proposed **decision 28**): family = the **outcome-type** axis only, orthogonal
-to period/subject/side/scope; **hard but conditional** cut (drop only when both query+candidate families are
-committed AND differ; uncertain → leak); query family **derived in the grounder by the same shared lexical
-tagger** that build-time-tags the catalog (extractor untouched, sport-agnostic); **precision-biased** lexical
-rules (commit only when sure), LLM as deferred **auditor** only; **per-selector** (extractor already splits
-combos), catalog combos/borderlines stay `uncertain` (no family-sets yet); filter **at pool construction** so
-BM25 can't dodge it; activate **first only on the competition-outcome cluster** (win-title / reach-stage /
-qualify / finish-position / top-scorer / award). Validate: no-LLM **WC-oracle collapse check first**, then the
-catalog-sweep round-trip (0 self-drops) + ship gate. **Deferred** (separate workstream): the combined-market
-reachability gap the "Mexico to Win and Both Teams To Score" probe exposed (extractor splits "X and Y", so
-pre-packaged combo rows are unreachable) — needs its own probe before any fix. No code yet.
+**Dropped the original Sprint 7** (an outcome-family gate Stage-1 — judged near-no-op — + a live-menu-driven
+Stage-2 recombination) and rewrote it around **combined markets only**, with a **grounder-owned** design that
+ships **independent of the executor / live layer**.
+
+Root cause (unchanged): the extractor splits "X and Y" into one selector per leg, so a combined catalog row
+(`1001957106 "Home Team to Win and Both Teams To Score"`) is never reached. Data: **293 combined rows, only 5
+ever offered** (registry) — so the **registry replaces the live menu** as the "is this combo real?" filter
+and no live fetch is needed to *discover* the combo (the executor only *confirms availability* later).
+
+**Built (additive — per-selector grounding byte-identical):** `src/resolver/combos.ts` (`eligibleCombos` =
+combined rows ∩ ever-offered registry → 5); `ground-market.ts` `assembleCombos` (query-level post-pass: pool
+the legs' content tokens, surface any eligible combo whose **side-stripped core** is covered ≥
+`LEX_COVER_FLOOR`; **≥2-leg** + **negated-leg** guards; per-side twins as `variants` via the existing
+`perSideIndex`) + `groundPlan` (returns legs **and** combos); `run.ts` `groundSelectors` now calls
+`groundPlan` (combos computed, grading unchanged). Reuses the surviving lexical/IDF channel + the per-side
+divert — no new matcher, no re-embed, **no extractor change**. Refactored `lexicalCover` onto a shared
+`idfCover` (behavior-preserving).
+
+**Validated (`scripts/combo-probe.ts`, offline — no LLM/Voyage):** both real split combos surface ("…win
+with goals at both ends" / "away side wins…both find the net" → the home/away twin pair, **cover 1.00**, best
+single leg **0.74** — the combo needs both legs); **0** legacy-combo leakage, **0** false positives over 50
+multi-leg tier1 queries (the lone negation case suppressed by the guard). `npm run typecheck` clean;
+`npm run eval` ship gate **PASS 8/8** (no regression).
+
+**Deferred:** eval-scorer grading of combos (probe-first); executor live-menu confirmation + side binding;
+unit-named combo aliases (scorecast/wincast). Atomic combos (Exact Finishing Order) and single-concept combos
+the extractor doesn't split ("score draw" → `correct score`) are out of scope (reached, or missed, by
+ordinary grounding).
 
 ---
 

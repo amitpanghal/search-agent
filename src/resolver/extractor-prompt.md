@@ -16,35 +16,26 @@ Work in three steps.
 
 ---
 
-## Step 1 — Decide the sport and the plan status
+## Step 1 — Identify the sport and resolve
 
-Built sports today: **FOOTBALL** (the only one). Decide `status`:
+**Every query resolves** — `status: "resolved"`. You **never abstain**.
 
-- The query is about football, **or names no sport at all** → a **football plan**,
-  `status: "resolved"`, `sport: "FOOTBALL"`. (A sport-silent query defaults to the only built
-  sport.) A football plan is **always** `resolved`; Step 3 fills its `selectors[]`.
-- The query is about a sport that is **not** built (tennis, basketball, cricket, F1, NFL, …)
-  → `status: "unsupported"`, `recognizedAs:` that sport as text. Do **not** invent a plan.
-- The query mixes football **with** an unbuilt sport → `status: "unsupported"` as well
-  (`recognizedAs` = the unbuilt sport). Do not half-answer by dropping the other sport.
-- `status: "ambiguous"` is reserved for a query torn between **two built sports**. With only
-  one built sport this can never happen today — never emit it.
-- **Abstain only on a named unbuilt sport.** Nothing else triggers `unsupported` — not a vague
-  or collective subject (descriptors like "the hosts", "the top seeds", "the favourites"), not a
-  missing or vague competition edition, not an exotic/unrecognized market, not an ungroundable
-  entity, not confusing phrasing. Resolve as FOOTBALL and keep the descriptor as **text** in
-  `teams`; grounding enumerates it. `recognizedAs` is the unbuilt sport's **name only** (e.g.
-  "tennis") or null — never a sentence, a reason, or "ambiguous query".
+Identify the **sport** the query is about and emit it as `sport` — free text, lowercase ("football",
+"tennis", "basketball", …). Read it from a named sport, the teams/players/competition, or the **market
+vocabulary** ("both teams to score" → football, "total games"/"aces" → tennis, "three-pointers" →
+basketball). If nothing disambiguates, pick the most likely sport for the wording. There is **no**
+`unsupported` and **no** `ambiguous` outcome: a sport with no catalog simply fails later at grounding —
+that is the right place for it, not extraction. So a non-football query still resolves; label the sport
+honestly (don't force it to football) and let grounding be the thing that fails.
 
-Only a **football plan** continues to Step 2 and Step 3; `unsupported` and `ambiguous` stop
-here and carry no scope or selectors. A football plan always carries `sport`, `event_scope`, and
-**≥1 selector** — there is no marketless status. A query that names no market still resolves: it
-gets one sentinel selector `{ subject: event, market_concept: "main" }` (Step 3), meaning "this
-fixture's main market". **Never emit zero selectors.**
+A resolved plan always carries `sport`, `event_scope`, and **≥1 selector**. A query that names no
+market still resolves — it gets one sentinel selector `{ subject: event, market_concept: "main" }`
+(Step 3), meaning "this fixture's main market". **Never emit zero selectors.**
 
 Neutral examples:
-- "corner markets priced over 1.5" → resolved, FOOTBALL (no sport named → the built one).
-- "Kohli to score a century next match" → unsupported, recognizedAs "cricket".
+- "corner markets priced over 1.5" → sport "football" (inferred from the market vocabulary).
+- "Djokovic vs Alcaraz total games over 22.5" → sport "tennis"; it resolves, then fails at grounding
+  (no tennis catalog) — never `unsupported`.
 
 ---
 
@@ -131,7 +122,7 @@ _Neutral examples:_
 ```json
 {
   "status": "resolved",
-  "sport": "FOOTBALL",
+  "sport": "football",
   "event_scope": {
     "teams": ["Italy"], "players": [], "competition": null,
     "level": "fixture",
@@ -150,12 +141,13 @@ Pick exactly one `kind`:
   stat/prop). Include `name` when a specific player is named → `{ kind: "player", name:
   "<player>" }`; **omit `name`** when it means any player → `{ kind: "player" }` (the executor
   returns every player's line). A position/age class rides in `attrFilter`; subject stays `player`.
-- **`team`** — a **named** team owns it. "England to win to nil" → `{ kind: "team", name:
-  "England" }`.
-- **`either_match_team`** — a **team-specific** market stated generically when **≥2 match
-  teams are in scope and no side is named**. "team total tackles" / "to-win-to-nil odds" in a
-  two-team match → `{ kind: "either_match_team" }` (bare, no name; do not split into two
-  selectors).
+- **`team`** — a **named** team owns it ("England", "Arsenal") → `{ kind: "team", name: "England" }`.
+  A **positional role is not a name**: "home team", "the hosts", "the away side" are sides — use
+  `either_match_team` with a `side`, never `{ name: "home team" }`.
+- **`either_match_team`** — one of the two match teams, stated generically (≥2 teams in scope, no
+  *named* owner). Add **`side: "home" | "away"`** when the query points at a specific side ("the hosts"
+  → `{ kind: "either_match_team", side: "home" }`); omit `side` when it's either team ("team total
+  tackles" → `{ kind: "either_match_team" }`). Never split into two selectors.
 - **`event`** — **one outcome for the whole match or tournament** (*not* a line per player),
   including a tournament award/outright with a single winner among many players → `{ kind:
   "event" }` (bare). A position/region/age class still rides in `attrFilter`.
@@ -167,19 +159,33 @@ outcome for the whole match or tournament** → `event`; a **team-specific** gen
 is `player`, but a single-winner award among players is `event`.)
 
 **Coreference:** resolve "his"/"their"/"its" to the concrete name — never emit the pronoun.
-"his shots" → that player's name. **"his team" → the player's national team** (World Cup
-context), not his club: "Pedri … his team to win" → team "Spain".
+"his shots" → that player's name. **"his/their team" → the team that player represents in the
+query's context** (their national side for an international tournament, their club for a league
+query): "Pedri … his team to win" → Pedri's side in context.
 
 ### market_concept
 
-The market as a short concept phrase close to the query wording ("tackle markets" →
-"tackles", "fouls conceded", "winning margin", "time of first goal"). Text only — never
-guess a catalog name, never invent a market that wasn't asked for.
+A **short market name**: the stat/outcome head, not a paraphrase or a sentence. Two steps:
+- **Drop the filler word "market(s)"**: "corner markets" → "corners", "tackle markets" → "tackles".
+- **Strip everything else that isn't the market** — the teams/event, competition, time, and conditions
+  ("if it goes to extra time", "this season", "for united"); what's left is a short noun phrase or
+  infinitive, **never a clause or full sentence** ("total fouls if it goes to extra time" → "total
+  fouls"). **Strip period qualifiers too**: whatever you encode in the `period` facet must NOT also
+  appear in `market_concept`. If stripping the period words leaves a bare stem, name the underlying
+  stat instead of keeping them ("goals after the restart" → `goals` + period `second_half`) — never a
+  concept like "total after the restart".
+
+Text only — never guess a catalog name, never invent a market that wasn't asked for.
 
 A **bare count noun** is incomplete: a whole-match or whole-team count names the aggregate
-"total <noun>" even when the query omits the word — "Over 2.5 goals" → "total goals", "9+
-corners" → "total corners". Leave already-qualified concepts as-is ("shots on target",
-"fouls conceded", "winning margin").
+"total `<noun>`" even when the query omits the word — "Over 2.5 goals" → "total goals", "9+
+corners" → "total corners". Leave already-qualified concepts as-is ("shots on target", "winning margin").
+
+A **question still names a market** — map it to the outcome it asks about, never skip it:
+- "who wins / comes out ahead" → the **result/winner** outcome (a whole-competition question → the **outright**);
+- "which/who has the **most / fewest / highest / best** `<X>`" → the **superlative** market on `<X>`
+  ("which team scores fewest" → "fewest goals"; "which side gets more `<X>`" → "most `<X>`");
+- "**how many** `<X>`" → the **count/total** of `<X>`.
 
 A **yes/no achievement** (a player *or team* proposition) is an infinitive *to <verb>* close to
 the query's wording, not a noun ("<X> scorer" → "to score"). Strip **generic timing** words
@@ -189,9 +195,13 @@ or method yourself — keep the query's own term; the per-sport lexicon maps it 
 
 ### period (optional) — which **match-period** the query restricts to
 
-A match runs in periods; when the query confines the market to one, emit the normalized facet
-(`first_half` / `second_half` / `extra_time`), else **omit** (= full match). Read the meaning, not a
-fixed word list. This is additive — **keep the period words in `market_concept` too**, don't strip them.
+A match runs in periods split by an interval. Emit the facet only when the query confines the market
+to one period, else **omit** (= full match):
+  - `first_half`  — play before the interval.
+  - `second_half` — play after the interval, once play resumes.
+  - `extra_time`  — play beyond regulation.
+Read the meaning, not the surface words. The facet carries the period, so the concept stays period-free
+(strip the period words from `market_concept`).
 
 ### line (optional) — by **answer-type**, not the nouns
 
@@ -214,9 +224,12 @@ noun (shots, cards, corners, fouls). One branch applies:
   omitted: a price-only mention keeps the `"yes"` line and puts the price in `odds`.
 - **`selection`** — picks **one of several named outcomes** (HT/FT, correct score, winning
   margin, handicap line) → `{ kind: "selection", value: "<pick>" }` as text; subject = named
-  team, else `event`. **Handicaps** (Asian / 3-way): `market_concept` names the type only
-  ("Asian handicap", "3-way handicap") — never the number; `value` = the signed line alone
-  ("-1.5", "+1"), never the team (it's the subject).
+  team, else `event`. **Handicaps:** a stated **start / spot / margin one side must overcome**
+  ("-1 start", "spotting them one", "a one-`<unit>` head start", "+5.5") **is a handicap** even
+  when the word isn't used; **a tie/draw offered as a third result makes it a "three-way handicap"**,
+  otherwise a **two-way handicap** (no tie). `market_concept` names the **type** ("`<count>` handicap",
+  "three-way handicap") — never the number; `value` = the signed line alone ("-1", "+1"), never the
+  team (it's the subject).
 
 **Binary vs selection:** asserts one proposition true → `binary`; chooses among named outcomes
 → `selection`. A superlative/occurrence/scorer stays `binary` even when it names the achiever
@@ -275,8 +288,9 @@ attrFilter `{ position: "fullback" }`.
    bind a market to a neighbouring subject. **Each comma/"and"-separated proposition is its own
    selector — never fuse two into one `market_concept`.** ("Kane tackles, Saka interceptions" →
    Kane↔tackles, Saka↔interceptions.)
-2. **Coreference → concrete name**; "his team" = the **national team** in a World Cup.
-   ("Foden … his team to win the group" → team "England".)
+2. **Coreference → concrete name**; "his/their team" = the team that player represents in context
+   (national side in an international tournament, club in a league query).
+   ("Foden … his team to win the group" → Foden's side in context.)
 3. **Line vs price** — a number on a counted thing is a **line**; a bare or "priced" number
    is **odds**; both can co-occur. Age is **never** a line/odds → it goes to `attrFilter`.
    ("tackles over 3.5 priced above 2.0" → line `{numeric,3.5,over}` + odds `{min:2.0}`.)
@@ -320,7 +334,7 @@ Plan:
 ```json
 {
   "status": "resolved",
-  "sport": "FOOTBALL",
+  "sport": "football",
   "event_scope": {
     "teams": ["Germany", "Italy"],
     "players": [{ "name": "Barella", "role": "starts" }],

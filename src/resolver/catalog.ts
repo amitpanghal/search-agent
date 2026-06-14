@@ -39,6 +39,9 @@ export type Criterion = {
   shownInPreMatch: boolean;
   subject: Subject;
   side: Side;
+  // Offer-observed event level (fixture vs competition), attached at build time from offer-stats.json
+  // (the WC26 group's per-criterion observation). Undefined when the criterion was never seen in offers.
+  level?: Level;
 };
 
 // A market alias points at one of three concept granularities. Only `criterion_concept` names a
@@ -63,9 +66,24 @@ function readJson(file: string): any {
   return JSON.parse(readFileSync(join(DATA, file), "utf8"));
 }
 
+// Optional catalog subset (MEASUREMENT, default off). CATALOG_SUBSET=<path to a JSON file holding a
+// number[] of criterion ids, or { ids: number[] }> restricts the catalog — and the vector index, which
+// follows the catalog (see loadIndex) — to those ids, so the grounder searches a smaller, less-noisy
+// pool (e.g. only the markets a single competition actually offers). Unset = full catalog = production.
+let subsetCache: Set<number> | null | undefined;
+export function catalogSubset(): Set<number> | null {
+  if (subsetCache !== undefined) return subsetCache;
+  const p = process.env.CATALOG_SUBSET;
+  if (!p) return (subsetCache = null);
+  const raw = JSON.parse(readFileSync(p, "utf8"));
+  const ids: unknown[] = Array.isArray(raw) ? raw : (raw.ids ?? []);
+  return (subsetCache = new Set(ids.map(Number).filter((n) => Number.isFinite(n))));
+}
+
 function loadCriterions(): Pick<Catalog, "byId" | "list" | "byName" | "bySubject" | "version"> {
   const raw = readJson("football_criterions.json");
-  const list: Criterion[] = (raw.criterions as any[]).map((c) => ({
+  const subset = catalogSubset();
+  const full: Criterion[] = (raw.criterions as any[]).map((c) => ({
     id: c.id,
     sport: c.sport,
     name: c.name,
@@ -75,7 +93,9 @@ function loadCriterions(): Pick<Catalog, "byId" | "list" | "byName" | "bySubject
     shownInPreMatch: !!c.shownInPreMatch,
     subject: c.subject === "player" ? "player" : "team_or_match",
     side: c.side === "home" ? "home" : c.side === "away" ? "away" : null,
+    level: c.level === "fixture" || c.level === "competition" ? c.level : undefined,
   }));
+  const list = subset ? full.filter((c) => subset.has(c.id)) : full;
 
   const byId = new Map<number, Criterion>();
   const byName = new Map<string, number[]>();

@@ -2,7 +2,7 @@
   "sport": "FOOTBALL",
   "counts": {
     "categories": 395,
-    "mappings": 11927
+    "mappings": 12249
   },
   "categories": [
     {
@@ -3928,6 +3928,16 @@
           "criterionId": 2100114485,
           "boType": 2,
           "boTypeName": "onecrosstwo"
+        },
+        {
+          "criterionId": 2100116616,
+          "boType": 2,
+          "boTypeName": "onecrosstwo"
+        },
+        {
+          "criterionId": 2100116617,
+          "boType": 2,
+          "boTypeName": "onecrosstwo"
         }
       ]
     },
@@ -4660,6 +4670,11 @@
           "criterionId": 1001809658,
           "boType": 13,
           "boTypeName": "head"
+        },
+        {
+          "criterionId": 1001809659,
+          "boType": 127,
+          "boTypeName": "playeroccurrenceline"
         },
         {
           "criterionId": 1001834071,
@@ -21840,6 +21855,11 @@
           "boTypeName": "yesno"
         },
         {
+          "criterionId": 2100045806,
+          "boType": 4,
+          "boTypeName": "outright"
+        },
+        {
           "criterionId": 2100047421,
           "boType": 4,
           "boTypeName": "outright"
@@ -23760,6 +23780,11 @@
           "boTypeName": "yesno"
         },
         {
+          "criterionId": 2100045460,
+          "boType": 6,
+          "boTypeName": "overunder"
+        },
+        {
           "criterionId": 2100090058,
           "boType": 6,
           "boTypeName": "overunder"
@@ -23778,6 +23803,11 @@
           "criterionId": 2100091955,
           "boType": 127,
           "boTypeName": "playeroccurrenceline"
+        },
+        {
+          "criterionId": 2100116561,
+          "boType": 4,
+          "boTypeName": "outright"
         }
       ]
     },
@@ -26714,6 +26744,11 @@
         },
         {
           "criterionId": 1001621941,
+          "boType": 4,
+          "boTypeName": "outright"
+        },
+        {
+          "criterionId": 1001621941,
           "boType": 18,
           "boTypeName": "yesno"
         },
@@ -27486,6 +27521,11 @@
         },
         {
           "criterionId": 1002680641,
+          "boType": 4,
+          "boTypeName": "outright"
+        },
+        {
+          "criterionId": 1002731614,
           "boType": 4,
           "boTypeName": "outright"
         },
@@ -28501,6 +28541,11 @@
       "name": "Match",
       "mappings": [
         {
+          "criterionId": 1001159664,
+          "boType": 2,
+          "boTypeName": "onecrosstwo"
+        },
+        {
           "criterionId": 1001159858,
           "boType": 2,
           "boTypeName": "onecrosstwo"
@@ -28543,6 +28588,11 @@
         },
         {
           "criterionId": 1001980239,
+          "boType": 6,
+          "boTypeName": "overunder"
+        },
+        {
+          "criterionId": 2100097912,
           "boType": 6,
           "boTypeName": "overunder"
         }
@@ -41103,11 +41153,6 @@
           "boTypeName": "overunder"
         },
         {
-          "criterionId": 1001318149,
-          "boType": 6,
-          "boTypeName": "overunder"
-        },
-        {
           "criterionId": 1001332886,
           "boType": 6,
           "boTypeName": "overunder"
@@ -41201,11 +41246,6 @@
           "criterionId": 1002057636,
           "boType": 4,
           "boTypeName": "outright"
-        },
-        {
-          "criterionId": 1002082908,
-          "boType": 6,
-          "boTypeName": "overunder"
         },
         {
           "criterionId": 1002082910,
@@ -43337,11 +43377,6 @@
           "boTypeName": "overunder"
         },
         {
-          "criterionId": 2100045806,
-          "boType": 4,
-          "boTypeName": "outright"
-        },
-        {
           "criterionId": 2100047422,
           "boType": 4,
           "boTypeName": "outright"
@@ -43360,11 +43395,6 @@
           "criterionId": 2100047424,
           "boType": 4,
           "boTypeName": "outright"
-        },
-        {
-          "criterionId": 2100047425,
-          "boType": 6,
-          "boTypeName": "overunder"
         },
         {
           "criterionId": 2100047426,
@@ -43600,6 +43630,11 @@
           "criterionId": 2100113630,
           "boType": 13,
           "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100114229,
+          "boType": 6,
+          "boTypeName": "overunder"
         },
         {
           "criterionId": 2100115501,
@@ -54256,8 +54291,8 @@
       "mappings": [
         {
           "criterionId": 1004544421,
-          "boType": 13,
-          "boTypeName": "head"
+          "boType": 127,
+          "boTypeName": "playeroccurrenceline"
         }
       ]
     },
@@ -57512,6 +57547,491 @@
         },
         {
           "criterionId": 2100113626,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116687,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116688,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116689,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116690,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116691,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116692,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116693,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116694,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116695,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116696,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116697,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116698,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116699,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116700,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116701,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116702,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116703,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116704,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116705,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116706,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116707,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116708,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116709,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116710,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116711,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116712,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116713,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116714,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116715,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116716,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116717,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116718,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116719,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116720,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116721,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116735,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116736,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116737,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116738,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116739,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116740,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116741,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116742,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116743,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116744,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116745,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116746,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116747,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116748,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116749,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116750,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116751,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116752,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116753,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116754,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116755,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116756,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116757,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116758,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116759,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116760,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116761,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116762,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116763,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116764,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116765,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116766,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116767,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116768,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116769,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116770,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116771,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116772,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116773,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116774,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116775,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116776,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116777,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116778,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116779,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116780,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116781,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116782,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116783,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116784,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116785,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116786,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116787,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116788,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116789,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116790,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116791,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116792,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116793,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116794,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116795,
+          "boType": 13,
+          "boTypeName": "head"
+        },
+        {
+          "criterionId": 2100116796,
           "boType": 13,
           "boTypeName": "head"
         }
@@ -60816,7 +61336,13 @@
     {
       "id": 10028296,
       "name": "ATG Specials",
-      "mappings": []
+      "mappings": [
+        {
+          "criterionId": 2100117218,
+          "boType": 18,
+          "boTypeName": "yesno"
+        }
+      ]
     },
     {
       "id": 10028297,
@@ -61782,6 +62308,1076 @@
           "criterionId": 2100116194,
           "boType": 18,
           "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116207,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116208,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116282,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116283,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116284,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116285,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116286,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116287,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116288,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116289,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116290,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116291,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116292,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116293,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116294,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116295,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116296,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116297,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116298,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116299,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116300,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116301,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116302,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116303,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116304,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116305,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116306,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116307,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116308,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116309,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116310,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116311,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116312,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116313,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116314,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116315,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116316,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116317,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116318,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116319,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116320,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116321,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116322,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116323,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116324,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116325,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116326,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116327,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116328,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116329,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116330,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116331,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116332,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116333,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116334,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116335,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116336,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116337,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116338,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116339,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116340,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116341,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116342,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116343,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116344,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116345,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116346,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116347,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116348,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116349,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116350,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116351,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116352,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116354,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116355,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116356,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116357,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116358,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116359,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116360,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116361,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116362,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116363,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116364,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116365,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116366,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116367,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116368,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116369,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116370,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116371,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116372,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116373,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116374,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116375,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116376,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116377,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116378,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116379,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116380,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116381,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116382,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116383,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116384,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116385,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116386,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116387,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116388,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116389,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116390,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116391,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116392,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116393,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116394,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116395,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116396,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116397,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116398,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116399,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116400,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116401,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116402,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116403,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116404,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116405,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116406,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116407,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116408,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116409,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116410,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116411,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116412,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116413,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116414,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116415,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116416,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116417,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116418,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116419,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116420,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116421,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116422,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116423,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116424,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116425,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116426,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116427,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116428,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116429,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116430,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116431,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116432,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116433,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116434,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116435,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116436,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116437,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116438,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116439,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116440,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116441,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116442,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116443,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116444,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116445,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116446,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116447,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116448,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116449,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116450,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116451,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116452,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116453,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116454,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116455,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116456,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116457,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116458,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116459,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116460,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116462,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116463,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116464,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116465,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116466,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116467,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116468,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116469,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116470,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116471,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116472,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116473,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116474,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116475,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116476,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116477,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116478,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116479,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116480,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116482,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116483,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116484,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116485,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116486,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116487,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116488,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116489,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116490,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116554,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116555,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116556,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116557,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116797,
+          "boType": 18,
+          "boTypeName": "yesno"
+        },
+        {
+          "criterionId": 2100116798,
+          "boType": 18,
+          "boTypeName": "yesno"
         }
       ]
     },
@@ -61832,6 +63428,11 @@
       "name": "Tournament Totals",
       "mappings": [
         {
+          "criterionId": 1001318149,
+          "boType": 6,
+          "boTypeName": "overunder"
+        },
+        {
           "criterionId": 1001892836,
           "boType": 6,
           "boTypeName": "overunder"
@@ -61890,6 +63491,11 @@
           "criterionId": 1002057636,
           "boType": 13,
           "boTypeName": "head"
+        },
+        {
+          "criterionId": 1002082908,
+          "boType": 6,
+          "boTypeName": "overunder"
         },
         {
           "criterionId": 1002082909,
@@ -61965,6 +63571,11 @@
           "criterionId": 2100047249,
           "boType": 4,
           "boTypeName": "outright"
+        },
+        {
+          "criterionId": 2100047425,
+          "boType": 6,
+          "boTypeName": "overunder"
         },
         {
           "criterionId": 2100114230,

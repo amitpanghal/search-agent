@@ -592,3 +592,32 @@ Step-0 sanity of the added `### period` rule (`scripts/probe-period-facet.ts`, r
 - "mbappe shots on target" → player `shots on target` | **—** | (omit) ✓
 - "who wins the second half" → `second half winner` | **second_half** | second_half ✓
 - **Finding:** 10/12 period idioms normalized by the LLM; `market_concept` stays **rich** (period words not stripped); no-period queries omit. The 2 LLM misses both carry the literal idiom in the concept text, so the grounder's `opts.period ?? periodOf(text)` regex fallback recovers them — validating the LLM-first / regex-fallback design. Grounder mechanism check (`offside flags` + `extra_time`): promotes "Player's offside infringements - **Including Extra Time**" from a wrong-period shortlist to a **confident** grounding (regex on the bare concept saw no period → period-collapse killed the ET variant; the LLM facet rescues it). Zero-drop holds (penalties touch `adj` only; `gate`/THRESHOLD untouched). Ship gate g001–g003 PASS; 32-case `ground-snapshot.ts` 0 regressions. Memo key extended to include `period`+`level` (`ground-market.ts`) so facet-differing calls don't collide.
+
+## 2026-06-13 — dual-stage probe (20 WC-2026 queries, extractor + grounding)
+Probed via `scripts/dual-probe.ts` (extractor plans cached to `scripts/.dual-probe.json`; Voyage embeds live). NOTE: vector index is STALE vs catalog (`fba201b9be6a` != `0f2aac930df9`) — affects vector-path rows only; rebuild with `npm run build:index`.
+
+Player-prop block:
+- "Bukayo Saka anytime scorer tonight World Cup" → player `anytime scorer` → **alias/variants** [1001159886,1006478338] To Score×2 ✓
+- "Viktor Gyökeres first goalscorer odds under 4.0 Sweden" → player `first goalscorer` → **vector/confident** [1005153918] First Goal Scorer ✓
+- "Bruno Fernandes shots on target over 1.5 this weekend World Cup" → player `shots on target` num1.5 → **name/confident** [2100015085] Player Shots on Target ✓
+- "Luka Modric to receive a card World Cup 2026" → player `to receive a card` → **vector/confident** [1001159667] To Get a Card ✓ (level=competition)
+- "Gonçalo Ramos anytime scorer live Portugal" → player `anytime scorer` → **alias/variants** [1001159886,1006478338] To Score×2 ✓
+- "Alexander Isak first goalscorer odds above 3.0 World Cup this weekend" → player `first goalscorer` → **vector/confident** [1005153918] First Goal Scorer ✓
+- "Edin Dzeko to score anytime Bosnia World Cup tonight" → player `to score anytime` → **vector/shortlist** [2100091656,2100091955,1001159886] To Score(Fielded Anytime)|To score at least {0} goals(Fielded Anytime)|To Score ⚠ (concept word-order "to score anytime" misses the `anytime scorer`/`to score` alias → cold vector shortlist)
+- "Anthony Gordon shots on target 2+ tonight World Cup" → player `shots on target` num2 → **name/confident** [2100015085] Player Shots on Target ✓
+- "Ronald Araujo anytime scorer Uruguay World Cup next match" → player `anytime scorer` → **alias/variants** [1001159886,1006478338] To Score×2 ✓
+- "Joao Felix to score and Portugal to win World Cup late kickoff" → split: player `to score` → **name/variants** [1001159886,1006478338] To Score×2 ✓ ; team `to win` → **vector/shortlist** [1001159600,1002044186,1001642866] To Win The Trophy|To win all their matches|Home Team to Win to Nil ⚠ (level=competition: fixture "to win"→Match Odds alias is level-scoped, so the competition query falls to a tournament-outright vector shortlist; no Match Odds). No combo surfaced.
+
+Event/market block:
+- "USA vs Paraguay live both teams to score" → event `both teams to score` → **name/confident** [1001642858] Both Teams To Score ✓
+- "World Cup tonight over 2.5 goals odds under 2.0" → event `total goals` num2.5 → **name/confident** [1001159926] Total Goals ✓
+- "World Cup late kickoffs draw no bet favorites under 1.5 odds" → event `draw no bet` → **name/confident** [1001159666] Draw No Bet ✓
+- "World Cup 2026 correct score 1-0 home win odds above 5.0" → event `correct score` sel"1-0 home win" → **name/confident** [1001159780] Correct Score ✓
+- "World Cup live corners over 8.5 second half tonight" → event `total corners` 2nd-half num8.5 → **vector/ambiguous** [1001159951,2100044967,2100044969] Total Corners-2nd Half|...By Home Team-2nd Half|...By Away Team-2nd Half ⚠ (period folded in correctly; match-total vs per-side twins land within ε → ambiguous, executor clarifies)
+- "Portugal double chance odds under 1.3 World Cup group stage" → team `double chance` → **name/confident** [1001159922] Double Chance ✓
+- "World Cup half time full time home/home this weekend odds above 3.5" → either_match_team `half time full time home/home` sel → **vector/confident** [1001159830] Half Time/Full Time ✓
+- "World Cup Asian handicap -0.5 tonight favorites" → either_match_team `Asian handicap` sel"-0.5" → **name/variants** [1002135397,1002275572] Asian Handicap×2 ✓
+- "England both teams to score and over 2.5 World Cup" → split: event `both teams to score` → **name/confident** [1001642858] BTTS ✓ ; event `total goals` num2.5 → **name/confident** [1001159926] Total Goals ✓. No combo surfaced (legs ground cleanly to singles; no BTTS+O2.5 combined row in eligible set).
+- "World Cup this weekend total cards over 3.5 late kickoffs" → event `total cards` num3.5 → **name/confident** [1001159529] Total Cards ✓
+
+**Findings:** 20/20 extracted clean (sport, scope, level, odds, period, line all populated; multi-leg "X and Y" split into per-selector legs as designed). Grounding: 16/20 confident-or-variants (correct), 2 ambiguous/shortlist that are *defensible* clarifies (corners twins; competition-level "to win"), 1 weak shortlist from concept word-order ("to score anytime" vs alias key "anytime scorer"/"to score"). No false-confidents. Odds bounds (min/max) carried on the plan but not used by grounding (executor-side filter). Combo pass surfaced nothing on the 2 multi-leg queries.

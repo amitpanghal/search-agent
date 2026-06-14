@@ -119,21 +119,16 @@ const GoldEventScope = z.object({
   time: Time.nullable(),
 });
 
-// the expected plan: status-discriminated, exactly like decision 18.
-// `sport` is a free string here, validated against the runtime BUILT_SPORTS on load (E11).
-const GoldPlan = z.discriminatedUnion("status", [
-  // resolved (decision 24): always >=1 selector. A marketless query is the lone `main` sentinel
-  // selector (market_concept {main:true}), not a separate status — the scorer grades that case like
-  // the former fixture_lookup (fixture-selecting facets HARD, Option A).
-  z.object({
-    status: z.literal("resolved"),
-    sport: z.string().min(1),
-    event_scope: GoldEventScope,
-    selectors: z.array(GoldSelector).min(1),
-  }),
-  z.object({ status: z.literal("ambiguous"), candidates: z.array(z.string()).min(2) }),
-  z.object({ status: z.literal("unsupported"), recognizedAs: z.string().nullable() }),
-]);
+// the expected plan: always resolved. The extractor never abstains — it identifies the sport (free text,
+// graded loosely) and resolves; an unsupported sport fails at grounding, not extraction. A marketless query
+// is the lone `main` sentinel selector (market_concept {main:true}), graded like the former fixture_lookup
+// (fixture-selecting facets HARD, Option A).
+const GoldPlan = z.object({
+  status: z.literal("resolved"),
+  sport: z.string().min(1),
+  event_scope: GoldEventScope,
+  selectors: z.array(GoldSelector).min(1),
+});
 
 export const GoldRecord = z.object({
   id: z.string().min(1), // gold row id, e.g. "g001"

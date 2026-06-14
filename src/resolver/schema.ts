@@ -21,7 +21,7 @@ export const BUILT_SPORTS = ["FOOTBALL"] as const;
 const Subject = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("player"), name: z.string().min(1).optional() }),
   z.object({ kind: z.literal("team"), name: z.string().min(1) }),
-  z.object({ kind: z.literal("either_match_team") }),
+  z.object({ kind: z.literal("either_match_team"), side: z.enum(["home", "away"]).optional() }),
   z.object({ kind: z.literal("event") }),
 ]);
 
@@ -55,8 +55,9 @@ const AttrFilter = z
 const Selector = z.object({
   subject: Subject,
   market_concept: z.string().min(1),
-  // Normalized match-period facet (sport-agnostic). The grounder's period penalty consumes it; omitted ->
-  // the grounder falls back to its catalog-name regex (`periodOf`). Enum MUST mirror ground-market's `Period`.
+  // Normalized match-period facet (sport-agnostic). The grounder folds it into the embed text (withPeriod)
+  // so period-specific catalog names out-cosine their full-match twins; omitted -> full match (no fold-in,
+  // no fallback — period must come from here). Enum MUST mirror ground-market's `Period`.
   period: z.enum(["full", "first_half", "second_half", "extra_time"]).optional(),
   line: Line.optional(),
   odds: Odds.optional(),
@@ -89,20 +90,15 @@ const EventScope = z.object({
   time: Time.nullable(),
 });
 
-// A confirmed football plan always carries sport + event_scope + >=1 selector — there is no
-// marketless status. A query that names no market still `resolved`s: it gets one sentinel selector
-// `{ subject: event, market_concept: "main" }` meaning "this fixture's main betoffer". Folding the
-// marketless case into `resolved` (instead of a separate `fixture_lookup` status) removes the second
-// output shape the small extractor over-used — it always emits >=1 selector now, which is the
-// always-resolve behaviour that had recall, minus the fabricated "match" market it used to invent.
-const footballPlan = { sport: z.enum(BUILT_SPORTS), event_scope: EventScope };
-
-// Status-discriminated "kind of resolver outcome": decide the sport first (ambiguous/unsupported are
-// abstentions carrying no scope); a built-sport query is always `resolved` with >=1 selector. The
-// marketless case is the `main` sentinel selector, not a status.
-export const QueryPlan = z.discriminatedUnion("status", [
-  z.object({ status: z.literal("resolved"), ...footballPlan, selectors: z.array(Selector).min(1) }),
-  z.object({ status: z.literal("ambiguous"), candidates: z.array(z.enum(BUILT_SPORTS)).min(2) }),
-  z.object({ status: z.literal("unsupported"), recognizedAs: z.string().nullable() }),
-]);
+// The extractor ALWAYS resolves and identifies the sport — `sport` is free text (any sport: "football",
+// "tennis", …), not a built-sport enum. It never abstains: a sport with no catalog simply fails downstream
+// at grounding, which is the right place for it, not extraction. So there is no `unsupported`/`ambiguous`
+// status. A query naming no market still resolves to the lone `main` sentinel selector (decision 24); a plan
+// always carries `sport`, `event_scope`, and >=1 selector.
+export const QueryPlan = z.object({
+  status: z.literal("resolved"),
+  sport: z.string().min(1),
+  event_scope: EventScope,
+  selectors: z.array(Selector).min(1),
+});
 export type QueryPlan = z.infer<typeof QueryPlan>;

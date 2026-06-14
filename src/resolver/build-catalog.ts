@@ -14,6 +14,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { catalogSubset } from "./catalog";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DATA = join(HERE, "..", "..", "data", "football");
@@ -25,6 +26,7 @@ type Category = { id: number; name: string; mappings: { criterionId: number; boT
 
 type Subject = "player" | "team_or_match";
 type Side = "home" | "away" | null;
+type Level = "fixture" | "competition";
 type OutCriterion = {
   id: number;
   sport: string;
@@ -35,6 +37,7 @@ type OutCriterion = {
   shownInPreMatch: boolean;
   subject: Subject;
   side: Side; // per-side ownership of a team_or_match market, for the named-team divert (decision 20)
+  level?: Level; // offer-observed event level from offer-stats.json (WC26 group); omitted when unobserved
 };
 
 // ---- subject tagging (decision 20) ----
@@ -113,6 +116,20 @@ function main(): void {
   const catFeed = read("football_categories.json") as { sport: string; categories: Category[] };
   const participants = read("football_participants.json") as { players: { name?: string }[] };
 
+  // Offer-observed event level (fixture vs competition), keyed by criterion id. Sourced from the WC26
+  // group's offer-stats; attached to each criterion below so the grounder can later use it as a level
+  // signal. Unobserved criterions get no level (key omitted).
+  const offerStats = read("offer-stats.json") as { stats: Record<string, { level?: string }> };
+  const levelById = new Map<number, Level>();
+  for (const [id, v] of Object.entries(offerStats.stats)) {
+    if (v.level === "fixture" || v.level === "competition") levelById.set(Number(id), v.level);
+  }
+
+  // Optional WC26-only build: when CATALOG_SUBSET points at a criterion-id list (e.g. wc26-subset.json),
+  // restrict the built catalog to those ids — same env/convention catalog.ts and the index use at load
+  // time (so the persisted artifact, not just a runtime filter, is the WC26 set). Unset = full catalog.
+  const subsetIds = catalogSubset();
+
   const rawById = new Map<number, RawCriterion>();
   for (const c of rawList) rawById.set(c.id, c);
 
@@ -146,6 +163,7 @@ function main(): void {
   let perSide = 0;
 
   for (const [id, categorySet] of cats) {
+    if (subsetIds && !subsetIds.has(id)) continue; // WC26-only build (decision: CATALOG_SUBSET set)
     const raw = rawById.get(id);
     const en = raw?.names.find((n) => n.locale === "en_GB");
     if (!en) {
@@ -180,6 +198,7 @@ function main(): void {
       shownInPreMatch: !!raw?.shownInPreMatch,
       subject,
       side,
+      level: levelById.get(id),
     });
   }
 
@@ -208,6 +227,9 @@ function main(): void {
       player,
       teamOrMatch,
       perSide,
+      withLevel: kept.filter((c) => c.level).length,
+      levelFixture: kept.filter((c) => c.level === "fixture").length,
+      levelCompetition: kept.filter((c) => c.level === "competition").length,
       shownInLive: kept.filter((c) => c.shownInLive).length,
       shownInPreMatch: kept.filter((c) => c.shownInPreMatch).length,
     },
@@ -219,9 +241,10 @@ function main(): void {
 
   // ---- report (eyeball the rebuild + the quarantine guard) ----
   const g001 = kept.find((c) => c.id === 2100015085);
-  console.log(`catalog rebuilt — version ${version}`);
+  console.log(`catalog rebuilt — version ${version}${subsetIds ? `  [WC26-only: ${subsetIds.size} subset ids]` : ""}`);
   console.log(`  referenced=${cats.size}  kept=${kept.length}  quarantined=${quarantined.length}`);
   console.log(`  subject: player=${player}  team_or_match=${teamOrMatch}  (per-side=${perSide})`);
+  console.log(`  level: withLevel=${kept.filter((c) => c.level).length}  fixture=${kept.filter((c) => c.level === "fixture").length}  competition=${kept.filter((c) => c.level === "competition").length}  (none=${kept.filter((c) => !c.level).length})`);
   console.log(`  g001 target 2100015085: ${g001 ? `PRESENT (subject=${g001.subject}, name="${g001.name}")` : "MISSING ❌"}`);
   if (missingEnGb.length) {
     console.log(`  ⚠ ${missingEnGb.length} referenced ids had no en_GB name and were dropped: ${missingEnGb.slice(0, 10).join(", ")}${missingEnGb.length > 10 ? " …" : ""}`);

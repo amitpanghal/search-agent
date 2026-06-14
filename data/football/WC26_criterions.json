@@ -1,0 +1,3222 @@
+{
+  "builtAt": "2026-06-13T15:07:40.250Z",
+  "source": {
+    "population": "offer-stats.json (WC-2026 group 2010133908 observed criterions)",
+    "levelFrom": "offer-stats.json (group 2010133908)",
+    "fieldsFrom": "football_criterions.json (catalog 3c11ce0a21f6)"
+  },
+  "counts": {
+    "observed": 194,
+    "written": 176,
+    "skipped": 18,
+    "withLevel": 176,
+    "levelFixture": 133,
+    "levelCompetition": 43
+  },
+  "criterions": [
+    {
+      "id": 1000316018,
+      "sport": "football",
+      "name": "Half Time",
+      "categoryNames": [
+        "HT 1x2",
+        "Half",
+        "Half Time",
+        "Half Time - Match"
+      ],
+      "boTypeNames": [
+        "doublechance",
+        "onecrosstwo",
+        "sidebet"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1000505272,
+      "sport": "football",
+      "name": "Correct Score - 1st Half",
+      "categoryNames": [
+        "Correct Score",
+        "Half Time"
+      ],
+      "boTypeNames": [
+        "result"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001159487,
+      "sport": "football",
+      "name": "Total Offsides by Home Team (Settled using Opta data)",
+      "categoryNames": [
+        "Match and Team Stats",
+        "Offsides",
+        "Team Stats",
+        "Total Offsides Home Team"
+      ],
+      "boTypeNames": [
+        "head",
+        "overunder"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "home",
+      "level": "fixture"
+    },
+    {
+      "id": 1001159499,
+      "sport": "football",
+      "name": "Group Stage points",
+      "categoryNames": [
+        "Group Betting",
+        "Team Performance"
+      ],
+      "boTypeNames": [
+        "outright",
+        "overunder"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 1001159529,
+      "sport": "football",
+      "name": "Total Cards",
+      "categoryNames": [
+        "Cards",
+        "Match Cards",
+        "Total Cards"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001159532,
+      "sport": "football",
+      "name": "Total Goals - 1st Half",
+      "categoryNames": [
+        "Half Time",
+        "Half Time - Over/Under",
+        "Half Time O/U",
+        "Half Total",
+        "Total Goals - 1st Half",
+        "Total Goals - First Half"
+      ],
+      "boTypeNames": [
+        "outright",
+        "overunder"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001159598,
+      "sport": "football",
+      "name": "Total Corners by Home Team",
+      "categoryNames": [
+        "Cards & Corners",
+        "Corners"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "home",
+      "level": "fixture"
+    },
+    {
+      "id": 1001159600,
+      "sport": "football",
+      "name": "To Win The Trophy",
+      "categoryNames": [
+        "Competition",
+        "Full Time",
+        "Fulltime",
+        "Match",
+        "Most Popular",
+        "Team Performance",
+        "Team Progress",
+        "Team To Go Through",
+        "Win/Place"
+      ],
+      "boTypeNames": [
+        "head",
+        "onecrosstwo",
+        "outright",
+        "sidebet",
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 1001159610,
+      "sport": "football",
+      "name": "Next Corner, No Corner No Bet ({0})",
+      "categoryNames": [
+        "Corners",
+        "Most Popular"
+      ],
+      "boTypeNames": [
+        "onecrosstwo"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001159620,
+      "sport": "football",
+      "name": "Total Offsides by Away Team (Settled using Opta data)",
+      "categoryNames": [
+        "Match and Team Stats",
+        "Offsides",
+        "Team Stats",
+        "Total Offsides Away Team"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "away",
+      "level": "fixture"
+    },
+    {
+      "id": 1001159628,
+      "sport": "football",
+      "name": "Total Offsides (Settled using Opta data)",
+      "categoryNames": [
+        "Match and Team Stats",
+        "Offsides",
+        "Stat Bets",
+        "Total Offsides"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001159633,
+      "sport": "football",
+      "name": "Total Goals by Away Team",
+      "categoryNames": [
+        "Full Time",
+        "Over/Under",
+        "Total Goals By Away Team",
+        "Total Goals by Away Team",
+        "Totals"
+      ],
+      "boTypeNames": [
+        "head",
+        "outright",
+        "overunder"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "away",
+      "level": "fixture"
+    },
+    {
+      "id": 1001159641,
+      "sport": "football",
+      "name": "To score most goals",
+      "categoryNames": [
+        "Player Goals",
+        "Player Performance",
+        "Player Specials",
+        "Player v Player",
+        "main (do not translate)"
+      ],
+      "boTypeNames": [
+        "head",
+        "outright"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001159666,
+      "sport": "football",
+      "name": "Draw No Bet",
+      "categoryNames": [
+        "Draw No Bet",
+        "Full Time",
+        "Side Bets"
+      ],
+      "boTypeNames": [
+        "onecrosstwo",
+        "sidebet"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001159667,
+      "sport": "football",
+      "name": "To Get a Card",
+      "categoryNames": [
+        "Cards",
+        "Player Cards",
+        "Player Specials",
+        "To get a Card"
+      ],
+      "boTypeNames": [
+        "head",
+        "playeroccurrenceline",
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001159668,
+      "sport": "football",
+      "name": "Double Chance - 1st Half",
+      "categoryNames": [
+        "Half Time"
+      ],
+      "boTypeNames": [
+        "doublechance"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001159697,
+      "sport": "football",
+      "name": "Total Corners by Away Team",
+      "categoryNames": [
+        "Cards & Corners",
+        "Corners"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "away",
+      "level": "fixture"
+    },
+    {
+      "id": 1001159711,
+      "sport": "football",
+      "name": "Handicap",
+      "categoryNames": [
+        "Full Time",
+        "Handicap",
+        "Match Odds",
+        "Spread"
+      ],
+      "boTypeNames": [
+        "handicap"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001159730,
+      "sport": "football",
+      "name": "To score from a header",
+      "categoryNames": [
+        "Goal Scorer",
+        "Goalscorers",
+        "Player Goals",
+        "Player Specials",
+        "Price Boost",
+        "To score from a header"
+      ],
+      "boTypeNames": [
+        "head",
+        "outright",
+        "playeroccurrenceline",
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001159750,
+      "sport": "football",
+      "name": "First Goal (Draw: No Goals)",
+      "categoryNames": [
+        "First & Last Goal",
+        "Match Events",
+        "next goal"
+      ],
+      "boTypeNames": [
+        "onecrosstwo",
+        "sidebet"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001159780,
+      "sport": "football",
+      "name": "Correct Score",
+      "categoryNames": [
+        "Correct Score",
+        "Full Time"
+      ],
+      "boTypeNames": [
+        "result"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001159807,
+      "sport": "football",
+      "name": "Most Corners",
+      "categoryNames": [
+        "Cards & Corners",
+        "Corners",
+        "Most Corners"
+      ],
+      "boTypeNames": [
+        "onecrosstwo",
+        "sidebet"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001159808,
+      "sport": "football",
+      "name": "Total Goals by Home Team Odd/Even",
+      "categoryNames": [
+        "Match Events",
+        "Odd/Even"
+      ],
+      "boTypeNames": [
+        "oddeven"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "home",
+      "level": "fixture"
+    },
+    {
+      "id": 1001159820,
+      "sport": "football",
+      "name": "Total Corners - 1st Half",
+      "categoryNames": [
+        "Cards & Corners",
+        "Corners"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001159826,
+      "sport": "football",
+      "name": "2nd Half",
+      "categoryNames": [
+        "2nd Half",
+        "Full Time",
+        "Half",
+        "Half Time",
+        "Second Half"
+      ],
+      "boTypeNames": [
+        "onecrosstwo"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001159830,
+      "sport": "football",
+      "name": "Half Time/Full Time",
+      "categoryNames": [
+        "Full Time",
+        "HT/FT"
+      ],
+      "boTypeNames": [
+        "htft",
+        "outright",
+        "overunder"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001159836,
+      "sport": "football",
+      "name": "To be included in starting XI",
+      "categoryNames": [
+        "Player Specials",
+        "Squad Selection"
+      ],
+      "boTypeNames": [
+        "head",
+        "outright"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001159858,
+      "sport": "football",
+      "name": "Full Time",
+      "categoryNames": [
+        "Asian",
+        "Full Time",
+        "Full Time - Match",
+        "Fulltime",
+        "Match",
+        "Match Odds",
+        "Most Popular"
+      ],
+      "boTypeNames": [
+        "asian",
+        "onecrosstwo"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001159884,
+      "sport": "football",
+      "name": "Draw No Bet - 1st Half",
+      "categoryNames": [
+        "Half Time"
+      ],
+      "boTypeNames": [
+        "onecrosstwo",
+        "sidebet"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001159886,
+      "sport": "football",
+      "name": "To Score",
+      "categoryNames": [
+        "Goal Scorer",
+        "Goalscorers",
+        "Player Goals",
+        "Player Scorer",
+        "Player Specials",
+        "To Score"
+      ],
+      "boTypeNames": [
+        "head",
+        "playeroccurrenceline",
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001159897,
+      "sport": "football",
+      "name": "Total Corners",
+      "categoryNames": [
+        "Cards & Corners",
+        "Corner",
+        "Corners",
+        "Total Corners"
+      ],
+      "boTypeNames": [
+        "outright",
+        "overunder"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001159922,
+      "sport": "football",
+      "name": "Double Chance",
+      "categoryNames": [
+        "Double Chance",
+        "Full Time",
+        "Side Bets"
+      ],
+      "boTypeNames": [
+        "doublechance"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001159926,
+      "sport": "football",
+      "name": "Total Goals",
+      "categoryNames": [
+        "Full Time",
+        "Full Time - Over/Under",
+        "Over/Under",
+        "Total",
+        "Total Goals",
+        "Totals",
+        "main (do not translate)"
+      ],
+      "boTypeNames": [
+        "head",
+        "outright",
+        "overunder"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001159938,
+      "sport": "football",
+      "name": "To Get a Red Card",
+      "categoryNames": [
+        "Player Cards",
+        "Player Specials",
+        "To get a Red Card"
+      ],
+      "boTypeNames": [
+        "head",
+        "playeroccurrenceline"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001159951,
+      "sport": "football",
+      "name": "Total Corners - 2nd Half",
+      "categoryNames": [
+        "Cards & Corners",
+        "Corners"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001159964,
+      "sport": "football",
+      "name": "Tournament progress by the team",
+      "categoryNames": [
+        "Team Performance",
+        "Team Progress",
+        "main (do not translate)"
+      ],
+      "boTypeNames": [
+        "outright"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 1001159967,
+      "sport": "football",
+      "name": "Total Goals by Home Team",
+      "categoryNames": [
+        "Full Time",
+        "Over/Under",
+        "Total Goals By Home Team",
+        "Total Goals by Home Team",
+        "Totals"
+      ],
+      "boTypeNames": [
+        "head",
+        "outright",
+        "overunder"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "home",
+      "level": "fixture"
+    },
+    {
+      "id": 1001159972,
+      "sport": "football",
+      "name": "Most Corners - 1st Half",
+      "categoryNames": [
+        "Cards & Corners",
+        "Corners"
+      ],
+      "boTypeNames": [
+        "onecrosstwo",
+        "sidebet"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001159997,
+      "sport": "football",
+      "name": "To score from outside the penalty box",
+      "categoryNames": [
+        "Goal Scorer",
+        "Goalscorers",
+        "Player Goals",
+        "Player Specials",
+        "Price Boost"
+      ],
+      "boTypeNames": [
+        "head",
+        "outright",
+        "playeroccurrenceline",
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001160024,
+      "sport": "football",
+      "name": "Total Goals by Away Team Odd/Even",
+      "categoryNames": [
+        "Match Events",
+        "Odd/Even"
+      ],
+      "boTypeNames": [
+        "oddeven"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "away",
+      "level": "fixture"
+    },
+    {
+      "id": 1001160038,
+      "sport": "football",
+      "name": "Total Goals Odd/Even",
+      "categoryNames": [
+        "Full Time",
+        "Odd/Even",
+        "Totals"
+      ],
+      "boTypeNames": [
+        "oddeven"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001224081,
+      "sport": "football",
+      "name": "3-Way Handicap",
+      "categoryNames": [
+        "3-Way Handicap",
+        "3-Way Spread",
+        "3-way Handicap",
+        "Full Time",
+        "Full Time - Handicap",
+        "Handicap"
+      ],
+      "boTypeNames": [
+        "threewayhandicap"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001228509,
+      "sport": "football",
+      "name": "Team to Score Most Goals",
+      "categoryNames": [
+        "Matchups",
+        "Special Offers",
+        "Team Goals",
+        "Team Performance",
+        "Tournament Matchups"
+      ],
+      "boTypeNames": [
+        "head",
+        "outright",
+        "overunder"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 1001232823,
+      "sport": "football",
+      "name": "To reach the Final",
+      "categoryNames": [
+        "Team Progress",
+        "Win/Place"
+      ],
+      "boTypeNames": [
+        "head",
+        "outright",
+        "yesno"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 1001239605,
+      "sport": "football",
+      "name": "Most Corners - 2nd Half",
+      "categoryNames": [
+        "Cards & Corners",
+        "Corners"
+      ],
+      "boTypeNames": [
+        "onecrosstwo",
+        "sidebet"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001241010,
+      "sport": "football",
+      "name": "To reach the Semi Final",
+      "categoryNames": [
+        "Team Progress",
+        "Win/Place"
+      ],
+      "boTypeNames": [
+        "head",
+        "outright",
+        "yesno"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 1001241014,
+      "sport": "football",
+      "name": "Exact Finishing Order (1st & 2nd placed)",
+      "categoryNames": [
+        "Competition Combinations",
+        "Finishing Position",
+        "Win/Place"
+      ],
+      "boTypeNames": [
+        "outright"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 1001241028,
+      "sport": "football",
+      "name": "To qualify from Group Stage",
+      "categoryNames": [
+        "Most Popular",
+        "Outrights",
+        "Team Performance",
+        "Team Progress",
+        "Team To Go Through",
+        "main (do not translate)"
+      ],
+      "boTypeNames": [
+        "head",
+        "outright",
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 1001241031,
+      "sport": "football",
+      "name": "Team in bottom place",
+      "categoryNames": [
+        "Competition",
+        "Finishing Position",
+        "Groups",
+        "Team Performance",
+        "main (do not translate)"
+      ],
+      "boTypeNames": [
+        "outright",
+        "position"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 1001241033,
+      "sport": "football",
+      "name": "Group to feature Tournament Winner",
+      "categoryNames": [
+        "Competition",
+        "Group Betting",
+        "Win/Place",
+        "main (do not translate)"
+      ],
+      "boTypeNames": [
+        "outright"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 1001243173,
+      "sport": "football",
+      "name": "Total Goals - 2nd Half",
+      "categoryNames": [
+        "Full Time",
+        "Half Time",
+        "Half Total",
+        "Second Half",
+        "Totals"
+      ],
+      "boTypeNames": [
+        "head",
+        "outright",
+        "overunder"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001263164,
+      "sport": "football",
+      "name": "Red Card given",
+      "categoryNames": [
+        "Cards",
+        "Match Cards",
+        "Red Card Given",
+        "Special Offers"
+      ],
+      "boTypeNames": [
+        "onecrosstwo",
+        "outright",
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001264082,
+      "sport": "football",
+      "name": "To Assist (Settled using Opta data)",
+      "categoryNames": [
+        "Player Assist",
+        "Player Assists",
+        "Player Specials",
+        "Player Stats"
+      ],
+      "boTypeNames": [
+        "head",
+        "playeroccurrenceline"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001304945,
+      "sport": "football",
+      "name": "To score most goals in the Competition",
+      "categoryNames": [
+        "Full Time",
+        "Most Popular",
+        "Most goals",
+        "Most goals in competition",
+        "Outrights",
+        "Player Goals",
+        "Player Performance",
+        "Player Specials",
+        "Top Goal Scorer",
+        "Top Goalscorer",
+        "Tournament Matchups",
+        "main (do not translate)"
+      ],
+      "boTypeNames": [
+        "head",
+        "outright",
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 1001370411,
+      "sport": "football",
+      "name": "To reach the Quarter Final",
+      "categoryNames": [
+        "Team Performance",
+        "Team Progress"
+      ],
+      "boTypeNames": [
+        "head",
+        "outright",
+        "yesno"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 1001376413,
+      "sport": "football",
+      "name": "To score most goals in the Competition for the Team",
+      "categoryNames": [
+        "Most Popular",
+        "Player Goals",
+        "Team Top Goalscorer",
+        "main (do not translate)"
+      ],
+      "boTypeNames": [
+        "head",
+        "outright"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 1001421320,
+      "sport": "football",
+      "name": "Double Chance - 2nd Half",
+      "categoryNames": [
+        "Full Time",
+        "Half Time",
+        "Second Half"
+      ],
+      "boTypeNames": [
+        "doublechance"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001421321,
+      "sport": "football",
+      "name": "Draw No Bet - 2nd Half",
+      "categoryNames": [
+        "Full Time",
+        "Half Time",
+        "Second Half"
+      ],
+      "boTypeNames": [
+        "onecrosstwo"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001475014,
+      "sport": "football",
+      "name": "Exact Winning Margin",
+      "categoryNames": [
+        "Full Time",
+        "Team Performance",
+        "Team Specials"
+      ],
+      "boTypeNames": [
+        "outright",
+        "winningmargin"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001518952,
+      "sport": "football",
+      "name": "To give most assists in the Competition",
+      "categoryNames": [
+        "Player Assists",
+        "Top Assists",
+        "Tournament Matchups",
+        "main (do not translate)"
+      ],
+      "boTypeNames": [
+        "head",
+        "outright"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 1001568619,
+      "sport": "football",
+      "name": "Correct Score - 2nd Half",
+      "categoryNames": [
+        "Half Time",
+        "Second Half"
+      ],
+      "boTypeNames": [
+        "result"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001568620,
+      "sport": "football",
+      "name": "3-Way Handicap - 1st Half",
+      "categoryNames": [
+        "3-Way Handicap",
+        "Half Time",
+        "Half Time - Handicap"
+      ],
+      "boTypeNames": [
+        "threewayhandicap"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001568621,
+      "sport": "football",
+      "name": "3-Way Handicap - 2nd Half",
+      "categoryNames": [
+        "3-Way Handicap",
+        "Full Time",
+        "Second Half"
+      ],
+      "boTypeNames": [
+        "threewayhandicap"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001613138,
+      "sport": "football",
+      "name": "Golden Ball Winner",
+      "categoryNames": [
+        "Player Awards",
+        "Player Betting",
+        "Player Specials",
+        "main (do not translate)"
+      ],
+      "boTypeNames": [
+        "outright"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 1001621941,
+      "sport": "football",
+      "name": "To finish in Top 3",
+      "categoryNames": [
+        "Finishing Position",
+        "Team Progress",
+        "Team Specials"
+      ],
+      "boTypeNames": [
+        "head",
+        "outright",
+        "yesno"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 1001642858,
+      "sport": "football",
+      "name": "Both Teams To Score",
+      "categoryNames": [
+        "BTTS",
+        "Both Teams To Score",
+        "Both Teams to Score",
+        "Full Time",
+        "Score",
+        "Special Offers"
+      ],
+      "boTypeNames": [
+        "outright",
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001642863,
+      "sport": "football",
+      "name": "Both Teams To Score - 1st Half",
+      "categoryNames": [
+        "Half Time"
+      ],
+      "boTypeNames": [
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001642864,
+      "sport": "football",
+      "name": "Home Team To Score - 1st Half",
+      "categoryNames": [
+        "Half Time"
+      ],
+      "boTypeNames": [
+        "yesno"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "home",
+      "level": "fixture"
+    },
+    {
+      "id": 1001642865,
+      "sport": "football",
+      "name": "Away Team To Score - 1st Half",
+      "categoryNames": [
+        "Half Time"
+      ],
+      "boTypeNames": [
+        "yesno"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "away",
+      "level": "fixture"
+    },
+    {
+      "id": 1001642866,
+      "sport": "football",
+      "name": "Home Team to Win to Nil",
+      "categoryNames": [
+        "Match Events",
+        "Specials",
+        "main (do not translate)"
+      ],
+      "boTypeNames": [
+        "outright",
+        "yesno"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "home",
+      "level": "fixture"
+    },
+    {
+      "id": 1001642867,
+      "sport": "football",
+      "name": "Away Team to Win to Nil",
+      "categoryNames": [
+        "Match Events"
+      ],
+      "boTypeNames": [
+        "yesno"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "away",
+      "level": "fixture"
+    },
+    {
+      "id": 1001642868,
+      "sport": "football",
+      "name": "Both Teams To Score - 2nd Half",
+      "categoryNames": [
+        "Half Time",
+        "Second Half"
+      ],
+      "boTypeNames": [
+        "yesno"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001657419,
+      "sport": "football",
+      "name": "Home Team to Win At Least One Half",
+      "categoryNames": [
+        "Match Events"
+      ],
+      "boTypeNames": [
+        "yesno"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "home",
+      "level": "fixture"
+    },
+    {
+      "id": 1001657420,
+      "sport": "football",
+      "name": "Away Team to Win At Least One Half",
+      "categoryNames": [
+        "Match Events"
+      ],
+      "boTypeNames": [
+        "yesno"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "away",
+      "level": "fixture"
+    },
+    {
+      "id": 1001692499,
+      "sport": "football",
+      "name": "Number of goals scored by the player in the Competition",
+      "categoryNames": [
+        "Player Goals",
+        "Player Specials"
+      ],
+      "boTypeNames": [
+        "head",
+        "outright",
+        "overunder"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 1001711098,
+      "sport": "football",
+      "name": "Number of goals scored by the team in the Competition",
+      "categoryNames": [
+        "Team Goals"
+      ],
+      "boTypeNames": [
+        "head",
+        "outright",
+        "overunder"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 1001711099,
+      "sport": "football",
+      "name": "Number of goals conceded by the team in the Competition",
+      "categoryNames": [
+        "Team Goals"
+      ],
+      "boTypeNames": [
+        "outright",
+        "overunder"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 1001774496,
+      "sport": "football",
+      "name": "Own goal",
+      "categoryNames": [
+        "Goal Scorer",
+        "Goalscorers",
+        "Match Events",
+        "Own Goal To Be Scored"
+      ],
+      "boTypeNames": [
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001774497,
+      "sport": "football",
+      "name": "Away Team given a Red Card",
+      "categoryNames": [
+        "Cards",
+        "Match Cards"
+      ],
+      "boTypeNames": [
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "away",
+      "level": "fixture"
+    },
+    {
+      "id": 1001774532,
+      "sport": "football",
+      "name": "Home Team given a Red Card",
+      "categoryNames": [
+        "Cards",
+        "Match Cards"
+      ],
+      "boTypeNames": [
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "home",
+      "level": "fixture"
+    },
+    {
+      "id": 1001809658,
+      "sport": "football",
+      "name": "Player's tackles completed (Settled using Opta data)",
+      "categoryNames": [
+        "Player Specials",
+        "Player Tackles",
+        "Player advanced stats"
+      ],
+      "boTypeNames": [
+        "head",
+        "playeroccurrenceline"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001809659,
+      "sport": "football",
+      "name": "Player's offside infringements (Settled using Opta Data)",
+      "categoryNames": [
+        "Player Specials",
+        "Player advanced stats"
+      ],
+      "boTypeNames": [
+        "head",
+        "playeroccurrenceline"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1001957106,
+      "sport": "football",
+      "name": "Home Team to Win and Both Teams To Score",
+      "categoryNames": [
+        "Both Teams to Score",
+        "Full Time"
+      ],
+      "boTypeNames": [
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "home",
+      "level": "fixture"
+    },
+    {
+      "id": 1001957108,
+      "sport": "football",
+      "name": "Away Team to Win and Both Teams To Score",
+      "categoryNames": [
+        "Both Teams to Score",
+        "Full Time"
+      ],
+      "boTypeNames": [
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "away",
+      "level": "fixture"
+    },
+    {
+      "id": 1002009649,
+      "sport": "football",
+      "name": "To give most assists in the Competition for the Team",
+      "categoryNames": [
+        "Player Assists",
+        "Player advanced stats",
+        "main (do not translate)"
+      ],
+      "boTypeNames": [
+        "outright"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 1002035662,
+      "sport": "football",
+      "name": "Player's shots on target (Settled using Opta data)",
+      "categoryNames": [
+        "Player Shots On Target",
+        "Player Shots on Target",
+        "Player advanced stats",
+        "Player's shots on target"
+      ],
+      "boTypeNames": [
+        "head",
+        "playeroccurrenceline"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1002035664,
+      "sport": "football",
+      "name": "Most Shots on Target (Settled using Opta data)",
+      "categoryNames": [
+        "Match Stats",
+        "Match and Team Shots",
+        "Match and Team Stats",
+        "Most Shots On Target",
+        "Player advanced stats",
+        "Special Offers"
+      ],
+      "boTypeNames": [
+        "head",
+        "onecrosstwo",
+        "outright"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1002035666,
+      "sport": "football",
+      "name": "To have most Shots on Target (Settled using Opta data)",
+      "categoryNames": [
+        "Match and Team Shots",
+        "Match and Team Stats",
+        "Player advanced stats",
+        "Player v Player"
+      ],
+      "boTypeNames": [
+        "head",
+        "onecrosstwo",
+        "yesno"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1002035667,
+      "sport": "football",
+      "name": "Total Shots on Target (Settled using Opta data)",
+      "categoryNames": [
+        "Match Stats",
+        "Match and Team Shots",
+        "Match and Team Stats",
+        "Total Shots On Target"
+      ],
+      "boTypeNames": [
+        "oddeven",
+        "overunder"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1002035671,
+      "sport": "football",
+      "name": "Total Shots on Target by Away Team (Settled using Opta data)",
+      "categoryNames": [
+        "Match Stats",
+        "Match and Team Shots",
+        "Shots On Target, Away Team"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "away",
+      "level": "fixture"
+    },
+    {
+      "id": 1002035672,
+      "sport": "football",
+      "name": "Total Shots on Target by Home Team (Settled using Opta data)",
+      "categoryNames": [
+        "Match Stats",
+        "Match and Team Shots",
+        "Shots On Target, Home Team"
+      ],
+      "boTypeNames": [
+        "head",
+        "overunder"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "home",
+      "level": "fixture"
+    },
+    {
+      "id": 1002044186,
+      "sport": "football",
+      "name": "To win all their matches in the Competition",
+      "categoryNames": [
+        "Team Performance",
+        "Team Specials"
+      ],
+      "boTypeNames": [
+        "head",
+        "outright",
+        "yesno"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 1002114154,
+      "sport": "football",
+      "name": "Match to feature the fastest goal from kick off",
+      "categoryNames": [
+        "Match Events",
+        "Matchday Specials"
+      ],
+      "boTypeNames": [
+        "outright"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 1002117475,
+      "sport": "football",
+      "name": "Player to receive most Cards in the Competition for the Team",
+      "categoryNames": [
+        "Player Cards",
+        "main (do not translate)"
+      ],
+      "boTypeNames": [
+        "outright"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 1002244276,
+      "sport": "football",
+      "name": "Asian Total",
+      "categoryNames": [
+        "Asian Lines",
+        "Full Time"
+      ],
+      "boTypeNames": [
+        "asianoverunder",
+        "overunder"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1002275572,
+      "sport": "football",
+      "name": "Asian Handicap",
+      "categoryNames": [
+        "Asian Handicap",
+        "Asian Lines"
+      ],
+      "boTypeNames": [
+        "asian"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1002275573,
+      "sport": "football",
+      "name": "Asian Handicap - 1st Half",
+      "categoryNames": [
+        "Asian Lines",
+        "Half Time"
+      ],
+      "boTypeNames": [
+        "asian"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1002363220,
+      "sport": "football",
+      "name": "Draw and Both Teams To Score",
+      "categoryNames": [
+        "Both Teams to Score",
+        "Full Time"
+      ],
+      "boTypeNames": [
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1002363221,
+      "sport": "football",
+      "name": "Goal in Both Halves",
+      "categoryNames": [
+        "Full Time",
+        "Match Events"
+      ],
+      "boTypeNames": [
+        "yesno"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1002483456,
+      "sport": "football",
+      "name": "Corners 3-Way Handicap",
+      "categoryNames": [
+        "Corners"
+      ],
+      "boTypeNames": [
+        "threewayhandicap"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1002506037,
+      "sport": "football",
+      "name": "Most Cards",
+      "categoryNames": [
+        "Cards",
+        "Match Cards",
+        "Most Cards"
+      ],
+      "boTypeNames": [
+        "onecrosstwo"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1002506038,
+      "sport": "football",
+      "name": "Total Cards - Home Team",
+      "categoryNames": [
+        "Cards",
+        "Match Cards"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "home",
+      "level": "fixture"
+    },
+    {
+      "id": 1002506039,
+      "sport": "football",
+      "name": "Total Cards - Away Team",
+      "categoryNames": [
+        "Cards",
+        "Match Cards"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "away",
+      "level": "fixture"
+    },
+    {
+      "id": 1002558602,
+      "sport": "football",
+      "name": "Asian Total - 1st Half",
+      "categoryNames": [
+        "Asian Lines",
+        "Half Time"
+      ],
+      "boTypeNames": [
+        "asianoverunder"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1002581664,
+      "sport": "football",
+      "name": "Number of goals scored from a free kick in the Competition",
+      "categoryNames": [
+        "Player Goals",
+        "Special Offers",
+        "Specials"
+      ],
+      "boTypeNames": [
+        "head",
+        "outright",
+        "overunder"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 1002679231,
+      "sport": "football",
+      "name": "To score with the left foot",
+      "categoryNames": [
+        "Goal Scorer",
+        "Goalscorers",
+        "James Specials",
+        "Player Goals"
+      ],
+      "boTypeNames": [
+        "head",
+        "playeroccurrenceline",
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1002679232,
+      "sport": "football",
+      "name": "To score with the right foot",
+      "categoryNames": [
+        "Goalscorers",
+        "James Specials",
+        "Player Goals"
+      ],
+      "boTypeNames": [
+        "head",
+        "playeroccurrenceline",
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1002702963,
+      "sport": "football",
+      "name": "Cards 3-Way Handicap",
+      "categoryNames": [
+        "Cards",
+        "Match Cards"
+      ],
+      "boTypeNames": [
+        "onecrosstwo",
+        "threewayhandicap"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1002731614,
+      "sport": "football",
+      "name": "Exact Combination of Competition Winner & Top Goalscorer",
+      "categoryNames": [
+        "Competition Combinations",
+        "Specials",
+        "main (do not translate)"
+      ],
+      "boTypeNames": [
+        "outright"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 1003002064,
+      "sport": "football",
+      "name": "To give most assists (Settled using Opta data)",
+      "categoryNames": [
+        "Player Assists",
+        "Player Specials",
+        "Player v Player"
+      ],
+      "boTypeNames": [
+        "head",
+        "outright"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1003194956,
+      "sport": "football",
+      "name": "Total Goals by Away Team - 1st Half",
+      "categoryNames": [
+        "Half Time"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "away",
+      "level": "fixture"
+    },
+    {
+      "id": 1003194957,
+      "sport": "football",
+      "name": "Total Goals by Away Team - 2nd Half",
+      "categoryNames": [
+        "Full Time",
+        "Half Time"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "away",
+      "level": "fixture"
+    },
+    {
+      "id": 1003194958,
+      "sport": "football",
+      "name": "Total Goals by Home Team - 1st Half",
+      "categoryNames": [
+        "Half Time"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "home",
+      "level": "fixture"
+    },
+    {
+      "id": 1003194959,
+      "sport": "football",
+      "name": "Total Goals by Home Team - 2nd Half",
+      "categoryNames": [
+        "Full Time",
+        "Half Time"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "home",
+      "level": "fixture"
+    },
+    {
+      "id": 1003303515,
+      "sport": "football",
+      "name": "Young Player of the Tournament",
+      "categoryNames": [
+        "Player Awards",
+        "Player Specials",
+        "main (do not translate)"
+      ],
+      "boTypeNames": [
+        "outright"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 1003314795,
+      "sport": "football",
+      "name": "To Score Or Assist (Settled using Opta data)",
+      "categoryNames": [
+        "Player Assists",
+        "Player Specials",
+        "Shots on target slot 7",
+        "To Score Or Assist"
+      ],
+      "boTypeNames": [
+        "head",
+        "playeroccurrenceline",
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1004119509,
+      "sport": "football",
+      "name": "Number of assists by the player in the Competition",
+      "categoryNames": [
+        "Player Assists",
+        "Specials"
+      ],
+      "boTypeNames": [
+        "head",
+        "overunder"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 1004240929,
+      "sport": "football",
+      "name": "Finishing Position",
+      "categoryNames": [
+        "Competition",
+        "Finishing Position",
+        "Full Time",
+        "Most Popular",
+        "Outrights",
+        "Win/Place",
+        "Winner",
+        "main (do not translate)"
+      ],
+      "boTypeNames": [
+        "outright",
+        "position"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 1004240933,
+      "sport": "football",
+      "name": "Group Finishing Position",
+      "categoryNames": [
+        "Competition",
+        "Full Time",
+        "Group finishing position",
+        "Most Popular",
+        "Outrights",
+        "Win/Place",
+        "main (do not translate)"
+      ],
+      "boTypeNames": [
+        "position"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 1004544389,
+      "sport": "football",
+      "name": "Total Shots (Settled using Opta data)",
+      "categoryNames": [
+        "Match and Team Shots",
+        "Player Shots"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1004544390,
+      "sport": "football",
+      "name": "Total Shots by Home Team (Settled using Opta data)",
+      "categoryNames": [
+        "Match and Team Shots",
+        "Player Shots",
+        "Total Shots by Home Team"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1004544391,
+      "sport": "football",
+      "name": "Total Shots by Away Team (Settled using Opta data)",
+      "categoryNames": [
+        "Match and Team Shots",
+        "Player Shots",
+        "Total Shots by Away Team"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1004544407,
+      "sport": "football",
+      "name": "To have most Shots (Settled using Opta data)",
+      "categoryNames": [
+        "Match and Team Shots",
+        "Match and Team Stats",
+        "Player Shots",
+        "Player v Player"
+      ],
+      "boTypeNames": [
+        "head",
+        "onecrosstwo",
+        "yesno"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1004544421,
+      "sport": "football",
+      "name": "Player's shots (Settled using Opta data)",
+      "categoryNames": [
+        "Player Shots",
+        "Player's Shots"
+      ],
+      "boTypeNames": [
+        "head",
+        "playeroccurrenceline"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1004714547,
+      "sport": "football",
+      "name": "Team to win all Group Stage matches",
+      "categoryNames": [
+        "Team Specials"
+      ],
+      "boTypeNames": [
+        "head",
+        "outright",
+        "yesno"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 1005153918,
+      "sport": "football",
+      "name": "First Goal Scorer",
+      "categoryNames": [
+        "First Goal Scorer",
+        "Goal Scorer"
+      ],
+      "boTypeNames": [
+        "outright",
+        "playeroccurrencenumber"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1005153925,
+      "sport": "football",
+      "name": "To score at least {0} goals",
+      "categoryNames": [
+        "Goal Scorer",
+        "Player Goals",
+        "Player Scorer",
+        "To score at least X goals"
+      ],
+      "boTypeNames": [
+        "playeroccurrenceline",
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1007684521,
+      "sport": "football",
+      "name": "Total Fouls conceded (Settled using Opta data)",
+      "categoryNames": [
+        "Match and Team Fouls",
+        "Total Fouls Conceded"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1007684525,
+      "sport": "football",
+      "name": "Total Fouls conceded by Home Team (Settled using Opta data)",
+      "categoryNames": [
+        "Match and Team Fouls",
+        "Total Fouls Conceded Home"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "home",
+      "level": "fixture"
+    },
+    {
+      "id": 1007684541,
+      "sport": "football",
+      "name": "Total Fouls conceded by Away Team (Settled using Opta data)",
+      "categoryNames": [
+        "Match and Team Fouls",
+        "Total Fouls Conceded Away"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "away",
+      "level": "fixture"
+    },
+    {
+      "id": 1007684754,
+      "sport": "football",
+      "name": "Player's fouls conceded (Settled using Opta data)",
+      "categoryNames": [
+        "Player Fouls",
+        "Player's fouls conceded"
+      ],
+      "boTypeNames": [
+        "head",
+        "playeroccurrenceline"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 1007684761,
+      "sport": "football",
+      "name": "Player's fouls won (Settled using Opta data)",
+      "categoryNames": [
+        "Player Fouls"
+      ],
+      "boTypeNames": [
+        "head",
+        "playeroccurrenceline"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 2100017825,
+      "sport": "football",
+      "name": "Winning Continent",
+      "categoryNames": [
+        "Competition",
+        "main (do not translate)"
+      ],
+      "boTypeNames": [
+        "outright"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 2100034871,
+      "sport": "football",
+      "name": "Woodwork to be Hit in the Match (Settled using Opta data)",
+      "categoryNames": [
+        "Match Events"
+      ],
+      "boTypeNames": [
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 2100034872,
+      "sport": "football",
+      "name": "Home Team to Hit the Woodwork in the Match (Settled using Opta data)",
+      "categoryNames": [
+        "Match Events"
+      ],
+      "boTypeNames": [
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "home",
+      "level": "fixture"
+    },
+    {
+      "id": 2100034873,
+      "sport": "football",
+      "name": "Away Team to Hit the Woodwork in the Match (Settled using Opta data)",
+      "categoryNames": [
+        "Match Events"
+      ],
+      "boTypeNames": [
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "away",
+      "level": "fixture"
+    },
+    {
+      "id": 2100044706,
+      "sport": "football",
+      "name": "Total Daily Goals",
+      "categoryNames": [
+        "Special Offers"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 2100044707,
+      "sport": "football",
+      "name": "Highest Scoring Game of the Day",
+      "categoryNames": [
+        "Special Offers",
+        "main (do not translate)"
+      ],
+      "boTypeNames": [
+        "outright"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 2100044964,
+      "sport": "football",
+      "name": "Most Cards - 1st Half",
+      "categoryNames": [
+        "Cards"
+      ],
+      "boTypeNames": [
+        "onecrosstwo"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 2100044965,
+      "sport": "football",
+      "name": "Most Cards - 2nd Half",
+      "categoryNames": [
+        "Cards"
+      ],
+      "boTypeNames": [
+        "onecrosstwo"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 2100044966,
+      "sport": "football",
+      "name": "Total Corners By Home Team - 1st Half",
+      "categoryNames": [
+        "Corners"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "home",
+      "level": "fixture"
+    },
+    {
+      "id": 2100044967,
+      "sport": "football",
+      "name": "Total Corners By Home Team - 2nd Half",
+      "categoryNames": [
+        "Corners"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "home",
+      "level": "fixture"
+    },
+    {
+      "id": 2100044968,
+      "sport": "football",
+      "name": "Total Corners By Away Team - 1st Half",
+      "categoryNames": [
+        "Corners"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "away",
+      "level": "fixture"
+    },
+    {
+      "id": 2100044969,
+      "sport": "football",
+      "name": "Total Corners By Away Team - 2nd Half",
+      "categoryNames": [
+        "Corners"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "away",
+      "level": "fixture"
+    },
+    {
+      "id": 2100045460,
+      "sport": "football",
+      "name": "Number of different goalscorers for the Team in the Competition",
+      "categoryNames": [
+        "Player Goals"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 2100045806,
+      "sport": "football",
+      "name": "Match to feature the latest goal from kick off",
+      "categoryNames": [
+        "Match Events"
+      ],
+      "boTypeNames": [
+        "outright"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 2100047421,
+      "sport": "football",
+      "name": "Goal Scored from a Direct Free Kick",
+      "categoryNames": [
+        "Match Events"
+      ],
+      "boTypeNames": [
+        "outright"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 2100047423,
+      "sport": "football",
+      "name": "Goalkeeper to make the Most Saves (Settled using Opta data)",
+      "categoryNames": [
+        "Player v Player",
+        "Special Offers"
+      ],
+      "boTypeNames": [
+        "head",
+        "outright"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 2100047426,
+      "sport": "football",
+      "name": "Player to score most goals",
+      "categoryNames": [
+        "Special Offers"
+      ],
+      "boTypeNames": [
+        "outright"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 2100047486,
+      "sport": "football",
+      "name": "Team with Most Shots on Target (Settled using Opta data)",
+      "categoryNames": [
+        "Special Offers"
+      ],
+      "boTypeNames": [
+        "outright"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 2100047487,
+      "sport": "football",
+      "name": "Team with Most Shots (Settled using Opta data)",
+      "categoryNames": [
+        "Special Offers"
+      ],
+      "boTypeNames": [
+        "outright"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 2100048338,
+      "sport": "football",
+      "name": "Total Daily Corners",
+      "categoryNames": [
+        "Special Offers"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 2100048339,
+      "sport": "football",
+      "name": "Total Daily Cards",
+      "categoryNames": [
+        "Special Offers"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 2100086017,
+      "sport": "football",
+      "name": "Goalkeeper Saves - Away Team",
+      "categoryNames": [
+        "Goalkeeper Saves"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "away",
+      "level": "fixture"
+    },
+    {
+      "id": 2100086018,
+      "sport": "football",
+      "name": "Goalkeeper Saves - Home Team",
+      "categoryNames": [
+        "Goalkeeper Saves"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "home",
+      "level": "fixture"
+    },
+    {
+      "id": 2100086019,
+      "sport": "football",
+      "name": "Goalkeeper Saves (Settled using Opta data)",
+      "categoryNames": [
+        "Goalkeeper Saves"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 2100089307,
+      "sport": "football",
+      "name": "Full Time - 2UP",
+      "categoryNames": [
+        "Full Time",
+        "Full Time - 2UP"
+      ],
+      "boTypeNames": [
+        "onecrosstwo"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 2100091656,
+      "sport": "football",
+      "name": "To Score (Fielded Anytime)",
+      "categoryNames": [
+        "Goal Scorer",
+        "Player Scorer"
+      ],
+      "boTypeNames": [
+        "playeroccurrenceline"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 2100091955,
+      "sport": "football",
+      "name": "To score at least {0} goals (Fielded Anytime)",
+      "categoryNames": [
+        "Goal Scorer",
+        "Player Goals",
+        "Player Scorer"
+      ],
+      "boTypeNames": [
+        "playeroccurrenceline"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 2100097567,
+      "sport": "football",
+      "name": "Penalties Awarded - Home Team",
+      "categoryNames": [
+        "Match Events"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "home",
+      "level": "fixture"
+    },
+    {
+      "id": 2100097568,
+      "sport": "football",
+      "name": "Penalties Awarded - Away Team",
+      "categoryNames": [
+        "Match Events"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "away",
+      "level": "fixture"
+    },
+    {
+      "id": 2100097662,
+      "sport": "football",
+      "name": "Total Penalties Awarded",
+      "categoryNames": [
+        "Match Events"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 2100097667,
+      "sport": "football",
+      "name": "Total Penalties Scored - Home Team",
+      "categoryNames": [
+        "Match Events"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "home",
+      "level": "fixture"
+    },
+    {
+      "id": 2100097668,
+      "sport": "football",
+      "name": "Total Penalties Scored - Away Team",
+      "categoryNames": [
+        "Match Events"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": "away",
+      "level": "fixture"
+    },
+    {
+      "id": 2100109198,
+      "sport": "football",
+      "name": "To Score or Get a Card",
+      "categoryNames": [
+        "Player Cards"
+      ],
+      "boTypeNames": [
+        "playeroccurrenceline"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 2100111448,
+      "sport": "football",
+      "name": "Either Player To Score",
+      "categoryNames": [
+        "Either Player"
+      ],
+      "boTypeNames": [
+        "head"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 2100112498,
+      "sport": "football",
+      "name": "Either Player to Assist (Settled using Opta data)",
+      "categoryNames": [
+        "Either Player"
+      ],
+      "boTypeNames": [
+        "head"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 2100112499,
+      "sport": "football",
+      "name": "Either Player to Get a Card (Settled using Opta data)",
+      "categoryNames": [
+        "Either Player"
+      ],
+      "boTypeNames": [
+        "head"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 2100112500,
+      "sport": "football",
+      "name": "Either Player to Score First",
+      "categoryNames": [
+        "Either Player"
+      ],
+      "boTypeNames": [
+        "head"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 2100112501,
+      "sport": "football",
+      "name": "Either Player to Score or Assist (Settled using Opta data)",
+      "categoryNames": [
+        "Either Player"
+      ],
+      "boTypeNames": [
+        "head"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 2100112502,
+      "sport": "football",
+      "name": "Player's Headed Shots on Target",
+      "categoryNames": [
+        "Player Shots on Target"
+      ],
+      "boTypeNames": [
+        "head",
+        "playeroccurrenceline"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 2100112503,
+      "sport": "football",
+      "name": "Player's Shots on Target Outside the Box",
+      "categoryNames": [
+        "Player Shots on Target"
+      ],
+      "boTypeNames": [
+        "head",
+        "playeroccurrenceline"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 2100112655,
+      "sport": "football",
+      "name": "Total Penalties Scored",
+      "categoryNames": [
+        "Match Events"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    },
+    {
+      "id": 2100114229,
+      "sport": "football",
+      "name": "Total Daily Shots on Target",
+      "categoryNames": [
+        "Special Offers"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 2100114235,
+      "sport": "football",
+      "name": "Eliminated in Penalty Shootout",
+      "categoryNames": [
+        "Team Progress"
+      ],
+      "boTypeNames": [
+        "outright"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 2100117218,
+      "sport": "football",
+      "name": "Sweden to win and Isak or Gyökeres to score",
+      "categoryNames": [
+        "ATG Specials"
+      ],
+      "boTypeNames": [
+        "yesno"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "fixture"
+    }
+  ]
+}

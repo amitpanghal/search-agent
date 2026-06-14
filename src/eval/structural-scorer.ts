@@ -204,27 +204,8 @@ export function scoreRun(
   const soft: string[] = [];
   const expect = gold.expect;
 
-  // 1. status gate (hard)
-  if (plan.status !== expect.status) {
-    failures.push(`status: expected "${expect.status}", got "${plan.status}"`);
-    return { pass: false, failures, soft };
-  }
-
-  // abstention buckets: status matched, grading ends here
-  if (expect.status !== "resolved") {
-    if (expect.status === "unsupported" && plan.status === "unsupported") {
-      const want = expect.recognizedAs;
-      const got = plan.recognizedAs;
-      if (want && got && !looseMatch(got, [want]) && !looseMatch(want, [got])) {
-        soft.push(`recognizedAs: expected ~"${want}", got "${got}"`);
-      }
-    }
-    return { pass: true, failures, soft };
-  }
-  if (plan.status !== "resolved") {
-    failures.push("internal: status narrowing failed");
-    return { pass: false, failures, soft };
-  }
+  // No status gate: the extractor always resolves (it never abstains — an unsupported sport fails downstream
+  // at grounding, not here). `sport` is graded loosely below (free text, any sport).
 
   // marketless sentinel (decision 24): a query naming no market resolves to a single
   // { subject: event, market_concept: "main" } selector (gold encodes it {main:true}). Grade it like
@@ -232,7 +213,7 @@ export function scoreRun(
   // (teams/stage/time) are HARD; sport stays costly; the plan must itself be the lone `main` selector
   // (a fabricated market or extra selector here is the Option-A failure nothing downstream catches).
   if (isGoldMarketless(expect)) {
-    if (plan.sport !== expect.sport) failures.push(`sport: expected "${expect.sport}", got "${plan.sport}"`);
+    if (!looseMatch(plan.sport, [expect.sport])) failures.push(`sport: expected ~"${expect.sport}", got "${plan.sport}"`);
     if (!isPlanMarketless(plan)) {
       failures.push(`marketless: expected a single "main" selector, got ${JSON.stringify(plan.selectors.map((s) => s.market_concept))}`);
     }
@@ -242,9 +223,9 @@ export function scoreRun(
     return { pass: failures.length === 0, failures, soft };
   }
 
-  // 2. sport (costly)
-  if (plan.sport !== expect.sport) {
-    failures.push(`sport: expected "${expect.sport}", got "${plan.sport}"`);
+  // 2. sport (costly) — loose text match (free-text sport, any sport; case/synonym-tolerant)
+  if (!looseMatch(plan.sport, [expect.sport])) {
+    failures.push(`sport: expected ~"${expect.sport}", got "${plan.sport}"`);
   }
 
   // 3. selector pairing + "market found". In ID mode (grounded supplied) a pair requires the gold

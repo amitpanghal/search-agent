@@ -40,26 +40,54 @@ function client(): Anthropic {
   return cached;
 }
 
-// Haiku occasionally emits an absent OPTIONAL selector leaf (line/odds/attrFilter) as an
-// explicit `null` OR an empty object `{}` rather than omitting it — both fail validation
-// (`.optional()` rejects `null`; the `.refine` guards reject `{}`), and none of the three is
-// ever validly empty (a line needs a `kind`, odds need ≥1 bound, attrFilter needs ≥1
-// predicate). Normalize either to omitted at the parse boundary (KE-6 secondary / decision 21)
-// — scoped to the three leaves, so the legitimately nullable fields (stage/time/competition)
-// are untouched and the model-facing JSON Schema is unchanged (we don't advertise `null`).
+// Haiku occasionally emits a structurally-broken selector that the schema rejects but that has a clear
+// fail-safe normalization. Repair these at the parse boundary (KE-6 / decision 21) rather than throw —
+// the model is now trying to resolve every query (never abstaining), so the odd malformed leaf shouldn't
+// sink the whole query. Each repair maps an unusable-but-clear shape to its fail-safe:
+//   1. An absent OPTIONAL selector leaf (line/odds/attrFilter) emitted as `null` or `{}` → omit it.
+//   2. A line that can't satisfy its kind (e.g. a numeric skeleton with `value: null`) → drop it
+//      (= "all offered lines"), the same fail-open as a blank leaf.
+//   3. A `team` subject with no name (the schema requires one) → coerce to the bare `event` subject.
+//   4. An all-null `stage`/`time` skeleton (Haiku emits this instead of `null`) → coerce to `null`
+//      (the "needs a round/ordinal" / "needs a window/kickoff" refines reject the empty object).
 const OPTIONAL_SELECTOR_LEAVES = ["line", "odds", "attrFilter"] as const;
 function isBlank(v: unknown): boolean {
   return v === null || (typeof v === "object" && v !== null && Object.keys(v).length === 0);
 }
-function dropBlankSelectorLeaves(plan: unknown): void {
+function isUsableLine(v: unknown): boolean {
+  if (!v || typeof v !== "object") return false;
+  const l = v as Record<string, unknown>;
+  if (l.kind === "numeric") return typeof l.value === "number" && (l.direction === "over" || l.direction === "under");
+  if (l.kind === "binary") return l.direction === "yes" || l.direction === "no";
+  if (l.kind === "selection") return typeof l.value === "string" && l.value.length > 0;
+  return false;
+}
+function normalizePlan(plan: unknown): void {
   if (!plan || typeof plan !== "object") return;
-  const selectors = (plan as { selectors?: unknown }).selectors;
+  const p = plan as Record<string, unknown>;
+
+  // event_scope: an all-null stage/time skeleton fails its refine -> coerce to null (omit the facet).
+  const es = p.event_scope as Record<string, unknown> | undefined;
+  if (es && typeof es === "object") {
+    const st = es.stage as Record<string, unknown> | null;
+    if (st && st.round == null && st.ordinal == null) es.stage = null;
+    const tm = es.time as Record<string, unknown> | null;
+    if (tm && tm.date_window == null && tm.kickoff_time_of_day == null) es.time = null;
+  }
+
+  // selectors: drop blank/unusable optional leaves; coerce a nameless `team` subject -> `event`.
+  const selectors = p.selectors;
   if (!Array.isArray(selectors)) return;
   for (const sel of selectors) {
     if (!sel || typeof sel !== "object") continue;
     const rec = sel as Record<string, unknown>;
     for (const k of OPTIONAL_SELECTOR_LEAVES) {
       if (isBlank(rec[k])) delete rec[k];
+    }
+    if (rec.line !== undefined && !isUsableLine(rec.line)) delete rec.line;
+    const subj = rec.subject as Record<string, unknown> | undefined;
+    if (subj && subj.kind === "team" && (typeof subj.name !== "string" || subj.name.length === 0)) {
+      rec.subject = { kind: "event" };
     }
   }
 }
@@ -99,7 +127,7 @@ export async function extract(query: string): Promise<QueryPlan> {
       // leave as the raw string; QueryPlan validation below will surface it.
     }
   }
-  dropBlankSelectorLeaves(planValue);
+  normalizePlan(planValue);
   const parsed = QueryPlan.safeParse(planValue);
   if (!parsed.success) {
     throw new Error(

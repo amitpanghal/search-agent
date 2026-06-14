@@ -1,20 +1,23 @@
 {
-  "version": "0f2aac930df9",
-  "builtAt": "2026-06-03T17:10:39.286Z",
+  "version": "3c11ce0a21f6",
+  "builtAt": "2026-06-13T08:39:11.591Z",
   "source": {
     "sport": "football",
     "sportLabel": "FOOTBALL",
     "feed": "football_criterions.raw.json ⋈ football_categories.json"
   },
   "counts": {
-    "referenced": 8550,
-    "kept": 2486,
-    "quarantined": 2437,
-    "player": 705,
-    "teamOrMatch": 1781,
+    "referenced": 8867,
+    "kept": 2503,
+    "quarantined": 2736,
+    "player": 718,
+    "teamOrMatch": 1785,
     "perSide": 182,
-    "shownInLive": 734,
-    "shownInPreMatch": 2098
+    "withLevel": 177,
+    "levelFixture": 108,
+    "levelCompetition": 69,
+    "shownInLive": 748,
+    "shownInPreMatch": 2117
   },
   "criterions": [
     {
@@ -77,7 +80,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1000350025,
@@ -108,7 +112,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001159482,
@@ -143,7 +148,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "home"
+      "side": "home",
+      "level": "fixture"
     },
     {
       "id": 1001159492,
@@ -212,7 +218,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1001159504,
@@ -259,7 +266,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001159532,
@@ -280,7 +288,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001159566,
@@ -349,7 +358,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "home"
+      "side": "home",
+      "level": "fixture"
     },
     {
       "id": 1001159599,
@@ -399,7 +409,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1001159610,
@@ -415,7 +426,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001159617,
@@ -449,7 +461,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "away"
+      "side": "away",
+      "level": "fixture"
     },
     {
       "id": 1001159624,
@@ -482,7 +495,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001159633,
@@ -503,7 +517,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "away"
+      "side": "away",
+      "level": "fixture"
     },
     {
       "id": 1001159641,
@@ -547,13 +562,14 @@
       "categoryNames": [
         "Extra Time",
         "Extra Time 1x2",
+        "Match",
         "Most Popular"
       ],
       "boTypeNames": [
         "onecrosstwo"
       ],
       "shownInLive": true,
-      "shownInPreMatch": false,
+      "shownInPreMatch": true,
       "subject": "team_or_match",
       "side": null
     },
@@ -573,7 +589,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001159667,
@@ -593,7 +610,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001159668,
@@ -608,7 +626,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001159685,
@@ -675,7 +694,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "away"
+      "side": "away",
+      "level": "fixture"
     },
     {
       "id": 1001159706,
@@ -709,7 +729,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001159712,
@@ -796,7 +817,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001159742,
@@ -834,7 +856,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001159755,
@@ -881,7 +904,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001159793,
@@ -938,7 +962,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001159808,
@@ -954,7 +979,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "home"
+      "side": "home",
+      "level": "fixture"
     },
     {
       "id": 1001159820,
@@ -970,7 +996,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001159826,
@@ -989,7 +1016,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001159830,
@@ -1007,7 +1035,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001159831,
@@ -1081,7 +1110,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001159861,
@@ -1117,7 +1147,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001159886,
@@ -1139,7 +1170,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001159897,
@@ -1158,7 +1190,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001159899,
@@ -1254,7 +1287,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001159926,
@@ -1277,7 +1311,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001159935,
@@ -1326,7 +1361,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001159948,
@@ -1357,7 +1393,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001159956,
@@ -1391,7 +1428,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1001159967,
@@ -1412,7 +1450,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "home"
+      "side": "home",
+      "level": "fixture"
     },
     {
       "id": 1001159972,
@@ -1429,7 +1468,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001159978,
@@ -1470,7 +1510,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001160024,
@@ -1486,7 +1527,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "away"
+      "side": "away",
+      "level": "fixture"
     },
     {
       "id": 1001160026,
@@ -1522,7 +1564,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001221607,
@@ -1632,7 +1675,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001224535,
@@ -1724,7 +1768,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1001225206,
@@ -1847,7 +1892,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1001228509,
@@ -1868,7 +1914,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1001228512,
@@ -1966,7 +2013,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1001233906,
@@ -2095,7 +2143,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001239606,
@@ -2795,7 +2844,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1001241013,
@@ -2813,7 +2863,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1001241014,
@@ -2830,7 +2881,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1001241016,
@@ -2849,7 +2901,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1001241017,
@@ -2868,7 +2921,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1001241025,
@@ -2939,7 +2993,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1001241029,
@@ -2992,7 +3047,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1001241033,
@@ -3010,7 +3066,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1001241034,
@@ -3030,7 +3087,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1001241776,
@@ -3136,7 +3194,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001258715,
@@ -3244,7 +3303,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001263167,
@@ -3347,7 +3407,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001268073,
@@ -3713,7 +3774,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1001304946,
@@ -3853,8 +3915,8 @@
       "name": "Number of penalties awarded",
       "categoryNames": [
         "Penalties",
-        "Special Offers",
-        "Specials"
+        "Specials",
+        "Tournament Totals"
       ],
       "boTypeNames": [
         "head",
@@ -3864,7 +3926,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1001320509,
@@ -4247,7 +4310,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1001370412,
@@ -4284,7 +4348,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1001387597,
@@ -4404,7 +4469,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001421321,
@@ -4421,7 +4487,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001421673,
@@ -4520,7 +4587,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001475788,
@@ -4959,7 +5027,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1001520137,
@@ -5058,7 +5127,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001568620,
@@ -5075,7 +5145,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001568621,
@@ -5092,7 +5163,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001568729,
@@ -5305,7 +5377,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1001613139,
@@ -5322,7 +5395,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1001613140,
@@ -5403,12 +5477,14 @@
       ],
       "boTypeNames": [
         "head",
+        "outright",
         "yesno"
       ],
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1001625256,
@@ -5592,7 +5668,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001642859,
@@ -5673,7 +5750,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001642864,
@@ -5688,7 +5766,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "home"
+      "side": "home",
+      "level": "fixture"
     },
     {
       "id": 1001642865,
@@ -5703,7 +5782,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "away"
+      "side": "away",
+      "level": "fixture"
     },
     {
       "id": 1001642866,
@@ -5721,7 +5801,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "home"
+      "side": "home",
+      "level": "fixture"
     },
     {
       "id": 1001642867,
@@ -5736,7 +5817,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "away"
+      "side": "away",
+      "level": "fixture"
     },
     {
       "id": 1001642868,
@@ -5752,7 +5834,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001642869,
@@ -6050,7 +6133,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "home"
+      "side": "home",
+      "level": "fixture"
     },
     {
       "id": 1001657420,
@@ -6065,7 +6149,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "away"
+      "side": "away",
+      "level": "fixture"
     },
     {
       "id": 1001657421,
@@ -6250,7 +6335,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1001710361,
@@ -6317,7 +6403,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1001711099,
@@ -6333,7 +6420,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1001728706,
@@ -6667,7 +6755,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1001774497,
@@ -6683,7 +6772,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "away"
+      "side": "away",
+      "level": "fixture"
     },
     {
       "id": 1001774500,
@@ -6874,7 +6964,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "home"
+      "side": "home",
+      "level": "fixture"
     },
     {
       "id": 1001774533,
@@ -7121,10 +7212,12 @@
       "sport": "football",
       "name": "Player's offside infringements (Settled using Opta Data)",
       "categoryNames": [
+        "Player Specials",
         "Player advanced stats"
       ],
       "boTypeNames": [
-        "head"
+        "head",
+        "playeroccurrenceline"
       ],
       "shownInLive": false,
       "shownInPreMatch": true,
@@ -7558,7 +7651,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1001877370,
@@ -7707,7 +7801,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1001892837,
@@ -7726,7 +7821,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1001892853,
@@ -7759,7 +7855,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1001892862,
@@ -7777,7 +7874,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1001903232,
@@ -8039,7 +8137,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "home"
+      "side": "home",
+      "level": "fixture"
     },
     {
       "id": 1001957108,
@@ -8055,7 +8154,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "away"
+      "side": "away",
+      "level": "fixture"
     },
     {
       "id": 1001957110,
@@ -8544,7 +8644,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1002023772,
@@ -8594,7 +8695,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1002035663,
@@ -8632,7 +8734,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1002035665,
@@ -8688,7 +8791,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1002035668,
@@ -8753,7 +8857,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "away"
+      "side": "away",
+      "level": "fixture"
     },
     {
       "id": 1002035672,
@@ -8771,7 +8876,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "home"
+      "side": "home",
+      "level": "fixture"
     },
     {
       "id": 1002041449,
@@ -8820,7 +8926,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1002044225,
@@ -8963,7 +9070,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1002057622,
@@ -8998,7 +9106,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1002060703,
@@ -9171,7 +9280,7 @@
         "Match and Team Stats",
         "Penalties",
         "Player Specials",
-        "Special Offers"
+        "Tournament Totals"
       ],
       "boTypeNames": [
         "outright",
@@ -9180,7 +9289,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1002082909,
@@ -9198,7 +9308,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1002082910,
@@ -9217,7 +9328,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1002083301,
@@ -9264,7 +9376,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1002084333,
@@ -9359,7 +9472,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1002086961,
@@ -9512,7 +9626,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1002098460,
@@ -9530,7 +9645,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1002100940,
@@ -11452,7 +11568,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1002247700,
@@ -11628,7 +11745,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1002275573,
@@ -11644,7 +11762,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1002280242,
@@ -11800,7 +11919,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1002363221,
@@ -11816,7 +11936,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1002364896,
@@ -12262,7 +12383,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1002485148,
@@ -12418,7 +12540,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1002506038,
@@ -12434,7 +12557,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "home"
+      "side": "home",
+      "level": "fixture"
     },
     {
       "id": 1002506039,
@@ -12450,7 +12574,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "away"
+      "side": "away",
+      "level": "fixture"
     },
     {
       "id": 1002506040,
@@ -12698,7 +12823,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1002567387,
@@ -12795,7 +12921,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1002582069,
@@ -13241,7 +13368,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1002692676,
@@ -13368,7 +13496,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1002702965,
@@ -13581,7 +13710,8 @@
       "name": "Exact Combination of Competition Winner & Top Goalscorer",
       "categoryNames": [
         "Competition Combinations",
-        "Specials"
+        "Specials",
+        "main (do not translate)"
       ],
       "boTypeNames": [
         "outright"
@@ -13589,7 +13719,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1002732196,
@@ -16615,7 +16746,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "away"
+      "side": "away",
+      "level": "fixture"
     },
     {
       "id": 1003194957,
@@ -16631,7 +16763,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "away"
+      "side": "away",
+      "level": "fixture"
     },
     {
       "id": 1003194958,
@@ -16646,7 +16779,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "home"
+      "side": "home",
+      "level": "fixture"
     },
     {
       "id": 1003194959,
@@ -16662,7 +16796,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "home"
+      "side": "home",
+      "level": "fixture"
     },
     {
       "id": 1003197474,
@@ -19033,7 +19168,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1003303619,
@@ -19098,7 +19234,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1003318820,
@@ -22264,7 +22401,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1004122750,
@@ -22282,7 +22420,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1004122779,
@@ -22685,7 +22824,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1004240930,
@@ -22770,7 +22910,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1004259539,
@@ -23888,7 +24029,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1004544390,
@@ -23905,7 +24047,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1004544391,
@@ -23922,7 +24065,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1004544392,
@@ -24037,7 +24181,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1004544422,
@@ -26001,7 +26146,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1004713973,
@@ -26125,7 +26271,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1004714874,
@@ -28173,7 +28320,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1005153919,
@@ -28207,7 +28355,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1005154239,
@@ -30680,7 +30829,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 1007632770,
@@ -31027,7 +31177,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1007684522,
@@ -31060,7 +31211,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "home"
+      "side": "home",
+      "level": "fixture"
     },
     {
       "id": 1007684539,
@@ -31091,7 +31243,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "away"
+      "side": "away",
+      "level": "fixture"
     },
     {
       "id": 1007684569,
@@ -31290,7 +31443,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 1007684756,
@@ -33995,7 +34149,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 2100017824,
@@ -34011,7 +34166,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 2100017825,
@@ -34027,7 +34183,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 2100018081,
@@ -34042,7 +34199,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 2100018082,
@@ -34072,7 +34230,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 2100018084,
@@ -34087,7 +34246,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 2100018085,
@@ -34102,7 +34262,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 2100018149,
@@ -35925,7 +36086,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 2100034872,
@@ -35940,7 +36102,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "home"
+      "side": "home",
+      "level": "fixture"
     },
     {
       "id": 2100034873,
@@ -35955,7 +36118,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "away"
+      "side": "away",
+      "level": "fixture"
     },
     {
       "id": 2100035863,
@@ -36383,7 +36547,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 2100044965,
@@ -36398,7 +36563,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 2100044966,
@@ -36413,7 +36579,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "home"
+      "side": "home",
+      "level": "fixture"
     },
     {
       "id": 2100044967,
@@ -36428,7 +36595,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "home"
+      "side": "home",
+      "level": "fixture"
     },
     {
       "id": 2100044968,
@@ -36443,7 +36611,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "away"
+      "side": "away",
+      "level": "fixture"
     },
     {
       "id": 2100044969,
@@ -36458,7 +36627,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "away"
+      "side": "away",
+      "level": "fixture"
     },
     {
       "id": 2100045061,
@@ -36489,7 +36659,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 2100045384,
@@ -36537,6 +36708,22 @@
       "side": null
     },
     {
+      "id": 2100045460,
+      "sport": "football",
+      "name": "Number of different goalscorers for the Team in the Competition",
+      "categoryNames": [
+        "Player Goals"
+      ],
+      "boTypeNames": [
+        "overunder"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "competition"
+    },
+    {
       "id": 2100045805,
       "sport": "football",
       "name": "Number of penalties scored",
@@ -36556,7 +36743,7 @@
       "sport": "football",
       "name": "Match to feature the latest goal from kick off",
       "categoryNames": [
-        "Special Offers"
+        "Match Events"
       ],
       "boTypeNames": [
         "outright"
@@ -36640,7 +36827,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 2100047421,
@@ -36710,7 +36898,7 @@
       "sport": "football",
       "name": "Number of Goalscorers",
       "categoryNames": [
-        "Special Offers"
+        "Tournament Totals"
       ],
       "boTypeNames": [
         "overunder"
@@ -36718,7 +36906,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 2100047426,
@@ -37456,7 +37645,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "away"
+      "side": "away",
+      "level": "fixture"
     },
     {
       "id": 2100086018,
@@ -37471,7 +37661,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": "home"
+      "side": "home",
+      "level": "fixture"
     },
     {
       "id": 2100086019,
@@ -37486,7 +37677,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 2100086781,
@@ -37629,7 +37821,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 2100089342,
@@ -37660,7 +37853,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 2100091955,
@@ -37677,7 +37871,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 2100092298,
@@ -38208,13 +38403,14 @@
       "name": "Total Goals - Extra Time",
       "categoryNames": [
         "Extra Time",
+        "Total Goals",
         "VAR"
       ],
       "boTypeNames": [
         "overunder"
       ],
       "shownInLive": true,
-      "shownInPreMatch": false,
+      "shownInPreMatch": true,
       "subject": "team_or_match",
       "side": null
     },
@@ -38520,7 +38716,8 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "player",
-      "side": null
+      "side": null,
+      "level": "fixture"
     },
     {
       "id": 2100109398,
@@ -39184,7 +39381,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 2100114227,
@@ -39195,6 +39393,22 @@
       ],
       "boTypeNames": [
         "outright"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 2100114229,
+      "sport": "football",
+      "name": "Total Daily Shots on Target",
+      "categoryNames": [
+        "Special Offers"
+      ],
+      "boTypeNames": [
+        "overunder"
       ],
       "shownInLive": false,
       "shownInPreMatch": true,
@@ -39230,7 +39444,8 @@
       "shownInLive": false,
       "shownInPreMatch": true,
       "subject": "team_or_match",
-      "side": null
+      "side": null,
+      "level": "competition"
     },
     {
       "id": 2100114416,
@@ -39350,6 +39565,232 @@
       "shownInLive": true,
       "shownInPreMatch": true,
       "subject": "player",
+      "side": null
+    },
+    {
+      "id": 2100116342,
+      "sport": "football",
+      "name": "Either Wahbi Khazri or Seifeddine Jaziri To Score",
+      "categoryNames": [
+        "Either Player"
+      ],
+      "boTypeNames": [
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null
+    },
+    {
+      "id": 2100116343,
+      "sport": "football",
+      "name": "Either Wahbi Khazri or Issam Jebali To Score",
+      "categoryNames": [
+        "Either Player"
+      ],
+      "boTypeNames": [
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null
+    },
+    {
+      "id": 2100116344,
+      "sport": "football",
+      "name": "Either Seifeddine Jaziri or Issam Jebali To Score",
+      "categoryNames": [
+        "Either Player"
+      ],
+      "boTypeNames": [
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null
+    },
+    {
+      "id": 2100116345,
+      "sport": "football",
+      "name": "Either Issam Jebali or Taha Yassine Khenissi To Score",
+      "categoryNames": [
+        "Either Player"
+      ],
+      "boTypeNames": [
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null
+    },
+    {
+      "id": 2100116438,
+      "sport": "football",
+      "name": "Either Yazan Al-Naimat or Hamza Al-Dardour To Score",
+      "categoryNames": [
+        "Either Player"
+      ],
+      "boTypeNames": [
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null
+    },
+    {
+      "id": 2100116439,
+      "sport": "football",
+      "name": "Either Hamza Al-Dardour or Mahmoud Al Mardii To Score",
+      "categoryNames": [
+        "Either Player"
+      ],
+      "boTypeNames": [
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null
+    },
+    {
+      "id": 2100116440,
+      "sport": "football",
+      "name": "Either Mahmoud Al Mardii or Yousef Al Rawashdeh To Score",
+      "categoryNames": [
+        "Either Player"
+      ],
+      "boTypeNames": [
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null
+    },
+    {
+      "id": 2100116441,
+      "sport": "football",
+      "name": "Either Yousef Al Rawashdeh or Baha Faisal To Score",
+      "categoryNames": [
+        "Either Player"
+      ],
+      "boTypeNames": [
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null
+    },
+    {
+      "id": 2100116489,
+      "sport": "football",
+      "name": "Either Tomas Rodriguez or Alberto Quintero To Score",
+      "categoryNames": [
+        "Either Player"
+      ],
+      "boTypeNames": [
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null
+    },
+    {
+      "id": 2100116490,
+      "sport": "football",
+      "name": "Either Alberto Quintero or Carlos Small To Score",
+      "categoryNames": [
+        "Either Player"
+      ],
+      "boTypeNames": [
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null
+    },
+    {
+      "id": 2100116561,
+      "sport": "football",
+      "name": "Brazil Serie A player to score most goals in the competition",
+      "categoryNames": [
+        "Player Goals"
+      ],
+      "boTypeNames": [
+        "outright"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null,
+      "level": "competition"
+    },
+    {
+      "id": 2100116616,
+      "sport": "football",
+      "name": "Full Time - 1UP Netherlands Super Early Payout",
+      "categoryNames": [
+        "Full Time"
+      ],
+      "boTypeNames": [
+        "onecrosstwo"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null
+    },
+    {
+      "id": 2100116617,
+      "sport": "football",
+      "name": "Full Time - 1UP Belgium Super Early Payout",
+      "categoryNames": [
+        "Full Time"
+      ],
+      "boTypeNames": [
+        "onecrosstwo"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
+      "side": null
+    },
+    {
+      "id": 2100116797,
+      "sport": "football",
+      "name": "Either Zeca Rodrigues or Bebeto To Score",
+      "categoryNames": [
+        "Either Player"
+      ],
+      "boTypeNames": [
+        "yesno"
+      ],
+      "shownInLive": true,
+      "shownInPreMatch": true,
+      "subject": "player",
+      "side": null
+    },
+    {
+      "id": 2100117218,
+      "sport": "football",
+      "name": "Sweden to win and Isak or Gyökeres to score",
+      "categoryNames": [
+        "ATG Specials"
+      ],
+      "boTypeNames": [
+        "yesno"
+      ],
+      "shownInLive": false,
+      "shownInPreMatch": true,
+      "subject": "team_or_match",
       "side": null
     }
   ],
@@ -51538,6 +51979,1501 @@
       "id": 2100116194,
       "name": "Either Vinicius Junior or Rodrygo To Score",
       "matched": "vinicius junior"
+    },
+    {
+      "id": 2100116207,
+      "name": "Either Musa Al-Tamari or Ali Olwan To Score",
+      "matched": "ali olwan"
+    },
+    {
+      "id": 2100116208,
+      "name": "Either Musa Al-Tamari or Ibrahim Mohammad Abdallah Sabra To Score",
+      "matched": "musa al tamari"
+    },
+    {
+      "id": 2100116282,
+      "name": "Either Christian Pulisic or Folarin Balogun To Score",
+      "matched": "christian pulisic"
+    },
+    {
+      "id": 2100116283,
+      "name": "Either Christian Pulisic or Timothy Weah To Score",
+      "matched": "christian pulisic"
+    },
+    {
+      "id": 2100116284,
+      "name": "Either Folarin Balogun or Timothy Weah To Score",
+      "matched": "folarin balogun"
+    },
+    {
+      "id": 2100116285,
+      "name": "Either Timothy Weah or Ricardo Pepi To Score",
+      "matched": "timothy weah"
+    },
+    {
+      "id": 2100116286,
+      "name": "Either Ricardo Pepi or Giovanni Reyna To Score",
+      "matched": "ricardo pepi"
+    },
+    {
+      "id": 2100116287,
+      "name": "Either Giovanni Reyna or Joshua Sargent To Score",
+      "matched": "giovanni reyna"
+    },
+    {
+      "id": 2100116288,
+      "name": "Either Miguel Almiron or Antonio Sanabria To Score",
+      "matched": "miguel almiron"
+    },
+    {
+      "id": 2100116289,
+      "name": "Either Miguel Almiron or Julio Enciso To Score",
+      "matched": "miguel almiron"
+    },
+    {
+      "id": 2100116290,
+      "name": "Either Antonio Sanabria or Julio Enciso To Score",
+      "matched": "antonio sanabria"
+    },
+    {
+      "id": 2100116291,
+      "name": "Either Julio Enciso or Adam Bareiro To Score",
+      "matched": "julio enciso"
+    },
+    {
+      "id": 2100116292,
+      "name": "Either Adam Bareiro or Derlis Gonzalez To Score",
+      "matched": "adam bareiro"
+    },
+    {
+      "id": 2100116293,
+      "name": "Either Derlis Gonzalez or Matias Rojas To Score",
+      "matched": "derlis gonzalez"
+    },
+    {
+      "id": 2100116294,
+      "name": "Either Jamie Maclaren or Mitchell Duke To Score",
+      "matched": "mitchell duke"
+    },
+    {
+      "id": 2100116295,
+      "name": "Either Jamie Maclaren or Kusini Yengi To Score",
+      "matched": "kusini yengi"
+    },
+    {
+      "id": 2100116296,
+      "name": "Either Mitchell Duke or Kusini Yengi To Score",
+      "matched": "mitchell duke"
+    },
+    {
+      "id": 2100116297,
+      "name": "Either Kusini Yengi or Mathew Leckie To Score",
+      "matched": "kusini yengi"
+    },
+    {
+      "id": 2100116298,
+      "name": "Either Mathew Leckie or Craig Goodwin To Score",
+      "matched": "mathew leckie"
+    },
+    {
+      "id": 2100116299,
+      "name": "Either Craig Goodwin or Garang Kuol To Score",
+      "matched": "craig goodwin"
+    },
+    {
+      "id": 2100116300,
+      "name": "Either Kenan Yildiz or Enes Unal To Score",
+      "matched": "kenan yildiz"
+    },
+    {
+      "id": 2100116301,
+      "name": "Either Kenan Yildiz or Kerem Akturkoglu To Score",
+      "matched": "kenan yildiz"
+    },
+    {
+      "id": 2100116302,
+      "name": "Either Arda Guler or Kerem Akturkoglu To Score",
+      "matched": "arda guler"
+    },
+    {
+      "id": 2100116303,
+      "name": "Either Kerem Akturkoglu or Baris Alper Yilmaz To Score",
+      "matched": "kerem akturkoglu"
+    },
+    {
+      "id": 2100116304,
+      "name": "Either Baris Alper Yilmaz or Arda Guler To Score",
+      "matched": "arda guler"
+    },
+    {
+      "id": 2100116305,
+      "name": "Either Arda Guler or Yunus Akgun To Score",
+      "matched": "arda guler"
+    },
+    {
+      "id": 2100116306,
+      "name": "Either Kai Havertz or Leroy Sané To Score",
+      "matched": "kai havertz"
+    },
+    {
+      "id": 2100116307,
+      "name": "Either Kai Havertz or Jamal Musiala To Score",
+      "matched": "kai havertz"
+    },
+    {
+      "id": 2100116308,
+      "name": "Either Lennart Karl or Jamal Musiala To Score",
+      "matched": "lennart karl"
+    },
+    {
+      "id": 2100116309,
+      "name": "Either Jamal Musiala or Leroy Sané To Score",
+      "matched": "jamal musiala"
+    },
+    {
+      "id": 2100116310,
+      "name": "Either Leroy Sané or Lennart Karl To Score",
+      "matched": "leroy sane"
+    },
+    {
+      "id": 2100116311,
+      "name": "Either Nick Woltemade or Florian Wirtz To Score",
+      "matched": "nick woltemade"
+    },
+    {
+      "id": 2100116312,
+      "name": "Either Rangelo Janga or Gervane Kastaneer To Score",
+      "matched": "rangelo janga"
+    },
+    {
+      "id": 2100116313,
+      "name": "Either Rangelo Janga or Jearl Margaritha To Score",
+      "matched": "rangelo janga"
+    },
+    {
+      "id": 2100116314,
+      "name": "Either Gervane Kastaneer or Jearl Margaritha To Score",
+      "matched": "gervane kastaneer"
+    },
+    {
+      "id": 2100116315,
+      "name": "Either Jearl Margaritha or Elson Hooi To Score",
+      "matched": "jearl margaritha"
+    },
+    {
+      "id": 2100116316,
+      "name": "Either Elson Hooi or Jeremy Antonisse To Score",
+      "matched": "jeremy antonisse"
+    },
+    {
+      "id": 2100116317,
+      "name": "Either Jeremy Antonisse or Quincy Hoeve To Score",
+      "matched": "jeremy antonisse"
+    },
+    {
+      "id": 2100116318,
+      "name": "Either Sebastien Haller or Nicolas Pepe To Score",
+      "matched": "sebastien haller"
+    },
+    {
+      "id": 2100116319,
+      "name": "Either Sebastien Haller or Jonathan Bamba To Score",
+      "matched": "sebastien haller"
+    },
+    {
+      "id": 2100116320,
+      "name": "Either Nicolas Pepe or Jonathan Bamba To Score",
+      "matched": "nicolas pepe"
+    },
+    {
+      "id": 2100116321,
+      "name": "Either Jonathan Bamba or Wilfried Zaha To Score",
+      "matched": "jonathan bamba"
+    },
+    {
+      "id": 2100116322,
+      "name": "Either Wilfried Zaha or Jeremie Boga To Score",
+      "matched": "wilfried zaha"
+    },
+    {
+      "id": 2100116323,
+      "name": "Either Jeremie Boga or Amad Diallo To Score",
+      "matched": "jeremie boga"
+    },
+    {
+      "id": 2100116324,
+      "name": "Either Enner Valencia or Kevin Rodriguez To Score",
+      "matched": "enner valencia"
+    },
+    {
+      "id": 2100116325,
+      "name": "Either Enner Valencia or Gonzalo Plata To Score",
+      "matched": "enner valencia"
+    },
+    {
+      "id": 2100116326,
+      "name": "Either Kevin Rodriguez or Gonzalo Plata To Score",
+      "matched": "kevin rodriguez"
+    },
+    {
+      "id": 2100116327,
+      "name": "Either Gonzalo Plata or Jeremy Sarmiento To Score",
+      "matched": "gonzalo plata"
+    },
+    {
+      "id": 2100116328,
+      "name": "Either Jeremy Sarmiento or Leonardo Campana To Score",
+      "matched": "jeremy sarmiento"
+    },
+    {
+      "id": 2100116329,
+      "name": "Either Leonardo Campana or John Yeboah To Score",
+      "matched": "leonardo campana"
+    },
+    {
+      "id": 2100116330,
+      "name": "Either Memphis Depay or Cody Gakpo To Score",
+      "matched": "memphis depay"
+    },
+    {
+      "id": 2100116331,
+      "name": "Either Memphis Depay or Donyell Malen To Score",
+      "matched": "memphis depay"
+    },
+    {
+      "id": 2100116332,
+      "name": "Either Cody Gakpo or Donyell Malen To Score",
+      "matched": "cody gakpo"
+    },
+    {
+      "id": 2100116333,
+      "name": "Either Donyell Malen or Xavi Simons To Score",
+      "matched": "donyell malen"
+    },
+    {
+      "id": 2100116334,
+      "name": "Either Xavi Simons or Cody Gakpo To Score",
+      "matched": "xavi simons"
+    },
+    {
+      "id": 2100116335,
+      "name": "Either Donyell Malen or Frenkie De Jong To Score",
+      "matched": "donyell malen"
+    },
+    {
+      "id": 2100116336,
+      "name": "Either Ayase Ueda or Ritsu Doan To Score",
+      "matched": "ayase ueda"
+    },
+    {
+      "id": 2100116337,
+      "name": "Either Ayase Ueda or Kaoru Mitoma To Score",
+      "matched": "ayase ueda"
+    },
+    {
+      "id": 2100116338,
+      "name": "Either Wataru Endo or Kaoru Mitoma To Score",
+      "matched": "wataru endo"
+    },
+    {
+      "id": 2100116339,
+      "name": "Either Kaoru Mitoma or Daizen Maeda To Score",
+      "matched": "kaoru mitoma"
+    },
+    {
+      "id": 2100116340,
+      "name": "Either Daizen Maeda or Junya Ito To Score",
+      "matched": "daizen maeda"
+    },
+    {
+      "id": 2100116341,
+      "name": "Either Junya Ito or Takefusa Kubo To Score",
+      "matched": "junya ito"
+    },
+    {
+      "id": 2100116346,
+      "name": "Either Taha Yassine Khenissi or Mohamed Elias Achouri To Score",
+      "matched": "mohamed elias achouri"
+    },
+    {
+      "id": 2100116347,
+      "name": "Either Mohamed Elias Achouri or Youssef Msakni To Score",
+      "matched": "mohamed elias achouri"
+    },
+    {
+      "id": 2100116348,
+      "name": "Either Alexander Isak or Viktor Gyokeres To Score",
+      "matched": "alexander isak"
+    },
+    {
+      "id": 2100116349,
+      "name": "Either Alexander Isak or Lucas Bergvall To Score",
+      "matched": "alexander isak"
+    },
+    {
+      "id": 2100116350,
+      "name": "Either Viktor Gyokeres or Lucas Bergvall To Score",
+      "matched": "viktor gyokeres"
+    },
+    {
+      "id": 2100116351,
+      "name": "Either Lucas Bergvall or Anthony Elanga To Score",
+      "matched": "lucas bergvall"
+    },
+    {
+      "id": 2100116352,
+      "name": "Either Anthony Elanga or Viktor Gyokeres To Score",
+      "matched": "anthony elanga"
+    },
+    {
+      "id": 2100116354,
+      "name": "Either Jesper Karlsson or Alexander Isak To Score",
+      "matched": "jesper karlsson"
+    },
+    {
+      "id": 2100116355,
+      "name": "Either Romelu Lukaku or Jeremy Doku To Score",
+      "matched": "romelu lukaku"
+    },
+    {
+      "id": 2100116356,
+      "name": "Either Romelu Lukaku or Leandro Trossard To Score",
+      "matched": "romelu lukaku"
+    },
+    {
+      "id": 2100116357,
+      "name": "Either Jeremy Doku or Leandro Trossard To Score",
+      "matched": "jeremy doku"
+    },
+    {
+      "id": 2100116358,
+      "name": "Either Leandro Trossard or Kevin De Bruyne To Score",
+      "matched": "leandro trossard"
+    },
+    {
+      "id": 2100116359,
+      "name": "Either Charles De Ketelaere or Dodi Lukebakio To Score",
+      "matched": "dodi lukebakio"
+    },
+    {
+      "id": 2100116360,
+      "name": "Either Romelu Lukaku or Kevin De Bruyne To Score",
+      "matched": "romelu lukaku"
+    },
+    {
+      "id": 2100116361,
+      "name": "Either Mohamed Salah or Mostafa Mohamed To Score",
+      "matched": "mohamed salah"
+    },
+    {
+      "id": 2100116362,
+      "name": "Either Mohamed Salah or Omar Marmoush To Score",
+      "matched": "mohamed salah"
+    },
+    {
+      "id": 2100116363,
+      "name": "Either Mostafa Mohamed or Omar Marmoush To Score",
+      "matched": "mostafa mohamed"
+    },
+    {
+      "id": 2100116364,
+      "name": "Either Omar Marmoush or Mahmoud Saber To Score",
+      "matched": "omar marmoush"
+    },
+    {
+      "id": 2100116365,
+      "name": "Either Mahmoud Saber or Ahmed Sayed \"Zizo\" To Score",
+      "matched": "mahmoud saber"
+    },
+    {
+      "id": 2100116366,
+      "name": "Either Ahmed Sayed \"Zizo\" or Trezeguet Hassan To Score",
+      "matched": "ahmed sayed zizo"
+    },
+    {
+      "id": 2100116367,
+      "name": "Either Mehdi Taremi or Sardar Azmoun To Score",
+      "matched": "mehdi taremi"
+    },
+    {
+      "id": 2100116368,
+      "name": "Either Mehdi Taremi or Alireza Jahanbakhsh To Score",
+      "matched": "mehdi taremi"
+    },
+    {
+      "id": 2100116369,
+      "name": "Either Sardar Azmoun or Alireza Jahanbakhsh To Score",
+      "matched": "alireza jahanbakhsh"
+    },
+    {
+      "id": 2100116370,
+      "name": "Either Alireza Jahanbakhsh or Mehdi Ghayedi To Score",
+      "matched": "alireza jahanbakhsh"
+    },
+    {
+      "id": 2100116371,
+      "name": "Either Mehdi Ghayedi or Karim Ansarifard To Score",
+      "matched": "mehdi ghayedi"
+    },
+    {
+      "id": 2100116372,
+      "name": "Either Karim Ansarifard or Allahyar Sayyadmanesh To Score",
+      "matched": "allahyar sayyadmanesh"
+    },
+    {
+      "id": 2100116373,
+      "name": "Either Chris Wood or Kosta Barbarouses To Score",
+      "matched": "chris wood"
+    },
+    {
+      "id": 2100116374,
+      "name": "Either Chris Wood or Matthew Garbett To Score",
+      "matched": "chris wood"
+    },
+    {
+      "id": 2100116375,
+      "name": "Either Kosta Barbarouses or Matthew Garbett To Score",
+      "matched": "kosta barbarouses"
+    },
+    {
+      "id": 2100116376,
+      "name": "Either Matthew Garbett or Ben Waine To Score",
+      "matched": "matthew garbett"
+    },
+    {
+      "id": 2100116377,
+      "name": "Either Ben Waine or Callum McCowatt To Score",
+      "matched": "ben waine"
+    },
+    {
+      "id": 2100116378,
+      "name": "Either Callum McCowatt or Sarpreet Singh To Score",
+      "matched": "callum mccowatt"
+    },
+    {
+      "id": 2100116379,
+      "name": "Either Mikel Oyarzabal or Ferran Torres To Score",
+      "matched": "mikel oyarzabal"
+    },
+    {
+      "id": 2100116380,
+      "name": "Either Lamine Yamal or Dani Olmo To Score",
+      "matched": "lamine yamal"
+    },
+    {
+      "id": 2100116381,
+      "name": "Either Ferran Torres or Dani Olmo To Score",
+      "matched": "ferran torres"
+    },
+    {
+      "id": 2100116382,
+      "name": "Either Dani Olmo or Nico Williams To Score",
+      "matched": "dani olmo"
+    },
+    {
+      "id": 2100116383,
+      "name": "Either Nico Williams or Lamine Yamal To Score",
+      "matched": "nico williams"
+    },
+    {
+      "id": 2100116384,
+      "name": "Either Lamine Yamal or Mikel Oyarzabal To Score",
+      "matched": "lamine yamal"
+    },
+    {
+      "id": 2100116385,
+      "name": "Either Saleh Al-Shehri or Firas Al-Buraikan To Score",
+      "matched": "saleh al shehri"
+    },
+    {
+      "id": 2100116386,
+      "name": "Either Saleh Al-Shehri or Salem Al-Dawsari To Score",
+      "matched": "saleh al shehri"
+    },
+    {
+      "id": 2100116387,
+      "name": "Either Firas Al-Buraikan or Salem Al-Dawsari To Score",
+      "matched": "salem al dawsari"
+    },
+    {
+      "id": 2100116388,
+      "name": "Either Salem Al-Dawsari or Abdulrahman Ghareeb To Score",
+      "matched": "abdulrahman ghareeb"
+    },
+    {
+      "id": 2100116389,
+      "name": "Either Abdulrahman Ghareeb or Abdullah Al-Hamdan To Score",
+      "matched": "abdulrahman ghareeb"
+    },
+    {
+      "id": 2100116390,
+      "name": "Either Abdullah Al-Hamdan or Nawaf Al-Abed To Score",
+      "matched": "abdullah al hamdan"
+    },
+    {
+      "id": 2100116391,
+      "name": "Either Darwin Nunez or Facundo Pellistri To Score",
+      "matched": "darwin nunez"
+    },
+    {
+      "id": 2100116392,
+      "name": "Either Darwin Nunez or Maximiliano Gómez To Score",
+      "matched": "darwin nunez"
+    },
+    {
+      "id": 2100116393,
+      "name": "Either Maximiliano Gómez or Facundo Pellistri To Score",
+      "matched": "maximiliano gomez"
+    },
+    {
+      "id": 2100116394,
+      "name": "Either Facundo Pellistri or Paul Brian Rodríguez To Score",
+      "matched": "facundo pellistri"
+    },
+    {
+      "id": 2100116395,
+      "name": "Either Paul Brian Rodríguez or Cristian Olivera To Score",
+      "matched": "cristian olivera"
+    },
+    {
+      "id": 2100116396,
+      "name": "Either Kylian Mbappe or Michael Olise To Score",
+      "matched": "kylian mbappe"
+    },
+    {
+      "id": 2100116397,
+      "name": "Either Kylian Mbappe or Ousmane Dembele To Score",
+      "matched": "kylian mbappe"
+    },
+    {
+      "id": 2100116398,
+      "name": "Either Michael Olise or Ousmane Dembele To Score",
+      "matched": "michael olise"
+    },
+    {
+      "id": 2100116399,
+      "name": "Either Desire Doue or Kylian Mbappe To Score",
+      "matched": "desire doue"
+    },
+    {
+      "id": 2100116400,
+      "name": "Either Rayan Cherki or Ousmane Dembele To Score",
+      "matched": "rayan cherki"
+    },
+    {
+      "id": 2100116401,
+      "name": "Either Ousmane Dembele or Marcus Thuram To Score",
+      "matched": "ousmane dembele"
+    },
+    {
+      "id": 2100116402,
+      "name": "Either Sadio Mane or Nicolas Jackson To Score",
+      "matched": "sadio mane"
+    },
+    {
+      "id": 2100116403,
+      "name": "Either Sadio Mane or Ismaila Sarr To Score",
+      "matched": "sadio mane"
+    },
+    {
+      "id": 2100116404,
+      "name": "Either Nicolas Jackson or Ismaila Sarr To Score",
+      "matched": "nicolas jackson"
+    },
+    {
+      "id": 2100116405,
+      "name": "Either Ismaila Sarr or Boulaye Dia To Score",
+      "matched": "ismaila sarr"
+    },
+    {
+      "id": 2100116406,
+      "name": "Either Boulaye Dia or Iliman Ndiaye To Score",
+      "matched": "boulaye dia"
+    },
+    {
+      "id": 2100116407,
+      "name": "Either Iliman Ndiaye or Habib Diallo To Score",
+      "matched": "iliman ndiaye"
+    },
+    {
+      "id": 2100116408,
+      "name": "Either Aymen Hussein or Ali Al-Hamadi To Score",
+      "matched": "aymen hussein"
+    },
+    {
+      "id": 2100116409,
+      "name": "Either Aymen Hussein or Mohanad Ali To Score",
+      "matched": "aymen hussein"
+    },
+    {
+      "id": 2100116410,
+      "name": "Either Ali Al-Hamadi or Mohanad Ali To Score",
+      "matched": "mohanad ali"
+    },
+    {
+      "id": 2100116411,
+      "name": "Either Mohanad Ali or Zidane Iqbal To Score",
+      "matched": "mohanad ali"
+    },
+    {
+      "id": 2100116412,
+      "name": "Either Zidane Iqbal or Amjad Attwan To Score",
+      "matched": "zidane iqbal"
+    },
+    {
+      "id": 2100116413,
+      "name": "Either Amjad Attwan or Ali Jasim To Score",
+      "matched": "ali jasim"
+    },
+    {
+      "id": 2100116414,
+      "name": "Either Erling Haaland or Alexander Sorloth To Score",
+      "matched": "erling haaland"
+    },
+    {
+      "id": 2100116415,
+      "name": "Either Erling Haaland or Mohamed Elyounoussi To Score",
+      "matched": "erling haaland"
+    },
+    {
+      "id": 2100116416,
+      "name": "Either Alexander Sorloth or Mohamed Elyounoussi To Score",
+      "matched": "mohamed elyounoussi"
+    },
+    {
+      "id": 2100116417,
+      "name": "Either Mohamed Elyounoussi or Jorgen Strand Larsen To Score",
+      "matched": "mohamed elyounoussi"
+    },
+    {
+      "id": 2100116418,
+      "name": "Either Jorgen Strand Larsen or Antonio Nusa To Score",
+      "matched": "antonio nusa"
+    },
+    {
+      "id": 2100116419,
+      "name": "Either Antonio Nusa or Ola Solbakken To Score",
+      "matched": "antonio nusa"
+    },
+    {
+      "id": 2100116420,
+      "name": "Either Lionel Messi or Julian Alvarez To Score",
+      "matched": "lionel messi"
+    },
+    {
+      "id": 2100116421,
+      "name": "Either Lionel Messi or Lautaro Martinez To Score",
+      "matched": "lionel messi"
+    },
+    {
+      "id": 2100116422,
+      "name": "Either Julian Alvarez or Lautaro Martinez To Score",
+      "matched": "julian alvarez"
+    },
+    {
+      "id": 2100116423,
+      "name": "Either Lautaro Martinez or Angel Correa To Score",
+      "matched": "lautaro martinez"
+    },
+    {
+      "id": 2100116424,
+      "name": "Either Angel Correa or Alejandro Garnacho To Score",
+      "matched": "angel correa"
+    },
+    {
+      "id": 2100116425,
+      "name": "Either Alejandro Garnacho or Nicolas Gonzalez To Score",
+      "matched": "alejandro garnacho"
+    },
+    {
+      "id": 2100116426,
+      "name": "Either Riyad Mahrez or Amine Gouiri To Score",
+      "matched": "riyad mahrez"
+    },
+    {
+      "id": 2100116427,
+      "name": "Either Riyad Mahrez or Baghdad Bounedjah To Score",
+      "matched": "riyad mahrez"
+    },
+    {
+      "id": 2100116428,
+      "name": "Either Amine Gouiri or Baghdad Bounedjah To Score",
+      "matched": "amine gouiri"
+    },
+    {
+      "id": 2100116429,
+      "name": "Either Baghdad Bounedjah or Islam Slimani To Score",
+      "matched": "baghdad bounedjah"
+    },
+    {
+      "id": 2100116430,
+      "name": "Either Islam Slimani or Youcef Belaili To Score",
+      "matched": "islam slimani"
+    },
+    {
+      "id": 2100116431,
+      "name": "Either Youcef Belaili or Said Benrahma To Score",
+      "matched": "said benrahma"
+    },
+    {
+      "id": 2100116432,
+      "name": "Either Marko Arnautovic or Michael Gregoritsch To Score",
+      "matched": "marko arnautovic"
+    },
+    {
+      "id": 2100116433,
+      "name": "Either Marko Arnautovic or Sasa Kalajdzic To Score",
+      "matched": "marko arnautovic"
+    },
+    {
+      "id": 2100116434,
+      "name": "Either Michael Gregoritsch or Sasa Kalajdzic To Score",
+      "matched": "michael gregoritsch"
+    },
+    {
+      "id": 2100116435,
+      "name": "Either Sasa Kalajdzic or Christoph Baumgartner To Score",
+      "matched": "sasa kalajdzic"
+    },
+    {
+      "id": 2100116436,
+      "name": "Either Christoph Baumgartner or Karim Onisiwo To Score",
+      "matched": "christoph baumgartner"
+    },
+    {
+      "id": 2100116437,
+      "name": "Either Karim Onisiwo or Florian Kainz To Score",
+      "matched": "karim onisiwo"
+    },
+    {
+      "id": 2100116442,
+      "name": "Either Cristiano Ronaldo or Goncalo Ramos To Score",
+      "matched": "cristiano ronaldo"
+    },
+    {
+      "id": 2100116443,
+      "name": "Either Cristiano Ronaldo or Rafael Leao To Score",
+      "matched": "cristiano ronaldo"
+    },
+    {
+      "id": 2100116444,
+      "name": "Either Cristiano Ronaldo or Bruno Fernandes To Score",
+      "matched": "cristiano ronaldo"
+    },
+    {
+      "id": 2100116445,
+      "name": "Either Rafael Leao or Joao Felix To Score",
+      "matched": "rafael leao"
+    },
+    {
+      "id": 2100116446,
+      "name": "Either Joao Felix or Bruno Fernandes To Score",
+      "matched": "joao felix"
+    },
+    {
+      "id": 2100116447,
+      "name": "Either Bernardo Silva or Bruno Fernandes To Score",
+      "matched": "bernardo silva"
+    },
+    {
+      "id": 2100116448,
+      "name": "Either Eldor Shomurodov or Igor Sergeev To Score",
+      "matched": "eldor shomurodov"
+    },
+    {
+      "id": 2100116449,
+      "name": "Either Eldor Shomurodov or Jaloliddin Masharipov To Score",
+      "matched": "eldor shomurodov"
+    },
+    {
+      "id": 2100116450,
+      "name": "Either Igor Sergeev or Jaloliddin Masharipov To Score",
+      "matched": "igor sergeev"
+    },
+    {
+      "id": 2100116451,
+      "name": "Either Jaloliddin Masharipov or Abbosbek Fayzullaev To Score",
+      "matched": "jaloliddin masharipov"
+    },
+    {
+      "id": 2100116452,
+      "name": "Either Abbosbek Fayzullaev or Oston Urunov To Score",
+      "matched": "abbosbek fayzullaev"
+    },
+    {
+      "id": 2100116453,
+      "name": "Either Oston Urunov or Jamshid Iskanderov To Score",
+      "matched": "oston urunov"
+    },
+    {
+      "id": 2100116454,
+      "name": "Either Luis Diaz or James Rodriguez To Score",
+      "matched": "luis diaz"
+    },
+    {
+      "id": 2100116455,
+      "name": "Either Luis Diaz or Luis Suarez To Score",
+      "matched": "luis diaz"
+    },
+    {
+      "id": 2100116456,
+      "name": "Either Luis Suarez or James Rodriguez To Score",
+      "matched": "luis suarez"
+    },
+    {
+      "id": 2100116457,
+      "name": "Either Luis Diaz or Richard Rios To Score",
+      "matched": "luis diaz"
+    },
+    {
+      "id": 2100116458,
+      "name": "Either Luis Diaz or Jhon Córdoba To Score",
+      "matched": "luis diaz"
+    },
+    {
+      "id": 2100116459,
+      "name": "Either Jhon Córdoba or James Rodriguez To Score",
+      "matched": "jhon cordoba"
+    },
+    {
+      "id": 2100116460,
+      "name": "Either Cedric Bakambu or Yoane Wissa To Score",
+      "matched": "cedric bakambu"
+    },
+    {
+      "id": 2100116462,
+      "name": "Either Cedric Bakambu or Simon Banza To Score",
+      "matched": "cedric bakambu"
+    },
+    {
+      "id": 2100116463,
+      "name": "Either Yoane Wissa or Simon Banza To Score",
+      "matched": "yoane wissa"
+    },
+    {
+      "id": 2100116464,
+      "name": "Either Simon Banza or Meschack Elia To Score",
+      "matched": "simon banza"
+    },
+    {
+      "id": 2100116465,
+      "name": "Either Meschack Elia or Theo Bongonda To Score",
+      "matched": "meschack elia"
+    },
+    {
+      "id": 2100116466,
+      "name": "Either Theo Bongonda or Yoane Wissa To Score",
+      "matched": "theo bongonda"
+    },
+    {
+      "id": 2100116467,
+      "name": "Either Harry Kane or Bukayo Saka To Score",
+      "matched": "harry kane"
+    },
+    {
+      "id": 2100116468,
+      "name": "Either Harry Kane or Morgan Rogers To Score",
+      "matched": "harry kane"
+    },
+    {
+      "id": 2100116469,
+      "name": "Either Bukayo Saka or Jude Bellingham To Score",
+      "matched": "bukayo saka"
+    },
+    {
+      "id": 2100116470,
+      "name": "Either Harry Kane or Marcus Rashford To Score",
+      "matched": "harry kane"
+    },
+    {
+      "id": 2100116471,
+      "name": "Either Marcus Rashford or Ollie Watkins To Score",
+      "matched": "marcus rashford"
+    },
+    {
+      "id": 2100116472,
+      "name": "Either Ollie Watkins or Ivan Toney To Score",
+      "matched": "ollie watkins"
+    },
+    {
+      "id": 2100116473,
+      "name": "Either Andrej Kramaric or Ante Budimir To Score",
+      "matched": "andrej kramaric"
+    },
+    {
+      "id": 2100116474,
+      "name": "Either Andrej Kramaric or Ivan Perisic To Score",
+      "matched": "andrej kramaric"
+    },
+    {
+      "id": 2100116475,
+      "name": "Either Ante Budimir or Luka Modric To Score",
+      "matched": "ante budimir"
+    },
+    {
+      "id": 2100116476,
+      "name": "Either Ivan Perisic or Andrej Kramaric To Score",
+      "matched": "ivan perisic"
+    },
+    {
+      "id": 2100116477,
+      "name": "Either Ivan Perisic or Luka Modric To Score",
+      "matched": "ivan perisic"
+    },
+    {
+      "id": 2100116478,
+      "name": "Either Luka Modric or Mario Pasalic To Score",
+      "matched": "luka modric"
+    },
+    {
+      "id": 2100116479,
+      "name": "Either Inaki Williams or Mohammed Kudus To Score",
+      "matched": "inaki williams"
+    },
+    {
+      "id": 2100116480,
+      "name": "Either Inaki Williams or Jordan Ayew To Score",
+      "matched": "inaki williams"
+    },
+    {
+      "id": 2100116483,
+      "name": "Either Antoine Semenyo or Kamal-Deen Sulemana To Score",
+      "matched": "antoine semenyo"
+    },
+    {
+      "id": 2100116484,
+      "name": "Either Kamal-Deen Sulemana or Ernest Nuamah To Score",
+      "matched": "ernest nuamah"
+    },
+    {
+      "id": 2100116485,
+      "name": "Either Cecilio Waterman or Jose Fajardo To Score",
+      "matched": "cecilio waterman"
+    },
+    {
+      "id": 2100116486,
+      "name": "Either Cecilio Waterman or Ismael Diaz To Score",
+      "matched": "cecilio waterman"
+    },
+    {
+      "id": 2100116487,
+      "name": "Either Jose Fajardo or Ismael Diaz To Score",
+      "matched": "jose fajardo"
+    },
+    {
+      "id": 2100116488,
+      "name": "Either Ismael Diaz or Tomas Rodriguez To Score",
+      "matched": "ismael diaz"
+    },
+    {
+      "id": 2100116554,
+      "name": "Either Ryan Mendes or Garry Rodrigues To Score",
+      "matched": "ryan mendes"
+    },
+    {
+      "id": 2100116555,
+      "name": "Either Ryan Mendes or Willy Semedo To Score",
+      "matched": "ryan mendes"
+    },
+    {
+      "id": 2100116556,
+      "name": "Either Garry Rodrigues or Willy Semedo To Score",
+      "matched": "garry rodrigues"
+    },
+    {
+      "id": 2100116557,
+      "name": "Either Willy Semedo or Zeca To Score",
+      "matched": "willy semedo"
+    },
+    {
+      "id": 2100116687,
+      "name": "Total combined Shots on Target by Raul Jimenez & Lyle Foster",
+      "matched": "raul jimenez"
+    },
+    {
+      "id": 2100116688,
+      "name": "Total combined Shots on Target by Son Heung-Min & Patrik Schick",
+      "matched": "patrik schick"
+    },
+    {
+      "id": 2100116689,
+      "name": "Total combined Shots on Target by Jonathan David & Edin Dzeko",
+      "matched": "jonathan david"
+    },
+    {
+      "id": 2100116690,
+      "name": "Total combined Shots on Target by Christian Pulisic & Julio Enciso",
+      "matched": "christian pulisic"
+    },
+    {
+      "id": 2100116691,
+      "name": "Total combined Shots on Target by Akram Afif & Breel Embolo",
+      "matched": "akram afif"
+    },
+    {
+      "id": 2100116692,
+      "name": "Total combined Shots on Target by Vinicius Junior & Ayoub El Kaabi",
+      "matched": "vinicius junior"
+    },
+    {
+      "id": 2100116693,
+      "name": "Total combined Shots on Target by Raphinha & Brahim Díaz",
+      "matched": "brahim diaz"
+    },
+    {
+      "id": 2100116694,
+      "name": "Total combined Shots on Target by Scott McTominay & Wilson Isidor",
+      "matched": "scott mctominay"
+    },
+    {
+      "id": 2100116695,
+      "name": "Total combined Shots on Target by Mohamed Toure & Arda Guler",
+      "matched": "mohamed toure"
+    },
+    {
+      "id": 2100116696,
+      "name": "Total combined Shots on Target by Kai Havertz & Florian Wirtz",
+      "matched": "kai havertz"
+    },
+    {
+      "id": 2100116697,
+      "name": "Total combined Shots on Target by Jamal Musiala & Leandro Bacuna",
+      "matched": "jamal musiala"
+    },
+    {
+      "id": 2100116698,
+      "name": "Total combined Shots on Target by Donyell Malen & Ayase Ueda",
+      "matched": "donyell malen"
+    },
+    {
+      "id": 2100116699,
+      "name": "Total combined Shots on Target by Memphis Depay & Cody Gakpo",
+      "matched": "memphis depay"
+    },
+    {
+      "id": 2100116700,
+      "name": "Total combined Shots on Target by Yan Diomande & Enner Valencia",
+      "matched": "yan diomande"
+    },
+    {
+      "id": 2100116701,
+      "name": "Total combined Shots on Target by Viktor Gyokeres & Alexander Isak",
+      "matched": "viktor gyokeres"
+    },
+    {
+      "id": 2100116702,
+      "name": "Total combined Shots on Target by Viktor Gyokeres & Firas Chaouat",
+      "matched": "viktor gyokeres"
+    },
+    {
+      "id": 2100116703,
+      "name": "Total combined Shots on Target by Lamine Yamal & Nico Williams",
+      "matched": "lamine yamal"
+    },
+    {
+      "id": 2100116704,
+      "name": "Total combined Shots on Target by Mikel Oyarzabal & Fabián Ruiz",
+      "matched": "mikel oyarzabal"
+    },
+    {
+      "id": 2100116705,
+      "name": "Total combined Shots on Target by Romelu Lukaku & Mohamed Salah",
+      "matched": "romelu lukaku"
+    },
+    {
+      "id": 2100116706,
+      "name": "Total combined Shots on Target by Jeremy Doku & Kevin De Bruyne",
+      "matched": "jeremy doku"
+    },
+    {
+      "id": 2100116707,
+      "name": "Total combined Shots on Target by Salem Al-Dawsari & Darwin Nunez",
+      "matched": "darwin nunez"
+    },
+    {
+      "id": 2100116708,
+      "name": "Total combined Shots on Target by Mehdi Taremi & Chris Wood",
+      "matched": "mehdi taremi"
+    },
+    {
+      "id": 2100116709,
+      "name": "Total combined Shots on Target by Kylian Mbappe & Ousmane Dembele",
+      "matched": "kylian mbappe"
+    },
+    {
+      "id": 2100116710,
+      "name": "Total combined Shots on Target by Michael Olise & Sadio Mane",
+      "matched": "michael olise"
+    },
+    {
+      "id": 2100116711,
+      "name": "Total combined Shots on Target by Aymen Hussein & Erling Haaland",
+      "matched": "aymen hussein"
+    },
+    {
+      "id": 2100116712,
+      "name": "Total combined Shots on Target by Lionel Messi & Riyad Mahrez",
+      "matched": "lionel messi"
+    },
+    {
+      "id": 2100116713,
+      "name": "Total combined Shots on Target by Julian Alvarez & Lautaro Martinez",
+      "matched": "julian alvarez"
+    },
+    {
+      "id": 2100116714,
+      "name": "Total combined Shots on Target by Marko Arnautovic & Mousa Tamari",
+      "matched": "marko arnautovic"
+    },
+    {
+      "id": 2100116715,
+      "name": "Total combined Shots on Target by Cristiano Ronaldo & Bruno Fernandes",
+      "matched": "cristiano ronaldo"
+    },
+    {
+      "id": 2100116716,
+      "name": "Total combined Shots on Target by Rafael Leao & Cedric Bakambu",
+      "matched": "rafael leao"
+    },
+    {
+      "id": 2100116717,
+      "name": "Total combined Shots on Target by Harry Kane & Andrej Kramaric",
+      "matched": "harry kane"
+    },
+    {
+      "id": 2100116718,
+      "name": "Total combined Shots on Target by Bukayo Saka & Jude Bellingham",
+      "matched": "bukayo saka"
+    },
+    {
+      "id": 2100116719,
+      "name": "Total combined Shots on Target by Antoine Semenyo & Ismael Diaz",
+      "matched": "antoine semenyo"
+    },
+    {
+      "id": 2100116720,
+      "name": "Total combined Shots on Target by Eldor Shomurodov & Luis Suarez",
+      "matched": "eldor shomurodov"
+    },
+    {
+      "id": 2100116721,
+      "name": "Total combined Shots on Target by Luis Diaz & Jhon Arias",
+      "matched": "luis diaz"
+    },
+    {
+      "id": 2100116735,
+      "name": "Total combined Shots on Target by Chris Wood & Mohamed Salah",
+      "matched": "chris wood"
+    },
+    {
+      "id": 2100116736,
+      "name": "Total combined Shots on Target by Lionel Messi & Marko Arnautović",
+      "matched": "lionel messi"
+    },
+    {
+      "id": 2100116737,
+      "name": "Total combined Shots on Target by Kylian Mbappe & Aymen Hussein",
+      "matched": "kylian mbappe"
+    },
+    {
+      "id": 2100116738,
+      "name": "Total combined Shots on Target by Patrik Schick & Lyle Foster",
+      "matched": "patrik schick"
+    },
+    {
+      "id": 2100116739,
+      "name": "Total combined Shots on Target by Breel Embolo & Edin Dzeko",
+      "matched": "breel embolo"
+    },
+    {
+      "id": 2100116740,
+      "name": "Total combined Shots on Target by Jonathan David & Akram Afif",
+      "matched": "jonathan david"
+    },
+    {
+      "id": 2100116741,
+      "name": "Total combined Shots on Target by Raul Jimenez & Heung-Min Son",
+      "matched": "raul jimenez"
+    },
+    {
+      "id": 2100116742,
+      "name": "Total combined Shots on Target by Christian Pulisic & Mohamed Toure",
+      "matched": "christian pulisic"
+    },
+    {
+      "id": 2100116743,
+      "name": "Total combined Shots on Target by Scott McTominay & Brahim Díaz",
+      "matched": "scott mctominay"
+    },
+    {
+      "id": 2100116744,
+      "name": "Total combined Shots on Target by Vinicius Junior & Raphinha",
+      "matched": "vinicius junior"
+    },
+    {
+      "id": 2100116745,
+      "name": "Total combined Shots on Target by Neymar & Wilson Isidor",
+      "matched": "wilson isidor"
+    },
+    {
+      "id": 2100116746,
+      "name": "Total combined Shots on Target by Arda Guler & Julio Enciso",
+      "matched": "arda guler"
+    },
+    {
+      "id": 2100116747,
+      "name": "Total combined Shots on Target by Memphis Depay & Viktor Gyökeres",
+      "matched": "memphis depay"
+    },
+    {
+      "id": 2100116748,
+      "name": "Total combined Shots on Target by Cody Gakpo & Alexander Isak",
+      "matched": "cody gakpo"
+    },
+    {
+      "id": 2100116749,
+      "name": "Total combined Shots on Target by Kai Havertz & Yan Diomande",
+      "matched": "kai havertz"
+    },
+    {
+      "id": 2100116750,
+      "name": "Total combined Shots on Target by Florian Wirtz & Jamal Musiala",
+      "matched": "florian wirtz"
+    },
+    {
+      "id": 2100116751,
+      "name": "Total combined Shots on Target by Enner Valencia & Leandro Bacuna",
+      "matched": "enner valencia"
+    },
+    {
+      "id": 2100116752,
+      "name": "Total combined Shots on Target by Firas Chaouat & Ayase Ueda",
+      "matched": "firas chaouat"
+    },
+    {
+      "id": 2100116753,
+      "name": "Total combined Shots on Target by Mikel Oyarzabal & Salem Al-Dawsari",
+      "matched": "mikel oyarzabal"
+    },
+    {
+      "id": 2100116754,
+      "name": "Total combined Shots on Target by Romelu Lukaku & Mehdi Taremi",
+      "matched": "romelu lukaku"
+    },
+    {
+      "id": 2100116755,
+      "name": "Total combined Shots on Target by Darwin Núñez & Jamiro Monteiro",
+      "matched": "darwin nunez"
+    },
+    {
+      "id": 2100116756,
+      "name": "Total combined Shots on Target by Ousmane Dembélé & Michael Olise",
+      "matched": "ousmane dembele"
+    },
+    {
+      "id": 2100116757,
+      "name": "Total combined Shots on Target by Erling Haaland & Sadio Mane",
+      "matched": "erling haaland"
+    },
+    {
+      "id": 2100116758,
+      "name": "Total combined Shots on Target by Mousa Tamari & Riyad Mahrez",
+      "matched": "riyad mahrez"
+    },
+    {
+      "id": 2100116759,
+      "name": "Total combined Shots on Target by Christiano Ronaldo & Eldor Shomurodov",
+      "matched": "eldor shomurodov"
+    },
+    {
+      "id": 2100116760,
+      "name": "Total combined Shots on Target by Bruno Fernandes & Rafael Leão",
+      "matched": "bruno fernandes"
+    },
+    {
+      "id": 2100116761,
+      "name": "Total combined Shots on Target by Harry Kane & Antoine Semenyo",
+      "matched": "harry kane"
+    },
+    {
+      "id": 2100116762,
+      "name": "Total combined Shots on Target by Ismael Díaz & Andrej Kramarić",
+      "matched": "ismael diaz"
+    },
+    {
+      "id": 2100116763,
+      "name": "Total combined Shots on Target by Jhon Arias & Cédric Bakambu",
+      "matched": "jhon arias"
+    },
+    {
+      "id": 2100116764,
+      "name": "Total combined Shots on Target by Luis Díaz & Luis Javier Suárez",
+      "matched": "luis diaz"
+    },
+    {
+      "id": 2100116765,
+      "name": "Total combined Shots on Target by Edin Dzeko & Akram Afif",
+      "matched": "edin dzeko"
+    },
+    {
+      "id": 2100116766,
+      "name": "Total combined Shots on Target by Breel Embolo & Jonathan David",
+      "matched": "breel embolo"
+    },
+    {
+      "id": 2100116767,
+      "name": "Total combined Shots on Target by Brahim Diaz & Wilson Isidor",
+      "matched": "brahim diaz"
+    },
+    {
+      "id": 2100116768,
+      "name": "Total combined Shots on Target by Scott McTominay & Vinicius Junior",
+      "matched": "scott mctominay"
+    },
+    {
+      "id": 2100116769,
+      "name": "Total combined Shots on Target by John McGinn & Raphinha",
+      "matched": "john mcginn"
+    },
+    {
+      "id": 2100116770,
+      "name": "Total combined Shots on Target by Patrik Schick & Raul Jimenez",
+      "matched": "patrik schick"
+    },
+    {
+      "id": 2100116771,
+      "name": "Total combined Shots on Target by Lyle Foster & Heung-Min Son",
+      "matched": "lyle foster"
+    },
+    {
+      "id": 2100116772,
+      "name": "Total combined Shots on Target by Leandro Bacuna & Yan Diomande",
+      "matched": "leandro bacuna"
+    },
+    {
+      "id": 2100116773,
+      "name": "Total combined Shots on Target by Enner Valencia & Kai Havertz",
+      "matched": "enner valencia"
+    },
+    {
+      "id": 2100116774,
+      "name": "Total combined Shots on Target by Ayase Ueda & Viktor Gyökeres",
+      "matched": "ayase ueda"
+    },
+    {
+      "id": 2100116775,
+      "name": "Total combined Shots on Target by Takefusa Kubo & Alexander Isak",
+      "matched": "takefusa kubo"
+    },
+    {
+      "id": 2100116776,
+      "name": "Total combined Shots on Target by Firas Chaouat & Memphis Depay",
+      "matched": "firas chaouat"
+    },
+    {
+      "id": 2100116777,
+      "name": "Total combined Shots on Target by Donyell Malen & Cody Gakpo",
+      "matched": "donyell malen"
+    },
+    {
+      "id": 2100116778,
+      "name": "Total combined Shots on Target by Julio Enciso & Mohamed Toure",
+      "matched": "julio enciso"
+    },
+    {
+      "id": 2100116779,
+      "name": "Total combined Shots on Target by Arda Guler & Christian Pulisic",
+      "matched": "arda guler"
+    },
+    {
+      "id": 2100116780,
+      "name": "Total combined Shots on Target by Erling Haaland & Kylian Mbappe",
+      "matched": "erling haaland"
+    },
+    {
+      "id": 2100116781,
+      "name": "Total combined Shots on Target by Alexander Sørloth & Ousmane Dembélé",
+      "matched": "ousmane dembele"
+    },
+    {
+      "id": 2100116782,
+      "name": "Total combined Shots on Target by Sadio Mane & Aymen Hussein",
+      "matched": "sadio mane"
+    },
+    {
+      "id": 2100116783,
+      "name": "Total combined Shots on Target by Jamiro Monteiro & Salem Al-Dawsari",
+      "matched": "jamiro monteiro"
+    },
+    {
+      "id": 2100116784,
+      "name": "Total combined Shots on Target by Darwin Núñez & Lamine Yamal",
+      "matched": "darwin nunez"
+    },
+    {
+      "id": 2100116785,
+      "name": "Total combined Shots on Target by Giorgian de Arrascaeta & Mikel Oyarzabal",
+      "matched": "mikel oyarzabal"
+    },
+    {
+      "id": 2100116786,
+      "name": "Total combined Shots on Target by Mohamed Salah & Mehdi Taremi",
+      "matched": "mohamed salah"
+    },
+    {
+      "id": 2100116787,
+      "name": "Total combined Shots on Target by Chris Wood & Romelu Lukaku",
+      "matched": "chris wood"
+    },
+    {
+      "id": 2100116788,
+      "name": "Total combined Shots on Target by Andrej Kramarić & Antoine Semenyo",
+      "matched": "andrej kramaric"
+    },
+    {
+      "id": 2100116789,
+      "name": "Total combined Shots on Target by Ismael Díaz & Harry Kane",
+      "matched": "ismael diaz"
+    },
+    {
+      "id": 2100116790,
+      "name": "Total combined Shots on Target by Anthony Gordon & Morgan Rogers",
+      "matched": "anthony gordon"
+    },
+    {
+      "id": 2100116791,
+      "name": "Total combined Shots on Target by Luis Díaz & Bruno Fernandes",
+      "matched": "luis diaz"
+    },
+    {
+      "id": 2100116792,
+      "name": "Total combined Shots on Target by Luis Javier Suárez & Christiano Ronaldo",
+      "matched": "javier suarez"
+    },
+    {
+      "id": 2100116793,
+      "name": "Total combined Shots on Target by Cédric Bakambu & Eldor Shomurodov",
+      "matched": "cedric bakambu"
+    },
+    {
+      "id": 2100116794,
+      "name": "Total combined Shots on Target by Riyad Mahrez & Marko Arnautović",
+      "matched": "riyad mahrez"
+    },
+    {
+      "id": 2100116795,
+      "name": "Total combined Shots on Target by Mousa Tamari & Lautaro Martinez",
+      "matched": "lautaro martinez"
+    },
+    {
+      "id": 2100116796,
+      "name": "Total combined Shots on Target by Lionel Messi & Julián Álvarez",
+      "matched": "lionel messi"
+    },
+    {
+      "id": 2100116798,
+      "name": "Either Bebeto or Jovane Cabral To Score",
+      "matched": "jovane cabral"
     }
   ]
 }

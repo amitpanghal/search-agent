@@ -19,7 +19,6 @@ export const BEHAVIOR_TAG_IDS = [
   "level",
   "stage",
   "time",
-  "abstain",
   "either-team",
   "yes/no-line",
   "odds-only-bounds",
@@ -47,8 +46,8 @@ export const BEHAVIOR_TAGS: Record<
   },
   "coref-his-team": {
     tier: "critical",
-    desc: "Resolve \"his team\" to the right team -- the national team in a World Cup context (countryTeamId), not the club.",
-    example: "\"every Yamal appearance ... his team match result\" -> his team = Spain NT, not Barcelona.",
+    desc: "Resolve \"his team\" to the team that player represents in the query's context.",
+    example: "\"every Yamal appearance ... his team match result\" -> his team = the team Yamal plays for in context.",
   },
   "line-vs-price": {
     tier: "critical",
@@ -85,11 +84,6 @@ export const BEHAVIOR_TAGS: Record<
     desc: "A time facet: date_window vs kickoff_time_of_day, anchored to the tournament or to now.",
     example: "\"in the first week\" (date_window, tournament), \"late kick-offs\" (kickoff band).",
   },
-  "abstain": {
-    tier: "critical",
-    desc: "Emit a sentinel status instead of fabricating a plan.",
-    example: "\"Djokovic vs Alcaraz total games over 22.5\" -> status unsupported (tennis not built).",
-  },
   "either-team": {
     tier: "critical",
     desc: "A generic team market with >=2 match teams in scope and no side named -> subject either_match_team.",
@@ -117,8 +111,8 @@ export const BEHAVIOR_TAGS: Record<
   },
   "sport-default": {
     tier: "critical",
-    desc: "No sport named -> resolve to the sole built sport (FOOTBALL today). Proposed this session; not in the original E7 list. Sport is a costly facet (E5), hence critical.",
-    example: "\"Both teams to score markets priced over 1.90\" -> sport FOOTBALL.",
+    desc: "No sport named -> infer the sport from the market vocabulary (graded loosely as free text). Sport is a costly facet (E5), hence critical.",
+    example: "\"Both teams to score markets priced over 1.90\" -> sport football (inferred from BTTS).",
   },
   "fixture-lookup": {
     tier: "critical",

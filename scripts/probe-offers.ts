@@ -21,8 +21,16 @@ import { dirname, join } from "node:path";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const REG = join(ROOT, "data", "football", "offer-registry.json");
+const CATALOG = join(ROOT, "data", "football", "football_criterions.json");
 const BASE = "https://eu.offering-api.kambicdn.com/offering/v2018/kambi";
 const Q = "lang=en_GB&market=GB";
+
+// Registry labels are normalized to the catalog's canonical name (mergeGroup): live betoffer labels bake in
+// the concrete event ("Total Goals by USA" for "...by Home Team", "{0}" -> "2"), while the catalog holds the
+// generic template — the authoritative form. These two assist criterions are the exception: the catalog name
+// is a terser variant ("To Assist") and the live label reads more naturally ("To give an assist"), so we keep
+// the live label for them.
+const KEEP_LIVE_LABEL = new Set<number>([1001264082, 1003314795]);
 
 type Ev = { id: number; tags?: string[]; state?: string };
 type Bo = { eventId?: number; criterion?: { id?: number; label?: string } };
@@ -106,7 +114,9 @@ async function pullGroup(groupId: string, label: string, quiet = false): Promise
 }
 
 // idempotent per-group merge: drop this group's prior contribution everywhere, then re-add this pull's.
-function mergeGroup(reg: Registry, groupId: string, label: string, res: PullResult, now: string): void {
+// Label = the catalog's canonical name when the id is in the catalog (except KEEP_LIVE_LABEL ids); otherwise
+// the live betoffer label (the only source for gap ids absent from the catalog). Survives future pulls.
+function mergeGroup(reg: Registry, groupId: string, label: string, res: PullResult, now: string, names: Map<number, string>): void {
   for (const e of Object.values(reg.criterions)) delete e.byComp[groupId];
   reg.competitions[groupId] = { label, lastPulled: now, nFixtureEvents: res.nFix, nCompEvents: res.nComp };
   for (const [id, contrib] of res.perCrit) {
@@ -114,14 +124,21 @@ function mergeGroup(reg: Registry, groupId: string, label: string, res: PullResu
     const e = reg.criterions[k] ?? (reg.criterions[k] = { firstSeen: now, lastSeen: now, byComp: {} });
     e.byComp[groupId] = contrib;
     e.lastSeen = now;
-    const lab = res.labels.get(id);
-    if (lab) e.label = lab;
+    const canonical = names.get(id);
+    const next = canonical && !KEEP_LIVE_LABEL.has(id) ? canonical : res.labels.get(id);
+    if (next) e.label = next;
   }
 }
 
 function loadRegistry(): Registry {
   if (existsSync(REG)) return JSON.parse(readFileSync(REG, "utf8"));
   return { updatedAt: "", competitions: {}, criterions: {} };
+}
+
+// catalog id -> canonical name; the authoritative label source for any offered id we also catalog.
+function catalogNames(): Map<number, string> {
+  const cat = JSON.parse(readFileSync(CATALOG, "utf8")) as { criterions: { id: number; name: string }[] };
+  return new Map(cat.criterions.map((c) => [c.id, c.name]));
 }
 
 // enumerate every football leaf competition (eventCount>0, no child groups), excluding synthetic esports.
@@ -150,18 +167,16 @@ async function footballComps(): Promise<{ id: string; label: string; ev: number 
   return leaves.filter((g) => !/esports/i.test(g.label));
 }
 
-function report(reg: Registry): void {
-  const cat = JSON.parse(readFileSync(join(ROOT, "data", "football", "football_criterions.json"), "utf8"));
-  const known = new Set<number>(cat.criterions.map((c: any) => c.id));
-  const everSeenInCat = Object.keys(reg.criterions).map(Number).filter((id) => known.has(id)).length;
-  const neverSeen = cat.criterions.length - everSeenInCat;
+function report(reg: Registry, names: Map<number, string>): void {
+  const everSeenInCat = Object.keys(reg.criterions).map(Number).filter((id) => names.has(id)).length;
+  const neverSeen = names.size - everSeenInCat;
   const totFix = Object.values(reg.competitions).reduce((n, c) => n + c.nFixtureEvents, 0);
   const totComp = Object.values(reg.competitions).reduce((n, c) => n + c.nCompEvents, 0);
-  const gaps = Object.entries(reg.criterions).filter(([id]) => !known.has(Number(id)));
+  const gaps = Object.entries(reg.criterions).filter(([id]) => !names.has(Number(id)));
   console.log(`\nregistry → data/football/offer-registry.json`);
   console.log(`groups: ${Object.keys(reg.competitions).length} | events: ${totFix} fixture + ${totComp} competition`);
   console.log(`\ncatalog hygiene (trust PRESENCE, not absence — do NOT quarantine yet):`);
-  console.log(`  ever-offered (in catalog): ${everSeenInCat}/${cat.criterions.length}`);
+  console.log(`  ever-offered (in catalog): ${everSeenInCat}/${names.size}`);
   console.log(`  never-seen so far (legacy CANDIDATES — needs seasonal-cycle coverage before any action): ${neverSeen}`);
   console.log(`\ngap report — offered live but MISSING from our catalog: ${gaps.length}`);
   for (const [id, e] of gaps.slice(0, 20)) console.log(`  ${id} "${e.label ?? "?"}"`);
@@ -170,6 +185,7 @@ function report(reg: Registry): void {
 
 async function main(): Promise<void> {
   const reg = loadRegistry();
+  const names = catalogNames();
   const now = new Date().toISOString();
   if (process.argv.includes("--all")) {
     const comps = await footballComps();
@@ -180,7 +196,7 @@ async function main(): Promise<void> {
       process.stderr.write(`[${i}/${comps.length}] ${c.label} (${c.ev} ev) … `);
       try {
         const res = await pullGroup(c.id, c.label, true);
-        mergeGroup(reg, c.id, c.label, res, now);
+        mergeGroup(reg, c.id, c.label, res, now, names);
         process.stderr.write(`${res.perCrit.size} criterions\n`);
       } catch (e) {
         process.stderr.write(`FAILED ${(e as Error).message}\n`);
@@ -190,11 +206,11 @@ async function main(): Promise<void> {
     const groupId = process.argv[2] ?? "2010133908";
     const label = process.argv[3] ?? groupId;
     const res = await pullGroup(groupId, label);
-    mergeGroup(reg, groupId, label, res, now);
+    mergeGroup(reg, groupId, label, res, now, names);
   }
   reg.updatedAt = now;
   writeFileSync(REG, JSON.stringify(reg, null, 1) + "\n");
-  report(reg);
+  report(reg, names);
 }
 
 main().catch((e) => {
