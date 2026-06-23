@@ -1,7 +1,7 @@
 // The extractor's output schema — the decision-18 `QueryPlan`, TEXT-valued.
 //
 // This is what the single Haiku extraction call emits via structured output, BEFORE any
-// grounding: `market_concept`, entity names, `competition`, `attrFilter` position/region,
+// grounding: `market_concept`, entity names, `competition`,
 // stage round, and time windows are all plain strings. Grounding maps text -> catalog ids
 // downstream, in place. The eval's `gold-record.ts` is the same shape with every groundable
 // leaf wrapped in a `Grounded` cell that carries the real id; keep the two in sync.
@@ -53,18 +53,6 @@ const Odds = z
   .refine((o) => o.min !== undefined || o.max !== undefined, "need >=1 bound")
   .refine((o) => o.min === undefined || o.max === undefined || o.min <= o.max, "min <= max");
 
-// Filters participant OUTCOMES within a market (position/region/age) — not a subject.
-// Age bounds are INCLUSIVE; the extractor normalises ("under 23" -> ageMax: 22).
-const AttrFilter = z
-  .object({
-    position: z.string().min(1).optional(),
-    region: z.string().min(1).optional(),
-    ageMin: z.number().int().positive().optional(),
-    ageMax: z.number().int().positive().optional(),
-  })
-  .refine((a) => a.position || a.region || a.ageMin != null || a.ageMax != null, "need >=1 predicate")
-  .refine((a) => a.ageMin == null || a.ageMax == null || a.ageMin <= a.ageMax, "ageMin <= ageMax");
-
 const Selector = z.object({
   subject: Subject,
   market_concept: z.string().min(1),
@@ -80,9 +68,8 @@ const Selector = z.object({
   odds: Odds.optional(),
   // Rank the market's outcomes by price instead of bounding it (sport-agnostic). `low` = shortest/lowest/
   // best price first (favourite); `high` = longest/highest/biggest first (underdog). Optional, like `period`
-  // — omitted = no price ranking. Carried per-selector into the FetchPlan (postFilters.outcomes), with line/odds/attrFilter.
+  // — omitted = no price ranking. Carried per-selector into the FetchPlan (postFilters.outcomes), with line/odds.
   odds_sort: z.enum(["low", "high"]).optional(),
-  attrFilter: AttrFilter.optional(),
 });
 
 const Stage = z

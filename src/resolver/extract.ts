@@ -49,13 +49,13 @@ function client(): Anthropic {
 // fail-safe normalization. Repair these at the parse boundary (KE-6 / decision 21) rather than throw —
 // the model is now trying to resolve every query (never abstaining), so the odd malformed leaf shouldn't
 // sink the whole query. Each repair maps an unusable-but-clear shape to its fail-safe:
-//   1. An absent OPTIONAL selector leaf (line/odds/attrFilter) emitted as `null` or `{}` → omit it.
+//   1. An absent OPTIONAL selector leaf (line/odds) emitted as `null` or `{}` → omit it.
 //   2. A line that can't satisfy its kind (e.g. a numeric skeleton with `value: null`) → drop it
 //      (= "all offered lines"), the same fail-open as a blank leaf.
 //   3. A `team` subject with no name (the schema requires one) → coerce to the bare `event` subject.
 //   4. An all-null `stage`/`time` skeleton (Haiku emits this instead of `null`) → coerce to `null`
 //      (the "needs a round/ordinal" / "needs a window/kickoff" refines reject the empty object).
-const OPTIONAL_SELECTOR_LEAVES = ["line", "odds", "attrFilter"] as const;
+const OPTIONAL_SELECTOR_LEAVES = ["line", "odds"] as const;
 function isBlank(v: unknown): boolean {
   return v === null || (typeof v === "object" && v !== null && Object.keys(v).length === 0);
 }
@@ -77,20 +77,6 @@ function sanitizeOdds(rec: Record<string, unknown>): void {
     if (!(typeof o[k] === "number" && (o[k] as number) > 0)) delete o[k];
   }
   if (o.min === undefined && o.max === undefined) delete rec.odds;
-}
-// Sanitize `attrFilter`: drop null/empty/invalid predicates; an attrFilter left with no real predicate is
-// removed (the schema needs >=1). Repairs the `{ region: null }` placeholder Haiku tacks on when there is no
-// actual outcome filter.
-function sanitizeAttrFilter(rec: Record<string, unknown>): void {
-  const a = rec.attrFilter as Record<string, unknown> | undefined;
-  if (!a || typeof a !== "object") return;
-  for (const k of ["position", "region"] as const) {
-    if (!(typeof a[k] === "string" && (a[k] as string).length > 0)) delete a[k];
-  }
-  for (const k of ["ageMin", "ageMax"] as const) {
-    if (!(typeof a[k] === "number" && Number.isInteger(a[k]) && (a[k] as number) > 0)) delete a[k];
-  }
-  if (a.position === undefined && a.region === undefined && a.ageMin === undefined && a.ageMax === undefined) delete rec.attrFilter;
 }
 // Sanitize `bo_types`: keep only known bucket tokens (a hallucinated/garbage token is dropped), dedupe, and
 // remove the field entirely if nothing valid remains (fail-open — the resolver then sees all buckets).
@@ -131,7 +117,6 @@ function normalizePlan(plan: unknown): void {
     }
     if (rec.line !== undefined && !isUsableLine(rec.line)) delete rec.line;
     sanitizeOdds(rec);
-    sanitizeAttrFilter(rec);
     sanitizeBoTypes(rec);
     // `odds_sort` is an optional enum: drop anything that isn't "low"/"high" (incl. null/{}) so the schema parses.
     if ("odds_sort" in rec && rec.odds_sort !== "low" && rec.odds_sort !== "high") delete rec.odds_sort;

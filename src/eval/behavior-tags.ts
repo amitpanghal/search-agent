@@ -14,7 +14,6 @@ export const BEHAVIOR_TAG_IDS = [
   "coref-his-team",
   "line-vs-price",
   "line-no-number",
-  "attrFilter",
   "player-role",
   "level",
   "stage",
@@ -66,11 +65,6 @@ export const BEHAVIOR_TAGS: Record<
     tier: "soft",
     desc: "A market named with no explicit number -> the line is omitted (means all offered lines).",
     example: "\"Van Dijk aerial duels won markets\" -> market only, no line.",
-  },
-  "attrFilter": {
-    tier: "soft",
-    desc: "An outcome attribute filter (position / region / age) applied within a market.",
-    example: "\"anytime scorer for strikers\" -> attrFilter.position = striker.",
   },
   "player-role": {
     tier: "soft",

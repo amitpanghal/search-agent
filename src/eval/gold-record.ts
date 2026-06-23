@@ -17,7 +17,7 @@ import { BEHAVIOR_TAG_IDS } from "./behavior-tags";
 
 // A groundable cell. `id` is usually a single catalog id, but may be an id SET:
 // e.g. `either_match_team` + a team-total market grounds to the home+away split
-// criteria, and an attrFilter set ("strikers") grounds to a participant id set.
+// criteria.
 // (This `number | number[]` widening is the one change from E9's single-id cell,
 // forced by authoring g001's "team total goals" selector -- see scorer.spec.md.)
 export const Grounded = z.object({
@@ -59,20 +59,6 @@ const Odds = z
   .refine((o) => o.min !== undefined || o.max !== undefined, "need >=1 bound")
   .refine((o) => o.min === undefined || o.max === undefined || o.min <= o.max, "min <= max");
 
-// position/age = text (roster feed, out of strict scope, E2); region = grounded (region table)
-const AttrFilter = z
-  .object({
-    position: z.string().min(1).optional(),
-    region: Grounded.optional(),
-    ageMin: z.number().int().positive().optional(),
-    ageMax: z.number().int().positive().optional(),
-  })
-  .refine(
-    (a) => a.position || a.region || a.ageMin != null || a.ageMax != null,
-    "need >=1 predicate"
-  )
-  .refine((a) => a.ageMin == null || a.ageMax == null || a.ageMin <= a.ageMax, "ageMin <= ageMax");
-
 // A market_concept is graded one of three ways. EXACT (`id`): the criterion id(s) the grounder must
 // contain at a clean confident|variants tier (the normal case). OFFER (`offer`): no exact market exists
 // for the *stated subject*, so the right outcome is the grounder SURFACING these real alternatives as a
@@ -106,7 +92,6 @@ const GoldSelector = z.object({
   line: Line.optional(),
   odds: Odds.optional(),
   odds_sort: z.enum(["low", "high"]).optional(), // mirrors Selector (schema.ts); plain enum, not grounded
-  attrFilter: AttrFilter.optional(),
 });
 
 const Stage = z
