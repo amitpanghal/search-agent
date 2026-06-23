@@ -23,6 +23,10 @@ export function planRecall(settled: SettledEntities): RecallInput {
   // union: each player's club + country team, so a fixture-level player market is reachable without the criterion
   const playerTeamIds = players.flatMap((p) => [p.clubId, p.countryTeamId].filter((x): x is number => x != null));
   const participantIds = [...new Set([...teamIds, ...playerIds, ...playerTeamIds])];
+  // 2+ NAMED teams = a matchup: the fixture must contain ALL of them (head-to-head). Kept SEPARATE from the
+  // fetch union above, which stays broad for player reachability. recall applies this to MATCH events only.
+  const matchTeamIds = teamIds.length >= 2 ? [...new Set(teamIds)] : [];
+  const mt = matchTeamIds.length ? { matchTeamIds } : {};
 
   const grain: Grain = settled.level === "competition" ? "competition" : "match";
   const playState = settled.playState ?? undefined; // "live" | "prematch" | null -> drop null
@@ -45,6 +49,6 @@ export function planRecall(settled: SettledEntities): RecallInput {
   const win = window && (hasWindow(window) || window.pick) ? { window } : {};
 
   // Model P: any named participant -> the participant endpoint; otherwise the competition group.
-  if (participantIds.length) return { grain, participantIds, ...(playState ? { playState } : {}), ...bo, ...win };
-  return { grain, ...(compId != null ? { groupId: compId } : {}), ...(playState ? { playState } : {}), ...bo, ...win };
+  if (participantIds.length) return { grain, participantIds, ...(playState ? { playState } : {}), ...bo, ...win, ...mt };
+  return { grain, ...(compId != null ? { groupId: compId } : {}), ...(playState ? { playState } : {}), ...bo, ...win, ...mt };
 }

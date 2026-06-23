@@ -20,3 +20,4 @@ scripts/.*.json
 scripts/.*.txt
 scripts/.*.out
 scripts/.*.err
+scripts/.trace-out/

@@ -1,103 +1,189 @@
-// EXECUTE — build plan Phase 4. The THIN final step. RECALL already fetched, and FILTER / RESOLVE / SELECT
-// already decided, so execute just ASSEMBLES the answer from the picked outcomes in the live data — no
-// fetching, no market decision here. It consumes an ExecuteInput (resolved legs + the data they were resolved
-// against) and produces a LiveAnswer: exact legs are the answer, close legs are labelled suggestions, none
-// legs clarify (theory §1, §4). Wired to nothing yet — the Phase-6 cut points the orchestrator at it.
+// EXECUTE — build plan Phase 4. The THIN final step. RECALL fetched and FILTER / RESOLVE / SELECT already
+// decided, so execute just ASSEMBLES the answer from the picked outcomes in the live data — no fetching, no
+// market decision. It consumes an ExecuteInput (resolved legs + the data they were resolved against) and
+// produces a ResponseEnvelope: results grouped by EVENT, each carrying the picked betoffer with its single
+// SELECTED outcome (theory §1, §4). Events with no pick never appear — the grouping IS the prune.
+//
+// odds / line are passed through RAW (integer millis, exactly as the feed sends them — 1800 = 1.80, -500 =
+// -0.5); formatting to decimals is the consumer's job. (SELECT still matches lines in decimals internally.)
 
-import { marketLabelOf, variantOf } from "./recall";
-import type { BetOffer, KEvent, KOutcome } from "./offering-client";
-import type { ExecuteInput, ResolvedLeg, Clarification, MatchLabel } from "./live-menu-types";
+import type { BetOffer, KEvent, KOutcome, KParticipant } from "./offering-client";
+import type { ExecuteInput } from "./live-menu-types";
 
-// One resolved leg's answer: the picked market, the selected outcome with its REAL odds, and how well it fits.
-// `fallback`/`note` carry the honest degrade (closest market, nearest line, subject not offered).
-export type LegResult = {
-  phrase: string;
-  match: MatchLabel;
-  market?: string;
-  event?: string;
-  outcome?: { label: string; odds?: number; line?: number; participant?: string };
-  fallback?: NonNullable<ResolvedLeg["selection"]>["fallback"];
-  note?: string;
+export type CoarseLiveState = "PREMATCH" | "LIVE" | "FINISHED";
+
+export type EnvelopeParticipant = {
+  participantId: number;
+  name: string;
+  englishName?: string;
+  termKey: string;
+  participantType: "TEAM" | "PARTICIPANT" | "LABEL" | "UNKNOWN";
+  home?: boolean;
 };
 
-export type LiveAnswer =
-  | { kind: "clarify"; clarifications: Clarification[]; legs: LegResult[] }
-  | { kind: "results"; legs: LegResult[]; clarifications: Clarification[]; notes: string[] };
+export type EnvelopeOutcome = {
+  label: string;
+  englishLabel?: string;
+  odds: number; // RAW integer millis (1800 = 1.80) — passed straight through, never divided
+  line?: number; // RAW integer millis (-500 = -0.5)
+  participant?: string;
+  participantId?: number;
+  eventParticipantId?: number;
+  type?: string;
+  status: "OPEN" | "SUSPENDED" | "CLOSED" | "SETTLED";
+};
 
-// odds and line arrive as integer millis (1800 = 1.80, 2500 = 2.5); to decimal for display.
-const dec = (n?: number): number | undefined => (n != null ? n / 1000 : undefined);
+export type EnvelopeBetOffer = {
+  id: number;
+  criterion: { id: number; label: string; englishLabel?: string; lifetime?: string };
+  betOfferType: { id: number; name: string; englishName?: string };
+  tags: string[];
+};
 
-export function execute(input: ExecuteInput): LiveAnswer {
+export type EnvelopeHighlighted = { betOffer: EnvelopeBetOffer; outcomes: EnvelopeOutcome[] };
+
+export type EnvelopeResult = {
+  event: {
+    id: number;
+    name: string;
+    homeName?: string;
+    awayName?: string;
+    start: string;
+    group: string;
+    sport: string;
+    tags: string[];
+    participants: EnvelopeParticipant[];
+  };
+  liveState?: CoarseLiveState;
+  highlighted: EnvelopeHighlighted[];
+  additional: EnvelopeHighlighted[];
+};
+
+export type ResponseEnvelope = {
+  summary: string;
+  results: EnvelopeResult[];
+  notes: string[];
+  clarificationNeeded: string | null;
+};
+
+// ---- raw -> envelope mappers (NO unit conversion: odds/line stay integer millis) ----
+const PTYPES = new Set(["TEAM", "PARTICIPANT", "LABEL"]);
+const toParticipant = (p: KParticipant): EnvelopeParticipant => ({
+  participantId: p.participantId ?? 0,
+  name: p.name ?? "",
+  ...(p.englishName ? { englishName: p.englishName } : {}),
+  termKey: p.termKey ?? "",
+  participantType: (PTYPES.has(p.participantType ?? "") ? p.participantType : "UNKNOWN") as EnvelopeParticipant["participantType"],
+  ...(p.home != null ? { home: p.home } : {}),
+});
+
+const STATUSES = new Set(["OPEN", "SUSPENDED", "CLOSED", "SETTLED"]);
+const toOutcome = (o: KOutcome): EnvelopeOutcome => ({
+  label: o.label ?? "",
+  ...(o.englishLabel ? { englishLabel: o.englishLabel } : {}),
+  odds: o.odds ?? 0,
+  ...(o.line != null ? { line: o.line } : {}),
+  ...(o.participant ? { participant: o.participant } : {}),
+  ...(o.participantId != null ? { participantId: o.participantId } : {}),
+  ...(o.eventParticipantId != null ? { eventParticipantId: o.eventParticipantId } : {}),
+  ...(o.type ? { type: o.type } : {}),
+  status: (STATUSES.has(o.status ?? "") ? o.status : "OPEN") as EnvelopeOutcome["status"],
+});
+
+const toBetOffer = (b: BetOffer): EnvelopeBetOffer => ({
+  id: b.id ?? 0,
+  criterion: {
+    id: b.criterion?.id ?? 0,
+    label: b.criterion?.label ?? "",
+    ...(b.criterion?.englishLabel ? { englishLabel: b.criterion.englishLabel } : {}),
+    ...(b.criterion?.lifetime ? { lifetime: b.criterion.lifetime } : {}),
+  },
+  betOfferType: {
+    id: b.betOfferType?.id ?? 0,
+    name: b.betOfferType?.name ?? "",
+    ...(b.betOfferType?.englishName ? { englishName: b.betOfferType.englishName } : {}),
+  },
+  tags: b.tags ?? [],
+});
+
+// Kambi state -> coarse: STARTED = in play, FINISHED = done, anything else (NOT_STARTED) = prematch.
+const liveStateOf = (e: KEvent): CoarseLiveState => (e.state === "STARTED" ? "LIVE" : e.state === "FINISHED" ? "FINISHED" : "PREMATCH");
+
+const toEventBlock = (e: KEvent): EnvelopeResult["event"] => ({
+  id: e.id,
+  name: e.name ?? "",
+  ...(e.homeName ? { homeName: e.homeName } : {}),
+  ...(e.awayName ? { awayName: e.awayName } : {}),
+  start: e.start ?? "",
+  group: e.group ?? "",
+  sport: e.sport ?? "",
+  tags: e.tags ?? [],
+  participants: (e.participants ?? []).map(toParticipant),
+});
+
+export function execute(input: ExecuteInput): ResponseEnvelope {
   const { data } = input;
   const clarifications = input.clarifications ?? [];
 
-  // index the live data once: outcomeId -> (outcome, its offer); (criterion|variant) -> label; eventId -> name
+  // index once: outcomeId -> (outcome, its offer); eventId -> event
   const outcomeById = new Map<number, { o: KOutcome; b: BetOffer }>();
-  const labelByMarket = new Map<string, string>();
-  const eventName = new Map<number, string>();
-  for (const e of data.events) if (e.id != null) eventName.set(e.id, e.name ?? "");
-  for (const b of data.betOffers) {
-    if (b.criterion?.id != null) {
-      const key = `${b.criterion.id}|${variantOf(b)}`;
-      if (!labelByMarket.has(key)) labelByMarket.set(key, marketLabelOf(b));
-    }
-    for (const o of b.outcomes ?? []) if (o.id != null) outcomeById.set(o.id, { o, b });
-  }
+  const eventById = new Map<number, KEvent>();
+  for (const e of data.events) if (e.id != null) eventById.set(e.id, e);
+  for (const b of data.betOffers) for (const o of b.outcomes ?? []) if (o.id != null) outcomeById.set(o.id, { o, b });
 
-  const legs = input.legs.map((leg) => assembleLeg(leg, outcomeById, labelByMarket, eventName));
-
-  // Clarify ONLY when NO leg mapped to a market (every pick `none`). A leg that picked a market but whose
-  // outcome degraded (subject-absent / nearest-line) is still a RESULT — it shows the market with an honest
-  // note, never a silent empty clarify.
-  const anyMarket = legs.some((r) => r.match !== "none");
-  if (!anyMarket) {
-    const fromNone = legs.map<Clarification>((r) => ({ ref: "market", question: `No market is offered for "${r.phrase}".` }));
-    return { kind: "clarify", clarifications: [...clarifications, ...fromNone], legs };
-  }
-
-  // 2+ legs are independent markets, not a joint bet -> caveat (same discipline as the old union note).
+  // group resolved legs by EVENT (insertion order preserved). A leg becomes a RESULT only when it picked a
+  // market AND select returned a concrete outcome — the prune falls out: an event with no pick never appears.
+  const byEvent = new Map<number, { event: KEvent; highlighted: EnvelopeHighlighted[] }>();
   const notes: string[] = [];
-  if (legs.length >= 2) notes.push("showing each market on its own — not only the games that have all of these together");
-  return { kind: "results", legs, clarifications, notes };
-}
+  const noPick: string[] = []; // legs whose market wasn't offered -> clarify
 
-function assembleLeg(
-  leg: ResolvedLeg,
-  outcomeById: Map<number, { o: KOutcome; b: BetOffer }>,
-  labelByMarket: Map<string, string>,
-  eventName: Map<number, string>,
-): LegResult {
-  const { phrase, pick, selection } = leg;
-  if (pick.match === "none" || pick.criterionId == null) return { phrase, match: "none", note: `not offered: "${phrase}"` };
+  for (const leg of input.legs) {
+    const { phrase, pick, selection } = leg;
+    if (pick.match === "none" || pick.criterionId == null) {
+      noPick.push(phrase);
+      continue;
+    }
 
-  const market = labelByMarket.get(`${pick.criterionId}|${pick.variant ?? ""}`);
-  const base: LegResult = { phrase, match: pick.match, ...(market ? { market } : {}) };
-  if (!selection) return base; // market picked, no outcome constraint (just surface the market itself)
+    // a concrete selected outcome? exact + nearest-line carry an outcomeId; the absent fallbacks don't.
+    const found = selection?.outcomeId != null ? outcomeById.get(selection.outcomeId) : undefined;
+    if (!found) {
+      const who = selection?.subject ?? "that selection";
+      if (selection?.fallback === "subject-absent") notes.push(`${who} is not offered for "${phrase}"`);
+      else if (selection?.fallback === "line-absent") notes.push(`that line isn't offered for "${phrase}"`);
+      else if (selection?.fallback === "odds-absent") notes.push(`no outcome in that price range for "${phrase}"`);
+      else notes.push(`no settling outcome found for "${phrase}"`);
+      continue;
+    }
 
-  // honest degrades that produced no outcome
-  if (selection.fallback === "subject-absent") return { ...base, fallback: "subject-absent", note: `${selection.subject ?? "that selection"} is not offered for this market` };
-  if (selection.fallback === "line-absent") return { ...base, fallback: "line-absent", note: "that line isn't offered for this market" };
-  if (selection.fallback === "odds-absent") return { ...base, fallback: "odds-absent", note: "no outcome is offered in that price range" };
+    const { o, b } = found;
+    const e = b.eventId != null ? eventById.get(b.eventId) : undefined;
+    if (!e) {
+      notes.push(`selected outcome for "${phrase}" has no event in the live data`);
+      continue;
+    }
 
-  const found = selection.outcomeId != null ? outcomeById.get(selection.outcomeId) : undefined;
-  if (!found) return { ...base, note: "selected outcome not found in the live data" };
+    if (pick.match === "close") notes.push(`closest market for "${phrase}" — not an exact settle`);
+    if (selection?.fallback === "nearest-line") notes.push(`nearest offered line for "${phrase}" (${o.line})`);
 
-  const { o, b } = found;
-  const outcome = {
-    label: o.label ?? "",
-    ...(dec(o.odds) != null ? { odds: dec(o.odds) } : {}),
-    ...(dec(o.line) != null ? { line: dec(o.line) } : {}),
-    ...(o.participant ? { participant: o.participant } : {}),
-  };
-  const ev = b.eventId != null ? eventName.get(b.eventId) : undefined;
-  const noteParts: string[] = [];
-  if (pick.match === "close") noteParts.push("closest market — not an exact settle");
-  if (selection.fallback === "nearest-line") noteParts.push(`nearest offered line (${dec(o.line)})`);
-  return {
-    ...base,
-    ...(ev ? { event: ev } : {}),
-    outcome,
-    ...(selection.fallback ? { fallback: selection.fallback } : {}),
-    ...(noteParts.length ? { note: noteParts.join("; ") } : {}),
-  };
+    let g = byEvent.get(e.id);
+    if (!g) byEvent.set(e.id, (g = { event: e, highlighted: [] }));
+    g.highlighted.push({ betOffer: toBetOffer(b), outcomes: [toOutcome(o)] });
+  }
+
+  const results: EnvelopeResult[] = [...byEvent.values()].map((g) => ({
+    event: toEventBlock(g.event),
+    liveState: liveStateOf(g.event),
+    highlighted: g.highlighted,
+    additional: [],
+  }));
+
+  // 2+ independent markets are not a joint bet -> the same caveat the old union note carried.
+  const totalPicks = results.reduce((n, r) => n + r.highlighted.length, 0);
+  if (totalPicks >= 2) notes.push("showing each market on its own — not only the games that have all of these together");
+
+  // carried entity clarifications + any leg whose market wasn't offered, folded into one string (null = clean).
+  const reasons = [...clarifications.map((c) => c.question), ...noPick.map((p) => `No market is offered for "${p}".`)];
+  const clarificationNeeded = reasons.length ? reasons.join(" ") : null;
+
+  return { summary: "", results, notes, clarificationNeeded };
 }

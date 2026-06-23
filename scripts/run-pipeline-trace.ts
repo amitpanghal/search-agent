@@ -96,8 +96,7 @@ import { resolveMarkets } from "../src/resolver/resolve-market";
 import { select, type SelectSpec } from "../src/resolver/select";
 import { execute } from "../src/resolver/execute";
 import { fold } from "../src/resolver/lexical";
-import { resolveTimeWindow, filterEventsByTime, hasWindow } from "../src/resolver/time-window";
-import type { BetOffer, KEvent } from "../src/resolver/offering-client";
+import type { BetOffer } from "../src/resolver/offering-client";
 import type { Subject, Line } from "../src/resolver/schema";
 import type { ResolvedLeg, MarketPick } from "../src/resolver/live-menu-types";
 
@@ -219,37 +218,19 @@ async function main() {
   );
   raw(`OUTPUT.menu (live menu — ${r.menu.length} distinct markets, labels only)`, r.menu);
 
-  // ---- TIME post-filter (verbatim from resolve.ts) ----------------------------------------------
+  // ---- TIME — applied ONCE inside recall.finalize() (Match-tagged only); no post-recall pass (mirrors resolve.ts) ----
   if (settled.time) {
-    banner("TIME POST-FILTER — resolveTimeWindow(settled.time) -> filterEventsByTime(r.data.events)");
-    const startMs = (e: KEvent) => (e.start ? Date.parse(e.start) : e.originalStartDate ? Date.parse(e.originalStartDate) : NaN);
-    const starts = r.data.events.map(startMs).filter((n) => !Number.isNaN(n));
-    const tournamentStart = starts.length ? new Date(Math.min(...starts)) : undefined;
-    const window = resolveTimeWindow(settled.time, { now: new Date(), tournamentStart });
-    raw("TIME INPUT.settled.time", settled.time);
-    raw("TIME OUTPUT.window (resolved [from,to] / kickoff / pick)", window);
-    if (hasWindow(window) || window.pick) {
-      const before = r.data.events.length;
-      let kept = filterEventsByTime(r.data.events, window);
-      if (window.pick) {
-        const ordered = kept.filter((e) => !Number.isNaN(startMs(e))).sort((a, b) => startMs(a) - startMs(b));
-        kept = window.pick.order === "earliest" ? ordered.slice(0, window.pick.count) : ordered.slice(-window.pick.count);
-      }
-      const keep = new Set(kept.map((e) => e.id));
-      r.data.events = kept;
-      r.data.betOffers = r.data.betOffers.filter((b) => b.eventId == null || keep.has(b.eventId));
-      console.log(`TIME FILTER: events ${before} -> ${r.data.events.length}; betOffers now ${r.data.betOffers.length}`);
-    } else {
-      console.log("TIME FILTER: no concrete window (unresolved or empty) -> events unchanged");
-    }
+    banner("TIME — applied inside recall.finalize() (Match-tagged events only); no post-recall time pass");
+    raw("settled.time (already filtered by recall above; events/menu reflect it)", settled.time);
   }
 
   // ---- post-recall setup (verbatim from resolve.ts) ---------------------------------------------
-  const ev = r.data.events[0];
-  const ctx = { home: ev?.homeName, away: ev?.awayName };
+  const eventOf = (offers: BetOffer[]) => {
+    const eid = offers.find((b) => b.eventId != null)?.eventId;
+    return r.data.events.find((e) => e.id === eid) ?? r.data.events[0];
+  };
   const unit = settled.units[0]!;
-  banner("FIXTURE CONTEXT (resolve.ts: r.data.events[0])");
-  raw("ctx (home/away used for relational subjects)", ctx);
+  banner("FIXTURE CONTEXT (per-leg home/away from each leg's picked betoffer's event)");
 
   // group selectors by FILTER subject (verbatim)
   const EVENT_KEY = " event";
@@ -272,15 +253,19 @@ async function main() {
   for (const [key, idxs] of groups) {
     banner(`GROUP "${key}" — selectors [${idxs.join(", ")}]`);
 
+    const firstSel = unit.selectors[idxs[0]!]!;
     const keepTypes = boTypeIdSet(idxs.flatMap((i) => unit.selectors[i]!.bo_types ?? []));
+    const subjId = subjectParticipantId(unit, firstSel.subject, idxs[0]!);
     console.log("\nSTAGE 6 — filterBySubject(...)  [deterministic]");
-    raw("FILTER INPUT.filterSubject", filterSubject(unit.selectors[idxs[0]!]!.subject) ?? null);
+    raw("FILTER INPUT.filterSubject", filterSubject(firstSel.subject) ?? null);
+    raw("FILTER INPUT.subjectId (grounded id — P home matches by id)", subjId ?? null);
     raw("FILTER INPUT.keepTypes (bo_type ids; empty = keep all)", [...keepTypes]);
     currentStage = `filter[${key}]`;
     const fr = filterBySubject(
       r.data.betOffers,
       r.data.events,
-      filterSubject(unit.selectors[idxs[0]!]!.subject),
+      filterSubject(firstSel.subject),
+      subjId,
       keepTypes,
     );
     filtered.set(key, fr);
@@ -327,6 +312,9 @@ async function main() {
           })),
         ),
       );
+      const ev = eventOf(sliceOffers);
+      const ctx = { home: ev?.homeName, away: ev?.awayName };
+      raw("SELECT INPUT.ctx (per-leg home/away from this leg's picked betoffer's event)", ctx);
       currentStage = `select[leg ${i}]`;
       selection = select({ events: r.data.events, betOffers: sliceOffers }, spec, ctx);
       raw("SELECT OUTPUT (Selection)", selection);
@@ -342,7 +330,7 @@ async function main() {
   raw("EXECUTE INPUT.clarifications", settled.clarifications);
   currentStage = "execute";
   const answer = execute({ legs, data: r.data, clarifications: settled.clarifications });
-  raw("OUTPUT — FINAL LiveAnswer", answer);
+  raw("OUTPUT — FINAL ResponseEnvelope", answer);
 
   // ---- LLM COST LEDGER ---------------------------------------------------------------------------
   banner("LLM COST LEDGER  (Claude Haiku 4.5: in $1.00/MTok, out $5.00/MTok, cache-write 1.25x, cache-read 0.1x)");

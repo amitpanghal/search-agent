@@ -3,6 +3,8 @@
 // that property is EARNED by the coverage audit (scripts/.coverage-audit.ts), which established WHERE a
 // subject's name lives across every market type. Four homes:
 //   (P) outcome `participant`   (Q) outcome `label`   (M) market label / per-team variant   (E) fixture event name
+//   (P) is keyed by participant ID when we have the grounded `subjectId` (robust, diacritic-immune); without an
+//   id (a named-but-ungrounded subject) it falls back to the folded participant name. Q/M/E are text homes.
 // A market is kept if the subject hits ANY home. Findings the audit locked in:
 //   - competition grain: a team/player sits in the outcome PARTICIPANT (P) — e.g. "Spain" keeps the 6
 //     Finishing-Position variants, drops the 30 generic daily-total markets.
@@ -20,10 +22,16 @@ import type { Menu } from "./live-menu-types";
 
 export type FilterResult = { offers: BetOffer[]; menu: Menu };
 
-// Does betoffer `b` price the (already-folded) subject, via any of the P/Q/M/E homes?
-function pricesSubject(b: BetOffer, s: string, evName: (id?: number) => string): boolean {
+// Does betoffer `b` price the subject, via any of the P/Q/M/E homes? P matches the outcome's participant by
+// ID when `subjectId` is known (preferred), else by folded name; Q/M/E are folded-name matches on the
+// already-folded subject `s`.
+function pricesSubject(b: BetOffer, s: string, subjectId: number | undefined, evName: (id?: number) => string): boolean {
   return (
-    (b.outcomes ?? []).some((o) => fold(o.participant ?? "").includes(s) || fold(o.label ?? "").includes(s)) || // P, Q
+    (b.outcomes ?? []).some(
+      (o) =>
+        (subjectId != null ? o.participantId === subjectId : fold(o.participant ?? "").includes(s)) || // P (id, else name)
+        fold(o.label ?? "").includes(s), // Q
+    ) ||
     fold(marketLabelOf(b)).includes(s) || // M
     fold(evName(b.eventId)).includes(s) // E
   );
@@ -32,12 +40,12 @@ function pricesSubject(b: BetOffer, s: string, evName: (id?: number) => string):
 // Keep only the offers that price the subject, then rebuild the menu from them (so menu and offers stay in
 // lockstep for SELECT). No subject -> the menu unchanged. Over-keeping (e.g. an opponent's per-team variant at
 // match grain) is SAFE; under-dropping is the only danger, and folding + the four homes guard against it.
-export function filterBySubject(offers: BetOffer[], events: KEvent[], subject?: string, keepTypes?: Set<number>): FilterResult {
+export function filterBySubject(offers: BetOffer[], events: KEvent[], subject?: string, subjectId?: number, keepTypes?: Set<number>): FilterResult {
   const evName = (id?: number) => events.find((e) => e.id === id)?.name ?? "";
   let kept = offers;
   if (subject && subject.trim()) {
     const s = fold(subject);
-    kept = offers.filter((b) => pricesSubject(b, s, evName));
+    kept = offers.filter((b) => pricesSubject(b, s, subjectId, evName));
   }
   // bo_types prune (the resolver still picks the market — this only shrinks its menu). EMPTY-GUARD: never let
   // a (possibly-wrong) shortlist strand a non-empty menu — skip the prune if it would kill everything.

@@ -1,6 +1,7 @@
 // time-window — resolve the executor's raw time PHRASE (+ anchor) into a concrete [from,to] window and a
 // kickoff-of-day band, then filter events by it. The offering API ignores from/to on every endpoint (verified),
-// so time is 100% client-side. Phrases use FIXED conventions (weekend = Sat–Sun; "after 8pm" = kickoff >= 20:00;
+// so time is 100% client-side. Phrases use FIXED conventions (weekend = Fri 18:00 → end of Sun, so late-Friday kickoffs count;
+// a named weekday = the next occurrence of that day; "after 8pm" = kickoff >= 20:00;
 // late/early = the last/first kickoff that day); a phrase we can't parse is left UNRESOLVED for the clarify
 // gate (Phase 5). Dates are handled in UTC to match `event.start` (e.g. "2026-06-18T16:00:00Z").
 
@@ -16,12 +17,16 @@ const startOfUTCDay = (d: Date) => new Date(Date.UTC(d.getUTCFullYear(), d.getUT
 const endOfUTCDay = (d: Date) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59, 59, 999));
 const addDays = (d: Date, n: number) => new Date(d.getTime() + n * 86400000);
 const addHours = (d: Date, n: number) => new Date(d.getTime() + n * 3600000);
+const WEEKDAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]; // index = getUTCDay()
 
-// The Sat–Sun pair containing `base` (when base is a weekend day) else the upcoming one.
+// The weekend window containing `base` (when base is Fri-eve/Sat/Sun) else the upcoming one. Starts FRIDAY
+// EVENING (18:00 UTC) so late-Friday tournament kickoffs fold into "the weekend", and runs to end of Sunday.
+const WEEKEND_FRI_HOUR = 18; // Friday 18:00 UTC — evening/late Friday kickoffs onward count as weekend
 function weekendOf(base: Date): [Date, Date] {
   const dow = base.getUTCDay(); // 0=Sun .. 6=Sat
   const sat = dow === 6 ? startOfUTCDay(base) : dow === 0 ? startOfUTCDay(addDays(base, -1)) : startOfUTCDay(addDays(base, 6 - dow));
-  return [sat, endOfUTCDay(addDays(sat, 1))];
+  const friEve = addHours(startOfUTCDay(addDays(sat, -1)), WEEKEND_FRI_HOUR);
+  return [friEve, endOfUTCDay(addDays(sat, 1))];
 }
 
 // `base` = the anchor instant ("now" or tournament start). `now` is always current time (relative phrases like
@@ -39,6 +44,13 @@ function parseDateWindow(value: string, base: Date, now: Date): [Date, Date] | n
   if (v === "tomorrow") { const t = addDays(now, 1); return [startOfUTCDay(t), endOfUTCDay(t)]; }
   if (v === "today" || v === "tonight") return [now, endOfUTCDay(now)];
   if (v === "weekend") return weekendOf(base); // "opening weekend" (base=tournament start) / "this weekend" (base=now)
+  // a named weekday -> its NEXT occurrence (today counts if today is that day); floor a same-day window to `now`
+  // so already-kicked-off games drop, matching the `today` token. The extractor owns "Sun"/"on Saturday" -> token.
+  const wd = WEEKDAYS.indexOf(v);
+  if (wd >= 0) {
+    const d = addDays(now, (wd - now.getUTCDay() + 7) % 7);
+    return [(wd - now.getUTCDay() + 7) % 7 === 0 ? now : startOfUTCDay(d), endOfUTCDay(d)];
+  }
   return null; // unknown token
 }
 

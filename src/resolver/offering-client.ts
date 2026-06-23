@@ -24,7 +24,7 @@ export function* batches<T>(a: T[], n: number): Generator<T[]> {
 
 // A team/player on an event. NOTE: present on BET-OFFER responses (includeParticipants) but NOT on the
 // /event/group response (which carries homeName/awayName instead) — verified live 2026-06-18.
-export type KParticipant = { participantId?: number; name?: string; home?: boolean; participantType?: string };
+export type KParticipant = { participantId?: number; name?: string; englishName?: string; termKey?: string; home?: boolean; participantType?: string };
 
 // A Kambi event — only the fields the executor reads. `start` is the UTC kickoff (`originalStartDate` appears
 // only on rescheduled events); `state` (NOT_STARTED / STARTED / …) drives the prematch/live split; `tags`
@@ -41,6 +41,7 @@ export type KEvent = {
   tags?: string[];
   group?: string;
   groupId?: number;
+  sport?: string;
   path?: { id: number; name?: string }[];
   participants?: KParticipant[];
 };
@@ -71,8 +72,8 @@ export type BetOffer = {
   id?: number;
   eventId?: number;
   closed?: boolean;
-  criterion?: { id?: number; label?: string };
-  betOfferType?: { id?: number; name?: string };
+  criterion?: { id?: number; label?: string; englishLabel?: string; lifetime?: string };
+  betOfferType?: { id?: number; name?: string; englishName?: string };
   tags?: string[];
   outcomes?: KOutcome[];
 };

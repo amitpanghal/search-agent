@@ -25,8 +25,7 @@ Identify the **sport** the query is about and emit it as `sport` — free text, 
 vocabulary** ("both teams to score" → football, "total games"/"aces" → tennis, "three-pointers" →
 basketball). If nothing disambiguates, pick the most likely sport for the wording. There is **no**
 `unsupported` and **no** `ambiguous` outcome: a sport with no catalog simply fails later at grounding —
-that is the right place for it, not extraction. So a non-football query still resolves; label the sport
-honestly (don't force it to football) and let grounding be the thing that fails.
+that is the right place for it, not extraction.
 
 A resolved plan always carries `sport`, `event_scope`, and **≥1 selector**. A query that names no
 market still resolves — it gets one sentinel selector `{ subject: event, market_concept: "main" }`
@@ -34,9 +33,7 @@ market still resolves — it gets one sentinel selector `{ subject: event, marke
 
 Neutral examples:
 - "corner markets priced over 1.5" → sport "football" (inferred from the market vocabulary).
-- "Djokovic vs Alcaraz total games over 22.5" → sport "tennis"; it resolves, then fails at grounding
-  (no tennis catalog) — never `unsupported`.
-
+- "Djokovic vs Alcaraz total games over 22.5" → sport "tennis";
 ---
 
 ## Step 2 — Scope the event (`event_scope`)
@@ -66,18 +63,17 @@ Which fixtures the query is about. Fields:
 - **`stage`** (or `null`) — the tournament round, as `{ round, ordinal, conditional }`:
   - `round`: text of the round ("group stage", "round of 16", "quarterfinal", "semifinal",
     "final", "knockout"), else `null`.
-  - `ordinal`: `"first"` for an opener ("the Italy opener" = that team's first match),
-    `"last"`, else `null`.
-  - `conditional`: `true` if the match might not happen ("if they get there", "whoever's in
-    it", "if it goes to the knockouts"); else `false`.
   - At least one of `round`/`ordinal` must be set when `stage` is present.
 - **`time`** (or `null`) — as `{ date_window, kickoff_time_of_day, fixture_pick }`:
   - `date_window`: `{ value, anchor }`. `value` = a CANONICAL TOKEN, never free text — map any
     date phrase to the nearest of: `today` (also "this evening", "later today", "right now"),
-    `tonight`, `tomorrow`, `weekend`, or a relative range `next_<N>_hours` / `next_<N>_days` /
+    `tonight`, `tomorrow`, `weekend`, a **named weekday** `monday`…`sunday` (any single day-of-week
+    the query names — "Sunday"/"on Sat"/"Mon" → `sunday`/`saturday`/`monday`; the resolver fills in
+    the real date, always `anchor: "now"`), or a relative range `next_<N>_hours` / `next_<N>_days` /
     `next_<N>_weeks` with the number filled in ("this week" → `next_7_days`, "next 48 hours" →
-    `next_48_hours`). `anchor` = `"tournament"` for tournament-relative phrases ("first week",
-    "opening weekend" → `weekend`) or `"now"` for clock-relative ones.
+    `next_48_hours`). A weekday paired with a time band splits — "Monday night" → `date_window`
+    `monday` **and** `kickoff_time_of_day` "night". `anchor` = `"tournament"` for tournament-relative
+    phrases ("first week", "opening weekend" → `weekend`) or `"now"` for clock-relative ones.
   - `kickoff_time_of_day`: a time-of-day band as text ("late kick-offs"), else `null`.
   - `fixture_pick`: `{ order, count }` for matches picked by clock order — "next game", "his next 2
     fixtures", "their last match" (else `null`); set it even with no date named. `order` = `"earliest"`
@@ -96,8 +92,7 @@ token (above). Do not resolve to real dates or brackets.
 
 Neutral examples:
 - "the Italy opener" → stage `{ round: null, ordinal: "first", conditional: false }`.
-- "Germany's quarterfinal if they get there" → stage `{ round: "quarterfinal", ordinal: null,
-  conditional: true }`.
+- "Germany's quarterfinal" → stage `{ round: "quarterfinal"}`.
 - "games in the opening weekend" → time `{ date_window: { value: "weekend", anchor:
   "tournament" }, kickoff_time_of_day: null, fixture_pick: null }`.
 - "his next game" → time `{ date_window: null, kickoff_time_of_day: null, fixture_pick: { order:
@@ -141,20 +136,6 @@ _Neutral examples:_
 - "Germany vs Italy match result" → one selector
   `{ subject: { kind: "event" }, market_concept: "match result" }` (an outcome, not the event).
 
-```json
-{
-  "status": "resolved",
-  "sport": "football",
-  "event_scope": {
-    "teams": ["Italy"], "players": [], "competition": null, "region": null,
-    "level": "fixture",
-    "stage": { "round": null, "ordinal": "first", "conditional": false },
-    "time": null, "play_state": null
-  },
-  "selectors": [{ "subject": { "kind": "event" }, "market_concept": "main" }]
-}
-```
-
 ### subject — who owns this market
 
 Pick one `kind` — or `soft` when genuinely two-faced (below):
@@ -178,15 +159,10 @@ Pick one `kind` — or `soft` when genuinely two-faced (below):
   ≥2 plausible kinds; grounding decides. **Rare** — never a fallback for a missing name (a bare
   per-player stat is still `player`).
 
-**Binding rule:** the **nearest preceding named subject owns the market**. With no named
-owner, decide by **what gets priced**: a **line per player** → `player` (omit `name`); **2+
-specifically-named players sharing one line you can't split** → emit the nameless `player` subject
-but list each named player in `event_scope.players` (role `plays`) so the names survive; **one
-outcome for the whole match or tournament** → `event`; a **team-specific** generic market with
-≥2 teams in scope and no side named → `either_match_team`. (So a per-player stat with no name
-is `player`, but a single-winner award among players is `event`.) When no owner and the phrase
-fits two readings — a per-player line *and* a single match/tournament outcome — don't force one;
-emit `soft` with both kinds.
+**Binding rule:** with no named owner, choose by **what gets priced** (subject kinds above; rule 1).
+One case isn't covered there — **2+ specifically-named players sharing one line you can't split**:
+emit the nameless `player` subject but list each named player in `event_scope.players` (role
+`plays`) so the names survive.
 
 **Coreference:** resolve "his"/"their"/"its" to the concrete name — never emit the pronoun.
 "his shots" → that player's name. **"his/their team" → the team that player represents in the
@@ -219,10 +195,18 @@ You are given a fixed list of coarse market-type buckets (token — name):
 
 {{BO_TYPES}}
 
-Return `bo_types`: every bucket token that could **plausibly** carry this market — a shortlist to
-narrow the search, not an exact pick. **Keep generously; drop a bucket only when it clearly cannot
-hold the market. When in doubt, or if nothing can be ruled out, omit the field** (= keep all
-buckets). Do not encode the line or subject here — each has its own facet.
+Return `bo_types`: the shortlist of bucket tokens that could **plausibly** carry this market — a net
+to narrow the search, **not** an exact pick. Decide in two independent steps:
+
+- **Include** every bucket that could plausibly carry the market, judged from the glosses above —
+  usually one to a few. When unsure whether a bucket fits, **keep it in**: an extra bucket only
+  widens the search a little, but a missing one makes the market **unfindable**. Drop a bucket only
+  when it *clearly* cannot hold the market.
+- **Omit** the field only when the market is so generic that essentially *every* bucket could hold
+  it (a bare `main` event, or a concept too vague to place). Omitting searches all buckets — a real
+  cost (a bigger, more easily truncated fetch), so it is the rare fallback, never the default.
+
+Name buckets only; do not encode the line or subject here — each has its own facet.
 
 ### line (optional) — by **answer-type**, not the nouns
 
@@ -292,34 +276,25 @@ A price word with **no number** is a sort; a **number** (bare or "priced/odds/at
 ## Universal rules (the make-or-break — get these exactly right)
 
 1. **Binding & splitting** — nearest preceding named subject owns the market; no owner →
-   **what gets priced**: line per player → `player` (no name); one match/tournament outcome →
-   `event`; generic team-specific market with ≥2 teams and no side → `either_match_team`; genuinely
-   two-faced (a per-player line *and* a single match/tournament outcome) → `soft` with both kinds.
-   Never bind a market to a neighbouring subject. **Each comma/"and"-separated proposition is its own
-   selector — never fuse two into one `market_concept`.** ("Kane tackles, Saka interceptions" →
-   Kane↔tackles, Saka↔interceptions.)
-2. **Coreference → concrete name**; "his/their team" = the team that player represents in context
-   (national side in an international tournament, club in a league query).
-   ("Foden … his team to win the group" → Foden's side in context.)
-3. **Line vs price** — a number on a counted thing is a **line**; a bare or "priced" number
-   is **odds**; both can co-occur.
-   ("tackles over 3.5 priced above 2.0" → line `{numeric,3.5,over}` + odds `{min:2.0}`.)
-4. **Binary side** — a named yes/no *or* occurrence/achievement market ("to be carded", "race
-   to 5 corners", "first card") defaults to side **`"yes"`**. Use **`"no"`** when the query
-   **negates the event** ("no <X>", "without <X>"): keep the bare event as `market_concept` and
-   set `line {binary,"no"}` — never fold the negation into the concept text. A counted noun
-   (card/corner) does not make it numeric — only an explicit over/under threshold does.
-5. **Self-correction** — if the query retracts something ("X out — sorry, with Y"), emit
-   **only the final corrected intent** and drop the retracted entity completely. ("with Kane
-   up top — wait, swap that for Foden" → only Foden appears; "Norway out — sorry, with
-   Modrić in the lineup" → drop Norway entirely, keep only Modrić.)
-6. **Never fabricate or substitute** — do not invent a market, stage/time, player, price, or id;
-   and never swap a vague concept for a different or narrower concrete market. **Record only what
-   the query states, as text** — keep a vague concept's own words as the `market_concept`
-   (grounding decides whether a market exists), and **omit any field rather than fill it with a
-   guess or a placeholder**. A query that names **no market** still resolves — to the single
-   `main` sentinel selector (Step 3) — never zero selectors and never a fabricated
-   "match"/"fixture" market.
+   **what gets priced** (line per player → `player` no name; one match/tournament outcome →
+   `event`; generic team market, ≥2 teams, no side → `either_match_team`; two-faced → `soft`).
+   Never bind to a neighbouring subject, and **never fuse two asks into one `market_concept`** —
+   each comma/"and"-separated proposition is its own selector. ("Kane tackles, Saka
+   interceptions" → Kane↔tackles, Saka↔interceptions.)
+2. **Coreference → concrete name** — resolve "his/their"; "his/their team" = that player's side
+   in context (national side in a tournament, club in a league query).
+3. **Line vs price** — a number on a counted thing is a `line`; a bare or "priced" number is
+   `odds`; both can co-occur.
+4. **Binary side** — defaults to `"yes"`; use `"no"` only to negate the event ("no <X>") — keep
+   the bare event as `market_concept`. A counted noun never makes it numeric; only an over/under
+   threshold does.
+5. **Self-correction** — on a retraction ("X out — sorry, with Y"), emit **only the final
+   corrected intent** and drop the retracted entity completely. ("Norway out — sorry, with Modrić
+   in the lineup" → drop Norway, keep only Modrić.)
+6. **Never fabricate or substitute** — never invent a market, stage/time, player, price, or id,
+   and never swap a vague concept for a narrower concrete one. Record only what the query states,
+   as text; **omit any field rather than guess**. A query naming no market still resolves to the
+   single `main` sentinel — never zero selectors, never a fabricated "match"/"fixture" market.
 
 ---
 
@@ -335,7 +310,7 @@ A price word with **no number** is a sort; a **number** (bare or "priced/odds/at
 
 ## One full worked example (neutral — not a test query)
 
-Query: *"Germany vs Italy quarterfinal if they get there, with Musiala interceptions over
+Query: *"Germany vs Italy quarterfinal, with Musiala interceptions over
 1.5 priced above 2.2, Barella starting, team total tackles over 18.5, and to-win-to-nil odds
 under 3.0"*
 
@@ -351,7 +326,7 @@ Plan:
     "competition": null,
     "region": null,
     "level": "fixture",
-    "stage": { "round": "quarterfinal", "ordinal": null, "conditional": true },
+    "stage": { "round": "quarterfinal"},
     "time": null,
     "play_state": null
   },
@@ -376,8 +351,3 @@ Plan:
   ]
 }
 ```
-
-Note in that example: the conditional stage ("if they get there"), a fixture-scoping player
-role (`Barella` / `starts`) that owns no market, a line **and** a price on one selector,
-`either_match_team` for two generically-stated team markets, and the default `"yes"` side of
-the binary win-to-nil market.

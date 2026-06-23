@@ -147,6 +147,7 @@ export type RecallInput = {
   window?: TimeWindow; // already-resolved time window, applied during the group fan-out
   maxFanoutEvents?: number;
   boTypes?: number[]; // union of the selectors' bo_types ids — the server-side `type=` fetch shrink
+  matchTeamIds?: number[]; // 2+ NAMED teams that must ALL appear in a fixture (head-to-head co-occurrence)
 };
 
 export type RecallResult = {
@@ -188,25 +189,44 @@ export function buildMenu(offers: BetOffer[]): Menu {
   return [...seen.values()];
 }
 
-// Apply the resolved time window to the FETCHED result — endpoint-independent (every recall return funnels
-// through here). The filter touches ONLY MATCH-tagged events (fixtures): COMPETITION outrights + untagged
-// events are always kept (they carry a `start` too, so we gate on the tag, not the kickoff). MATCH events are
-// date/kickoff-filtered, then narrowed to the picked fixtures ("next game"). Offers for dropped events go too,
-// and the menu is rebuilt so menu/offers/events stay in lockstep. No window/pick -> passthrough.
+// A fixture co-occurs a set of named teams when its TEAM participants include ALL of them (match by id).
+// Lenient: a fixture with no listed team participants is kept (never dropped on missing data — same discipline
+// as the time filter). COMPETITION events bundle many teams, so this is only ever applied to MATCH fixtures.
+function fixtureHasAllTeams(e: KEvent, teamIds: number[]): boolean {
+  const ids = new Set(
+    (e.participants ?? []).filter((p) => p.participantType === "TEAM" && p.participantId != null).map((p) => p.participantId!),
+  );
+  if (ids.size === 0) return true;
+  return teamIds.every((id) => ids.has(id));
+}
+
+// Narrow the FETCHED result to the fixtures the query meant — endpoint-independent (every recall return funnels
+// through here). Two filters, both touching ONLY MATCH-tagged events (COMPETITION outrights + untagged are
+// always kept): (1) co-occurrence — 2+ NAMED teams keep only fixtures whose TEAM participants include ALL of
+// them (the head-to-head); (2) the time window — date/kickoff filter, then the "next game" pick. Offers for
+// dropped events go too and the menu is rebuilt, so menu/offers/events stay in lockstep. Nothing to apply ->
+// passthrough.
 export function finalize(
   endpoint: RecallResult["endpoint"],
   betOffers: BetOffer[],
   events: KEvent[],
   truncated: boolean,
   window?: TimeWindow,
+  matchTeamIds?: number[],
 ): RecallResult {
   let evs = events;
   let offs = betOffers;
-  if (window && (hasWindow(window) || window.pick)) {
+  const coocc = matchTeamIds && matchTeamIds.length >= 2 ? matchTeamIds : undefined;
+  const timed = window && (hasWindow(window) || window.pick) ? window : undefined;
+  if (coocc || timed) {
     const isMatch = (e: KEvent) => levelOf(e.tags) === "fixture";
     const others = events.filter((e) => !isMatch(e)); // COMPETITION + untagged -> always kept
-    let matches = filterEventsByTime(events.filter(isMatch), window);
-    if (window.pick) matches = applyFixturePick(matches, window.pick);
+    let matches = events.filter(isMatch);
+    if (coocc) matches = matches.filter((e) => fixtureHasAllTeams(e, coocc)); // head-to-head, before the time pick
+    if (timed) {
+      matches = filterEventsByTime(matches, timed);
+      if (timed.pick) matches = applyFixturePick(matches, timed.pick);
+    }
     evs = [...others, ...matches];
     const keep = new Set(evs.map((e) => e.id));
     offs = betOffers.filter((b) => b.eventId == null || keep.has(b.eventId));
@@ -221,13 +241,13 @@ export async function recall(input: RecallInput): Promise<RecallResult> {
   // explicit fixtures -> the event endpoint (via the fan-out batcher)
   if (input.eventIds?.length) {
     const r = await fetchEventOffers(input.eventIds, input.boTypes?.length ? { type: input.boTypes } : {});
-    return finalize("event", r.betOffers, r.events, r.truncated, input.window);
+    return finalize("event", r.betOffers, r.events, r.truncated, input.window, input.matchTeamIds);
   }
   // Model P: a named participant -> participant endpoint (even for competition-grain markets like the Golden Boot)
   if (input.participantIds?.length) {
     const task: Task = { endpoint: "participant", ids: input.participantIds, params: input.boTypes?.length ? { type: input.boTypes } : {} };
     const [res] = await runTasks([task], { window: input.window, maxFanoutEvents: input.maxFanoutEvents });
-    return finalize("participant", res!.betOffers, res!.events, res!.truncated, input.window);
+    return finalize("participant", res!.betOffers, res!.events, res!.truncated, input.window, input.matchTeamIds);
   }
   // else the competition group; grain sets onlyCompetitions + the fan-out level, playState sets exclude flags
   if (input.groupId == null) throw new Error("recall: need groupId, participantIds, or eventIds");
@@ -242,5 +262,5 @@ export async function recall(input: RecallInput): Promise<RecallResult> {
   };
   const task: Task = { endpoint: "group", ids: [input.groupId], params, fanout };
   const [res] = await runTasks([task], { window: input.window, maxFanoutEvents: input.maxFanoutEvents });
-  return finalize("group", res!.betOffers, res!.events, res!.truncated, input.window);
+  return finalize("group", res!.betOffers, res!.events, res!.truncated, input.window, input.matchTeamIds);
 }
