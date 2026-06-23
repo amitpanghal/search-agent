@@ -88,7 +88,6 @@ const MarketConcept = z.union([
 const GoldSelector = z.object({
   subject: GoldSubject,
   market_concept: MarketConcept, // exact criterion id(s) OR an offer-of-alternatives (see MarketConcept)
-  period: z.enum(["full", "first_half", "second_half", "extra_time"]).optional(), // mirrors Selector (schema.ts); plain enum, not grounded
   line: Line.optional(),
   odds: Odds.optional(),
   odds_sort: z.enum(["low", "high"]).optional(), // mirrors Selector (schema.ts); plain enum, not grounded

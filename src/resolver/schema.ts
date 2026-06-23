@@ -60,14 +60,10 @@ const Selector = z.object({
   // against data/betoffertypes.json via BO_TYPE_KEYS). Narrows the fetch + resolve menu; omitted = keep all
   // buckets. The resolver still picks the exact market — this only prunes, never commits.
   bo_types: z.array(z.enum(BO_TYPE_KEYS)).optional(),
-  // Normalized match-period facet (sport-agnostic), carried to market resolution so a period-specific
-  // market ("1st Half ...") is distinguished from its full-match twin; omitted -> full match (period must
-  // come from here — no fallback).
-  period: z.enum(["full", "first_half", "second_half", "extra_time"]).optional(),
   line: Line.optional(),
   odds: Odds.optional(),
   // Rank the market's outcomes by price instead of bounding it (sport-agnostic). `low` = shortest/lowest/
-  // best price first (favourite); `high` = longest/highest/biggest first (underdog). Optional, like `period`
+  // best price first (favourite); `high` = longest/highest/biggest first (underdog). Optional
   // — omitted = no price ranking. Carried per-selector into the FetchPlan (postFilters.outcomes), with line/odds.
   odds_sort: z.enum(["low", "high"]).optional(),
 });

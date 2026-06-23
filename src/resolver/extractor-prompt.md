@@ -127,8 +127,8 @@ bare event *is* `main`.
 
 The cut is *event-reference vs outcome*, where an outcome may be a **noun or a question**: "their next
 **fixture**" / "the group-stage **match**" name only the event → `main`; "**match result**", "**match**
-winner", "outright **winner**" — **and a question asking which side wins or comes out ahead (e.g. "who
-wins", "who comes out on top") — name the result outcome → that concept (e.g. "match winner")**. Keep
+winner", "outright **winner**" — **and a question asking which side wins or comes out ahead ("who
+wins", "who comes out on top") — names the result outcome (keep the user's words)**. Keep
 the stated scope: a question about winning the **whole competition** is the outright, not the
 single-match result. A named market always wins on its own, **however fixture-flavoured the rest
 of the query reads** — an adjacent list verb ("show me", "do we have") or event noun ("tie", "game")
@@ -195,35 +195,23 @@ query): "Pedri … his team to win" → Pedri's side in context.
 
 ### market_concept
 
-**Keep the user's own market words.** Strip only what isn't the market:
-- the filler **"market(s)"**;
-- **scope words** — teams/event, competition, stage, time, conditions — leaving a short noun phrase or
-  infinitive, **never a clause or full sentence** ("<stat> if it goes to extra time" → "<stat>");
-- **period qualifiers** — they live in the `period` facet, never both; if stripping them leaves a bare
-  stem, keep the underlying stat plus the facet.
+A short, faithful phrase naming the outcome the user wants — in **their own words**. It is matched
+later against the real market labels on the live menu, which tolerates loose wording, so **don't
+canonicalize toward a catalog name and don't paraphrase**. Keep it short and faithful.
 
-Otherwise keep the words as stated. **Do not canonicalize toward a catalog name, paraphrase, or add a
-head the user didn't say** — a stated count noun stays as-is (don't prepend an aggregate like "total");
-the over/under lives in the `line` facet, not `market_concept`. Whether a fuller market exists is
-grounding's call.
+- **Keep qualifiers that pick a different market** — "first half", "on target", "to win to nil",
+  and ordinals ("first"/"last" goalscorer). Strip only the filler "market(s)" and the scope words
+  (teams/competition/stage/time), leaving a short noun phrase or infinitive — never a full clause
+  ("<stat> if it goes to extra time" → "<stat>").
+- **Numbers and prices are not market words** — an over/under goes to `line`, a price bound to
+  `odds`, and a price *ranking* ("shortest/best odds") to `odds_sort` — never a market named
+  "shortest odds".
+- **A question still names a market** — give the outcome it asks about in the user's words, never
+  skip it ("who wins" → "who wins"; "how many corners" → "corners"; "most fouls" → "most fouls").
+- **Never invent or fuse** — record only a market the query states; never invent a "match"/"fixture"
+  market; each comma/"and"-separated ask is its own selector (rule 1).
 
-Text only — never guess a catalog name, never invent a market that wasn't asked for.
-
-A **question still names a market** — map it to the outcome it asks about, never skip it:
-- "who wins / comes out ahead" → the **result/winner** outcome (a whole-competition question → the **outright**);
-- "which/who has the **most / fewest / highest / best** `<X>`" → the **superlative** market on `<X>`
-  ("which team scores fewest" → "fewest goals"; "which side gets more `<X>`" → "most `<X>`").
-  **Carve-out:** when `<X>` is the **price itself** ("highest/best/shortest odds/price"), that is a
-  price *ranking*, not a market — the market is whatever is being priced, and the ranking goes to
-  `odds_sort` ("which player has the shortest odds to score first" → market "to score first" +
-  `odds_sort: "low"`, never a market named "shortest odds");
-- "**how many** `<X>`" → the **count/total** of `<X>`.
-
-Keep a **yes/no achievement** (a player *or team* proposition) in the query's own words — do **not**
-convert a noun to an infinitive or back. Strip **generic timing** words
-("anytime", "ever", "at any point") — they don't change the market; **keep ordinals**
-("first"/"last") — they do. Do **not** paraphrase sport-specific slang into its underlying count
-or method yourself — keep the query's own term; the per-sport lexicon maps it downstream.
+Text only — never an id or catalog name.
 
 ### bo_types (optional) — candidate market-type buckets
 
@@ -234,17 +222,7 @@ You are given a fixed list of coarse market-type buckets (token — name):
 Return `bo_types`: every bucket token that could **plausibly** carry this market — a shortlist to
 narrow the search, not an exact pick. **Keep generously; drop a bucket only when it clearly cannot
 hold the market. When in doubt, or if nothing can be ruled out, omit the field** (= keep all
-buckets). Do not encode the line, period, or subject here — each has its own facet.
-
-### period (optional) — which **match-period** the query restricts to
-
-A match runs in periods split by an interval. Emit the facet only when the query confines the market
-to one period, else **omit** (= full match):
-  - `first_half`  — play before the interval.
-  - `second_half` — play after the interval, once play resumes.
-  - `extra_time`  — play beyond regulation.
-Read the meaning, not the surface words. The facet carries the period, so the concept stays period-free
-(strip the period words from `market_concept`).
+buckets). Do not encode the line or subject here — each has its own facet.
 
 ### line (optional) — by **answer-type**, not the nouns
 
