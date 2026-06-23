@@ -11,28 +11,41 @@
 // candidates are single-valued for now.
 
 import { z } from "zod";
+import { BO_TYPE_KEYS } from "./bo-types";
 
 export const BUILT_SPORTS = ["FOOTBALL"] as const;
 
-// Who owns a market. `player.name` is OPTIONAL (decision 21): named, a specific player owns a
-// line ("Mbappé shots"); omitted, it's a generic per-player market ("player shots") whose
-// outcomes the executor returns for every player. `team` still carries a required name;
-// either_match_team/event are bare tags.
-const Subject = z.discriminatedUnion("kind", [
+// Who owns a market. The four concrete kinds are the BOUND readings (recall-resolve Role 1): an owner
+// named it OR the phrase reads at a single level, so the kind is certain and the hard subject-filter
+// stays. `player.name` is OPTIONAL (decision 21): named, a specific player owns a line ("Mbappé shots");
+// omitted, it's a generic per-player market ("player shots") whose outcomes the executor returns for
+// every player. `team` still carries a required name; either_match_team/event are bare tags.
+//
+// `soft` is the deferred reading: NO owner AND the phrase reads at more than one level ("to score over
+// 2.5 goals" -> player or event). We do NOT pick — carry the >=2 plausible kinds so recall can pull
+// per-kind (balanced) and the catalog-aware resolver decides. Kept rare (see plan §7).
+export const Subject = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("player"), name: z.string().min(1).optional() }),
   z.object({ kind: z.literal("team"), name: z.string().min(1) }),
   z.object({ kind: z.literal("either_match_team"), side: z.enum(["home", "away"]).optional() }),
   z.object({ kind: z.literal("event") }),
+  z.object({
+    kind: z.literal("soft"),
+    kinds: z.array(z.enum(["player", "team", "either_match_team", "event"])).min(2),
+  }),
 ]);
+export type Subject = z.infer<typeof Subject>;
 
 // A line picks the market outcome: a numeric threshold on a counted stat, a yes/no side, or a
 // named multi-outcome selection (HT/FT, correct score). Omitted entirely = "all offered lines".
-// `selection.value` is text close to the query wording; grounding maps it to an outcome id.
-const Line = z.discriminatedUnion("kind", [
+// `selection.value` is text close to the query wording; grounding maps it to an outcome id (a
+// signed-number value like "-0.5" is a handicap rung the executor matches on the outcome's line).
+export const Line = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("numeric"), value: z.number(), direction: z.enum(["over", "under"]) }),
   z.object({ kind: z.literal("binary"), direction: z.enum(["yes", "no"]) }),
   z.object({ kind: z.literal("selection"), value: z.string().min(1) }),
 ]);
+export type Line = z.infer<typeof Line>;
 
 // A price bound on the outcome. At least one of min/max; min <= max.
 const Odds = z
@@ -55,12 +68,20 @@ const AttrFilter = z
 const Selector = z.object({
   subject: Subject,
   market_concept: z.string().min(1),
-  // Normalized match-period facet (sport-agnostic). The grounder folds it into the embed text (withPeriod)
-  // so period-specific catalog names out-cosine their full-match twins; omitted -> full match (no fold-in,
-  // no fallback — period must come from here). Enum MUST mirror ground-market's `Period`.
+  // Over-inclusive shortlist of coarse market-type buckets that could carry this market (tokens validated
+  // against data/betoffertypes.json via BO_TYPE_KEYS). Narrows the fetch + resolve menu; omitted = keep all
+  // buckets. The resolver still picks the exact market — this only prunes, never commits.
+  bo_types: z.array(z.enum(BO_TYPE_KEYS)).optional(),
+  // Normalized match-period facet (sport-agnostic), carried to market resolution so a period-specific
+  // market ("1st Half ...") is distinguished from its full-match twin; omitted -> full match (period must
+  // come from here — no fallback).
   period: z.enum(["full", "first_half", "second_half", "extra_time"]).optional(),
   line: Line.optional(),
   odds: Odds.optional(),
+  // Rank the market's outcomes by price instead of bounding it (sport-agnostic). `low` = shortest/lowest/
+  // best price first (favourite); `high` = longest/highest/biggest first (underdog). Optional, like `period`
+  // — omitted = no price ranking. Carried per-selector into the FetchPlan (postFilters.outcomes), with line/odds/attrFilter.
+  odds_sort: z.enum(["low", "high"]).optional(),
   attrFilter: AttrFilter.optional(),
 });
 
@@ -78,16 +99,31 @@ const Time = z
       .object({ value: z.string().min(1), anchor: z.enum(["tournament", "now"]) })
       .nullable(),
     kickoff_time_of_day: z.string().min(1).nullable(),
+    fixture_pick: z
+      .object({ order: z.enum(["earliest", "latest"]), count: z.number().int().min(1) })
+      .nullable(),
   })
-  .refine((t) => t.date_window !== null || t.kickoff_time_of_day !== null, "need a window or a kickoff band");
+  .refine(
+    (t) => t.date_window !== null || t.kickoff_time_of_day !== null || t.fixture_pick !== null,
+    "need a window, a kickoff band, or a fixture pick",
+  );
 
 const EventScope = z.object({
   teams: z.array(z.string().min(1)),
   players: z.array(z.object({ name: z.string().min(1), role: z.enum(["plays", "starts", "captain"]) })),
   competition: z.string().min(1).nullable(),
+  // A place/territory that SCOPES the competition (a country like "Italy", or a cross-country comp branch
+  // like "Champions League") — distinct from a country named as a TEAM, which stays in `teams`. The scope
+  // grounder resolves it to a top-level branch and hard-scopes competition candidates to that branch's
+  // subtree. Nullable; populated by the extractor (see extractor-prompt.md region/team routing rule).
+  region: z.string().min(1).nullable(),
   level: z.enum(["fixture", "competition"]),
   stage: Stage.nullable(),
   time: Time.nullable(),
+  // In-play vs pre-match restriction (sport-agnostic). `live` = matches in progress; `prematch` = not yet
+  // started; `null` = no preference. Required-nullable like `region` (always present, value-or-null), so
+  // event_scope keeps its fixed shape. Disjoint from `time`: a bare clock phrase is a time window, not a state.
+  play_state: z.enum(["live", "prematch"]).nullable(),
 });
 
 // The extractor ALWAYS resolves and identifies the sport — `sport` is free text (any sport: "football",

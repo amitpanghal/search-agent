@@ -17,7 +17,17 @@
 
 import type { GoldRecord } from "./gold-record";
 import type { QueryPlan } from "../resolver/schema";
-import type { GroundResult } from "../resolver/ground-market";
+
+// The market-grounding shape the ID-mode market axis consumes. Formerly imported from ground-market.ts,
+// deleted at the Phase 6 cut (market is now resolved post-fetch). The type is relocated here, its sole
+// consumer, so the ID-mode block keeps compiling. There is no live producer today: run.ts grades the market
+// axis in TEXT mode, and criterion-id resolution is graded by the separate live gate (market-resolve-gate.ts);
+// `grounded` is the optional hook that keeps the ID-mode logic available.
+export type GroundResult = {
+  ids: number[]; // [] iff method is "none"
+  method: string; // "none" => the leg abstained
+  tier?: "confident" | "variants" | "ambiguous" | "shortlist"; // present iff ids.length > 0; clean = confident|variants
+};
 
 // ---- text matching (lenient containment, confirmed with user) ----
 
@@ -61,6 +71,7 @@ type StageVal = { round: string | null; ordinal: "first" | "last" | null; condit
 type TimeVal = {
   date_window: { value: string; anchor: "tournament" | "now" } | null;
   kickoff_time_of_day: string | null;
+  fixture_pick?: { order: "earliest" | "latest"; count: number } | null;
 };
 
 function lineEqual(p: PredLine | undefined, g: GoldLine | undefined): boolean {
@@ -135,13 +146,19 @@ function timeNote(g: TimeVal | null, p: TimeVal | null): string | null {
   if (!!g.kickoff_time_of_day !== !!p.kickoff_time_of_day) {
     diffs.push(`kickoff ${JSON.stringify(p.kickoff_time_of_day)} vs ${JSON.stringify(g.kickoff_time_of_day)}`);
   }
+  const gf = g.fixture_pick ?? null;
+  const pf = p.fixture_pick ?? null;
+  if (!!gf !== !!pf || (gf && pf && (gf.order !== pf.order || gf.count !== pf.count))) {
+    diffs.push(`fixture_pick ${JSON.stringify(pf)} vs ${JSON.stringify(gf)}`);
+  }
   return diffs.length ? `time: ${diffs.join(", ")}` : null;
 }
 
 // All event_scope diffs, tagged by facet. On a market `resolved` plan every diff is a soft note (the
 // market id is the costly facet); on a marketless `main`-sentinel plan the event_scope IS the answer,
 // so the fixture-selecting facets are promoted to hard failures (decision 24 / Option A).
-type ScopeFacet = "level" | "teams" | "competition" | "players" | "stage" | "time";
+type ScopeFacet = "level" | "teams" | "competition" | "players" | "stage" | "time" | "play_state";
+// play_state stays OUT of the hard set: even a marketless "live markets" query keeps it soft (like level).
 const HARD_FIXTURE_FACETS = new Set<ScopeFacet>(["teams", "stage", "time"]);
 
 // A marketless plan/gold is the lone `main` sentinel selector (decision 24): exactly one selector,
@@ -189,6 +206,10 @@ function eventScopeDiffs(
   if (sn) out.push({ facet: "stage", msg: sn });
   const tn = timeNote(ge.time, pe.time);
   if (tn) out.push({ facet: "time", msg: tn });
+
+  if (ge.play_state !== pe.play_state) {
+    out.push({ facet: "play_state", msg: `play_state: expected ${ge.play_state}, got ${pe.play_state}` });
+  }
 
   return out;
 }
@@ -239,9 +260,11 @@ export function scoreRun(
 
   for (const [gi, g] of expect.selectors.entries()) {
     const mc = g.market_concept;
-    // exactly one of id|offer per the schema: offer => the "no exact market, surface alternatives" outcome.
+    // exactly one of id|offer|none per the schema: offer => "no exact market, surface alternatives";
+    // none => "no market and nothing to surface, must abstain (method none)".
     const offer: number[] | null = "offer" in mc ? mc.offer : null;
     const wantIds: number[] | null = "id" in mc ? (Array.isArray(mc.id) ? mc.id : [mc.id]) : null;
+    const isNone = "none" in mc;
     let matched: PredSelector | undefined; // clean pair: contains gold id(s) + clean tier, or text-matched
     let matchedIdx = -1;
     let clarifyIdx = -1; // contains gold id(s) but tier is ambiguous|shortlist -> tracked miss, never green
@@ -249,6 +272,16 @@ export function scoreRun(
       if (usedPred.has(pi)) continue;
       if (idMode) {
         const gr = grounded[pi];
+        if (isNone) {
+          // NONE outcome: pair by text, pass iff this leg ABSTAINED — id-less (groundPlan's perSelector nulls
+          // every id-less leg, so a `none` reads as null here), method "none", or empty ids.
+          if (mc.accept.length > 0 && looseMatch(p.market_concept, mc.accept) && (!gr || gr.method === "none" || gr.ids.length === 0)) {
+            matched = p;
+            matchedIdx = pi;
+            break;
+          }
+          continue;
+        }
         if (!gr) continue;
         if (offer) {
           // OFFER outcome: a market the stated subject doesn't have must be SURFACED as a `shortlist`
@@ -277,6 +310,8 @@ export function scoreRun(
       pairs.push({ g, p: matched });
     } else if (idMode && offer) {
       failures.push(`offer not surfaced: gold[${gi}] (${g.subject.kind}) expected a shortlist offering ${JSON.stringify(offer)}`);
+    } else if (idMode && isNone) {
+      failures.push(`expected-none: gold[${gi}] (${g.subject.kind}) "${mc.accept[0] ?? g.subject.kind}" should ground to nothing (abstain), but it didn't`);
     } else if (idMode && clarifyIdx >= 0) {
       usedPred.add(clarifyIdx); // consume it so it isn't double-reported as an unexpected market
       const gr = grounded[clarifyIdx];
@@ -313,6 +348,10 @@ export function scoreRun(
     }
     if (!oddsEqual(p.odds, g.odds)) {
       failures.push(`odds: "${p.market_concept}" expected ${JSON.stringify(g.odds)}, got ${JSON.stringify(p.odds)}`);
+    }
+    // odds_sort: selector facet, hard like odds (both undefined -> equal -> no-op on existing rows).
+    if (p.odds_sort !== g.odds_sort) {
+      failures.push(`odds_sort: "${p.market_concept}" expected ${JSON.stringify(g.odds_sort)}, got ${JSON.stringify(p.odds_sort)}`);
     }
   }
 

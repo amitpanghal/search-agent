@@ -9,6 +9,9 @@
 // Assumes `zod` (the project's package.json arrives in plan step 2). This file is
 // the schema source; the seed data lives in gold.seed.jsonl, the stamp in gold.meta.json.
 
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import { z } from "zod";
 import { BEHAVIOR_TAG_IDS } from "./behavior-tags";
 
@@ -20,6 +23,12 @@ import { BEHAVIOR_TAG_IDS } from "./behavior-tags";
 export const Grounded = z.object({
   id: z.union([z.number(), z.array(z.number()).min(1)]),
   accept: z.array(z.string()).default([]),
+  // Entity-grounding ONLY: the tier the scope grounder is expected to return for this cell. Default
+  // "confident" (a clean, single resolution that must CONTAIN the gold id — confident-precision). A clarify
+  // tier ("ambiguous"/"shortlist") means the cell is genuinely under-specified (e.g. bare "World Cup"), so
+  // the right answer is the grounder SURFACING that ambiguity with the gold id(s) in its candidate set
+  // (recall@k), never a forced guess. Ignored by the market/binding axes (which use their own tier rule).
+  tier: z.enum(["confident", "variants", "ambiguous", "shortlist"]).optional(),
 });
 export type Grounded = z.infer<typeof Grounded>;
 
@@ -30,6 +39,11 @@ const GoldSubject = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("team"), name: Grounded }),
   z.object({ kind: z.literal("either_match_team") }), // bare -- teams come from event_scope
   z.object({ kind: z.literal("event") }), // bare -- whole-match / no named owner
+  // soft (recall-resolve Role 1): no owner + reads at >1 level -- carry the plausible kinds, don't pick
+  z.object({
+    kind: z.literal("soft"),
+    kinds: z.array(z.enum(["player", "team", "either_match_team", "event"])).min(2),
+  }),
 ]);
 
 // numeric/binary are structural -- graded by exact value (E2). selection is a groundable
@@ -67,8 +81,11 @@ const AttrFilter = z
 // market, where the honest answer is "that isn't offered; here are the player corner markets that are".
 // MAIN (`main: true`): the marketless sentinel (decision 24) — the query named no market, so the lone
 // selector is `{ subject: event, market_concept: "main" }` and the grounder returns method "main" (no
-// id; the executor shows the event's main betoffer). Exactly one of id|offer|main; accept[] stays
-// diagnostic. (Resolves the architecture line-486 open item.)
+// id; the executor shows the event's main betoffer). NONE (`none: true`): the stated subject has no
+// market AND nothing surfaces — the grounder must ABSTAIN (method "none"), so the system clarifies rather
+// than guessing (e.g. a player asked for a team-only stat, like "Bruno Fernandes corners" under WC26 —
+// no player-corners market exists and there is nothing to offer). Exactly one of id|offer|main|none;
+// accept[] stays diagnostic (and pairs a `none` cell to its plan selector by text).
 const MarketConcept = z.union([
   z.object({
     id: z.union([z.number(), z.array(z.number()).min(1)]),
@@ -79,6 +96,7 @@ const MarketConcept = z.union([
     accept: z.array(z.string()).default([]),
   }),
   z.object({ main: z.literal(true), accept: z.array(z.string()).default([]) }),
+  z.object({ none: z.literal(true), accept: z.array(z.string()).default([]) }),
 ]);
 
 const GoldSelector = z.object({
@@ -87,6 +105,7 @@ const GoldSelector = z.object({
   period: z.enum(["full", "first_half", "second_half", "extra_time"]).optional(), // mirrors Selector (schema.ts); plain enum, not grounded
   line: Line.optional(),
   odds: Odds.optional(),
+  odds_sort: z.enum(["low", "high"]).optional(), // mirrors Selector (schema.ts); plain enum, not grounded
   attrFilter: AttrFilter.optional(),
 });
 
@@ -104,19 +123,25 @@ const Time = z
       .object({ value: z.string().min(1), anchor: z.enum(["tournament", "now"]) })
       .nullable(),
     kickoff_time_of_day: z.string().min(1).nullable(), // text
+    fixture_pick: z
+      .object({ order: z.enum(["earliest", "latest"]), count: z.number().int().min(1) })
+      .nullable()
+      .optional(), // optional: rows that don't exercise it omit the key
   })
   .refine(
-    (t) => t.date_window !== null || t.kickoff_time_of_day !== null,
-    "need a window or a kickoff band"
+    (t) => t.date_window != null || t.kickoff_time_of_day != null || t.fixture_pick != null,
+    "need a window, a kickoff band, or a fixture pick"
   );
 
 const GoldEventScope = z.object({
   teams: z.array(Grounded), // each team id; may be empty (market-only query)
   players: z.array(z.object({ name: Grounded, role: z.enum(["plays", "starts", "captain"]) })),
-  competition: Grounded.nullable(), // competition id
+  competition: Grounded.nullable(), // competition (group) id
+  region: Grounded.nullable().default(null), // region branch id (country / cross-country comp branch); scopes competition. default null so pre-region gold rows still parse
   level: z.enum(["fixture", "competition"]),
   stage: Stage.nullable(),
   time: Time.nullable(),
+  play_state: z.enum(["live", "prematch"]).nullable().default(null), // mirrors Selector-side play_state (schema.ts); .default(null) so pre-existing gold rows still parse
 });
 
 // the expected plan: always resolved. The extractor never abstains — it identifies the sport (free text,
@@ -135,6 +160,34 @@ export const GoldRecord = z.object({
   query: z.string().min(1), // the raw natural-language query under test
   tags: z.array(z.enum(BEHAVIOR_TAG_IDS)).min(1), // behaviors this query stresses (E7)
   expect: GoldPlan, // the grounded plan it must produce (expect.status is the abstain bucket)
+  // Default true: the row is graded by the extractor/market ship gate (scoreRun). Set false for a
+  // pure-SCOPE row whose point is the deterministic entity gate only (entity text fed from gold) — it is
+  // skipped by the LLM market gate so a not-yet-taught extractor (e.g. region routing) can't redden it.
+  gradeMarket: z.boolean().default(true),
   notes: z.string().optional(), // authoring rationale: coref, self-correction, edge cases
 });
 export type GoldRecord = z.infer<typeof GoldRecord>;
+
+// Load + validate the gold seed (one JSON object per line). Shared by the eval runner and the gates so the
+// parse lives in one place; throws with the offending line number on bad JSON / schema.
+export function loadGold(): GoldRecord[] {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const text = readFileSync(join(here, "gold.seed.jsonl"), "utf8");
+  const out: GoldRecord[] = [];
+  for (const [i, raw] of text.split("\n").entries()) {
+    const line = raw.trim();
+    if (!line) continue;
+    let obj: unknown;
+    try {
+      obj = JSON.parse(line);
+    } catch (e) {
+      throw new Error(`gold.seed.jsonl line ${i + 1}: invalid JSON — ${(e as Error).message}`);
+    }
+    const parsed = GoldRecord.safeParse(obj);
+    if (!parsed.success) {
+      throw new Error(`gold.seed.jsonl line ${i + 1}: schema error — ${parsed.error.message}`);
+    }
+    out.push(parsed.data);
+  }
+  return out;
+}

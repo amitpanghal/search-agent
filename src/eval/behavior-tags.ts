@@ -26,6 +26,14 @@ export const BEHAVIOR_TAG_IDS = [
   "age-normalize",
   "sport-default",
   "fixture-lookup",
+  "scope-competition",
+  "scope-region",
+  "scope-team",
+  "scope-player",
+  "scope-mononym",
+  "scope-nt-variant",
+  "odds-sort",
+  "play-state",
 ] as const;
 
 export type BehaviorTag = (typeof BEHAVIOR_TAG_IDS)[number];
@@ -118,6 +126,50 @@ export const BEHAVIOR_TAGS: Record<
     tier: "critical",
     desc: "A marketless / 'show me the fixtures' query -> status resolved with a single sentinel selector { subject: event, market_concept: \"main\" }; never a fabricated 'match' market or a crash (decision 24, replacing the fixture_lookup status). On these records the fixture-selecting facets (teams/stage/time) grade HARD (Option A).",
     example: "\"is England's next match listed yet\" -> resolved, one \"main\" selector; \"match result\" would instead be a real market selector.",
+  },
+  // ---- scope-grounding behaviors (graded by the SEPARATE deterministic grounder gate, not the extractor
+  // tag gate): recall@k (gold id in the candidate set) + confident-precision (a confident/variants tier
+  // must contain the gold id). Tier "soft" only marks that the new grounder is still uncalibrated; a
+  // confident-WRONG entity is always a hard miss in the entity gate regardless. ----
+  "scope-competition": {
+    tier: "soft",
+    desc: "Ground a competition name to its group id; an under-specified one (no edition) stays ambiguous, surfacing the editions for the disambiguator.",
+    example: "\"World Cup 2026\" -> confident WC26; bare \"World Cup\" -> ambiguous {WC26, WC22}.",
+  },
+  "scope-region": {
+    tier: "soft",
+    desc: "A place word scopes the competition: resolve it to a top-level branch and hard-scope competition candidates to that branch's subtree (rescuing a high-collision name).",
+    example: "\"English Premier League\" -> region England cuts the 8 'Premier League' nodes to England's one.",
+  },
+  "scope-team": {
+    tier: "soft",
+    desc: "Ground a team name (club or national team) to its participant id.",
+    example: "\"Brazil\" -> the Brazil national-team id.",
+  },
+  "scope-player": {
+    tier: "soft",
+    desc: "Ground a player name to its participant id, hard-scoped under a confident competition / team (the homonym cut).",
+    example: "\"Bruno Fernandes\" with Portugal in scope -> the Portugal international, not the other Bruno Fernandes.",
+  },
+  "scope-mononym": {
+    tier: "soft",
+    desc: "A single-name (mononym) player collides many ways; bare it stays ambiguous, scoped to a competition it collapses to one.",
+    example: "\"Juninho\" -> ambiguous (7 players); \"Juninho\" in Liga MX -> the one Liga MX Juninho.",
+  },
+  "scope-nt-variant": {
+    tier: "soft",
+    desc: "A national-team name defaults to the senior_men variant; a marker (U23/U21) picks the youth variant.",
+    example: "\"Brazil\" -> senior_men national team (default variant).",
+  },
+  "odds-sort": {
+    tier: "soft",
+    desc: "Rank by price (shortest/longest odds) — a sort, not a bound.",
+    example: "\"shortest odds to score first\" -> odds_sort low; \"highest draw odds\" -> odds_sort high.",
+  },
+  "play-state": {
+    tier: "soft",
+    desc: "Live (in-play) vs pre-match; a bare clock phrase stays a time window.",
+    example: "\"live corner markets\" -> play_state live; \"games next 48h\" -> time window, play_state null.",
   },
 };
 

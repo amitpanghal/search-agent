@@ -298,8 +298,8 @@ _Earlier (2026-06-06): decision-23 result-family aliases; Q33–Q36 — groundin
 ### Q35 — Argentina to win to nil, Messi anytime scorer, R16
 - **Query:** Argentina to win to nil with Messi as anytime scorer in their R16.
 - **Extractor:** Two bets — level fixture, teams [Argentina], players [Messi], stage `{round: round of 16}`. Sel1 `subject: team:Argentina` "to win to nil" binary yes. Sel2 `subject: player:Messi` "anytime scorer" binary yes.
-- **Grounding:** "to win to nil" (team, fixture) → **Home/Away Team to Win to Nil** (`1001642867`/`1001642866` + combo, vector/shortlist 0.382) via the per-side divert — the decision-23 `to win` alias correctly did **not** steal it (level-aliases are exact-only, skipped by the subset fallback). "anytime scorer" → To Score (alias/variants).
-- **Status:** ✅ Correct — confirms the **non-steal**: "to win to nil" reaches the Win-to-Nil divert, not Match Odds. Side stays shortlist (home/away unresolved without fixture context, as before).
+- **Grounding:** "to win to nil" (team, fixture) → **Home/Away Team to Win to Nil** (`1001642866`/`1001642867`, **name/variants** — both twins) via the per-side divert — the decision-23 `to win` alias correctly did **not** steal it (level-aliases are exact-only, skipped by the subset fallback). "anytime scorer" → To Score (alias/variants).
+- **Status:** ✅ Correct — confirms the **non-steal**: "to win to nil" reaches the Win-to-Nil divert, not Match Odds. **2026-06-16:** a side-LESS per-side stat now resolves to **both twins as `variants`** (was a weak `shortlist`), so it passes the disambiguator untouched — the executor binds home/away from the live fixture, and the disambiguator can no longer (wrongly) ask the user "home or away?". Path (b) of `applyPerSideDivert` now fires over a shortlist, not only an empty miss.
 
 ### Q36 — France HT/FT, Mbappé scoring twice
 - **Query:** Stack France winning HT/FT with Mbappé scoring twice.
@@ -621,3 +621,167 @@ Event/market block:
 - "World Cup this weekend total cards over 3.5 late kickoffs" → event `total cards` num3.5 → **name/confident** [1001159529] Total Cards ✓
 
 **Findings:** 20/20 extracted clean (sport, scope, level, odds, period, line all populated; multi-leg "X and Y" split into per-selector legs as designed). Grounding: 16/20 confident-or-variants (correct), 2 ambiguous/shortlist that are *defensible* clarifies (corners twins; competition-level "to win"), 1 weak shortlist from concept word-order ("to score anytime" vs alias key "anytime scorer"/"to score"). No false-confidents. Odds bounds (min/max) carried on the plan but not used by grounding (executor-side filter). Combo pass surfaced nothing on the 2 multi-leg queries.
+
+---
+
+## 2026-06-14 — region-vs-team routing (new `region` field + prompt rule)
+
+Probing whether the extractor routes the SAME country word as `team` (a competitor) vs `region` (a place that scopes the competition), per the new sport-agnostic prompt rule. `region` is now a real `event_scope` field. `→ teams / region / competition`:
+
+- "Italy to score in the World Cup" → teams `["Italy"]`, region `null`, competition `"World Cup"` ✓ (Italy = team, it *scores*). Grounds: team Italy → confident 1000000146 (senior_men NT); "World Cup" no region → ambiguous {WC26 2010133908, WC22 2000116272} (correct — no edition named).
+- "Italian Serie A top scorer" → teams `[]`, region `"Italy"`, competition `"Serie A"` ✓ (adjective "Italian" → region, normalized to "Italy"). Grounds: region Italy → branch 1000461745; "Serie A" hard-scoped → confident Serie A 1000095001.
+- "top scorer in Italy" → teams `[]`, region `"Italy"`, competition `null` ✓ (place "in Italy", no competition → region alone). Grounds: region Italy → confident branch 1000461745.
+- "will Italy qualify for the World Cup" → teams `["Italy"]`, region `null`, competition `"World Cup"` ✓ (Italy = team, it *qualifies*).
+
+**Findings:** 4/4 routed correctly — the same word "Italy" split four ways purely by its sentence role (team in #1/#4, region in #2/#3), and "Italian" was normalized to the place noun "Italy". The routed `region` then drives the grounder's hard-scope live (Q2: cuts the cross-country "Serie A" candidates to the Italian one confidently). No place-vs-team confusion on these.
+
+---
+
+## 2026-06-16 — odds_sort (price ranking) + play_state (live vs pre-match)
+
+New extraction-only facets: `odds_sort` on the selector (a price superlative is a *ranking*, not a bound) and `play_state` on event_scope (in-play vs pre-match; a bare clock phrase stays a `time` window). Probing the prompt rewrites. `→ facets / grounding`:
+
+- "which match has the shortest draw odds" → event `draw`, **odds_sort low**, no line → confident Draw No Bet [1001159666] ✓ (price superlative routed to the sort, not a `{min:0}` bound).
+- "which match has the highest draw odds" → event `draw`, **odds_sort high**, no line → confident Draw No Bet [1001159666] ✓.
+- "live total corners for Germany right now" → team Germany `total corners`, **play_state live** AND **time** `{value "now", anchor now}` → both facets fire (in-progress wording + a clock phrase, neither swallows the other). Market → variants {home 1001159598, away 1001159697}; Germany team → confident 1007458821.
+- "pre-match odds for the final" → marketless `main`, stage `final`, **play_state prematch** ✓ (no market named → sentinel; "pre-match" sets the state).
+- (guard) "games in the next 48 hours" → marketless `main`, **play_state null** + time `{value "next 48 hours", anchor now}` ✓ — a bare clock phrase stays a time window, NOT play_state.
+- (guard) "first goalscorer priced over 5.0" → player `first goalscorer`, **odds {min:5}**, **no odds_sort** ✓ — a numeric price is a bound, not a sort.
+- (variance note) "Musiala / which Germany player … shortest odds to score first" → **odds_sort low extracted correctly every time**, but the *score-first market text* wobbles between "to score first" (→ To Score variants {1001159886,1006478338}) and "first goalscorer" (→ First Goal Scorer [1005153918]) — disjoint groundings. So the gold odds-sort-low row (g017) uses the stable `draw` market instead of a flaky player score-first market.
+
+**Findings:** odds_sort and play_state both extract cleanly; the bound-vs-sort and live-vs-time disambiguations hold on the two guards. The only flakiness is upstream and unrelated (the score-first market name varies), handled by choosing a stable market for the gold row. Gold rows g017–g020 added; ship gate PASS, both new soft tags 2/2.
+
+---
+
+## 2026-06-17 — recall-resolve step 1+2: Preserve (de-canonicalize) + soft subject
+
+Extractor-only probes (`--query`, no grading) after removing two canonicalizations from the prompt
+(the `"over 2.5 goals" → "total goals"` aggregate rewrite and the `"<X> scorer" → "to score"`
+infinitive rewrite) and adding the `soft` subject (`{kind:"soft", kinds:[...]}`). `→ plan`:
+
+- "to score over 2.5 goals" → concept **"to score"** (NOT "total goals") + line {numeric, 2.5, over};
+  subject **event** — soft did NOT fire (model read it as a match total, not the two-faced player/event case).
+- "9+ corners" → concept **"corners"** (NOT "total corners") + line {numeric, 9, over}; subject event.
+- "anytime goalscorer for Brazil" → concept **"anytime goalscorer"** (NOT "to score") + line {binary, yes};
+  subject either_match_team/home (pre-existing per-player-vs-team binding, unchanged by this step).
+
+**Findings:** de-canonicalization confirmed on all three — the phrase is preserved and the over/under
+rides in `line`, no fabricated "total"/"to score" head. `soft` is wired (schema + prompt) but stayed
+unproven: the canonical two-faced example resolved to `event`, not soft. Soft is consumed by the
+recall/resolve steps (3–4), so defer tuning its trigger until there's a downstream consumer to measure
+against. NOTE: grounding will dip until steps 3–4 land — the grounder still expects the old canonical shape.
+
+---
+
+## 2026-06-19 — next-game Phase 1: `time.fixture_pick` (extraction contract)
+
+Extractor-only probes after adding `time.fixture_pick { order, count }` (schema + prompt) for relative
+fixture selection. The real blocker was NOT the prompt — `normalizePlan` was coercing a `fixture_pick`-only
+time to `null` (it checked only `date_window`/`kickoff`); fixed to keep the field. `→ time`:
+
+- "Musiala to score in his next game" → `fixture_pick {earliest, 1}` (date_window null).
+- "Mbappe to score in his next 2 fixtures" → `fixture_pick {earliest, 2}` (count captured).
+- "goals in France's last game today" → date_window {today, now} + `fixture_pick {latest, 1}`.
+- "BTTS in all weekend matches" → date_window {weekend, now} + `fixture_pick: null` (range, not an ordinal slice).
+- "cards this weekend" → date_window {this weekend, now} + `fixture_pick: null` (control).
+- "next game to have a red card" → `fixture_pick {earliest, 1}` (event subject, no date — still fires).
+
+**Findings:** all correct. Bare "next game" (no date) works once the normalizer stops erasing it — the LLM
+emits it reliably, so no deterministic backfill needed. Gold gf02 ("is England's next match listed yet")
+updated `time: null → fixture_pick {earliest,1}` (the feature now claims "next match"); scorer `timeNote`
+extended to grade `fixture_pick`. Ship gate PASS (fixture-lookup 5/5, entity gate, disambiguator replay).
+
+---
+
+## 2026-06-20 — full-pipeline probe: "highest draw odds" (grounder miss)
+
+`scripts/probe-pipeline.ts "which World Cup 26 match has the highest draw odds"`. Extractor was clean:
+`competition: World Cup 2026, level: competition`, one event-subject selector `market_concept: "match result",
+line: {selection, draw}, odds_sort: high`. Pipeline then FAILED at grounding → ended in a clarify.
+
+- Stage 2 (ground): scope OK (WC26 confident). Market vector search for "match result" returned junk —
+  top hit `Match to feature the latest goal from kick off` (0.333), then `Tournament progress`, `fastest goal`.
+  The real 1X2 market is named **"Full Time"** (id 1001159858, cats: Match / Match Odds / Full Time) and never
+  entered the shortlist.
+- Stage 3 (disambiguate): Pass 1 re-expressed to "match result draw"; Pass 2 still saw no real candidate →
+  emitted a clarify ("none of the candidates are a standard match-result or draw market").
+- Stage 4: fell back to a bare WC26 group fetch, market unsettled.
+
+**Root cause:** lexically-disjoint name — canonical match-result market is "Full Time", so the "match result"
+embedding lands nowhere near it. Classic near-synonym / alias-bridge gap (match result / 1X2 → "Full Time").
+Not an extractor or fetch bug.
+
+**2026-06-20 re-probe (probe-app.ts, plan review):** reconfirmed identical extraction. New detail for the
+event-grain-relevel plan: Stage-2 market tier = **`vector` / `shortlist`** (top cosine 0.333) — i.e. WEAK, so
+G1's try-both-level trigger would correctly fire. Confirms the plan's premise that pass-1 at competition level
+is junk because `levelOk` drops the fixture-level "Full Time" before scoring.
+
+---
+
+## 2026-06-20 — E4 probe: "what are the draw odds in Spain's World Cup matches"
+
+`scripts/probe-app.ts`. Extraction: `teams: ["Spain"]`, `level: fixture`, one event-subject selector
+`market_concept: "draw", line: {binary, yes}`. Competition `"World Cup"` grounded **ambiguous** (2026 / 2022 /
+qualifying) — a separate disambiguation point, not the thing under test.
+
+**Purpose — does a team-narrowed fixture sweep wrongly hit the E4 broad-query clarify gate?** No. A named team
+routes to the **participant** endpoint (plan-fetch fork: any participant → participant), and the broad-gate in
+`checkExecutable` is **group-endpoint only**, so a team query never reaches it. The known weakness that
+`narrowed` ignores team filters is therefore harmless — recorded in event-grain-relevel-plan.md E4 with a note
+to KEEP the `endpoint === "group"` guard when generalising the gate to `levelsOf`.
+
+---
+
+## 2026-06-23 — Positional-market extractor probe (HT/FT vs Double Chance vs Correct Score)
+
+`scripts/probe-extract-positional.ts`. Purpose: decide whether the SELECT home/away fix (translate the
+subject-view token to the feed's home/away 1/X/2 notation) covers all three "positional" families in one pass.
+Extraction only, no fetch. (9 calls, in=3872 out=2212 cacheW=10343 cacheR=82744, $0.036135.)
+
+**Double Chance — NOT a selection.** Emitted as a binary with the DC combination buried in `market_concept`:
+- "France to win or draw in their next game" → team France, concept `"to win or draw"`, line `{binary, yes}`
+- "Norway double chance win or draw next match" → team Norway, concept `"double chance win or draw"`, `{binary, yes}`, bo_types `["doublechance"]`
+- "Brazil not to lose their next game" → team Brazil, concept `"to lose"`, line `{binary, **no**}`
+- "double chance home win or draw" → `either_match_team` side home, concept `"double chance home win or draw"`, `{binary, yes}`
+
+**Correct Score — selection, literal score string (subject-view when a team is named):**
+- "France to win 2-0 in their next game" → **team France**, concept `"correct score"`, line `{selection, "2-0"}`
+- "correct score 2-1 for France" → event, `{selection, "2-1"}`
+- "Norway vs France to finish 1-2" → event, `{selection, "1-2"}`
+- "France next game correct score 3-1" → event, `{selection, "3-1"}`
+
+**HT/FT (sanity):** "Norway to win HT/FT" → team Norway, concept `"HT/FT"`, line `{selection, "win/win"}`.
+
+**Conclusion:** HT/FT + Correct Score both route through SELECT's `selection` branch → landed together via
+`subjectSide()` + (a) win/draw/loss→1/X/2 per side, (b) reverse `a-b`→`b-a` for an away named-team subject.
+Double Chance can't ride this pass: it's a binary, and *which* DC outcome (1X/12/X2) is only in free text — the
+feed's DC outcomes carry no participantId and no yes/no type. DC needs an extractor-emit change (a DC selection
+token) before the same side-mapping can apply. Opened as a separate item.
+
+---
+
+## 2026-06-23 — Why the extractor drops "next game" on a mixed outright+fixture query
+
+`scripts/probe-scope-mix.ts` (extraction only). Question: why did "Top scorer WC26 Mbappé + France winning
+its next game" come back with `time: null` (next game lost)? Five variants:
+
+| variant | level | next game kept? |
+|---|---|---|
+| "France winning, its next game" (fixture only) | fixture | YES |
+| "Top scorer WC26 Mbappé, France winning, next game" (outright first) | competition | **NO** |
+| "France winning next game, top scorer WC26 Mbappé" (fixture first) | fixture | YES |
+| "Top scorer WC26 Mbappé, France HT/FT its next game" | competition | YES |
+| "Mbappé to score, France to win, both next game" (two fixture legs) | fixture | YES |
+
+**Root cause — structural, not a prompt rule.** In isolation "next game" → `fixture_pick` reliably. The drop
+only happens on a MIXED-grain query, and it's UNSTABLE: leg order flips it (var 2 vs 3), and `level: competition`
+does NOT force `time: null` (var 4 keeps both). The cause is the single `event_scope` holding one `level` + one
+`time`: when a competition-grain leg (tournament top-scorer) and a fixture-grain leg (next-match win) collide,
+the model crams both into one scope and the loser's scope info is dropped/mangled. The ambiguous "France winning"
+(match vs tournament) tipped it to a tournament reading under the competition scope, so "next game" was dropped;
+the unambiguous "HT/FT" kept it. No clean prompt-only fix — there is physically one `level`/`time` and two legs
+pulling it apart.
+
+**Fix direction:** per-leg scope (move `level` + `time`/`fixture_pick` onto the selector). Pairs with the rule
+that the time/next-game filter runs ONLY on `MATCH`-tagged events (never `COMPETITION`), so an outright leg's
+event is never touched while the fixture leg narrows to its next match.

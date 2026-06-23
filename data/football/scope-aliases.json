@@ -1,0 +1,38 @@
+{
+  "_doc": "Curated scope-alias lexicon (same merge-at-load pattern as aliases.json, but for SCOPE not markets). Three tables, all keys/values matched after fold(): competitions (acronym/short-form -> a competition NAME the lexical grounder then resolves to a group id), regions (a place adjective/short-form -> a country/branch NAME for the region hard-scope), markers (a surface marker -> a normalized token the grounder maps to an ntVariant / women's-competition variant). Bridges only — add a key only when vectors/lexical fundamentally can't reach it (lexically disjoint), never to patch a tuning miss.",
+  "competitions": {
+    "epl": "Premier League",
+    "ucl": "Champions League",
+    "uefa champions league": "Champions League",
+    "wc": "World Cup",
+    "wc26": "World Cup 2026",
+    "wc 2026": "World Cup 2026",
+    "wc22": "World Cup 2022",
+    "wc 2022": "World Cup 2022"
+  },
+  "regions": {
+    "english": "England",
+    "italian": "Italy",
+    "spanish": "Spain",
+    "german": "Germany",
+    "french": "France",
+    "dutch": "Netherlands",
+    "portuguese": "Portugal",
+    "brazilian": "Brazil",
+    "argentine": "Argentina",
+    "argentinian": "Argentina",
+    "scottish": "Scotland",
+    "welsh": "Wales"
+  },
+  "markers": {
+    "(w)": "women",
+    "women": "women",
+    "womens": "women",
+    "ladies": "women",
+    "u23": "u23",
+    "u21": "u21",
+    "u20": "u20",
+    "u19": "u19",
+    "u17": "u17"
+  }
+}

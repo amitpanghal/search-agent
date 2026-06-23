@@ -6,13 +6,8 @@
   "description": "Kambi intent-resolver — extractor + structural eval (Sprint 1).",
   "scripts": {
     "eval": "tsx src/eval/run.ts",
-    "build:categories": "tsx src/resolver/build-categories.ts",
-    "build:catalog": "tsx src/resolver/build-catalog.ts",
-    "build:index": "tsx src/resolver/build-market-index.ts",
-    "build:wc26": "tsx scripts/build-wc26-criterions.ts",
-    "refresh:feeds": "tsx scripts/refresh-football-feeds.ts",
-    "refresh:wc26": "tsx scripts/refresh-wc26.ts",
-    "gen:doc-views": "tsx scripts/gen-doc-views.ts",
+    "build:scope": "tsx src/resolver/build-scope-index.ts",
+    "gate:live-menu": "tsx src/eval/live-menu-gate.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

@@ -1,0 +1,13 @@
+{
+  "_comment": "Curated headline adjacency (related-markets Part B3). For match-winner / trophy / qualify markets, where market-to-market cosine fails entirely, this tiny hand-built map supplies the shelf. Keys and values are catalog criterion NAMES (matched via normalize() at runtime); a value that doesn't resolve to a catalog id is silently dropped. Hand-maintained on purpose — small and intentional.",
+  "map": {
+    "Match Odds": [
+      "Double Chance",
+      "Draw No Bet",
+      "Both Teams To Score",
+      "Correct Score",
+      "Half Time/Full Time",
+      "Total Goals"
+    ]
+  }
+}
