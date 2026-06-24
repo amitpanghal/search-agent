@@ -156,6 +156,7 @@ export type RecallResult = {
   menu: Menu;
   data: { betOffers: BetOffer[]; events: KEvent[] };
   truncated: boolean;
+  failed: boolean; // a group/participant fetch errored (degraded to empty via failedTask, never thrown)
 };
 
 // The betoffer `description` ("Winner", "Top 4", …) — the market's VARIANT, part of its identity (theory §4).
@@ -203,8 +204,8 @@ function fixtureHasAllTeams(e: KEvent, teamIds: number[]): boolean {
 
 // Build the BROAD RecallResult — NO narrowing (finalize is deleted): per-leg time/grain/co-occurrence narrowing
 // is scopeMenu's job now. The menu here is the broad menu; the orchestrator rebuilds a narrowed one per leg.
-function out(endpoint: RecallResult["endpoint"], betOffers: BetOffer[], events: KEvent[], truncated: boolean): RecallResult {
-  return { endpoint, menu: buildMenu(betOffers), data: { betOffers, events }, truncated };
+function out(endpoint: RecallResult["endpoint"], betOffers: BetOffer[], events: KEvent[], truncated: boolean, failed = false): RecallResult {
+  return { endpoint, menu: buildMenu(betOffers), data: { betOffers, events }, truncated, failed };
 }
 
 // RECALL: deterministic endpoint + ids -> the BROAD live data, via the fetch engine above (cap detection + group
@@ -221,7 +222,7 @@ export async function recall(input: RecallInput): Promise<RecallResult> {
   if (input.participantIds?.length) {
     const task: Task = { endpoint: "participant", ids: input.participantIds, params: typeP };
     const [res] = await runTasks([task], { maxFanoutEvents: input.maxFanoutEvents });
-    return out("participant", res!.betOffers, res!.events, res!.truncated);
+    return out("participant", res!.betOffers, res!.events, res!.truncated, res!.failed ?? false);
   }
   // else the competition group(s): ONE task per group, run in parallel (each keeps its own cap/fan-out handling).
   // event.groupId differentiates them so scopeMenu can separate the legs. onlyCompetitions only when EVERY leg is
@@ -238,7 +239,7 @@ export async function recall(input: RecallInput): Promise<RecallResult> {
   const results = await runTasks(tasks, { maxFanoutEvents: input.maxFanoutEvents });
   const evById = new Map<number, KEvent>();
   for (const r of results) for (const e of r.events) evById.set(e.id, e);
-  return out("group", results.flatMap((r) => r.betOffers), [...evById.values()], results.some((r) => r.truncated));
+  return out("group", results.flatMap((r) => r.betOffers), [...evById.values()], results.some((r) => r.truncated), results.some((r) => r.failed));
 }
 
 // scopeMenu — narrow the BROAD recall data to ONE leg's scope, then build that leg's menu (replaces finalize's
@@ -247,7 +248,7 @@ export async function recall(input: RecallInput): Promise<RecallResult> {
 // co-occurrence and the time window + "next game" pick. COMPETITION outrights + untagged events pass the
 // MATCH-only filters (same discipline finalize had), and a MISSING level/groupId is kept (never drop on missing
 // data). Returns the menu + narrowed offers/events + kept event-ids (so one leg's events stay out of another's).
-export type ScopedMenu = { menu: Menu; offers: BetOffer[]; events: KEvent[]; eventIds: number[] };
+export type ScopedMenu = { menu: Menu; offers: BetOffer[]; events: KEvent[]; eventIds: number[]; timeUnresolved: boolean };
 export function scopeMenu(
   data: { betOffers: BetOffer[]; events: KEvent[] },
   leg: ResolvedLegScope,
@@ -277,5 +278,5 @@ export function scopeMenu(
   evs = [...others, ...matches];
   const keep = new Set(evs.map((e) => e.id));
   const offers = data.betOffers.filter((b) => b.eventId == null || keep.has(b.eventId));
-  return { menu: buildMenu(offers), offers, events: evs, eventIds: [...keep] };
+  return { menu: buildMenu(offers), offers, events: evs, eventIds: [...keep], timeUnresolved: !!window?.unresolved };
 }

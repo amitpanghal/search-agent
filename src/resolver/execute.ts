@@ -134,7 +134,7 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
   // group resolved legs by EVENT (insertion order preserved). A leg becomes a RESULT only when it picked a
   // market AND select returned a concrete outcome — the prune falls out: an event with no pick never appears.
   const byEvent = new Map<number, { event: KEvent; highlighted: EnvelopeHighlighted[] }>();
-  const notes: string[] = [];
+  const notes: string[] = [...(input.notes ?? [])]; // caller-built notes (e.g. unresolved time) ride along
   const noPick: string[] = []; // legs whose market wasn't offered -> clarify
 
   for (const leg of input.legs) {
@@ -181,9 +181,13 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
   const totalPicks = results.reduce((n, r) => n + r.highlighted.length, 0);
   if (totalPicks >= 2) notes.push("showing each market on its own — not only the games that have all of these together");
 
+  // Global fetch caveats (state a fact + a next step, never hedge): the broad fetch was capped, or a request errored.
+  if (input.truncated) notes.push("This is a broad search — showing the top markets. Add a team, league, or time to see more.");
+  if (input.fetchFailed) notes.push("Some live data is temporarily unavailable — showing what loaded.");
+
   // carried entity clarifications + any leg whose market wasn't offered, folded into one string (null = clean).
   const reasons = [...clarifications.map((c) => c.question), ...noPick.map((p) => `No market is offered for "${p}".`)];
   const clarificationNeeded = reasons.length ? reasons.join(" ") : null;
 
-  return { summary: "", results, notes, clarificationNeeded };
+  return { summary: "", results, notes: [...new Set(notes)], clarificationNeeded };
 }

@@ -88,4 +88,7 @@ export type ExecuteInput = {
   legs: ResolvedLeg[];
   data: BetOfferResponse;
   clarifications?: Clarification[];
+  notes?: string[];        // caller-built notes (e.g. unresolved time — needs the per-leg phrase)
+  truncated?: boolean;     // recall hit the 2000-betoffer cap / a capped group fan-out
+  fetchFailed?: boolean;   // a group/participant fetch errored (degraded to empty, not thrown)
 };

@@ -9,6 +9,7 @@
 // scope (the redesign): every selector carries its own grain/competition/time, so narrowing is per leg, not global.
 
 import { extract } from "./extract";
+import { checkComplete } from "./check-complete";
 import { groundScope, type EntityResolution, type ResolvedLegScope } from "./ground-scope";
 import { resolveEntities } from "./resolve-entities";
 import { planRecall } from "./plan-recall";
@@ -70,6 +71,10 @@ const offersForPick = (offers: BetOffer[], criterionId?: number, variant?: strin
 
 export async function resolveQuery(query: string): Promise<ResponseEnvelope> {
   const plan = await extract(query);
+  // Incomplete-query gate: no team/player/league/region anchor -> nothing to scope to. Stop BEFORE any
+  // grounding/fetch/LLM and ask the user to add one (canned message; no network spent).
+  const incomplete = checkComplete(plan);
+  if (incomplete) return { summary: "", results: [], notes: [], clarificationNeeded: incomplete.question };
   const scope = groundScope(plan);
   const settled = await resolveEntities(query, scope);
   const r = await recall(planRecall(settled, plan)); // BROAD data; per-leg narrowing is scopeMenu's job below
@@ -106,11 +111,16 @@ export async function resolveQuery(query: string): Promise<ResponseEnvelope> {
   const groupData = new Map<string, GroupData>();
   const keyByIdx: string[] = new Array(plan.selectors.length);
   const pickByIdx: MarketPick[] = new Array(plan.selectors.length);
+  const extraNotes = new Set<string>(); // pipeline-level notes resolve alone can build (needs per-leg scope)
 
   for (const [key, idxs] of groups) {
     const leg = settled.legs[idxs[0]!]!;
     const sel0 = plan.selectors[idxs[0]!]!;
     const scoped = scopeMenu(r.data, leg); // narrow the broad data to this group's leg scope
+    if (scoped.timeUnresolved) {
+      const phrase = leg.time?.date_window?.value ?? leg.time?.kickoff_time_of_day ?? "you gave";
+      extraNotes.add(`Couldn't read the time "${phrase}" — showing all matching games instead.`);
+    }
     const keepTypes = boTypeIdSet(idxs.flatMap((i) => plan.selectors[i]!.bo_types ?? []));
     const subjId = subjectParticipantId(leg, sel0.subject);
     const fr = filterBySubject(scoped.offers, scoped.events, filterSubject(sel0.subject), subjId, keepTypes);
@@ -151,5 +161,12 @@ export async function resolveQuery(query: string): Promise<ResponseEnvelope> {
     for (const e of scoped.events) if (e.id != null) execEvents.set(e.id, e);
     for (const b of scoped.offers) execOffers.add(b);
   }
-  return execute({ legs: legsOut, data: { events: [...execEvents.values()], betOffers: [...execOffers] }, clarifications: settled.clarifications });
+  return execute({
+    legs: legsOut,
+    data: { events: [...execEvents.values()], betOffers: [...execOffers] },
+    clarifications: settled.clarifications,
+    notes: [...extraNotes],
+    truncated: r.truncated,
+    fetchFailed: r.failed,
+  });
 }
