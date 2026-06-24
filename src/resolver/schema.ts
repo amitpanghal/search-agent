@@ -53,21 +53,6 @@ const Odds = z
   .refine((o) => o.min !== undefined || o.max !== undefined, "need >=1 bound")
   .refine((o) => o.min === undefined || o.max === undefined || o.min <= o.max, "min <= max");
 
-const Selector = z.object({
-  subject: Subject,
-  market_concept: z.string().min(1),
-  // Over-inclusive shortlist of coarse market-type buckets that could carry this market (tokens validated
-  // against data/betoffertypes.json via BO_TYPE_KEYS). Narrows the fetch + resolve menu; omitted = keep all
-  // buckets. The resolver still picks the exact market — this only prunes, never commits.
-  bo_types: z.array(z.enum(BO_TYPE_KEYS)).optional(),
-  line: Line.optional(),
-  odds: Odds.optional(),
-  // Rank the market's outcomes by price instead of bounding it (sport-agnostic). `low` = shortest/lowest/
-  // best price first (favourite); `high` = longest/highest/biggest first (underdog). Optional
-  // — omitted = no price ranking. Carried per-selector into the FetchPlan (postFilters.outcomes), with line/odds.
-  odds_sort: z.enum(["low", "high"]).optional(),
-});
-
 const Stage = z
   .object({
     round: z.string().min(1).nullable(),
@@ -91,7 +76,12 @@ const Time = z
     "need a window, a kickoff band, or a fixture pick",
   );
 
-const EventScope = z.object({
+// PER-LEG scope (the per-leg-scope redesign): every `Selector` carries its OWN `scope` — the fixtures THAT
+// leg settles over. There is NO query-level `event_scope` and NO inheritance: when legs share a value
+// (competition / region / teams / a time window), the extractor REPEATS it on every leg's `scope`. `level` is
+// tagged independently per leg (a tournament-wide outcome is `competition`, a single match is `fixture`), so a
+// mixed-grain query keeps each leg's grain and a fixture leg keeps its `time` even when a sibling is competition.
+const Scope = z.object({
   teams: z.array(z.string().min(1)),
   players: z.array(z.object({ name: z.string().min(1), role: z.enum(["plays", "starts", "captain"]) })),
   competition: z.string().min(1).nullable(),
@@ -104,20 +94,37 @@ const EventScope = z.object({
   stage: Stage.nullable(),
   time: Time.nullable(),
   // In-play vs pre-match restriction (sport-agnostic). `live` = matches in progress; `prematch` = not yet
-  // started; `null` = no preference. Required-nullable like `region` (always present, value-or-null), so
-  // event_scope keeps its fixed shape. Disjoint from `time`: a bare clock phrase is a time window, not a state.
+  // started; `null` = no preference. Required-nullable like `region` (always present, value-or-null), so the
+  // scope keeps its fixed shape. Disjoint from `time`: a bare clock phrase is a time window, not a state.
   play_state: z.enum(["live", "prematch"]).nullable(),
+});
+export type Scope = z.infer<typeof Scope>;
+
+const Selector = z.object({
+  subject: Subject,
+  market_concept: z.string().min(1),
+  // Over-inclusive shortlist of coarse market-type buckets that could carry this market (tokens validated
+  // against data/betoffertypes.json via BO_TYPE_KEYS). Narrows the fetch + resolve menu; omitted = keep all
+  // buckets. The resolver still picks the exact market — this only prunes, never commits.
+  bo_types: z.array(z.enum(BO_TYPE_KEYS)).optional(),
+  line: Line.optional(),
+  odds: Odds.optional(),
+  // Rank the market's outcomes by price instead of bounding it (sport-agnostic). `low` = shortest/lowest/
+  // best price first (favourite); `high` = longest/highest/biggest first (underdog). Optional
+  // — omitted = no price ranking. Carried per-selector into the FetchPlan (postFilters.outcomes), with line/odds.
+  odds_sort: z.enum(["low", "high"]).optional(),
+  // This leg's own scope (per-leg-scope redesign) — grain, competition, teams, stage, time, state. Required.
+  scope: Scope,
 });
 
 // The extractor ALWAYS resolves and identifies the sport — `sport` is free text (any sport: "football",
 // "tennis", …), not a built-sport enum. It never abstains: a sport with no catalog simply fails downstream
 // at grounding, which is the right place for it, not extraction. So there is no `unsupported`/`ambiguous`
 // status. A query naming no market still resolves to the lone `main` sentinel selector (decision 24); a plan
-// always carries `sport`, `event_scope`, and >=1 selector.
+// always carries `sport` and >=1 selector, and every selector carries its own `scope`.
 export const QueryPlan = z.object({
   status: z.literal("resolved"),
   sport: z.string().min(1),
-  event_scope: EventScope,
   selectors: z.array(Selector).min(1),
 });
 export type QueryPlan = z.infer<typeof QueryPlan>;

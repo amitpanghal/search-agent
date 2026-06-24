@@ -17,8 +17,10 @@ import {
   batches,
   type BetOffer,
   type KEvent,
+  type Level,
 } from "./offering-client";
-import { filterEventsByTime, hasWindow, applyFixturePick, type TimeWindow } from "./time-window";
+import { filterEventsByTime, hasWindow, applyFixturePick, resolveTimeWindow, type TimeWindow } from "./time-window";
+import type { ResolvedLegScope } from "./ground-scope";
 import type { Menu, MenuItem } from "./live-menu-types";
 
 // ============================================================================
@@ -137,17 +139,16 @@ export async function runTasks(tasks: Task[], opts: { pool?: number; maxFanoutEv
 // participant endpoint is used regardless (Model P); grain only steers the GROUP call's options + fan-out.
 export type Grain = "competition" | "match";
 
-// Confident entity ids + grain — the only inputs RECALL needs (no market, no criterion).
+// The BROAD fetch inputs RECALL needs (per-leg-scope: the UNION across legs; no market, no criterion). Per-leg
+// time / grain / co-occurrence narrowing happens AFTER the fetch, in scopeMenu — never here.
 export type RecallInput = {
-  grain: Grain;
-  groupId?: number; // competition group id (used when no participant is named)
+  levels: Level[]; // union of leg levels — drives the group fan-out (covers both grains when legs differ)
+  groupIds?: number[]; // competition group ids (no participant named); >1 ⇒ parallel group fetches, split by event.groupId
   participantIds?: number[]; // team/player ids — when present, the participant endpoint wins (Model P)
   eventIds?: number[]; // explicit fixtures, when already pinned
-  playState?: "live" | "prematch";
-  window?: TimeWindow; // already-resolved time window, applied during the group fan-out
+  playState?: "live" | "prematch"; // bound server-side ONLY when every leg agrees (else broad; scopeMenu filters)
   maxFanoutEvents?: number;
   boTypes?: number[]; // union of the selectors' bo_types ids — the server-side `type=` fetch shrink
-  matchTeamIds?: number[]; // 2+ NAMED teams that must ALL appear in a fixture (head-to-head co-occurrence)
 };
 
 export type RecallResult = {
@@ -200,67 +201,81 @@ function fixtureHasAllTeams(e: KEvent, teamIds: number[]): boolean {
   return teamIds.every((id) => ids.has(id));
 }
 
-// Narrow the FETCHED result to the fixtures the query meant — endpoint-independent (every recall return funnels
-// through here). Two filters, both touching ONLY MATCH-tagged events (COMPETITION outrights + untagged are
-// always kept): (1) co-occurrence — 2+ NAMED teams keep only fixtures whose TEAM participants include ALL of
-// them (the head-to-head); (2) the time window — date/kickoff filter, then the "next game" pick. Offers for
-// dropped events go too and the menu is rebuilt, so menu/offers/events stay in lockstep. Nothing to apply ->
-// passthrough.
-export function finalize(
-  endpoint: RecallResult["endpoint"],
-  betOffers: BetOffer[],
-  events: KEvent[],
-  truncated: boolean,
-  window?: TimeWindow,
-  matchTeamIds?: number[],
-): RecallResult {
-  let evs = events;
-  let offs = betOffers;
-  const coocc = matchTeamIds && matchTeamIds.length >= 2 ? matchTeamIds : undefined;
-  const timed = window && (hasWindow(window) || window.pick) ? window : undefined;
-  if (coocc || timed) {
-    const isMatch = (e: KEvent) => levelOf(e.tags) === "fixture";
-    const others = events.filter((e) => !isMatch(e)); // COMPETITION + untagged -> always kept
-    let matches = events.filter(isMatch);
-    if (coocc) matches = matches.filter((e) => fixtureHasAllTeams(e, coocc)); // head-to-head, before the time pick
-    if (timed) {
-      matches = filterEventsByTime(matches, timed);
-      if (timed.pick) matches = applyFixturePick(matches, timed.pick);
-    }
-    evs = [...others, ...matches];
-    const keep = new Set(evs.map((e) => e.id));
-    offs = betOffers.filter((b) => b.eventId == null || keep.has(b.eventId));
-  }
-  return { endpoint, menu: buildMenu(offs), data: { betOffers: offs, events: evs }, truncated };
+// Build the BROAD RecallResult — NO narrowing (finalize is deleted): per-leg time/grain/co-occurrence narrowing
+// is scopeMenu's job now. The menu here is the broad menu; the orchestrator rebuilds a narrowed one per leg.
+function out(endpoint: RecallResult["endpoint"], betOffers: BetOffer[], events: KEvent[], truncated: boolean): RecallResult {
+  return { endpoint, menu: buildMenu(betOffers), data: { betOffers, events }, truncated };
 }
 
-// RECALL: deterministic endpoint + ids -> live menu, via the fetch engine above (cap detection + group
-// fan-out). Endpoint by Model P — a named participant wins; else the competition group. No criterion `type=`
-// bound (the market is deferred), so group calls fetch broad and rely on the fan-out for completeness.
+// RECALL: deterministic endpoint + ids -> the BROAD live data, via the fetch engine above (cap detection + group
+// fan-out). Endpoint by Model P — a named participant wins; else the competition group(s). No criterion `type=`
+// bound (market deferred), and NO time/grain/co-occurrence narrowing here — that is per-leg, in scopeMenu.
 export async function recall(input: RecallInput): Promise<RecallResult> {
+  const typeP = input.boTypes?.length ? { type: input.boTypes } : {};
   // explicit fixtures -> the event endpoint (via the fan-out batcher)
   if (input.eventIds?.length) {
-    const r = await fetchEventOffers(input.eventIds, input.boTypes?.length ? { type: input.boTypes } : {});
-    return finalize("event", r.betOffers, r.events, r.truncated, input.window, input.matchTeamIds);
+    const r = await fetchEventOffers(input.eventIds, typeP);
+    return out("event", r.betOffers, r.events, r.truncated);
   }
   // Model P: a named participant -> participant endpoint (even for competition-grain markets like the Golden Boot)
   if (input.participantIds?.length) {
-    const task: Task = { endpoint: "participant", ids: input.participantIds, params: input.boTypes?.length ? { type: input.boTypes } : {} };
-    const [res] = await runTasks([task], { window: input.window, maxFanoutEvents: input.maxFanoutEvents });
-    return finalize("participant", res!.betOffers, res!.events, res!.truncated, input.window, input.matchTeamIds);
+    const task: Task = { endpoint: "participant", ids: input.participantIds, params: typeP };
+    const [res] = await runTasks([task], { maxFanoutEvents: input.maxFanoutEvents });
+    return out("participant", res!.betOffers, res!.events, res!.truncated);
   }
-  // else the competition group; grain sets onlyCompetitions + the fan-out level, playState sets exclude flags
-  if (input.groupId == null) throw new Error("recall: need groupId, participantIds, or eventIds");
+  // else the competition group(s): ONE task per group, run in parallel (each keeps its own cap/fan-out handling).
+  // event.groupId differentiates them so scopeMenu can separate the legs. onlyCompetitions only when EVERY leg is
+  // competition-grain; the fan-out covers the UNION of levels.
+  if (!input.groupIds?.length) throw new Error("recall: need groupIds, participantIds, or eventIds");
+  const onlyComp = input.levels.length === 1 && input.levels[0] === "competition";
   const params: Task["params"] = {
-    ...(input.boTypes?.length ? { type: input.boTypes } : {}),
-    ...(input.grain === "competition" ? { onlyCompetitions: true } : {}),
+    ...typeP,
+    ...(onlyComp ? { onlyCompetitions: true } : {}),
     ...(input.playState === "live" ? { excludePrematch: true } : input.playState === "prematch" ? { excludeLive: true } : {}),
   };
-  const fanout: NonNullable<Task["fanout"]> = {
-    levels: input.grain === "competition" ? ["competition"] : ["fixture"],
-    ...(input.playState ? { playState: input.playState } : {}),
-  };
-  const task: Task = { endpoint: "group", ids: [input.groupId], params, fanout };
-  const [res] = await runTasks([task], { window: input.window, maxFanoutEvents: input.maxFanoutEvents });
-  return finalize("group", res!.betOffers, res!.events, res!.truncated, input.window, input.matchTeamIds);
+  const fanout: NonNullable<Task["fanout"]> = { levels: input.levels, ...(input.playState ? { playState: input.playState } : {}) };
+  const tasks: Task[] = input.groupIds.map((id) => ({ endpoint: "group", ids: [id], params, fanout }));
+  const results = await runTasks(tasks, { maxFanoutEvents: input.maxFanoutEvents });
+  const evById = new Map<number, KEvent>();
+  for (const r of results) for (const e of r.events) evById.set(e.id, e);
+  return out("group", results.flatMap((r) => r.betOffers), [...evById.values()], results.some((r) => r.truncated));
+}
+
+// scopeMenu — narrow the BROAD recall data to ONE leg's scope, then build that leg's menu (replaces finalize's
+// global narrowing). Every filter is per-leg: grain (the leg's level tag), competition (event.groupId), a per-leg
+// live/prematch cut (when the broad fetch couldn't bind it), then the MATCH-only filters — head-to-head
+// co-occurrence and the time window + "next game" pick. COMPETITION outrights + untagged events pass the
+// MATCH-only filters (same discipline finalize had), and a MISSING level/groupId is kept (never drop on missing
+// data). Returns the menu + narrowed offers/events + kept event-ids (so one leg's events stay out of another's).
+export type ScopedMenu = { menu: Menu; offers: BetOffer[]; events: KEvent[]; eventIds: number[] };
+export function scopeMenu(
+  data: { betOffers: BetOffer[]; events: KEvent[] },
+  leg: ResolvedLegScope,
+  opts: { now?: Date } = {},
+): ScopedMenu {
+  const compId = leg.competition?.tier === "confident" ? leg.competition.candidates[0]!.id : null;
+  const teamIds = leg.teams.filter((t) => t.tier === "confident").flatMap((t) => t.candidates.map((c) => c.id));
+  const window = leg.time ? resolveTimeWindow(leg.time, { now: opts.now ?? new Date() }) : undefined;
+
+  let evs = data.events.filter((e) => {
+    const el = levelOf(e.tags);
+    if (el && el !== leg.level) return false; // grain (untagged kept)
+    if (compId != null && e.groupId != null && e.groupId !== compId) return false; // competition (no-groupId kept)
+    if (leg.playState === "prematch" && e.state !== "NOT_STARTED") return false;
+    if (leg.playState === "live" && e.state === "NOT_STARTED") return false;
+    return true;
+  });
+  // MATCH-only filters (COMPETITION + untagged always kept through these).
+  const isMatch = (e: KEvent) => levelOf(e.tags) === "fixture";
+  const others = evs.filter((e) => !isMatch(e));
+  let matches = evs.filter(isMatch);
+  if (teamIds.length >= 2) matches = matches.filter((e) => fixtureHasAllTeams(e, teamIds)); // head-to-head
+  if (window && (hasWindow(window) || window.pick)) {
+    matches = filterEventsByTime(matches, window);
+    if (window.pick) matches = applyFixturePick(matches, window.pick);
+  }
+  evs = [...others, ...matches];
+  const keep = new Set(evs.map((e) => e.id));
+  const offers = data.betOffers.filter((b) => b.eventId == null || keep.has(b.eventId));
+  return { menu: buildMenu(offers), offers, events: evs, eventIds: [...keep] };
 }

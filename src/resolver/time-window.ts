@@ -5,10 +5,10 @@
 // late/early = the last/first kickoff that day); a phrase we can't parse is left UNRESOLVED for the clarify
 // gate (Phase 5). Dates are handled in UTC to match `event.start` (e.g. "2026-06-18T16:00:00Z").
 
-import type { ResolvedScope } from "./ground-scope";
+import type { Scope } from "./schema";
 import type { KEvent } from "./offering-client";
 
-type TimeField = NonNullable<ResolvedScope["time"]>;
+type TimeField = NonNullable<Scope["time"]>;
 type Kickoff = { afterHour?: number; beforeHour?: number; relative?: "late" | "early" };
 export type FixturePick = { order: "earliest" | "latest"; count: number };
 export type TimeWindow = { from?: Date; to?: Date; kickoff?: Kickoff; pick?: FixturePick; unresolved?: boolean };

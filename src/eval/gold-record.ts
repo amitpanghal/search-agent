@@ -37,7 +37,7 @@ export type Grounded = z.infer<typeof Grounded>;
 const GoldSubject = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("player"), name: Grounded }),
   z.object({ kind: z.literal("team"), name: Grounded }),
-  z.object({ kind: z.literal("either_match_team") }), // bare -- teams come from event_scope
+  z.object({ kind: z.literal("either_match_team") }), // bare -- teams come from the leg's scope
   z.object({ kind: z.literal("event") }), // bare -- whole-match / no named owner
   // soft (recall-resolve Role 1): no owner + reads at >1 level -- carry the plausible kinds, don't pick
   z.object({
@@ -85,14 +85,6 @@ const MarketConcept = z.union([
   z.object({ none: z.literal(true), accept: z.array(z.string()).default([]) }),
 ]);
 
-const GoldSelector = z.object({
-  subject: GoldSubject,
-  market_concept: MarketConcept, // exact criterion id(s) OR an offer-of-alternatives (see MarketConcept)
-  line: Line.optional(),
-  odds: Odds.optional(),
-  odds_sort: z.enum(["low", "high"]).optional(), // mirrors Selector (schema.ts); plain enum, not grounded
-});
-
 const Stage = z
   .object({
     round: z.string().min(1).nullable(), // text -- resolved by the live layer (E2)
@@ -117,7 +109,9 @@ const Time = z
     "need a window, a kickoff band, or a fixture pick"
   );
 
-const GoldEventScope = z.object({
+// PER-LEG scope (the grounded twin of schema.ts `Scope`): every selector carries its OWN grounded scope.
+// Shared scope (competition/teams/time) is repeated on every selector — mirrors the extractor output.
+const GoldScope = z.object({
   teams: z.array(Grounded), // each team id; may be empty (market-only query)
   players: z.array(z.object({ name: Grounded, role: z.enum(["plays", "starts", "captain"]) })),
   competition: Grounded.nullable(), // competition (group) id
@@ -128,6 +122,15 @@ const GoldEventScope = z.object({
   play_state: z.enum(["live", "prematch"]).nullable().default(null), // mirrors Selector-side play_state (schema.ts); .default(null) so pre-existing gold rows still parse
 });
 
+const GoldSelector = z.object({
+  subject: GoldSubject,
+  market_concept: MarketConcept, // exact criterion id(s) OR an offer-of-alternatives (see MarketConcept)
+  line: Line.optional(),
+  odds: Odds.optional(),
+  odds_sort: z.enum(["low", "high"]).optional(), // mirrors Selector (schema.ts); plain enum, not grounded
+  scope: GoldScope, // per-leg scope (mirrors schema.ts Selector.scope)
+});
+
 // the expected plan: always resolved. The extractor never abstains — it identifies the sport (free text,
 // graded loosely) and resolves; an unsupported sport fails at grounding, not extraction. A marketless query
 // is the lone `main` sentinel selector (market_concept {main:true}), graded like the former fixture_lookup
@@ -135,7 +138,6 @@ const GoldEventScope = z.object({
 const GoldPlan = z.object({
   status: z.literal("resolved"),
   sport: z.string().min(1),
-  event_scope: GoldEventScope,
   selectors: z.array(GoldSelector).min(1),
 });
 

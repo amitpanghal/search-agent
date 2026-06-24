@@ -47,7 +47,7 @@ function idCases(gold: GoldRecord[]): IdCase[] {
       const mc = sel.market_concept;
       if (!("id" in mc)) continue; // only EXACT id cells (offer/none/main are subject-bound or sentinels)
       if (!mc.accept.length) continue; // no canonical phrasing to resolve against — skip (gold-authoring gap)
-      out.push({ id: rec.id, subjectKind: sel.subject.kind, accept: mc.accept, level: rec.expect.event_scope.level, wantIds: Array.isArray(mc.id) ? mc.id : [mc.id] });
+      out.push({ id: rec.id, subjectKind: sel.subject.kind, accept: mc.accept, level: sel.scope.level, wantIds: Array.isArray(mc.id) ? mc.id : [mc.id] });
     }
   }
   return out;

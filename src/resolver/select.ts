@@ -110,9 +110,12 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
     const byId = cands.filter(({ o }) => o.participantId === spec.subjectId);
     if (byId.length) {
       pool = byId;
-      // OUTRIGHT pick: one named outcome (label is the participant, not a direction word) with nothing left
-      // to narrow -> that outcome IS the bet, returned directly (sidesteps the direction gate it can't pass).
-      if (byId.length === 1 && spec.line == null && spec.dir == null && dirOf(byId[0]!.o) == null) return pick(byId[0]!.o);
+      // OUTRIGHT pick: one named outcome (label is the participant, not a direction word) with no line and only
+      // the DEFAULT affirmative left to satisfy -> that outcome IS the bet, returned directly (sidesteps the
+      // direction gate it can't pass). A superlative/outright ("most goals", "golden ball", "first goalscorer")
+      // arrives as binary "yes", but the named outcome has no yes/no direction, so the (2) gate would wrongly
+      // drop it — so accept dir null OR "yes" here; a real "no" still falls through (a genuine negation).
+      if (byId.length === 1 && spec.line == null && dirOf(byId[0]!.o) == null && (spec.dir == null || spec.dir === "yes")) return pick(byId[0]!.o);
     } else if (!cands.some(({ o }) => dirOf(o) === "yes")) {
       return absent("subject-absent"); // market lists OTHER participants, not the subject (and no owner-Yes)
     }

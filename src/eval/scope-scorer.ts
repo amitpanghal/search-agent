@@ -30,29 +30,33 @@ export type EntityGrade = {
   reason?: string;
 };
 
-type GoldScope = GoldRecord["expect"]["event_scope"];
+type GoldScope = GoldRecord["expect"]["selectors"][number]["scope"];
 type GroundedCell = { id: number | number[]; accept: string[]; tier?: ScopeTier };
 
 const idsOf = (cell: GroundedCell): number[] => (Array.isArray(cell.id) ? cell.id : [cell.id]);
 const textOf = (cell: GroundedCell): string => cell.accept[0] ?? "";
 
 // Build a QueryPlan straight from the gold's entity text — the deterministic input to groundScope.
-function syntheticPlan(es: GoldScope): QueryPlan {
+function syntheticPlan(sc: GoldScope): QueryPlan {
   return {
     status: "resolved",
     sport: "FOOTBALL",
-    event_scope: {
-      teams: es.teams.map(textOf),
-      players: es.players.map((p) => ({ name: textOf(p.name), role: p.role })),
-      competition: es.competition ? textOf(es.competition) : null,
-      region: null, // fed via opts.region below (region-as-given)
-      level: es.level,
-      stage: es.stage,
-      time: es.time ? { ...es.time, fixture_pick: null } : null, // gold mirror predates fixture_pick; default null
-
-      play_state: null, // scope rows don't exercise play_state; fixed null
-    },
-    selectors: [{ subject: { kind: "event" }, market_concept: "main" }],
+    selectors: [
+      {
+        subject: { kind: "event" },
+        market_concept: "main",
+        scope: {
+          teams: sc.teams.map(textOf),
+          players: sc.players.map((p) => ({ name: textOf(p.name), role: p.role })),
+          competition: sc.competition ? textOf(sc.competition) : null,
+          region: null, // fed via opts.region below (region-as-given)
+          level: sc.level,
+          stage: sc.stage,
+          time: sc.time ? { ...sc.time, fixture_pick: sc.time.fixture_pick ?? null } : null,
+          play_state: null, // scope rows don't exercise play_state; fixed null
+        },
+      },
+    ],
   };
 }
 
@@ -80,19 +84,20 @@ function gradeCell(rec: string, type: EntityType, cell: GroundedCell, res: Entit
 
 // Grade every entity cell of one gold record. Empty if the record carries no scope entities.
 export function gradeScope(gold: GoldRecord): EntityGrade[] {
-  const es = gold.expect.event_scope;
-  const hasEntities = es.region != null || es.competition != null || es.teams.length > 0 || es.players.length > 0;
+  // Migrated golds repeat scope on every leg, so leg 0's scope carries the record's entities.
+  const sc = gold.expect.selectors[0]!.scope;
+  const hasEntities = sc.region != null || sc.competition != null || sc.teams.length > 0 || sc.players.length > 0;
   if (!hasEntities) return [];
 
-  const regionText = es.region ? textOf(es.region) : undefined;
-  const resolved = groundScope(syntheticPlan(es), { region: regionText });
-  const unit = resolved.units[0]!;
+  const regionText = sc.region ? textOf(sc.region) : undefined;
+  const resolved = groundScope(syntheticPlan(sc), { region: regionText });
+  const leg = resolved.legs[0]!;
   const grades: EntityGrade[] = [];
 
-  if (es.region && resolved.region) grades.push(gradeCell(gold.id, "region", es.region, resolved.region));
-  if (es.competition && resolved.competition) grades.push(gradeCell(gold.id, "competition", es.competition, resolved.competition));
-  es.teams.forEach((t, i) => { if (unit.teams[i]) grades.push(gradeCell(gold.id, "team", t, unit.teams[i]!)); });
-  es.players.forEach((p, i) => { if (unit.players[i]) grades.push(gradeCell(gold.id, "player", p.name, unit.players[i]!)); });
+  if (sc.region && leg.region) grades.push(gradeCell(gold.id, "region", sc.region, leg.region));
+  if (sc.competition && leg.competition) grades.push(gradeCell(gold.id, "competition", sc.competition, leg.competition));
+  sc.teams.forEach((t, i) => { if (leg.teams[i]) grades.push(gradeCell(gold.id, "team", t, leg.teams[i]!)); });
+  sc.players.forEach((p, i) => { if (leg.players[i]) grades.push(gradeCell(gold.id, "player", p.name, leg.players[i]!)); });
   return grades;
 }
 

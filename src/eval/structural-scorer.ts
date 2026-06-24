@@ -171,9 +171,9 @@ function isPlanMarketless(p: ResolvedPlan): boolean {
   return p.selectors.length === 1 && p.selectors[0]!.market_concept === "main";
 }
 
-function eventScopeDiffs(
-  ge: ResolvedGold["event_scope"],
-  pe: ResolvedPlan["event_scope"],
+function scopeDiffs(
+  ge: ResolvedGold["selectors"][number]["scope"],
+  pe: ResolvedPlan["selectors"][number]["scope"],
 ): { facet: ScopeFacet; msg: string }[] {
   const out: { facet: ScopeFacet; msg: string }[] = [];
 
@@ -238,7 +238,7 @@ export function scoreRun(
     if (!isPlanMarketless(plan)) {
       failures.push(`marketless: expected a single "main" selector, got ${JSON.stringify(plan.selectors.map((s) => s.market_concept))}`);
     }
-    for (const d of eventScopeDiffs(expect.event_scope, plan.event_scope)) {
+    for (const d of scopeDiffs(expect.selectors[0]!.scope, plan.selectors[0]!.scope)) {
       (HARD_FIXTURE_FACETS.has(d.facet) ? failures : soft).push(d.msg);
     }
     return { pass: failures.length === 0, failures, soft };
@@ -355,8 +355,9 @@ export function scoreRun(
     }
   }
 
-  // 5. event_scope (soft, tracked only — on a market query the market id is the costly facet)
-  soft.push(...eventScopeDiffs(expect.event_scope, plan.event_scope).map((d) => d.msg));
+  // 5. scope (soft, tracked only — on a market query the market id is the costly facet). Migrated golds repeat
+  // scope per leg, so leg 0's scope is the representative diff (per-leg-pair diffs are a later refinement).
+  soft.push(...scopeDiffs(expect.selectors[0]!.scope, plan.selectors[0]!.scope).map((d) => d.msg));
 
   return { pass: failures.length === 0, failures, soft };
 }

@@ -16,10 +16,12 @@
 //                                          cut: "Bruno Fernandes" + Portugal in scope -> the Portugal one)
 // Anything not confidently scoped stays recall-first (top-k, tier `ambiguous`/`shortlist`) for the LLM.
 //
-// This sprint: the extractor still emits ONE flat scope, so groundScope wraps it into a single ScopeUnit
-// (the units[] shape is ready for multi-fixture, but always length 1 here).
+// Per-leg-scope redesign: each selector carries its OWN scope, so groundScope runs the cascade PER leg and
+// returns one ResolvedLegScope per selector (index-aligned with plan.selectors). A memo cache keyed by entity
+// text + scope context means a value repeated across legs (the same competition on every leg) is grounded once
+// — and identical legs share the SAME EntityResolution reference, the substrate the Phase 4 entity gate dedups on.
 
-import type { QueryPlan } from "./schema";
+import type { QueryPlan, Scope } from "./schema";
 import { loadScopeCatalog, type ScopeCatalog } from "./scope-catalog";
 import { fold, contentTokens, buildLexicon, type Lexicon } from "./lexical";
 
@@ -41,26 +43,26 @@ export type Candidate = {
 // A resolved scope cell (no `kind` / no `method` — kind is implied by which slot it sits in).
 export type EntityResolution = { text: string; tier: ScopeTier; candidates: Candidate[] };
 
-export type ScopeUnit = {
+// One grounded leg — the per-selector scope mapped to ids (index-aligned with plan.selectors). Replaces the old
+// flat ResolvedScope + single ScopeUnit: every selector now carries its own region/competition/teams/.../level.
+export type ResolvedLegScope = {
+  region: EntityResolution | null;
+  competition: EntityResolution | null;
+  level: "fixture" | "competition";
+  stage: Scope["stage"];
+  time: Scope["time"];
+  playState: Scope["play_state"]; // live/prematch restriction, carried to planFetch
   teams: EntityResolution[];
   players: EntityResolution[];
-  playerRoles: QueryPlan["event_scope"]["players"][number]["role"][]; // role per player, index-aligned with `players`, carried for planFetch
-  // The named player that OWNS each selector's market (the selector subject), grounded — index-aligned with
-  // `selectors`, null where the subject isn't a named player. Distinct from `players` (which scope WHICH fixture):
-  // these are the market owners planFetch filters outcomes to. See extractor-prompt event_scope.players note.
-  subjectPlayers: (EntityResolution | null)[];
-  selectors: QueryPlan["selectors"]; // market selectors carried through for planFetch
+  playerRoles: Scope["players"][number]["role"][]; // role per player, index-aligned with `players`
+  // The named player that OWNS this leg's market (the selector subject), grounded — null where the subject isn't
+  // a named player. Distinct from `players` (which scope WHICH fixture): the market owner planFetch filters to.
+  subjectPlayer: EntityResolution | null;
 };
 
 export type ResolvedScope = {
   sport: string;
-  region: EntityResolution | null;
-  competition: EntityResolution | null;
-  level: "fixture" | "competition";
-  stage: QueryPlan["event_scope"]["stage"];
-  time: QueryPlan["event_scope"]["time"];
-  playState: QueryPlan["event_scope"]["play_state"]; // live/prematch restriction, carried to planFetch
-  units: ScopeUnit[];
+  legs: ResolvedLegScope[]; // index-aligned with plan.selectors
 };
 
 // ---- knobs (precision-biased; each fails toward clarify, never a false confident) ----
@@ -257,31 +259,62 @@ export function groundPlayer(
   return { text, tier: "none", candidates: [] };
 }
 
-// ---- the cascade + flat-plan -> single-unit adapter ----
+// ---- the cascade, run PER leg with a memo cache ----
 // `opts.region` lets a caller (the eval gate) feed region as GIVEN, exactly as the market grounder is fed a
-// clean market_concept — so a flaky extractor LLM can't redden a grounder test. Falls back to the
-// extractor's event_scope.region otherwise.
+// clean market_concept — so a flaky extractor LLM can't redden a grounder test. Applied to every leg; falls
+// back to each leg's own scope.region otherwise.
 export function groundScope(plan: QueryPlan, opts: { region?: string | null } = {}): ResolvedScope {
   const cat = loadScopeCatalog();
-  const es = plan.event_scope;
 
-  const regionText = opts.region !== undefined ? opts.region : es.region;
-  const region = regionText ? groundRegion(regionText, cat) : null;
-  const regionBranch = region && region.tier === "confident" ? region.candidates[0]!.id : null;
+  // Memo by entity text + scope context: a value repeated across legs (the same competition on every leg, a
+  // shared team) is grounded once, and identical references are reused. Player/subject keys fold in compId +
+  // teamIds because those change the result. ` ` joins parts (never present in folded text).
+  const memo = new Map<string, EntityResolution>();
+  const once = (key: string, fn: () => EntityResolution): EntityResolution => {
+    let r = memo.get(key);
+    if (r === undefined) memo.set(key, (r = fn()));
+    return r;
+  };
 
-  const competition = es.competition ? groundCompetition(es.competition, regionBranch, cat) : null;
-  const compId = competition && competition.tier === "confident" ? competition.candidates[0]!.id : null;
+  const legs: ResolvedLegScope[] = plan.selectors.map((sel) => {
+    const sc = sel.scope;
 
-  // teams first (a confident team scopes the player pool — the homonym cut), then players.
-  const teams = es.teams.map((t) => groundTeam(t, cat));
-  const teamIds = teams.filter((r) => r.tier === "confident").flatMap((r) => r.candidates.map((c) => c.id));
-  const players = es.players.map((p) => groundPlayer(p.name, { compId, teamIds }, cat));
+    const regionText = opts.region !== undefined ? opts.region : sc.region;
+    const region = regionText ? once(`region ${fold(regionText)}`, () => groundRegion(regionText, cat)) : null;
+    const regionBranch = region && region.tier === "confident" ? region.candidates[0]!.id : null;
 
-  // Ground the market-OWNER player named on each selector subject (recall: same player pool as event_scope.players).
-  const subjectPlayers = plan.selectors.map((sel) =>
-    sel.subject.kind === "player" && sel.subject.name ? groundPlayer(sel.subject.name, { compId, teamIds }, cat) : null,
-  );
+    const competition = sc.competition
+      ? once(`comp ${fold(sc.competition)} ${regionBranch}`, () => groundCompetition(sc.competition!, regionBranch, cat))
+      : null;
+    const compId = competition && competition.tier === "confident" ? competition.candidates[0]!.id : null;
 
-  const unit: ScopeUnit = { teams, players, playerRoles: es.players.map((p) => p.role), subjectPlayers, selectors: plan.selectors };
-  return { sport: plan.sport, region, competition, level: es.level, stage: es.stage, time: es.time, playState: es.play_state, units: [unit] };
+    // teams first (a confident team scopes the player pool — the homonym cut), then players.
+    const teams = sc.teams.map((t) => once(`team ${fold(t)}`, () => groundTeam(t, cat)));
+    const teamIds = teams.filter((r) => r.tier === "confident").flatMap((r) => r.candidates.map((c) => c.id));
+    const pKey = (name: string) => `player ${fold(name)} ${compId} ${[...teamIds].sort((a, b) => a - b).join(",")}`;
+    const players = sc.players.map((p) => once(pKey(p.name), () => groundPlayer(p.name, { compId, teamIds }, cat)));
+
+    // the market-OWNER player named on this leg's subject (recall: same player pool as scope.players).
+    // Capture the name in a local const so the memo closure keeps the narrowing (TS drops property-narrowing
+    // inside a closure).
+    const subjName = sel.subject.kind === "player" ? sel.subject.name : undefined;
+    const subjectPlayer = subjName
+      ? once(pKey(subjName), () => groundPlayer(subjName, { compId, teamIds }, cat))
+      : null;
+
+    return {
+      region,
+      competition,
+      level: sc.level,
+      stage: sc.stage,
+      time: sc.time,
+      playState: sc.play_state,
+      teams,
+      players,
+      playerRoles: sc.players.map((p) => p.role),
+      subjectPlayer,
+    };
+  });
+
+  return { sport: plan.sport, legs };
 }

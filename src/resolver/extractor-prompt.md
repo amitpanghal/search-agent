@@ -27,18 +27,29 @@ basketball). If nothing disambiguates, pick the most likely sport for the wordin
 `unsupported` and **no** `ambiguous` outcome: a sport with no catalog simply fails later at grounding —
 that is the right place for it, not extraction.
 
-A resolved plan always carries `sport`, `event_scope`, and **≥1 selector**. A query that names no
-market still resolves — it gets one sentinel selector `{ subject: event, market_concept: "main" }`
-(Step 3), meaning "this fixture's main market". **Never emit zero selectors.**
+A resolved plan always carries `sport` and **≥1 selector**, and **every selector carries its own `scope`**
+(Step 2). A query that names no market still resolves — it gets one sentinel selector
+`{ subject: event, market_concept: "main", scope: {…} }` (Step 3), meaning "this fixture's main market".
+**Never emit zero selectors.**
 
 Neutral examples:
 - "corner markets priced over 1.5" → sport "football" (inferred from the market vocabulary).
 - "Djokovic vs Alcaraz total games over 22.5" → sport "tennis";
 ---
 
-## Step 2 — Scope the event (`event_scope`)
+## Step 2 — Scope each selector (`scope`)
 
-Which fixtures the query is about. Fields:
+**Every selector carries its own `scope`** — the fixtures THAT leg settles over. There is **no** query-level
+scope and **no inheritance**: when legs share a value (competition, region, teams, a time window), **repeat it on
+every leg's `scope`**. Two rules make or break multi-leg queries:
+
+- **Tag `level` independently per leg**, by what settles THAT leg — a tournament-wide outcome (outright winner,
+  an award, top scorer / most goals, group winner, a named team's progression) is `competition`; a single-match
+  outcome is `fixture`. Two legs in one query may differ.
+- **Keep a fixture leg's `time`/`fixture_pick` even when a sibling leg is `competition`** — "next game", "on
+  Sunday", "tonight" belong to the fixture leg they describe; a competition leg never absorbs them.
+
+Fields (each leg's `scope`):
 
 - **`teams`**: named teams that scope the match(es), as text. "Germany vs Italy" →
   `["Germany","Italy"]`. May be empty for a market-only query.
@@ -64,7 +75,8 @@ Which fixtures the query is about. Fields:
   - `round`: text of the round ("group stage", "round of 16", "quarterfinal", "semifinal",
     "final", "knockout"), else `null`.
   - At least one of `round`/`ordinal` must be set when `stage` is present.
-- **`time`** (or `null`) — as `{ date_window, kickoff_time_of_day, fixture_pick }`:
+- **`time`** (or `null`) — as `{ date_window, kickoff_time_of_day, fixture_pick }`. Emit `null` when the leg
+  states no timing — **never an all-null object** `{date_window:null, kickoff_time_of_day:null, fixture_pick:null}`:
   - `date_window`: `{ value, anchor }`. `value` = a CANONICAL TOKEN, never free text — map any
     date phrase to the nearest of: `today` (also "this evening", "later today", "right now"),
     `tonight`, `tomorrow`, `weekend`, a **named weekday** `monday`…`sunday` (any single day-of-week
@@ -80,8 +92,8 @@ Which fixtures the query is about. Fields:
     (next/upcoming/first) or `"latest"` (last/most recent); `count` = the number named (default 1). A date
     range stays `date_window`; "late kick-offs" stays `kickoff_time_of_day`; a round ordinal ("last group
     game") stays `stage` — never set with `stage.ordinal`.
-- **`play_state`** (`"live" | "prematch"`, or `null`) — whether the query restricts to matches
-  **in progress** or **not yet started**. "live / in-play / playing now / currently on" → `"live"`;
+- **`play_state`** (`"live" | "prematch"`, or `null`) — whether THIS LEG restricts to matches
+  **in progress** or **not yet started** (per-leg, like every other scope field). "live / in-play / playing now / currently on" → `"live"`;
   "pre-match / before kick-off / not started" → `"prematch"`; else `null`. **Only in-progress wording
   sets `live`** — a bare clock phrase ("now", "today", "next 48 hours", "this week") is a `time`
   window (anchor `now`), never `play_state`. The two can co-occur ("live markets right now" →
@@ -103,7 +115,7 @@ Neutral examples:
 ## Step 3 — Extract the selectors (one per market)
 
 Each market in the query becomes one selector: `{ subject, market_concept, bo_types?, line?, odds?,
-odds_sort? }`.
+odds_sort?, scope }` — every selector gets its own `scope` (Step 2).
 
 ### First: name the market for each request — the `main` fallback
 
@@ -131,7 +143,7 @@ never downgrades a named market to `main`.
 
 _Neutral examples:_
 - "is the Italy opener on the schedule yet" → one selector `{ subject: { kind: "event" }, market_concept: "main" }`.
-- "what games are on this weekend" → one `main` selector; `event_scope.time =
+- "what games are on this weekend" → one `main` selector with `scope.time =
   { date_window: { value: "weekend", anchor: "now" }, kickoff_time_of_day: null, fixture_pick: null }`.
 - "Germany vs Italy match result" → one selector
   `{ subject: { kind: "event" }, market_concept: "match result" }` (an outcome, not the event).
@@ -161,7 +173,7 @@ Pick one `kind` — or `soft` when genuinely two-faced (below):
 
 **Binding rule:** with no named owner, choose by **what gets priced** (subject kinds above; rule 1).
 One case isn't covered there — **2+ specifically-named players sharing one line you can't split**:
-emit the nameless `player` subject but list each named player in `event_scope.players` (role
+emit the nameless `player` subject but list each named player in that selector's `scope.players` (role
 `plays`) so the names survive.
 
 **Coreference:** resolve "his"/"their"/"its" to the concrete name — never emit the pronoun.
@@ -310,9 +322,11 @@ A price word with **no number** is a sort; a **number** (bare or "priced/odds/at
 
 ## One full worked example (neutral — not a test query)
 
-Query: *"Germany vs Italy quarterfinal, with Musiala interceptions over
-1.5 priced above 2.2, Barella starting, team total tackles over 18.5, and to-win-to-nil odds
-under 3.0"*
+A mixed-grain query: leg 0 settles tournament-wide (`competition`), leg 1 settles in one match (`fixture`).
+Note the shared `competition` is **repeated on every leg's `scope`**, and the fixture leg **keeps its
+`fixture_pick`** even though the other leg is `competition`.
+
+Query: *"Mbappé most goals in WC26, and over 2.5 goals in France's next game priced above 1.90"*
 
 Plan:
 
@@ -320,33 +334,37 @@ Plan:
 {
   "status": "resolved",
   "sport": "football",
-  "event_scope": {
-    "teams": ["Germany", "Italy"],
-    "players": [{ "name": "Barella", "role": "starts" }],
-    "competition": null,
-    "region": null,
-    "level": "fixture",
-    "stage": { "round": "quarterfinal"},
-    "time": null,
-    "play_state": null
-  },
   "selectors": [
     {
-      "subject": { "kind": "player", "name": "Musiala" },
-      "market_concept": "interceptions",
-      "line": { "kind": "numeric", "value": 1.5, "direction": "over" },
-      "odds": { "min": 2.2 }
-    },
-    {
-      "subject": { "kind": "either_match_team" },
-      "market_concept": "total tackles",
-      "line": { "kind": "numeric", "value": 18.5, "direction": "over" }
-    },
-    {
-      "subject": { "kind": "either_match_team" },
-      "market_concept": "to win to nil",
+      "subject": { "kind": "player", "name": "Mbappé" },
+      "market_concept": "most goals",
       "line": { "kind": "binary", "direction": "yes" },
-      "odds": { "max": 3.0 }
+      "scope": {
+        "level": "competition",
+        "competition": "World Cup 2026",
+        "region": null,
+        "teams": [],
+        "players": [],
+        "stage": null,
+        "time": null,
+        "play_state": null
+      }
+    },
+    {
+      "subject": { "kind": "event" },
+      "market_concept": "goals",
+      "line": { "kind": "numeric", "value": 2.5, "direction": "over" },
+      "odds": { "min": 1.90 },
+      "scope": {
+        "level": "fixture",
+        "competition": "World Cup 2026",
+        "region": null,
+        "teams": ["France"],
+        "players": [],
+        "stage": null,
+        "time": { "date_window": null, "kickoff_time_of_day": null, "fixture_pick": { "order": "earliest", "count": 1 } },
+        "play_state": null
+      }
     }
   ]
 }

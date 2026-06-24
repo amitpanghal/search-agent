@@ -77,26 +77,46 @@ function buildEntityCell(ref: CellRef, res: EntityResolution, ground: (phrase: s
   };
 }
 
-function buildEntityCells(scope: ResolvedScope): Cell[] {
+// Where a grounded entity sits in the per-leg scope, so a settled pick fans back to every leg that referenced it.
+type Slot = "region" | "competition" | "team" | "player" | "subject";
+type Placement = { legIdx: number; slot: Slot; idx: number };
+
+// Build the gated cells across ALL legs, DEDUPED by distinct grounded entity. Phase 3's memo cache makes an
+// entity repeated across legs the SAME EntityResolution reference, so identity dedup == "one cell per distinct
+// entity": gate it once, record every placement, then fan the pick back per leg in applyOutcomes (never re-ask
+// the same clarification per leg). Returns the cells (for the single decide batch) + ref->placements (writeback).
+function buildEntityCells(scope: ResolvedScope): { cells: Cell[]; places: Map<CellRef, Placement[]> } {
   const scat = loadScopeCatalog();
-  const unit = scope.units[0]!;
   const cells: Cell[] = [];
+  const places = new Map<CellRef, Placement[]>();
+  const refByEntity = new Map<EntityResolution, CellRef>(); // identity dedup: a shared grounding -> its one cell
+  const count: Record<Slot, number> = { region: 0, competition: 0, team: 0, player: 0, subject: 0 };
 
-  // Build-time confident scoping for the reground closures (per-cell, no cascade re-run).
-  const regionBranch = scope.region?.tier === "confident" ? scope.region.candidates[0]!.id : null;
-  const compId = scope.competition?.tier === "confident" ? scope.competition.candidates[0]!.id : null;
-  const teamIds = unit.teams.filter((t) => t.tier === "confident").flatMap((t) => t.candidates.map((c) => c.id));
-
-  const pushEntity = (ref: CellRef, res: EntityResolution | null, ground: (phrase: string) => EntityResolution) => {
-    if (res && SENT_TIERS.has(res.tier)) cells.push(buildEntityCell(ref, res, ground));
+  const add = (slot: Slot, res: EntityResolution | null, legIdx: number, idx: number, ground: (p: string) => EntityResolution) => {
+    if (!res || !SENT_TIERS.has(res.tier)) return; // confident/variants: already settled in the clone, no cell
+    let ref = refByEntity.get(res);
+    if (ref === undefined) {
+      ref = `${slot}:${count[slot]++}` as CellRef;
+      refByEntity.set(res, ref);
+      places.set(ref, []);
+      cells.push(buildEntityCell(ref, res, ground));
+    }
+    places.get(ref)!.push({ legIdx, slot, idx });
   };
-  pushEntity("region", scope.region, (p) => groundRegion(p, scat));
-  pushEntity("competition", scope.competition, (p) => groundCompetition(p, regionBranch, scat));
-  unit.teams.forEach((t, i) => pushEntity(`team:${i}`, t, (p) => groundTeam(p, scat)));
-  unit.players.forEach((pl, i) => pushEntity(`player:${i}`, pl, (p) => groundPlayer(p, { compId, teamIds }, scat)));
-  // Market-owner players (selector subjects) settle in the SAME batch — gated and re-grounded like a player cell.
-  unit.subjectPlayers.forEach((sp, i) => pushEntity(`subject:${i}`, sp, (p) => groundPlayer(p, { compId, teamIds }, scat)));
-  return cells;
+
+  // Per-leg confident scoping for the reground closures (the leg this entity belongs to; deduped legs share it).
+  scope.legs.forEach((leg, legIdx) => {
+    const regionBranch = leg.region?.tier === "confident" ? leg.region.candidates[0]!.id : null;
+    const compId = leg.competition?.tier === "confident" ? leg.competition.candidates[0]!.id : null;
+    const teamIds = leg.teams.filter((t) => t.tier === "confident").flatMap((t) => t.candidates.map((c) => c.id));
+    add("region", leg.region, legIdx, 0, (p) => groundRegion(p, scat));
+    add("competition", leg.competition, legIdx, 0, (p) => groundCompetition(p, regionBranch, scat));
+    leg.teams.forEach((t, i) => add("team", t, legIdx, i, (p) => groundTeam(p, scat)));
+    leg.players.forEach((pl, i) => add("player", pl, legIdx, i, (p) => groundPlayer(p, { compId, teamIds }, scat)));
+    // Market-owner player (the leg's subject) settles in the SAME batch — gated and re-grounded like a player.
+    add("subject", leg.subjectPlayer, legIdx, 0, (p) => groundPlayer(p, { compId, teamIds }, scat));
+  });
+  return { cells, places };
 }
 
 // ---- decide(): the one LLM call, forced tool use, per-pass schema ----
@@ -228,21 +248,21 @@ async function runPasses(query: string, cells: Cell[], decideFn: DecideFn): Prom
   return outcomes;
 }
 
-function setEntity(s: SettledEntities, ref: CellRef, res: EntityResolution): void {
-  if (ref === "region") s.region = res;
-  else if (ref === "competition") s.competition = res;
-  else {
-    const [kind, i] = ref.split(":");
-    const idx = Number(i);
-    if (kind === "team") s.units[0]!.teams[idx] = res;
-    else if (kind === "player") s.units[0]!.players[idx] = res;
-    else if (kind === "subject") s.units[0]!.subjectPlayers[idx] = res;
+// Fan a settled resolution back to every leg location that referenced the (deduped) cell.
+function setEntity(s: SettledEntities, places: Placement[], res: EntityResolution): void {
+  for (const pl of places) {
+    const leg = s.legs[pl.legIdx]!;
+    if (pl.slot === "region") leg.region = res;
+    else if (pl.slot === "competition") leg.competition = res;
+    else if (pl.slot === "team") leg.teams[pl.idx] = res;
+    else if (pl.slot === "player") leg.players[pl.idx] = res;
+    else leg.subjectPlayer = res;
   }
 }
 
-function applyOutcomes(s: SettledEntities, outcomes: Outcome[]): void {
+function applyOutcomes(s: SettledEntities, outcomes: Outcome[], places: Map<CellRef, Placement[]>): void {
   for (const o of outcomes) {
-    if (o.kind === "settle-entity") setEntity(s, o.ref, o.resolution);
+    if (o.kind === "settle-entity") setEntity(s, places.get(o.ref) ?? [], o.resolution);
     else s.clarifications.push({ ref: o.ref, question: o.question, ...(o.suggest?.length ? { suggest: o.suggest } : {}) });
   }
 }
@@ -252,7 +272,7 @@ function applyOutcomes(s: SettledEntities, outcomes: Outcome[]): void {
 export async function resolveEntities(query: string, scope: ResolvedScope, decideFn: DecideFn = decide): Promise<SettledEntities> {
   const settled = structuredClone(scope) as SettledEntities;
   settled.clarifications = [];
-  const cells = buildEntityCells(scope);
-  if (cells.length) applyOutcomes(settled, await runPasses(query, cells, decideFn));
+  const { cells, places } = buildEntityCells(scope);
+  if (cells.length) applyOutcomes(settled, await runPasses(query, cells, decideFn), places);
   return settled;
 }

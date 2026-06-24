@@ -10,8 +10,10 @@ import type { ResolvedScope } from "./ground-scope";
 import type { BetOfferResponse } from "./offering-client";
 
 // Which entity cell a resolution/clarification belongs to (entity-only after the cut — the old "market:i" ref
-// is gone). Owned here so resolve-entities can depend on it without a cycle.
-export type CellRef = "region" | "competition" | `team:${number}` | `player:${number}` | `subject:${number}`;
+// is gone). Owned here so resolve-entities can depend on it without a cycle. Per-leg-scope: every kind is
+// indexed now (region/competition can differ across legs), and the index runs over DISTINCT grounded entities,
+// not legs — the gate dedups identical entities (same grounded reference) into one cell, gated once.
+export type CellRef = `region:${number}` | `competition:${number}` | `team:${number}` | `player:${number}` | `subject:${number}`;
 
 // A clarification raised anywhere in the pipeline: an entity cell the gate couldn't pin (`CellRef`), or a
 // post-fetch reason — a market not offered (`market`), a too-broad scope (`scope`), or an unresolved time
