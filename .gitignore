@@ -15,7 +15,8 @@ src/resolver/index/
 # Durable artifacts are data/football/{criterion-doc-views,doc-views-gen-cache}.json.
 .docviews/
 
-# Transient probe-script scratch dumps (dot-prefixed JSON/txt/out/err under scripts/).
+# Transient probe-script scratch (dot-prefixed under scripts/: scratch .ts probes + their JSON/txt/out/err dumps).
+scripts/.*.ts
 scripts/.*.json
 scripts/.*.txt
 scripts/.*.out
