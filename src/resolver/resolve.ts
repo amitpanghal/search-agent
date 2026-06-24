@@ -69,15 +69,33 @@ function selSpec(line: Line | undefined, odds: { min?: number; max?: number } | 
 const offersForPick = (offers: BetOffer[], criterionId?: number, variant?: string): BetOffer[] =>
   offers.filter((b) => b.criterion?.id === criterionId && variantOf(b) === (variant ?? ""));
 
-export async function resolveQuery(query: string): Promise<ResponseEnvelope> {
+export type StageEvent =
+  | { stage: "extracting" }
+  | { stage: "fetching" }
+  | { stage: "resolving" }
+  | { stage: "done"; envelope: ResponseEnvelope };
+
+// runPipeline — the orchestrator as an async generator. It yields a coarse progress marker before each
+// expensive phase (extract LLM, recall fetch, market-resolve LLM) and a final `done` carrying the envelope.
+// The SSE server forwards each yield; resolveQuery (below) drains it to the single envelope for non-streaming
+// callers (eval, probes). The phase logic is UNCHANGED — only the yields are new.
+export async function* runPipeline(query: string): AsyncGenerator<StageEvent> {
+  yield { stage: "extracting" };
   const plan = await extract(query);
   // Incomplete-query gate: no team/player/league/region anchor -> nothing to scope to. Stop BEFORE any
   // grounding/fetch/LLM and ask the user to add one (canned message; no network spent).
   const incomplete = checkComplete(plan);
-  if (incomplete) return { summary: "", results: [], notes: [], clarificationNeeded: incomplete.question };
+  if (incomplete) {
+    yield { stage: "done", envelope: { summary: "", results: [], notes: [], clarificationNeeded: incomplete.question } };
+    return;
+  }
+
+  yield { stage: "fetching" };
   const scope = groundScope(plan);
   const settled = await resolveEntities(query, scope);
   const r = await recall(planRecall(settled, plan)); // BROAD data; per-leg narrowing is scopeMenu's job below
+
+  yield { stage: "resolving" };
 
   // Group selectors that share BOTH a filter-subject AND a grounded scope signature: they get ONE scopeMenu +
   // ONE filterBySubject + ONE batched resolveMarkets call. The signature spans everything that shapes the menu
@@ -161,12 +179,25 @@ export async function resolveQuery(query: string): Promise<ResponseEnvelope> {
     for (const e of scoped.events) if (e.id != null) execEvents.set(e.id, e);
     for (const b of scoped.offers) execOffers.add(b);
   }
-  return execute({
-    legs: legsOut,
-    data: { events: [...execEvents.values()], betOffers: [...execOffers] },
-    clarifications: settled.clarifications,
-    notes: [...extraNotes],
-    truncated: r.truncated,
-    fetchFailed: r.failed,
-  });
+  yield {
+    stage: "done",
+    envelope: execute({
+      legs: legsOut,
+      data: { events: [...execEvents.values()], betOffers: [...execOffers] },
+      clarifications: settled.clarifications,
+      notes: [...extraNotes],
+      truncated: r.truncated,
+      fetchFailed: r.failed,
+    }),
+  };
+}
+
+// resolveQuery — the non-streaming entry: drain runPipeline and return the final envelope. Existing callers
+// (eval, probes) keep their `Promise<ResponseEnvelope>` contract; the generator always emits exactly one `done`.
+export async function resolveQuery(query: string): Promise<ResponseEnvelope> {
+  let envelope: ResponseEnvelope | undefined;
+  for await (const evt of runPipeline(query)) {
+    if (evt.stage === "done") envelope = evt.envelope;
+  }
+  return envelope!;
 }
