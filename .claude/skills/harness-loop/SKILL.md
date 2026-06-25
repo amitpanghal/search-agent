@@ -62,9 +62,11 @@ Fixes to shipped resolver code (grounder, prompts, schema, calibration) are huma
 English with a worked example, then stop and ask before editing. Rig/test code (harness-loop itself) can proceed.
 
 ## Generate a new batch
-Spawn a Haiku generator subagent to produce 10–15 queries against real snapshot ids, written to
-`src/harness-loop/batches/batch-NNN.jsonl` (one `BatchQuery` JSON per line). Each line carries its
-by-construction answer key:
+Spawn a **Sonnet** generator subagent with the system prompt `src/harness-loop/batch-gen-prompt.md` to
+produce 10–15 queries against real snapshot ids, written to `src/harness-loop/batches/batch-NNN.jsonl`
+(one `BatchQuery` JSON per line). Feed it, per target market, its `{id, label, category, subject, scope}`
+**plus the sibling market labels from the same fixture/competition** (so the query can be pinned to the
+exact gold, not a twin). Each line carries its by-construction answer key:
 ```
 {"id":"q001","category":"competition-level","q":"who wins the World Cup 2026","grade":{"targets":[[1001159600]]}}
 ```
