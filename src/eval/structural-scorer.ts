@@ -75,15 +75,11 @@ type TimeVal = {
 };
 
 function lineEqual(p: PredLine | undefined, g: GoldLine | undefined): boolean {
-  if (!p && !g) return true;
-  if (!p || !g) return false;
-  if (p.kind !== g.kind) return false;
-  if (p.kind === "numeric" && g.kind === "numeric") {
-    return p.value === g.value && p.direction === g.direction;
-  }
-  if (p.kind === "binary" && g.kind === "binary") return p.direction === g.direction;
-  if (p.kind === "selection" && g.kind === "selection") return looseMatch(p.value, g.value.accept);
-  return false;
+  if (p === undefined && g === undefined) return true;
+  if (p === undefined || g === undefined) return false;
+  // NUMBER rung -> exact value; STRING named pick -> loose accept-list match (gold holds a Grounded cell).
+  if (typeof p === "number") return typeof g === "number" && p === g;
+  return typeof g !== "number" && looseMatch(p, g.accept);
 }
 
 function oddsEqual(a: OddsVal | undefined, b: OddsVal | undefined): boolean {

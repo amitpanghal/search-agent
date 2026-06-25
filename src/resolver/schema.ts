@@ -36,15 +36,14 @@ export const Subject = z.discriminatedUnion("kind", [
 ]);
 export type Subject = z.infer<typeof Subject>;
 
-// A line picks the market outcome: a numeric threshold on a counted stat, a yes/no side, or a
-// named multi-outcome selection (HT/FT, correct score). Omitted entirely = "all offered lines".
-// `selection.value` is text close to the query wording; grounding maps it to an outcome id (a
-// signed-number value like "-0.5" is a handicap rung the executor matches on the outcome's line).
-export const Line = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("numeric"), value: z.number(), direction: z.enum(["over", "under"]) }),
-  z.object({ kind: z.literal("binary"), direction: z.enum(["yes", "no"]) }),
-  z.object({ kind: z.literal("selection"), value: z.string().min(1) }),
-]);
+// A line is the stated outcome VALUE, or omitted — never a side. A NUMBER is a rung the resolver matches on
+// the outcome's line: an over/under threshold ("over 2.5" -> 2.5) or a handicap start ("-1 start" -> -1). A
+// STRING is a named multi-outcome pick the resolver matches on the outcome's label/score: HT/FT ("draw/win"),
+// correct score ("2-1"), win/draw/loss across stages. The TYPE alone routes resolution (number -> line match,
+// string -> label match) — there is no `kind` and no direction (over/under, yes/no). The resolver returns ALL
+// sides of the market, so "which side" is never extracted; only the rung/pick that names a distinct market is.
+// Omitted = no value stated (a yes/no prop, a superlative, an outright) -> all offered lines/sides.
+export const Line = z.union([z.number(), z.string().min(1)]);
 export type Line = z.infer<typeof Line>;
 
 // A price bound on the outcome. At least one of min/max; min <= max.

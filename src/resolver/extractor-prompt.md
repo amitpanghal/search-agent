@@ -9,7 +9,7 @@ Y"). Your job is to split it into typed, **subject-bound** facets.
 
 All *data* values are plain text close to the query wording (market names, entity names,
 competition, region, position, stage round, time phrases). Only *classification* fields are
-fixed enums (`status`, `sport`, `subject.kind`, `line.kind`/`direction`, `level`, player
+fixed enums (`status`, `sport`, `subject.kind`, `level`, player
 `role`, `ordinal`, `date_window.anchor`). Never put an id anywhere.
 
 Work in three steps.
@@ -129,7 +129,7 @@ Name the concrete market each request states. If a request names **no** market �
 the two never-markets above and the scope words (teams/competition/stage/time/players), nothing
 bettable is left — emit a **single** sentinel selector
 `{ subject: { kind: "event" }, market_concept: "main" }` ("this fixture's main market"). Never drop
-a request, never emit zero selectors, and **never invent a "match"/"fixture" market** (rule 6) — the
+a request, never emit zero selectors, and **never invent a "match"/"fixture" market** (rule 5) — the
 bare event *is* `main`.
 
 The cut is *event-reference vs outcome*, where an outcome may be a **noun or a question**: "their next
@@ -220,45 +220,11 @@ to narrow the search, **not** an exact pick. Decide in two independent steps:
 
 Name buckets only; do not encode the line or subject here — each has its own facet.
 
-### line (optional) — by **answer-type**, not the nouns
+### line (optional)
 
-What kind of answer settles the market? Decide from what it *asks*, **never** from a counted
-noun (shots, cards, corners, fouls). One branch applies:
-
-- **`numeric`** — asks *how many* against a threshold. Number stated → `{ kind: "numeric",
-  value, direction: "over"|"under" }`. A count market with **no number → omit `line`** (= all
-  offered lines) — *omit* is only for true over/under markets ("team corners", "clearances"). A
-  **first-event** ("first card"), **superlative** ("most fouls"), or **to-be** market is not
-  over/under → binary, never omitted.
-- **`binary`** — a single **yes/no proposition**; the default whenever it isn't numeric or a
-  pick. → `{ kind: "binary", direction: "yes"|"no" }`, default `"yes"` (`"no"` only if stated).
-  Covers props (to score, anytime / first / last goalscorer, a brace, clean sheet, BTTS, win
-  to nil), a **named team's tournament outright** (to win the tournament / group, to reach the
-  final / semi-finals — a single team's progression is a yes/no), occurrences (to be carded, a card in
-  the first 10 min, first foul inside 2 min), and superlatives (*most / highest / fewest / top
-  / first-to / race-to*: "most fouls", "highest possession", "race to 5 corners"). A counted
-  noun — or a number inside the phrase ("race to **5**") — never makes it numeric. Never
-  omitted: a price-only mention keeps the `"yes"` line and puts the price in `odds`.
-- **`selection`** — picks **one of several named outcomes** (HT/FT, correct score, winning
-  margin, handicap line) → `{ kind: "selection", value: "<pick>" }` as text; subject = named
-  team, else `event`. A selection naming a side's **result across stages** (a verdict at more than
-  one point) → **exactly** `win`/`draw`/`loss` from the named team's view (ahead/leading = `win`,
-  level = `draw`, behind = `loss`), one token per stage joined by `/` — **never a synonym or a team
-  name**; subject = that team. **Handicaps:** a stated **start / spot / margin one side must overcome**
-  ("-1 start", "spotting them one", "a one-`<unit>` head start", "+5.5") **is a handicap** even
-  when the word isn't used; **a tie/draw offered as a third result makes it a "three-way handicap"**,
-  otherwise a **two-way handicap** (no tie). `market_concept` names the **type** ("`<count>` handicap",
-  "three-way handicap") — never the number; `value` = the signed line alone ("-1", "+1"), never the
-  team (it's the subject).
-
-**Binary vs selection:** asserts one proposition true → `binary`; chooses among named outcomes
-→ `selection`. A superlative/occurrence/scorer stays `binary` even when it names the achiever
-("most passes … to be Griezmann", "Mbappé first goalscorer" → binary). A **named team to win /
-reach** a stage asserts one proposition → `binary` ("Spain to win the group" → binary yes); the
-bare **field** outright names no side ("outright winner", "group winner") → subject `event`, not
-binary. An **enumerated instance** ("winner of Group A…L") → one selector each, `market_concept` the
-type only ("group winner") and the instance a `selection` line ("Group A"). Keep any time/score
-window in `market_concept`.
+Add a `line` only when the query states a value that picks the market's outcome: a **number** for a
+threshold/rung (an over/under line, a handicap start), or **text** for one named outcome of a
+multi-outcome market (a result combination, a score, an enumerated instance).
 
 ### odds (optional) — a **price** bound
 
@@ -266,8 +232,8 @@ A bare number, or a number with "priced / odds / at" → `{ min?, max? }`. "pric
 → `{ min: 1.80 }`; "under 3.0" → `{ max: 3.0 }`; "between 5.0 and 15.0" → `{ min: 5.0, max:
 15.0 }`.
 
-`line` and `odds` can **both** appear: "headers won over 2.5 priced above 1.80" → `line {
-numeric, 2.5, over }` **and** `odds { min: 1.80 }`.
+`line` and `odds` can **both** appear: "headers won over 2.5 priced above 1.80" → `line 2.5`
+**and** `odds { min: 1.80 }`.
 
 **Omit `odds` entirely** when "odds / price" is named with **no number** ("team to score
 first odds", "match result odds") — that means *any price*. Never emit an empty `odds: {}` or a
@@ -306,13 +272,10 @@ field but wants the one most-likely competitor — "who wins", "the winner", "th
    in context (national side in a tournament, club in a league query).
 3. **Line vs price** — a number on a counted thing is a `line`; a bare or "priced" number is
    `odds`; both can co-occur.
-4. **Binary side** — defaults to `"yes"`; use `"no"` only to negate the event ("no <X>") — keep
-   the bare event as `market_concept`. A counted noun never makes it numeric; only an over/under
-   threshold does.
-5. **Self-correction** — on a retraction ("X out — sorry, with Y"), emit **only the final
+4. **Self-correction** — on a retraction ("X out — sorry, with Y"), emit **only the final
    corrected intent** and drop the retracted entity completely. ("Norway out — sorry, with Modrić
    in the lineup" → drop Norway, keep only Modrić.)
-6. **Never fabricate or substitute** — never invent a market, stage/time, player, price, or id,
+5. **Never fabricate or substitute** — never invent a market, stage/time, player, price, or id,
    and never swap a vague concept for a narrower concrete one. Record only what the query states,
    as text; **omit any field rather than guess**. A query naming no market still resolves to the
    single `main` sentinel — never zero selectors, never a fabricated "match"/"fixture" market.
@@ -347,7 +310,6 @@ Plan:
     {
       "subject": { "kind": "player", "name": "Mbappé" },
       "market_concept": "most goals",
-      "line": { "kind": "binary", "direction": "yes" },
       "scope": {
         "level": "competition",
         "competition": "World Cup 2026",
@@ -362,7 +324,7 @@ Plan:
     {
       "subject": { "kind": "event" },
       "market_concept": "goals",
-      "line": { "kind": "numeric", "value": 2.5, "direction": "over" },
+      "line": 2.5,
       "odds": { "min": 1.90 },
       "scope": {
         "level": "fixture",

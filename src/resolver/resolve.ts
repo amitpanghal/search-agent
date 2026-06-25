@@ -50,7 +50,10 @@ function subjectParticipantId(leg: ResolvedLegScope, s: Subject): number | undef
   return undefined;
 }
 
-// A selector's Line + subject -> the deterministic SELECT spec (value + direction, never a market binding).
+// A selector's Line + subject -> the deterministic SELECT spec (value, never a market binding). A NUMBER line
+// is a rung (over/under threshold, handicap start) -> SELECT's line matcher; a STRING is a named pick (HT/FT
+// "1/1", correct score "2-1", double chance "X2") -> SELECT's label/score matcher. No direction: the extractor
+// no longer says "which side", so an over/under resolves to all sides at the rung until SELECT returns them.
 function selSpec(line: Line | undefined, odds: { min?: number; max?: number } | undefined, subject?: string, subjectId?: number, sort?: "low" | "high", count?: number): SelectSpec {
   const base: SelectSpec = {
     ...(subjectId != null ? { subjectId } : {}),
@@ -60,10 +63,8 @@ function selSpec(line: Line | undefined, odds: { min?: number; max?: number } | 
     ...(sort ? { sort } : {}),
     ...(count != null ? { count } : {}),
   };
-  if (!line) return base;
-  if (line.kind === "numeric") return { ...base, line: line.value, dir: line.direction };
-  if (line.kind === "binary") return { ...base, dir: line.direction };
-  return { ...base, selection: line.value }; // named selection: HT/FT "1/1", correct score "2-1", double chance "X2"
+  if (line === undefined) return base;
+  return typeof line === "number" ? { ...base, line } : { ...base, selection: line };
 }
 
 // The picked market's betoffers, keyed by the menu LABEL (the identity — criterion englishLabel + variant).

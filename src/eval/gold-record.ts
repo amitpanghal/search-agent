@@ -46,13 +46,10 @@ const GoldSubject = z.discriminatedUnion("kind", [
   }),
 ]);
 
-// numeric/binary are structural -- graded by exact value (E2). selection is a groundable
-// pick (HT/FT cell, correct score) -> the value carries the real outcome id.
-const Line = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("numeric"), value: z.number(), direction: z.enum(["over", "under"]) }),
-  z.object({ kind: z.literal("binary"), direction: z.enum(["yes", "no"]) }),
-  z.object({ kind: z.literal("selection"), value: Grounded }),
-]);
+// A line is a bare value (no kind/direction): a NUMBER rung (over/under threshold, handicap) graded by exact
+// value (E2), or a named multi-outcome pick (HT/FT cell, correct score) as a `Grounded` string graded loosely
+// against its accept list. A yes/no side or a bare superlative carries no value -> the leg omits `line`.
+const Line = z.union([z.number(), Grounded]);
 
 const Odds = z
   .object({ min: z.number().positive().optional(), max: z.number().positive().optional() })

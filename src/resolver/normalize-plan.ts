@@ -23,12 +23,9 @@ function isBlank(v: unknown): boolean {
   return v === null || (typeof v === "object" && v !== null && Object.keys(v).length === 0);
 }
 function isUsableLine(v: unknown): boolean {
-  if (!v || typeof v !== "object") return false;
-  const l = v as Record<string, unknown>;
-  if (l.kind === "numeric") return typeof l.value === "number" && (l.direction === "over" || l.direction === "under");
-  if (l.kind === "binary") return l.direction === "yes" || l.direction === "no";
-  if (l.kind === "selection") return typeof l.value === "string" && l.value.length > 0;
-  return false;
+  // A line is now a bare value: a number (rung/handicap, 0 included) or a non-empty string (named pick).
+  if (typeof v === "number") return Number.isFinite(v);
+  return typeof v === "string" && v.length > 0;
 }
 // Sanitize `odds`: drop any min/max that isn't a positive number; an odds object left with no valid bound is
 // removed (the schema needs >=1 positive bound). Repairs the `{ min: 0 }` placeholder a superlative like
