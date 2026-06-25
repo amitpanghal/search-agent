@@ -1,0 +1,21 @@
+{
+  "status": "resolved",
+  "sport": "football",
+  "selectors": [
+    {
+      "subject": { "kind": "event" },
+      "market_concept": "who wins",
+      "line": { "kind": "binary", "direction": "yes" },
+      "scope": {
+        "level": "competition",
+        "competition": "World Cup 2026",
+        "region": null,
+        "teams": [],
+        "players": [],
+        "stage": null,
+        "time": null,
+        "play_state": null
+      }
+    }
+  ]
+}

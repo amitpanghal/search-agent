@@ -31,6 +31,7 @@ export type EnvelopeOutcome = {
   eventParticipantId?: number;
   type?: string;
   status: "OPEN" | "SUSPENDED" | "CLOSED" | "SETTLED";
+  selected?: boolean; // true on the one outcome matching the query's line/side; the rest are the alternatives
 };
 
 export type EnvelopeBetOffer = {
@@ -136,17 +137,21 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
   const byEvent = new Map<number, { event: KEvent; highlighted: EnvelopeHighlighted[] }>();
   const notes: string[] = [...(input.notes ?? [])]; // caller-built notes (e.g. unresolved time) ride along
   const noPick: string[] = []; // legs whose market wasn't offered -> clarify
+  let resolvedLegs = 0; // legs that produced ≥1 outcome (drives the "independent markets" caveat — count LEGS)
 
   for (const leg of input.legs) {
     const { phrase, pick, selection } = leg;
-    if (pick.match === "none" || pick.criterionId == null) {
+    if (pick.match === "none" || pick.label == null) {
       noPick.push(phrase);
       continue;
     }
 
-    // a concrete selected outcome? exact + nearest-line carry an outcomeId; the absent fallbacks don't.
-    const found = selection?.outcomeId != null ? outcomeById.get(selection.outcomeId) : undefined;
-    if (!found) {
+    // The participant's pool for this leg: every line+side SELECT returned (`outcomeIds`), the query's match
+    // flagged `selected`. Combo/outright legs carry only the single `outcomeId` -> fall back to that. The absent
+    // fallbacks carry neither -> honest note, no result.
+    const ids = selection?.outcomeIds?.length ? selection.outcomeIds : selection?.outcomeId != null ? [selection.outcomeId] : [];
+    const founds = ids.map((id) => outcomeById.get(id)).filter((x): x is { o: KOutcome; b: BetOffer } => x != null);
+    if (!founds.length) {
       const who = selection?.subject ?? "that selection";
       if (selection?.fallback === "subject-absent") notes.push(`${who} is not offered for "${phrase}"`);
       else if (selection?.fallback === "line-absent") notes.push(`that line isn't offered for "${phrase}"`);
@@ -155,19 +160,27 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
       continue;
     }
 
-    const { o, b } = found;
-    const e = b.eventId != null ? eventById.get(b.eventId) : undefined;
+    // event comes off the SELECTED outcome's betoffer (the whole pool is one market on one fixture).
+    const sel = founds.find((f) => f.o.id === selection?.outcomeId) ?? founds[0]!;
+    const e = sel.b.eventId != null ? eventById.get(sel.b.eventId) : undefined;
     if (!e) {
       notes.push(`selected outcome for "${phrase}" has no event in the live data`);
       continue;
     }
 
     if (pick.match === "close") notes.push(`closest market for "${phrase}" — not an exact settle`);
-    if (selection?.fallback === "nearest-line") notes.push(`nearest offered line for "${phrase}" (${o.line})`);
 
     let g = byEvent.get(e.id);
     if (!g) byEvent.set(e.id, (g = { event: e, highlighted: [] }));
-    g.highlighted.push({ betOffer: toBetOffer(b), outcomes: [toOutcome(o)] });
+    // emit the pool grouped by betoffer (different lines are different betoffers); flag the query's match.
+    const byBo = new Map<number, { b: BetOffer; outs: EnvelopeOutcome[] }>();
+    for (const f of founds) {
+      let grp = byBo.get(f.b.id ?? 0);
+      if (!grp) byBo.set(f.b.id ?? 0, (grp = { b: f.b, outs: [] }));
+      grp.outs.push({ ...toOutcome(f.o), ...(f.o.id === selection?.outcomeId ? { selected: true } : {}) });
+    }
+    for (const { b, outs } of byBo.values()) g.highlighted.push({ betOffer: toBetOffer(b), outcomes: outs });
+    resolvedLegs += 1;
   }
 
   const results: EnvelopeResult[] = [...byEvent.values()].map((g) => ({
@@ -177,9 +190,9 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
     additional: [],
   }));
 
-  // 2+ independent markets are not a joint bet -> the same caveat the old union note carried.
-  const totalPicks = results.reduce((n, r) => n + r.highlighted.length, 0);
-  if (totalPicks >= 2) notes.push("showing each market on its own — not only the games that have all of these together");
+  // 2+ independent market LEGS are not a joint bet -> the same caveat the old union note carried. Count LEGS,
+  // not highlighted entries: one over/under leg now spans several line-betoffers.
+  if (resolvedLegs >= 2) notes.push("showing each market on its own — not only the games that have all of these together");
 
   // Global fetch caveats (state a fact + a next step, never hedge): the broad fetch was capped, or a request errored.
   if (input.truncated) notes.push("This is a broad search — showing the top markets. Add a team, league, or time to see more.");

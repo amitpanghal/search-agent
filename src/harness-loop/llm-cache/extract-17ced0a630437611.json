@@ -1,0 +1,21 @@
+{
+  "status": "resolved",
+  "sport": "football",
+  "selectors": [
+    {
+      "subject": { "kind": "event" },
+      "market_concept": "corners",
+      "line": { "kind": "numeric" },
+      "scope": {
+        "level": "fixture",
+        "competition": null,
+        "region": null,
+        "teams": ["Turkey", "USA"],
+        "players": [],
+        "stage": null,
+        "time": null,
+        "play_state": null
+      }
+    }
+  ]
+}

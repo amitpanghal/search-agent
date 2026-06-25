@@ -163,30 +163,26 @@ export type RecallResult = {
 // NOTE: the live API returns this field but offering-client's BetOffer type does not declare it yet (probes cast too).
 export const variantOf = (b: BetOffer): string => String((b as Record<string, unknown>).description ?? "").trim();
 
-// The single display label fed to the resolver: criterion label + variant. Exported so FILTER reuses the exact
-// same label text it sees on the menu (no drift between menu identity and coverage matching).
+// The single display label fed to the resolver AND the market's identity: criterion englishLabel + variant.
+// englishLabel (not the localized `label`) keeps the identity locale-stable, and it distinguishes markets that
+// SHARE a criterion id but differ in label (the "to score at least 2/3/4 goals" family). Exported so FILTER and
+// the re-slice (offersForPick) reuse the exact same identity text — no drift between menu, pick, and slice.
 export const marketLabelOf = (b: BetOffer): string => {
   const v = variantOf(b);
-  return `${b.criterion?.label ?? "?"}${v ? ` — ${v}` : ""}`;
+  return `${b.criterion?.englishLabel ?? b.criterion?.label ?? "?"}${v ? ` — ${v}` : ""}`;
 };
 
-// Dedupe a betoffer list into the live menu: one item per distinct (criterion id + variant). Labels only — no
-// odds or outcomes (theory §6). Across multiple fixtures the same market collapses to one item (fixture-pick is
-// a separate concern); `eventId` keeps the first fixture seen as an example.
+// Dedupe a betoffer list into the live menu: one item per distinct LABEL (criterion englishLabel + variant —
+// see marketLabelOf). Labels only — no odds or outcomes (theory §6). Across multiple fixtures the same market
+// collapses to one item (fixture-pick is a separate concern); `eventId` keeps the first fixture seen as an
+// example. The label IS the identity: same label ⇒ same market — so the at-least-N family splits into one item
+// per threshold, while over/under lines stay collapsed (their label is constant; the line lives on the outcomes).
 export function buildMenu(offers: BetOffer[]): Menu {
   const seen = new Map<string, MenuItem>();
   for (const b of offers) {
-    if (b.criterion?.id == null) continue;
-    const variant = variantOf(b);
-    const key = `${b.criterion.id}|${variant}`;
-    if (!seen.has(key)) {
-      seen.set(key, {
-        criterionId: b.criterion.id,
-        variant,
-        label: marketLabelOf(b),
-        ...(b.eventId != null ? { eventId: b.eventId } : {}),
-      });
-    }
+    if (b.criterion?.id == null) continue; // an offer with no criterion isn't a real market
+    const label = marketLabelOf(b);
+    if (!seen.has(label)) seen.set(label, { label, ...(b.eventId != null ? { eventId: b.eventId } : {}) });
   }
   return [...seen.values()];
 }

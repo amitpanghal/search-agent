@@ -8,7 +8,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { buildMenu } from "../resolver/recall";
+import { buildMenu, marketLabelOf } from "../resolver/recall";
 import { filterBySubject } from "../resolver/filter";
 import { resolveMarket, resolveMarkets, type DecideFn, type DecideManyFn } from "../resolver/resolve-market";
 import { select, type SelectSpec } from "../resolver/select";
@@ -71,7 +71,7 @@ export async function runLiveMenuGate(): Promise<GateResult> {
   for (const c of RDECK) {
     const menu = c.grain === "competition" ? compMenu(c.subject) : matchMenu(c.subject);
     const pick = await resolveMarket(c.phrase, menu, replay(c.gold));
-    const gotLabel = pick.match === "none" ? null : menu.find((m) => m.criterionId === pick.criterionId && m.variant === pick.variant)?.label ?? null;
+    const gotLabel = pick.match === "none" ? null : pick.label ?? null;
     const ok = c.gold == null ? pick.match === "none" : pick.match === c.gold.match && (gotLabel ?? "").toLowerCase() === c.gold.label.toLowerCase();
     check(`resolve: "${c.phrase}"`, ok, `want ${c.gold ? c.gold.match + " " + c.gold.label : "none"} -> got ${pick.match} ${gotLabel ?? "—"}`);
   }
@@ -90,22 +90,22 @@ export async function runLiveMenuGate(): Promise<GateResult> {
       { label: "Finishing Position — Top 4", match: "exact" },
     ];
     const picks = await resolveMarkets(["Spain to win the World Cup", "Spain to finish in the top 4"], menu, replayMany(golds));
-    const labelOf = (p: (typeof picks)[number]) => (p.match === "none" ? null : menu.find((m) => m.criterionId === p.criterionId && m.variant === p.variant)?.label ?? null);
+    const labelOf = (p: (typeof picks)[number]) => (p.match === "none" ? null : p.label ?? null);
     const ok = picks.length === golds.length && picks.every((p, i) => p.match === golds[i]!.match && (labelOf(p) ?? "").toLowerCase() === golds[i]!.label.toLowerCase());
     check("resolve batched: 2 legs share one menu -> 2 correct picks", ok, picks.map((p) => `${p.match} ${labelOf(p) ?? "—"}`).join(" | "));
   }
 
   // ---- (C) SELECT against the captured fixture (deterministic) ----
   // The picked market as a SELECT slice (the market's betoffers + their events), mirroring resolve.ts.
-  const sliceFor = (label: string, grain: Grain = match) => {
-    const variantOf = (b: BetOffer) => String((b as Record<string, unknown>).description ?? "").trim();
-    const lbl = (b: BetOffer) => `${b.criterion?.label ?? "?"}${variantOf(b) ? ` — ${variantOf(b)}` : ""}`;
-    return { events: grain.events, betOffers: grain.betOffers.filter((b) => lbl(b).toLowerCase() === label.toLowerCase()) };
-  };
-  type SCase = { phrase: string; market: string; sel: SelectSpec; want: "exact" | "nearest-line" | "subject-absent" };
+  const sliceFor = (label: string, grain: Grain = match) => ({
+    events: grain.events,
+    betOffers: grain.betOffers.filter((b) => marketLabelOf(b).toLowerCase() === label.toLowerCase()),
+  });
+  type SCase = { phrase: string; market: string; sel: SelectSpec; want: "exact" | "subject-absent" };
   const SDECK: SCase[] = [
     { phrase: "under 4.5 total goals", market: "Total Goals", sel: { dir: "under", line: 4.5 }, want: "exact" },
-    { phrase: "over 2.25 total goals", market: "Total Goals", sel: { dir: "over", line: 2.25 }, want: "nearest-line" },
+    // nearest line is now just the SELECTED outcome (no `nearest-line` flag) — 2.25 -> 2.5, a concrete pick.
+    { phrase: "over 2.25 total goals", market: "Total Goals", sel: { dir: "over", line: 2.25 }, want: "exact" },
     { phrase: "USA over 0.5 goals", market: "Total Goals by USA", sel: { dir: "over", line: 0.5 }, want: "exact" },
     { phrase: "Çalhanoglu to score 2+", market: "To score at least 2 goals", sel: { subject: "Çalhanoglu", dir: "yes", line: 2 }, want: "exact" },
     { phrase: "Turkey -0.5 handicap", market: "Asian Handicap", sel: { subject: "Turkey", line: -0.5 }, want: "exact" },
@@ -119,9 +119,10 @@ export async function runLiveMenuGate(): Promise<GateResult> {
   }
 
   // ---- (D) EXECUTE assembly (deterministic) ----
-  const variantOf = (b: BetOffer) => String((b as Record<string, unknown>).description ?? "").trim();
-  const lbl = (b: BetOffer) => `${b.criterion?.label ?? "?"}${variantOf(b) ? ` — ${variantOf(b)}` : ""}`;
-  const pickOf = (label: string) => { const b = match.betOffers.find((x) => lbl(x).toLowerCase() === label.toLowerCase())!; return { criterionId: b.criterion!.id!, variant: variantOf(b) }; };
+  const pickOf = (label: string): { label: string } => {
+    if (!match.betOffers.some((x) => marketLabelOf(x).toLowerCase() === label.toLowerCase())) throw new Error(`pickOf: "${label}" not in snapshot`);
+    return { label };
+  };
   const legExact = (phrase: string, label: string, sel: SelectSpec): ResolvedLeg => ({ phrase, pick: { ...pickOf(label), match: "exact" }, selection: select(sliceFor(label), sel, ctx) });
   const ex = { betOffers: match.betOffers, events: match.events };
 
@@ -150,7 +151,7 @@ export async function runLiveMenuGate(): Promise<GateResult> {
   ];
   for (const c of IDECK) {
     const grain = c.grain === "competition" ? comp : match;
-    const betOffers = grain.betOffers.filter((b) => lbl(b).toLowerCase() === c.market.toLowerCase());
+    const betOffers = grain.betOffers.filter((b) => marketLabelOf(b).toLowerCase() === c.market.toLowerCase());
     const outs = betOffers.flatMap((b) => b.outcomes ?? []);
     const r = select({ events: grain.events, betOffers }, c.sel, ctx);
     const got = r.fallback ?? (r.outcomeId != null ? "exact" : "empty");

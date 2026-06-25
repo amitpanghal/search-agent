@@ -113,6 +113,10 @@ const Selector = z.object({
   // best price first (favourite); `high` = longest/highest/biggest first (underdog). Optional
   // — omitted = no price ranking. Carried per-selector into the FetchPlan (postFilters.outcomes), with line/odds.
   odds_sort: z.enum(["low", "high"]).optional(),
+  // How many outcomes of a multi-outcome FIELD to surface (an outright / award / top-scorer with many named
+  // competitors). A singular ask ("who wins", "the winner", a "top <stat>" leader) -> 1, paired with
+  // odds_sort "low" (the favourite); "top 3" -> 3; omitted = the whole field. Ignored on non-field markets.
+  count: z.number().int().min(1).optional(),
   // This leg's own scope (per-leg-scope redesign) — grain, competition, teams, stage, time, state. Required.
   scope: Scope,
 });

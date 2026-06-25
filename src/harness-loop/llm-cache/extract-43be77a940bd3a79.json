@@ -1,0 +1,25 @@
+{
+  "status": "resolved",
+  "sport": "football",
+  "selectors": [
+    {
+      "subject": {
+        "kind": "event"
+      },
+      "market_concept": "who's winning the whole tournament",
+      "bo_types": [
+        "outright"
+      ],
+      "scope": {
+        "level": "competition",
+        "competition": "World Cup 2026",
+        "region": null,
+        "teams": [],
+        "players": [],
+        "stage": null,
+        "time": null,
+        "play_state": null
+      }
+    }
+  ]
+}

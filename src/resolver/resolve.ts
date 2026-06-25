@@ -13,7 +13,7 @@ import { checkComplete } from "./check-complete";
 import { groundScope, type EntityResolution, type ResolvedLegScope } from "./ground-scope";
 import { resolveEntities } from "./resolve-entities";
 import { planRecall } from "./plan-recall";
-import { recall, scopeMenu, variantOf } from "./recall";
+import { recall, scopeMenu, marketLabelOf } from "./recall";
 import { filterBySubject } from "./filter";
 import { boTypeIdSet } from "./bo-types";
 import { resolveMarkets } from "./resolve-market";
@@ -51,12 +51,14 @@ function subjectParticipantId(leg: ResolvedLegScope, s: Subject): number | undef
 }
 
 // A selector's Line + subject -> the deterministic SELECT spec (value + direction, never a market binding).
-function selSpec(line: Line | undefined, odds: { min?: number; max?: number } | undefined, subject?: string, subjectId?: number): SelectSpec {
+function selSpec(line: Line | undefined, odds: { min?: number; max?: number } | undefined, subject?: string, subjectId?: number, sort?: "low" | "high", count?: number): SelectSpec {
   const base: SelectSpec = {
     ...(subjectId != null ? { subjectId } : {}),
     ...(subject ? { subject } : {}),
     ...(odds?.min != null ? { oddsMin: odds.min } : {}),
     ...(odds?.max != null ? { oddsMax: odds.max } : {}),
+    ...(sort ? { sort } : {}),
+    ...(count != null ? { count } : {}),
   };
   if (!line) return base;
   if (line.kind === "numeric") return { ...base, line: line.value, dir: line.direction };
@@ -64,24 +66,37 @@ function selSpec(line: Line | undefined, odds: { min?: number; max?: number } | 
   return { ...base, selection: line.value }; // named selection: HT/FT "1/1", correct score "2-1", double chance "X2"
 }
 
-// The picked market's betoffers (criterion + variant). SELECT flattens these to outcomes itself, but keeps
-// the betOffer parent for the handicap-sign check — so hand it the offers, not pre-flattened outcomes.
-const offersForPick = (offers: BetOffer[], criterionId?: number, variant?: string): BetOffer[] =>
-  offers.filter((b) => b.criterion?.id === criterionId && variantOf(b) === (variant ?? ""));
+// The picked market's betoffers, keyed by the menu LABEL (the identity — criterion englishLabel + variant).
+// SELECT flattens these to outcomes itself, but keeps the betOffer parent for the handicap-sign check — so hand
+// it the offers, not pre-flattened outcomes. Same label ⇒ same market, so the slice is exactly the picked market
+// (the at-least-N family no longer leaks sibling thresholds into it).
+const offersForPick = (offers: BetOffer[], label?: string): BetOffer[] =>
+  label == null ? [] : offers.filter((b) => marketLabelOf(b) === label);
 
 export type StageEvent =
-  | { stage: "extracting" }
-  | { stage: "fetching" }
   | { stage: "resolving" }
+  | { stage: "searching" }
+  | { stage: 'disambiguating' }
   | { stage: "done"; envelope: ResponseEnvelope };
+
+// The pipeline's injectable boundaries — the three LLM steps + the network fetch. Production passes nothing and
+// gets REAL_DEPS (identical behaviour); the harness-loop rig injects cached/subagent + live-cached doubles so it
+// can run the WHOLE real pipeline with no LLM API. Pure plumbing: defaults preserve every production call.
+export type PipelineDeps = {
+  extract: typeof extract;
+  recall: typeof recall;
+  resolveEntities: typeof resolveEntities;
+  resolveMarkets: typeof resolveMarkets;
+};
+const REAL_DEPS: PipelineDeps = { extract, recall, resolveEntities, resolveMarkets };
 
 // runPipeline — the orchestrator as an async generator. It yields a coarse progress marker before each
 // expensive phase (extract LLM, recall fetch, market-resolve LLM) and a final `done` carrying the envelope.
 // The SSE server forwards each yield; resolveQuery (below) drains it to the single envelope for non-streaming
 // callers (eval, probes). The phase logic is UNCHANGED — only the yields are new.
-export async function* runPipeline(query: string): AsyncGenerator<StageEvent> {
-  yield { stage: "extracting" };
-  const plan = await extract(query);
+export async function* runPipeline(query: string, deps: PipelineDeps = REAL_DEPS): AsyncGenerator<StageEvent> {
+  yield { stage: "resolving" };
+  const plan = await deps.extract(query);
   // Incomplete-query gate: no team/player/league/region anchor -> nothing to scope to. Stop BEFORE any
   // grounding/fetch/LLM and ask the user to add one (canned message; no network spent).
   const incomplete = checkComplete(plan);
@@ -90,12 +105,12 @@ export async function* runPipeline(query: string): AsyncGenerator<StageEvent> {
     return;
   }
 
-  yield { stage: "fetching" };
+  yield { stage: "disambiguating" };
   const scope = groundScope(plan);
-  const settled = await resolveEntities(query, scope);
-  const r = await recall(planRecall(settled, plan)); // BROAD data; per-leg narrowing is scopeMenu's job below
+  const settled = await deps.resolveEntities(query, scope);
+  const r = await deps.recall(planRecall(settled, plan)); // BROAD data; per-leg narrowing is scopeMenu's job below
 
-  yield { stage: "resolving" };
+  yield { stage: "searching" };
 
   // Group selectors that share BOTH a filter-subject AND a grounded scope signature: they get ONE scopeMenu +
   // ONE filterBySubject + ONE batched resolveMarkets call. The signature spans everything that shapes the menu
@@ -143,7 +158,7 @@ export async function* runPipeline(query: string): AsyncGenerator<StageEvent> {
     const subjId = subjectParticipantId(leg, sel0.subject);
     const fr = filterBySubject(scoped.offers, scoped.events, filterSubject(sel0.subject), subjId, keepTypes);
     groupData.set(key, { scoped, fr });
-    const picks = await resolveMarkets(idxs.map((i) => plan.selectors[i]!.market_concept), fr.menu);
+    const picks = await deps.resolveMarkets(idxs.map((i) => plan.selectors[i]!.market_concept), fr.menu);
     idxs.forEach((i, k) => { pickByIdx[i] = picks[k]!; keyByIdx[i] = key; });
   }
 
@@ -162,11 +177,11 @@ export async function* runPipeline(query: string): AsyncGenerator<StageEvent> {
     const { scoped, fr } = groupData.get(keyByIdx[i]!)!;
     let selection;
     if (pick.match !== "none") {
-      const picked = offersForPick(fr.offers, pick.criterionId, pick.variant);
+      const picked = offersForPick(fr.offers, pick.label);
       const ev = eventOf(picked, scoped.events); // per-leg home/away from this leg's market's event
       const ctx = { home: ev?.homeName, away: ev?.awayName };
       const slice = { events: scoped.events, betOffers: picked };
-      selection = select(slice, selSpec(sel.line, sel.odds, selectSubject(sel.subject), subjectParticipantId(leg, sel.subject)), ctx);
+      selection = select(slice, selSpec(sel.line, sel.odds, selectSubject(sel.subject), subjectParticipantId(leg, sel.subject), sel.odds_sort, sel.count), ctx);
     }
     legsOut.push({ phrase: sel.market_concept, pick, ...(selection ? { selection } : {}) });
   }

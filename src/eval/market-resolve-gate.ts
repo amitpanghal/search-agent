@@ -17,6 +17,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { filterBySubject } from "../resolver/filter";
+import { marketLabelOf } from "../resolver/recall";
 import { resolveMarket } from "../resolver/resolve-market";
 import type { BetOffer, KEvent } from "../resolver/offering-client";
 import type { Menu } from "../resolver/live-menu-types";
@@ -71,11 +72,18 @@ export async function runMarketResolveGate(gold: GoldRecord[]): Promise<GateResu
   const matchMenu = menuOf(snap.match);
   const fixtureTeams = [snap.match.home, snap.match.away].filter(Boolean);
 
+  // The pick now carries a LABEL, not a criterion id (the menu identity is the englishLabel-based label). Map it
+  // back to criterion id(s) via the snapshot betoffers — a label can front >1 id only if two criteria share it
+  // (none observed), so the intersection with wantIds is the robust check.
+  const idsForLabel = (offers: BetOffer[], label: string): number[] =>
+    [...new Set(offers.filter((b) => marketLabelOf(b) === label).map((b) => b.criterion?.id).filter((id): id is number => id != null))];
+
   const cases = idCases(gold);
   const fails: string[] = [];
   let passed = 0;
   for (const c of cases) {
     const menu = c.level === "competition" ? compMenu : matchMenu;
+    const grainOffers = c.level === "competition" ? snap.competition.betOffers : snap.match.betOffers;
     const teams = c.level === "competition" ? [] : fixtureTeams; // team-binding only meaningful at fixture grain
     const tries = phrasings(c.subjectKind, c.accept, teams);
     // Reachability: the gold market passes if ANY natural phrasing resolves EXACT onto a gold criterion id.
@@ -83,8 +91,9 @@ export async function runMarketResolveGate(gold: GoldRecord[]): Promise<GateResu
     let lastMiss = "no phrasing tried";
     for (const phrase of tries) {
       const pick = await resolveMarket(phrase, menu); // LIVE LLM (default decider)
-      if (pick.match === "exact" && pick.criterionId != null && c.wantIds.includes(pick.criterionId)) { hit = phrase; break; }
-      lastMiss = `"${phrase}" -> ${pick.match} ${pick.criterionId ?? "—"}`;
+      const gotIds = pick.match === "exact" && pick.label != null ? idsForLabel(grainOffers, pick.label) : [];
+      if (gotIds.some((id) => c.wantIds.includes(id))) { hit = phrase; break; }
+      lastMiss = `"${phrase}" -> ${pick.match} ${pick.label ?? "—"}`;
     }
     if (hit) passed++;
     else fails.push(`   x ${c.id} (${c.subjectKind}) — want exact ∈ ${JSON.stringify(c.wantIds)}; no phrasing hit (tried ${tries.length}, last ${lastMiss})`);
@@ -100,8 +109,8 @@ export async function resolveEyeball(concept: string, grain: "match" | "competit
   const snap = loadSnapshot();
   const menu = menuOf(grain === "competition" ? snap.competition : snap.match);
   const pick = await resolveMarket(concept, menu);
-  const label = pick.match === "none" ? "—" : menu.find((m) => m.criterionId === pick.criterionId && m.variant === pick.variant)?.label ?? "?";
-  console.log(`resolve "${concept}" [${grain}, menu=${menu.length}] -> ${pick.match}  ${pick.criterionId ?? ""} ${label}${pick.reason ? `  (${pick.reason})` : ""}`);
+  const label = pick.match === "none" ? "—" : pick.label ?? "?";
+  console.log(`resolve "${concept}" [${grain}, menu=${menu.length}] -> ${pick.match}  ${label}${pick.reason ? `  (${pick.reason})` : ""}`);
 }
 
 // CLI: `npx tsx src/eval/market-resolve-gate.ts` — run the live gate standalone (mirrors live-menu-gate.ts).

@@ -1,6 +1,6 @@
 // RESOLVE(market) — build plan Phase 2. The LLM picks one market per BET from the FILTERED live menu and labels
 // each exact | close | none (theory §4). It sees LABELS ONLY (no odds, no outcomes) and picks by `ref`; we map
-// the ref back to (criterionId + variant). The model may always abstain (`none`). BATCHED (Q2): legs that share
+// the ref back to the menu item's label (the market identity). The model may always abstain (`none`). BATCHED (Q2): legs that share
 // one filtered menu resolve in a SINGLE call — the menu is sent once, not per leg — saving repeated input tokens
 // and a round-trip. `resolveMarket` (singular) is a thin wrapper kept for the offline gates. The contract —
 // confident-wrong ≈ 1 in 180 case-evaluations — was validated by scripts/.contract-probe.ts.
@@ -62,8 +62,7 @@ export type DecideFn = (phrase: string, menu: Menu) => Promise<RawPick>;
 const toPick = (raw: RawPick | undefined, menu: Menu): MarketPick => {
   const match = (raw?.match ?? "none") as MatchLabel;
   if (!raw || match === "none" || raw.ref == null || !menu[raw.ref]) return { match: "none", reason: raw?.reason ?? "no pick" };
-  const m = menu[raw.ref]!;
-  return { criterionId: m.criterionId, variant: m.variant, match, reason: raw.reason };
+  return { label: menu[raw.ref]!.label, match, reason: raw.reason };
 };
 
 // Pick + label a market for EACH phrase against the one shared filtered menu, in a single model call.

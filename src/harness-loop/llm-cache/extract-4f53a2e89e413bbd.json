@@ -1,0 +1,32 @@
+{
+  "status": "resolved",
+  "sport": "football",
+  "selectors": [
+    {
+      "subject": {
+        "kind": "event"
+      },
+      "market_concept": "top scorer",
+      "line": {
+        "kind": "binary",
+        "direction": "yes"
+      },
+      "bo_types": [
+        "outright",
+        "scorer"
+      ],
+      "count": 1,
+      "odds_sort": "low",
+      "scope": {
+        "level": "competition",
+        "competition": "World Cup 2026",
+        "region": null,
+        "teams": [],
+        "players": [],
+        "stage": null,
+        "time": null,
+        "play_state": null
+      }
+    }
+  ]
+}

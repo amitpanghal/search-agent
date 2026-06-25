@@ -1,0 +1,21 @@
+{
+  "status": "resolved",
+  "sport": "football",
+  "selectors": [
+    {
+      "subject": { "kind": "event" },
+      "market_concept": "first half and second half goals",
+      "line": { "kind": "selection", "value": "HT/FT" },
+      "scope": {
+        "level": "fixture",
+        "competition": null,
+        "region": null,
+        "teams": ["Turkey", "USA"],
+        "players": [],
+        "stage": null,
+        "time": null,
+        "play_state": null
+      }
+    }
+  ]
+}

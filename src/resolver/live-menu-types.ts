@@ -29,13 +29,14 @@ export type SettledEntities = ResolvedScope & {
 };
 
 // ---- RECALL output: the live menu ----
-// One market the feed actually offered, identified by (criterion id + variant). `variant` is the betoffer
-// `description` ("Winner", "Top 4", "" when none) and is PART of the identity — "Finishing Position — Winner"
-// and "Finishing Position — Top 4" are two distinct menu items (theory §4). `label` is the single display
-// string the resolver reads (criterion label + variant); `eventId` ties a match-grain item to its fixture.
+// One market the feed actually offered, identified by its `label` — the single display string the resolver
+// reads AND the market's identity: criterion `englishLabel` + the betoffer `description` variant ("Winner",
+// "Top 4", "" when none). So "Finishing Position — Winner" / "— Top 4" (same criterion, different variant) and
+// "To score at least 2 goals" / "— 3 goals" (SAME criterion id, different englishLabel) are all distinct items
+// (theory §4). englishLabel — not the localized label — keeps the identity locale-stable. The criterion id is
+// NOT part of the identity: it can't tell the at-least-N family apart, and it's invisible to the resolver
+// anyway. `eventId` ties a match-grain item to its fixture.
 export type MenuItem = {
-  criterionId: number;
-  variant: string;
   label: string;
   eventId?: number;
 };
@@ -46,29 +47,27 @@ export type Menu = MenuItem[];
 // The resolver's tier on its pick (theory §4): `exact` settles the bet; `close` is a same-direction
 // suggestion; `none` = nothing maps (always allowed, never forced).
 export type MatchLabel = "exact" | "close" | "none";
-// The market the LLM picked from the live menu, at (criterion + variant) granularity, plus its tier. When
-// `match === "none"` there is no pick (clarify), so `criterionId` / `variant` are left unset.
-//
-// NOTE (deviation from the plan's Phase-0 sketch): the tier field is named `match`, not `label` — the
-// validated `.contract-probe.ts` uses `match`, and `MenuItem.label` already means the display string, so two
-// different `label`s would invite bugs. Flag for the plan author; trivial to rename back if preferred.
+// The market the LLM picked from the live menu, carried by its `label` (the MenuItem identity), plus its tier.
+// When `match === "none"` there is no pick (clarify), so `label` is left unset. The tier field is `match`, not
+// `label`, so it never collides with the identity `label` (which mirrors MenuItem.label).
 export type MarketPick = {
-  criterionId?: number;
-  variant?: string;
+  label?: string;
   match: MatchLabel;
   reason?: string;
 };
 
 // ---- SELECT output ----
 // The deterministic outcome lookup against the picked market's REAL outcomes (theory §5, zero LLM). `outcomeId`
-// is the chosen KOutcome.id; `line` / `subject` are the resolved values. `fallback` is set ONLY when we
-// degraded from an exact hit: a nearest offered line, or an honest not-offered (the subject or line the market
-// doesn't carry). Absent `fallback` === exact hit.
+// is the SELECTED outcome (the query's line/side match); `outcomeIds` is the participant's WHOLE pool in this
+// market — every line and side they're offered, returned so the consumer can show alternatives with the matched
+// one flagged. `line` / `subject` are the resolved values. `fallback` is set ONLY on an honest not-offered (the
+// subject, or the asked side, the market doesn't carry). Absent `fallback` === a concrete pick.
 export type Selection = {
   outcomeId?: number;
+  outcomeIds?: number[];
   line?: number;
   subject?: string;
-  fallback?: "nearest-line" | "subject-absent" | "line-absent" | "odds-absent";
+  fallback?: "subject-absent" | "line-absent" | "odds-absent";
 };
 
 // ---- new executor input (replaces the FetchPlan's committed `marketIds`) ----

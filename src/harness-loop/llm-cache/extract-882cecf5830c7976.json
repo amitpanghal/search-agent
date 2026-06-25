@@ -1,0 +1,21 @@
+{
+  "status": "resolved",
+  "sport": "football",
+  "selectors": [
+    {
+      "subject": { "kind": "player", "name": "Kenan Yildiz" },
+      "market_concept": "assist or goal",
+      "line": { "kind": "binary", "direction": "yes" },
+      "scope": {
+        "level": "fixture",
+        "competition": null,
+        "region": null,
+        "teams": ["Turkey", "USA"],
+        "players": [],
+        "stage": null,
+        "time": null,
+        "play_state": null
+      }
+    }
+  ]
+}

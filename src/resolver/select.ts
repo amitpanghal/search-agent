@@ -25,6 +25,8 @@ export type SelectSpec = {
   selection?: string; // combo token: correct score "2-1", HT/FT "1/1", double chance "X2"
   oddsMin?: number; // price floor (decimal, 5.0): keep only outcomes priced >= min ("first scorer over 5.0")
   oddsMax?: number; // price ceiling (decimal): keep only outcomes priced <= max
+  sort?: "low" | "high"; // rank a field outright by price (low = favourite first) — drives count + selected
+  count?: number; // surface only the top N of a many-outcome field (omitted = the whole field)
 };
 
 // The picked market as Kambi's own shape (the market's betoffers + their events). We keep the betOffer
@@ -44,6 +46,12 @@ const dirOf = (o: KOutcome): Dir | undefined => {
   if (!noType(o.type)) return undefined; // type IS informative, just not a direction (OT_ONE, OT_TWO, …)
   return (["over", "under", "yes", "no"] as const).find((d) => d === (o.label ?? "").toLowerCase());
 };
+// A direction's POLARITY: over/yes are the HIGH side of a threshold, under/no the LOW side. The query's
+// direction is only a PREFERENCE for which side to pre-select, reconciled onto whatever the market offers — so
+// "over 2+ goals" (high) lands on a Yes/No "to score 2+" market (high), while an asked "under" stays honestly
+// absent when only the "over" side exists. Polarity is preserved; only the over/under-vs-yes/no wording is bridged.
+const POLE: Record<Dir, "hi" | "lo"> = { over: "hi", yes: "hi", under: "lo", no: "lo" };
+const poleOf = (o: KOutcome): "hi" | "lo" | undefined => { const d = dirOf(o); return d ? POLE[d] : undefined; };
 
 // The outcome line is stored as integer millis (2500 = 2.5, -500 = -0.5); to decimal for matching.
 const lineOf = (o: KOutcome): number | null => (o.line != null ? o.line / 1000 : null);
@@ -147,9 +155,19 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
     pool = bounded;
   }
 
-  // ---- (2) DIRECTION + (3) LINE -> the outcome ----
+  // The participant's WHOLE pool (every line + side they hold in this market) is RETURNED; one outcome is the
+  // query's match, flagged downstream. The extractor's line/dir only choose WHICH is selected — never a filter
+  // that drops the rest (the live market is the source of truth; the query is a preference over it).
+  const ids = pool.map(({ o }) => o.id).filter((id): id is number => id != null);
+  const withPool = (o: KOutcome, line?: number, idList: number[] = ids): Selection => ({
+    ...withSubj,
+    outcomeId: o.id,
+    ...(line != null ? { line } : lineOf(o) != null ? { line: lineOf(o)! } : {}),
+    outcomeIds: idList,
+  });
+
+  // ---- (2) DIRECTION + (3) LINE -> the SELECTED outcome (the rest of `pool` rides along for display) ----
   if (spec.dir || spec.line != null) {
-    const flt = spec.dir ? pool.filter(({ o }) => dirOf(o) === spec.dir) : pool;
     if (spec.line != null) {
       // Handicap sign: a SAME-line betoffer (type-11 3-way) stores the line from the HOME perspective, so
       // negate it for the away side. Opposite-sign betoffers (type 1/7) store each team's own line -> as-is.
@@ -161,16 +179,35 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
         const l = lineOf(c.o);
         return l != null && sameLine(c.bo) && (c.o.type === "OT_TWO" || c.o.label === "2") ? -l : l;
       };
-      const exact = flt.find((c) => effLine(c) === spec.line);
-      if (exact) return { ...withSubj, outcomeId: exact.o.id, line: spec.line };
-      const near = flt.filter((c) => effLine(c) != null).sort((a, b) => Math.abs(effLine(a)! - spec.line!) - Math.abs(effLine(b)! - spec.line!))[0];
-      return near ? { ...withSubj, outcomeId: near.o.id, line: effLine(near)!, fallback: "nearest-line" } : absent("line-absent");
+      // Restrict the SELECTED pick to the asked SIDE by polarity (over↔yes / under↔no): a query "over" still
+      // selects on a Yes/No market, but a side the market simply lacks stays honestly absent — exact line first,
+      // else the nearest offered line on that side.
+      const wantPole = spec.dir ? POLE[spec.dir] : undefined;
+      const sideCands = wantPole ? pool.filter(({ o }) => poleOf(o) === wantPole) : pool;
+      const nearest = (set: Cand[]) =>
+        set.filter((c) => effLine(c) != null).sort((a, b) => Math.abs(effLine(a)! - spec.line!) - Math.abs(effLine(b)! - spec.line!))[0];
+      const chosen = sideCands.find((c) => effLine(c) === spec.line) ?? nearest(sideCands);
+      return chosen ? withPool(chosen.o, effLine(chosen)!) : absent("line-absent");
     }
-    return flt[0] ? pick(flt[0].o) : absent("subject-absent");
+    // direction only. The asked side is a PREFERENCE over the live market, never a drop (same decision as the
+    // line branch + the subjectId outright at (1)): take the matching outcome if the market offers that
+    // direction. If the market has NO direction axis (a FIELD outright of named outcomes — who wins / top
+    // scorer / an award), `dir` is inapplicable, so the live field wins: rank by price (odds_sort) and keep the
+    // top `count` (favourite when sort="low"), leader selected. Only a real binary lacking the asked SIDE absents.
+    const flt = spec.dir ? pool.filter(({ o }) => dirOf(o) === spec.dir) : pool;
+    if (flt[0]) return withPool(flt[0].o);
+    const directional = pool.some(({ o }) => dirOf(o) != null);
+    if (!directional && spec.dir !== "no" && pool[0]) {
+      const key = (c: Cand) => oddsOf(c.o) ?? (spec.sort === "high" ? -Infinity : Infinity);
+      const ordered = spec.sort ? [...pool].sort((a, b) => (spec.sort === "low" ? key(a) - key(b) : key(b) - key(a))) : pool;
+      const top = spec.count != null ? ordered.slice(0, spec.count) : ordered;
+      return withPool(top[0]!.o, undefined, top.map(({ o }) => o.id).filter((id): id is number => id != null));
+    }
+    return absent("subject-absent");
   }
 
   // ---- (4) no direction / no line -> the owner-bound affirmative (Yes), else the single survivor ----
   const yes = !hasNamed ? pool.find(({ o }) => dirOf(o) === "yes") : undefined;
   const chosen = (yes ?? pool[0])?.o;
-  return chosen ? pick(chosen) : absent("subject-absent");
+  return chosen ? withPool(chosen) : absent("subject-absent");
 }

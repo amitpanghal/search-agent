@@ -82,6 +82,8 @@ export function normalizePlan(plan: unknown): void {
     sanitizeBoTypes(rec);
     // `odds_sort` is an optional enum: drop anything that isn't "low"/"high" (incl. null/{}) so the schema parses.
     if ("odds_sort" in rec && rec.odds_sort !== "low" && rec.odds_sort !== "high") delete rec.odds_sort;
+    // `count` is an optional positive integer (the field-outright limit); drop anything else so the schema parses.
+    if ("count" in rec && !(Number.isInteger(rec.count) && (rec.count as number) >= 1)) delete rec.count;
     const subj = rec.subject as Record<string, unknown> | undefined;
     if (subj && subj.kind === "team" && (typeof subj.name !== "string" || subj.name.length === 0)) {
       rec.subject = { kind: "event" };

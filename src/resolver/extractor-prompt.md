@@ -283,6 +283,15 @@ bound them. Emit `odds_sort` and **no** `odds`:
   - longest / highest / biggest / outsider price → `odds_sort: "high"`.
 A price word with **no number** is a sort; a **number** (bare or "priced/odds/at") is still an `odds` bound.
 
+### count (optional) — how many of a field to show
+
+Only for a **field market**: one market with many named competitors (an outright winner, an award,
+a top-stat leader) — never a yes/no, a line, or a single named subject. A **singular** ask names the
+field but wants the one most-likely competitor — "who wins", "the winner", "the favourite", a
+"top <stat>" leader → `count: 1`, paired with `odds_sort: "low"` (favourite first). A stated number —
+"top 3", "the 3 favourites" → that number. **Omit `count`** to show the whole field — an explicit
+"all" ("odds for all of them") or a bare market view ("the outright market").
+
 ---
 
 ## Universal rules (the make-or-break — get these exactly right)

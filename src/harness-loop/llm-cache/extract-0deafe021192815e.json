@@ -1,0 +1,30 @@
+{
+  "status": "resolved",
+  "sport": "football",
+  "selectors": [
+    {
+      "subject": {
+        "kind": "player"
+      },
+      "market_concept": "leading goal scorer across all matches",
+      "line": {
+        "kind": "binary",
+        "direction": "yes"
+      },
+      "bo_types": [
+        "scorer",
+        "outright"
+      ],
+      "scope": {
+        "level": "competition",
+        "competition": "World Cup 2026",
+        "region": null,
+        "teams": [],
+        "players": [],
+        "stage": null,
+        "time": null,
+        "play_state": null
+      }
+    }
+  ]
+}

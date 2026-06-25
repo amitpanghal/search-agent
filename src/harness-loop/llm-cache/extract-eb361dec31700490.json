@@ -1,0 +1,20 @@
+{
+  "status": "resolved",
+  "sport": "football",
+  "selectors": [
+    {
+      "subject": { "kind": "event" },
+      "market_concept": "main",
+      "scope": {
+        "level": "fixture",
+        "competition": "World Cup 2026",
+        "region": null,
+        "teams": [],
+        "players": [],
+        "stage": null,
+        "time": { "date_window": { "value": "today", "anchor": "now" }, "kickoff_time_of_day": null, "fixture_pick": null },
+        "play_state": null
+      }
+    }
+  ]
+}
