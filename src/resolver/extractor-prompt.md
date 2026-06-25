@@ -28,9 +28,7 @@ basketball). If nothing disambiguates, pick the most likely sport for the wordin
 that is the right place for it, not extraction.
 
 A resolved plan always carries `sport` and **≥1 selector**, and **every selector carries its own `scope`**
-(Step 2). A query that names no market still resolves — it gets one sentinel selector
-`{ subject: event, market_concept: "main", scope: {…} }` (Step 3), meaning "this fixture's main market".
-**Never emit zero selectors.**
+(Step 2). A marketless query still resolves — to the lone `main` sentinel (Step 3), never zero selectors.
 
 Neutral examples:
 - "corner markets priced over 1.5" → sport "football" (inferred from the market vocabulary).
@@ -119,34 +117,21 @@ odds_sort?, scope }` — every selector gets its own `scope` (Step 2).
 
 ### First: name the market for each request — the `main` fallback
 
-Each thing the user asks for becomes one selector. A **market** is a *bettable outcome*: a price
-someone can take — a match result, both-teams-to-score, a player prop, an outright, a card/corner
-total. Two things are **never** markets — they describe the *event*, not an outcome:
-- a noun naming the **event itself** — "match", "fixture", "game", "tie", "clash";
-- a verb that only **asks to see/list** events — "show me", "pull up", "do we have", "what's on".
+A **market** is a *bettable outcome* — a price someone can take (the result/winner, a total, a player
+prop, an outright or award). A **question** about an outcome counts too ("who wins", "who comes out on
+top" name the winner). Two things are **never** markets — they point at the *event*, not an outcome: a
+noun naming the event ("match", "game", "fixture"), and a verb that only asks to see events ("show me",
+"what's on", "do we have").
 
-Name the concrete market each request states. If a request names **no** market — after stripping
-the two never-markets above and the scope words (teams/competition/stage/time/players), nothing
-bettable is left — emit a **single** sentinel selector
-`{ subject: { kind: "event" }, market_concept: "main" }` ("this fixture's main market"). Never drop
-a request, never emit zero selectors, and **never invent a "match"/"fixture" market** (rule 5) — the
-bare event *is* `main`.
+Strip those never-markets and the scope words (teams/competition/stage/time/players). If a bettable
+outcome remains, name it in the user's words — a named market always wins, however event-flavoured the
+rest reads. If **nothing** bettable remains, emit one sentinel selector
+`{ subject: { kind: "event" }, market_concept: "main" }` — never drop a request, never emit zero
+selectors, never invent a "match"/"fixture" market.
 
-The cut is *event-reference vs outcome*, where an outcome may be a **noun or a question**: "their next
-**fixture**" / "the group-stage **match**" name only the event → `main`; "**match result**", "**match**
-winner", "outright **winner**" — **and a question asking which side wins or comes out ahead ("who
-wins", "who comes out on top") — names the result outcome (keep the user's words)**. Keep
-the stated scope: a question about winning the **whole competition** is the outright, not the
-single-match result. A named market always wins on its own, **however fixture-flavoured the rest
-of the query reads** — an adjacent list verb ("show me", "do we have") or event noun ("tie", "game")
-never downgrades a named market to `main`.
-
-_Neutral examples:_
-- "is the Italy opener on the schedule yet" → one selector `{ subject: { kind: "event" }, market_concept: "main" }`.
-- "what games are on this weekend" → one `main` selector with `scope.time =
-  { date_window: { value: "weekend", anchor: "now" }, kickoff_time_of_day: null, fixture_pick: null }`.
-- "Germany vs Italy match result" → one selector
-  `{ subject: { kind: "event" }, market_concept: "match result" }` (an outcome, not the event).
+_Examples:_
+- "what's on this weekend" → one `main` selector (+ the `weekend` `scope.time`).
+- "who wins tonight's game" → `market_concept: "who wins"` (an outcome, not the event).
 
 ### subject — who owns this market
 
@@ -277,8 +262,8 @@ field but wants the one most-likely competitor — "who wins", "the winner", "th
    in the lineup" → drop Norway, keep only Modrić.)
 5. **Never fabricate or substitute** — never invent a market, stage/time, player, price, or id,
    and never swap a vague concept for a narrower concrete one. Record only what the query states,
-   as text; **omit any field rather than guess**. A query naming no market still resolves to the
-   single `main` sentinel — never zero selectors, never a fabricated "match"/"fixture" market.
+   as text; **omit any field rather than guess** (a marketless query → the `main` sentinel, never a
+   fabricated "match"/"fixture" market).
 
 ---
 
