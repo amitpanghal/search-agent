@@ -12,6 +12,10 @@ export type Level = "fixture" | "competition";
 export const levelOf = (tags: string[] = []): Level | null =>
   tags.includes("COMPETITION") ? "competition" : tags.includes("MATCH") ? "fixture" : null;
 
+// A "main"/headline market carries the MAIN tag. NOTE the distinct "MAIN_LINE" tag (an over/under's main line)
+// must NOT match here — only the exact "MAIN" tag marks a bare-event main market.
+export const isMain = (tags: string[] = []): boolean => tags.includes("MAIN");
+
 export async function getJson(url: string): Promise<any> {
   const r = await fetch(url);
   if (!r.ok) throw new Error(`HTTP ${r.status} for ${url}`);

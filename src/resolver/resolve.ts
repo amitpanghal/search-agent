@@ -20,7 +20,7 @@ import { resolveMarkets } from "./resolve-market";
 import { select, type SelectSpec } from "./select";
 import { execute, type ResponseEnvelope } from "./execute";
 import { fold } from "./lexical";
-import type { BetOffer, KEvent } from "./offering-client";
+import { isMain, type BetOffer, type KEvent } from "./offering-client";
 import type { Subject, Line } from "./schema";
 import type { ResolvedLeg, MarketPick } from "./live-menu-types";
 
@@ -159,8 +159,12 @@ export async function* runPipeline(query: string, deps: PipelineDeps = REAL_DEPS
     const subjId = subjectParticipantId(leg, sel0.subject);
     const fr = filterBySubject(scoped.offers, scoped.events, filterSubject(sel0.subject), subjId, keepTypes);
     groupData.set(key, { scoped, fr });
-    const picks = await deps.resolveMarkets(idxs.map((i) => plan.selectors[i]!.market_concept), fr.menu);
-    idxs.forEach((i, k) => { pickByIdx[i] = picks[k]!; keyByIdx[i] = key; });
+    // "main" legs name no market — they skip the LLM pick entirely and fan out into every main market below.
+    // Only the named legs go to resolveMarkets (keep the pick-index alignment to THOSE legs).
+    const llmIdxs = idxs.filter((i) => plan.selectors[i]!.market_concept !== "main");
+    const picks = llmIdxs.length ? await deps.resolveMarkets(llmIdxs.map((i) => plan.selectors[i]!.market_concept), fr.menu) : [];
+    llmIdxs.forEach((i, k) => { pickByIdx[i] = picks[k]!; });
+    idxs.forEach((i) => { keyByIdx[i] = key; });
   }
 
   // Relational subjects need the fixture's home/away — from THIS leg's picked betoffer's event, within the
@@ -174,16 +178,27 @@ export async function* runPipeline(query: string, deps: PipelineDeps = REAL_DEPS
   for (let i = 0; i < plan.selectors.length; i++) {
     const sel = plan.selectors[i]!;
     const leg = settled.legs[i]!;
-    const pick = pickByIdx[i]!;
     const { scoped, fr } = groupData.get(keyByIdx[i]!)!;
-    let selection;
-    if (pick.match !== "none") {
-      const picked = offersForPick(fr.offers, pick.label);
-      const ev = eventOf(picked, scoped.events); // per-leg home/away from this leg's market's event
-      const ctx = { home: ev?.homeName, away: ev?.awayName };
-      const slice = { events: scoped.events, betOffers: picked };
-      selection = select(slice, selSpec(sel.line, sel.odds, selectSubject(sel.subject), subjectParticipantId(leg, sel.subject), sel.odds_sort, sel.count), ctx);
+    const spec = selSpec(sel.line, sel.odds, selectSubject(sel.subject), subjectParticipantId(leg, sel.subject), sel.odds_sort, sel.count);
+    // select one market's outcomes; event comes off the picked offers (per-leg home/away binds to the right match).
+    const selectFor = (picked: BetOffer[]) =>
+      select({ events: scoped.events, betOffers: picked }, spec, { home: eventOf(picked, scoped.events)?.homeName, away: eventOf(picked, scoped.events)?.awayName });
+
+    // "main": no LLM pick — surface EVERY main market for the matched fixtures. Filter this leg's offers to the
+    // MAIN-tagged ones (the per-leg client-side cut — works on any endpoint; a no-op when recall shrank server-side),
+    // then emit one leg per distinct main market so execute groups them under their events. Line/subject/odds still
+    // apply per market via the same select() path; only the market-naming LLM step is skipped.
+    if (sel.market_concept === "main") {
+      const mainOffers = fr.offers.filter((b) => isMain(b.tags) && b.criterion?.id != null);
+      for (const label of new Set(mainOffers.map(marketLabelOf))) {
+        const selection = selectFor(offersForPick(mainOffers, label));
+        legsOut.push({ phrase: label, pick: { label, match: "exact" }, ...(selection ? { selection } : {}) });
+      }
+      continue;
     }
+
+    const pick = pickByIdx[i]!;
+    const selection = pick.match !== "none" ? selectFor(offersForPick(fr.offers, pick.label)) : undefined;
     legsOut.push({ phrase: sel.market_concept, pick, ...(selection ? { selection } : {}) });
   }
 

@@ -44,7 +44,12 @@ export function planRecall(settled: SettledEntities, plan: QueryPlan): RecallInp
     ? [...new Set(plan.selectors.flatMap((s) => s.bo_types ?? []).map(boTypeId).filter((x): x is number => x != null))]
     : [];
 
-  const base: RecallInput = { levels, ...(playState ? { playState } : {}), ...(boTypes.length ? { boTypes } : {}) };
+  // onlyMain: bind the server-side shrink ONLY when EVERY leg is the bare-event "main" market — a mixed query
+  // (one main leg + one named leg) shares this broad fetch, so a server onlyMain would starve the named leg;
+  // those cases fetch broad and the main leg's MAIN-tag filter is applied per-leg downstream (resolve.ts).
+  const onlyMain = plan.selectors.every((s) => s.market_concept === "main");
+
+  const base: RecallInput = { levels, ...(playState ? { playState } : {}), ...(boTypes.length ? { boTypes } : {}), ...(onlyMain ? { onlyMain: true } : {}) };
   // Model P: any named participant -> participant endpoint; else the competition group(s).
   if (participantIds.length) return { ...base, participantIds };
   return { ...base, ...(groupIds.length ? { groupIds } : {}) };

@@ -33,7 +33,7 @@ import type { Menu, MenuItem } from "./live-menu-types";
 export type Task = {
   endpoint: "group" | "participant";
   ids: number[];
-  params: { type?: number[]; onlyCompetitions?: boolean; excludeLive?: boolean; excludePrematch?: boolean };
+  params: { type?: number[]; onlyMain?: boolean; onlyCompetitions?: boolean; excludeLive?: boolean; excludePrematch?: boolean };
   // group only: how to pre-filter the full event list before batching when the group call caps.
   fanout?: { levels: ("fixture" | "competition")[]; playState?: "live" | "prematch" };
 };
@@ -70,14 +70,14 @@ async function runTask(task: Task): Promise<TaskResult> {
 // The fan-out workhorse: fetch ALL offers for a set of events, batched under the cap and run in parallel.
 // Batch size is conservative (~810 offers/match untyped, ~518 typed -> stay under 2000). `truncated` flips if
 // any single batch itself caps (a batch with an unusually offer-dense event).
-export async function fetchEventOffers(eventIds: number[], opts: { type?: number[] } = {}, pool = 6): Promise<{ betOffers: BetOffer[]; events: KEvent[]; truncated: boolean }> {
+export async function fetchEventOffers(eventIds: number[], opts: { type?: number[]; onlyMain?: boolean } = {}, pool = 6): Promise<{ betOffers: BetOffer[]; events: KEvent[]; truncated: boolean }> {
   const size = opts.type?.length ? 3 : 2;
   const chunks = [...batches(eventIds, size)];
   const betOffers: BetOffer[] = [];
   const evById = new Map<number, KEvent>();
   let truncated = false;
   for (let i = 0; i < chunks.length; i += pool) {
-    const responses = await Promise.all(chunks.slice(i, i + pool).map((c) => betOffersByEvents(c, { type: opts.type })));
+    const responses = await Promise.all(chunks.slice(i, i + pool).map((c) => betOffersByEvents(c, { type: opts.type, onlyMain: opts.onlyMain })));
     for (const r of responses) {
       betOffers.push(...r.betOffers);
       for (const e of r.events) evById.set(e.id, e);
@@ -105,7 +105,7 @@ async function fanOutGroup(task: Task, maxEvents?: number, window?: TimeWindow):
     if (hasWindow(window)) picked = filterEventsByTime(picked, window!); // time-scope the event list BEFORE batching
     let capped = false;
     if (maxEvents != null && picked.length > maxEvents) { picked = picked.slice(0, maxEvents); capped = true; }
-    const { betOffers, events, truncated } = await fetchEventOffers(picked.map((e) => e.id), { type: task.params.type });
+    const { betOffers, events, truncated } = await fetchEventOffers(picked.map((e) => e.id), { type: task.params.type, onlyMain: task.params.onlyMain });
     const evById = new Map<number, KEvent>();
     for (const e of picked) evById.set(e.id, e); // keep the source events' tags/state
     for (const e of events) evById.set(e.id, e); // overlay the batch events' richer participants
@@ -149,6 +149,7 @@ export type RecallInput = {
   playState?: "live" | "prematch"; // bound server-side ONLY when every leg agrees (else broad; scopeMenu filters)
   maxFanoutEvents?: number;
   boTypes?: number[]; // union of the selectors' bo_types ids — the server-side `type=` fetch shrink
+  onlyMain?: boolean; // EVERY leg is the bare-event "main" market -> server-side onlyMain shrink (group/event only; the participant endpoint ignores it, so a per-leg client-side MAIN-tag filter covers that case downstream)
 };
 
 export type RecallResult = {
@@ -209,9 +210,10 @@ function out(endpoint: RecallResult["endpoint"], betOffers: BetOffer[], events: 
 // bound (market deferred), and NO time/grain/co-occurrence narrowing here — that is per-leg, in scopeMenu.
 export async function recall(input: RecallInput): Promise<RecallResult> {
   const typeP = input.boTypes?.length ? { type: input.boTypes } : {};
+  const mainP = input.onlyMain ? { onlyMain: true } : {}; // all-main shrink; participant ignores it (filtered client-side downstream)
   // explicit fixtures -> the event endpoint (via the fan-out batcher)
   if (input.eventIds?.length) {
-    const r = await fetchEventOffers(input.eventIds, typeP);
+    const r = await fetchEventOffers(input.eventIds, { ...typeP, ...mainP });
     return out("event", r.betOffers, r.events, r.truncated);
   }
   // Model P: a named participant -> participant endpoint (even for competition-grain markets like the Golden Boot)
@@ -227,6 +229,7 @@ export async function recall(input: RecallInput): Promise<RecallResult> {
   const onlyComp = input.levels.length === 1 && input.levels[0] === "competition";
   const params: Task["params"] = {
     ...typeP,
+    ...mainP,
     ...(onlyComp ? { onlyCompetitions: true } : {}),
     ...(input.playState === "live" ? { excludePrematch: true } : input.playState === "prematch" ? { excludeLive: true } : {}),
   };
