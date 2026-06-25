@@ -143,8 +143,8 @@ export type Grain = "competition" | "match";
 // time / grain / co-occurrence narrowing happens AFTER the fetch, in scopeMenu — never here.
 export type RecallInput = {
   levels: Level[]; // union of leg levels — drives the group fan-out (covers both grains when legs differ)
-  groupIds?: number[]; // competition group ids (no participant named); >1 ⇒ parallel group fetches, split by event.groupId
-  participantIds?: number[]; // team/player ids — when present, the participant endpoint wins (Model P)
+  groupIds?: number[]; // competition group ids for legs naming no participant; >1 ⇒ parallel fetches, split by event.groupId
+  participantIds?: number[]; // team/player ids (Model P). May COEXIST with groupIds (a mixed query) — recall fetches + unions both
   eventIds?: number[]; // explicit fixtures, when already pinned
   playState?: "live" | "prematch"; // bound server-side ONLY when every leg agrees (else broad; scopeMenu filters)
   maxFanoutEvents?: number;
@@ -153,7 +153,7 @@ export type RecallInput = {
 };
 
 export type RecallResult = {
-  endpoint: "group" | "participant" | "event";
+  endpoint: "group" | "participant" | "event" | "mixed"; // "mixed" = a participant fetch + a group fetch unioned
   menu: Menu;
   data: { betOffers: BetOffer[]; events: KEvent[] };
   truncated: boolean;
@@ -216,29 +216,41 @@ export async function recall(input: RecallInput): Promise<RecallResult> {
     const r = await fetchEventOffers(input.eventIds, { ...typeP, ...mainP });
     return out("event", r.betOffers, r.events, r.truncated);
   }
-  // Model P: a named participant -> participant endpoint (even for competition-grain markets like the Golden Boot)
-  if (input.participantIds?.length) {
-    const task: Task = { endpoint: "participant", ids: input.participantIds, params: typeP };
-    const [res] = await runTasks([task], { maxFanoutEvents: input.maxFanoutEvents });
-    return out("participant", res!.betOffers, res!.events, res!.truncated, res!.failed ?? false);
+  // Model P: a named participant -> participant endpoint (even for competition-grain markets like the Golden Boot);
+  // a bare-competition leg -> its group(s). A MIXED query needs BOTH, so build every task and run them together —
+  // runTasks fans out a capped group task. event.groupId differentiates groups so scopeMenu can separate the legs.
+  const tasks: Task[] = [];
+  if (input.participantIds?.length) tasks.push({ endpoint: "participant", ids: input.participantIds, params: typeP });
+  if (input.groupIds?.length) {
+    // ONE task per group, run in parallel (each keeps its own cap/fan-out). onlyCompetitions only when EVERY leg
+    // is competition-grain; the fan-out covers the UNION of levels.
+    const onlyComp = input.levels.length === 1 && input.levels[0] === "competition";
+    const params: Task["params"] = {
+      ...typeP,
+      ...mainP,
+      ...(onlyComp ? { onlyCompetitions: true } : {}),
+      ...(input.playState === "live" ? { excludePrematch: true } : input.playState === "prematch" ? { excludeLive: true } : {}),
+    };
+    const fanout: NonNullable<Task["fanout"]> = { levels: input.levels, ...(input.playState ? { playState: input.playState } : {}) };
+    for (const id of input.groupIds) tasks.push({ endpoint: "group", ids: [id], params, fanout });
   }
-  // else the competition group(s): ONE task per group, run in parallel (each keeps its own cap/fan-out handling).
-  // event.groupId differentiates them so scopeMenu can separate the legs. onlyCompetitions only when EVERY leg is
-  // competition-grain; the fan-out covers the UNION of levels.
-  if (!input.groupIds?.length) throw new Error("recall: need groupIds, participantIds, or eventIds");
-  const onlyComp = input.levels.length === 1 && input.levels[0] === "competition";
-  const params: Task["params"] = {
-    ...typeP,
-    ...mainP,
-    ...(onlyComp ? { onlyCompetitions: true } : {}),
-    ...(input.playState === "live" ? { excludePrematch: true } : input.playState === "prematch" ? { excludeLive: true } : {}),
-  };
-  const fanout: NonNullable<Task["fanout"]> = { levels: input.levels, ...(input.playState ? { playState: input.playState } : {}) };
-  const tasks: Task[] = input.groupIds.map((id) => ({ endpoint: "group", ids: [id], params, fanout }));
+  if (!tasks.length) throw new Error("recall: need groupIds, participantIds, or eventIds");
+
   const results = await runTasks(tasks, { maxFanoutEvents: input.maxFanoutEvents });
+  // Union the task results into ONE broad dataset. A participant fetch and a group fetch overlap on a named team's
+  // OWN fixture, so dedup events AND betoffers by id (else that fixture's outcomes double up in every per-leg menu).
   const evById = new Map<number, KEvent>();
-  for (const r of results) for (const e of r.events) evById.set(e.id, e);
-  return out("group", results.flatMap((r) => r.betOffers), [...evById.values()], results.some((r) => r.truncated), results.some((r) => r.failed));
+  const boSeen = new Set<number>();
+  const betOffers: BetOffer[] = [];
+  for (const r of results) {
+    for (const e of r.events) evById.set(e.id, e);
+    for (const b of r.betOffers) {
+      if (b.id != null) { if (boSeen.has(b.id)) continue; boSeen.add(b.id); }
+      betOffers.push(b);
+    }
+  }
+  const endpoint = input.participantIds?.length && input.groupIds?.length ? "mixed" : input.participantIds?.length ? "participant" : "group";
+  return out(endpoint, betOffers, [...evById.values()], results.some((r) => r.truncated), results.some((r) => r.failed));
 }
 
 // scopeMenu — narrow the BROAD recall data to ONE leg's scope, then build that leg's menu (replaces finalize's
@@ -269,7 +281,7 @@ export function scopeMenu(
   const isMatch = (e: KEvent) => levelOf(e.tags) === "fixture";
   const others = evs.filter((e) => !isMatch(e));
   let matches = evs.filter(isMatch);
-  if (teamIds.length >= 2) matches = matches.filter((e) => fixtureHasAllTeams(e, teamIds)); // head-to-head
+  if (teamIds.length) matches = matches.filter((e) => fixtureHasAllTeams(e, teamIds)); // scope to fixtures with the team(s): 1 = that team's matches, 2+ = head-to-head
   if (window && (hasWindow(window) || window.pick)) {
     matches = filterEventsByTime(matches, window);
     if (window.pick) matches = applyFixturePick(matches, window.pick);

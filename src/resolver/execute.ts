@@ -134,7 +134,7 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
 
   // group resolved legs by EVENT (insertion order preserved). A leg becomes a RESULT only when it picked a
   // market AND select returned a concrete outcome — the prune falls out: an event with no pick never appears.
-  const byEvent = new Map<number, { event: KEvent; highlighted: EnvelopeHighlighted[] }>();
+  const byEvent = new Map<number, { event: KEvent; highlighted: EnvelopeHighlighted[]; byBo: Map<number, { b: BetOffer; outs: EnvelopeOutcome[] }> }>();
   const notes: string[] = [...(input.notes ?? [])]; // caller-built notes (e.g. unresolved time) ride along
   const noPick: string[] = []; // legs whose market wasn't offered -> clarify
   let resolvedLegs = 0; // legs that produced ≥1 outcome (drives the "independent markets" caveat — count LEGS)
@@ -160,26 +160,30 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
       continue;
     }
 
-    // event comes off the SELECTED outcome's betoffer (the whole pool is one market on one fixture).
-    const sel = founds.find((f) => f.o.id === selection?.outcomeId) ?? founds[0]!;
-    const e = sel.b.eventId != null ? eventById.get(sel.b.eventId) : undefined;
-    if (!e) {
+    if (pick.match === "close") notes.push(`closest market for "${phrase}" — not an exact settle`);
+
+    // A single leg's pool can span MULTIPLE fixtures (a "main" market like Match Result over the next N
+    // events). Group each outcome under ITS OWN betoffer's event — not the selected outcome's — else every
+    // fixture's offers collapse into one event block. Different lines are different betoffers; the query's
+    // match is flagged wherever it lands.
+    let placed = 0;
+    for (const f of founds) {
+      const e = f.b.eventId != null ? eventById.get(f.b.eventId) : undefined;
+      if (!e) continue;
+      let g = byEvent.get(e.id);
+      if (!g) byEvent.set(e.id, (g = { event: e, highlighted: [], byBo: new Map() }));
+      let grp = g.byBo.get(f.b.id ?? 0);
+      if (!grp) {
+        g.byBo.set(f.b.id ?? 0, (grp = { b: f.b, outs: [] }));
+        g.highlighted.push({ betOffer: toBetOffer(f.b), outcomes: grp.outs });
+      }
+      grp.outs.push({ ...toOutcome(f.o), ...(f.o.id === selection?.outcomeId ? { selected: true } : {}) });
+      placed++;
+    }
+    if (!placed) {
       notes.push(`selected outcome for "${phrase}" has no event in the live data`);
       continue;
     }
-
-    if (pick.match === "close") notes.push(`closest market for "${phrase}" — not an exact settle`);
-
-    let g = byEvent.get(e.id);
-    if (!g) byEvent.set(e.id, (g = { event: e, highlighted: [] }));
-    // emit the pool grouped by betoffer (different lines are different betoffers); flag the query's match.
-    const byBo = new Map<number, { b: BetOffer; outs: EnvelopeOutcome[] }>();
-    for (const f of founds) {
-      let grp = byBo.get(f.b.id ?? 0);
-      if (!grp) byBo.set(f.b.id ?? 0, (grp = { b: f.b, outs: [] }));
-      grp.outs.push({ ...toOutcome(f.o), ...(f.o.id === selection?.outcomeId ? { selected: true } : {}) });
-    }
-    for (const { b, outs } of byBo.values()) g.highlighted.push({ betOffer: toBetOffer(b), outcomes: outs });
     resolvedLegs += 1;
   }
 

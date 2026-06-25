@@ -121,13 +121,12 @@ export function eventMatchesTime(e: KEvent, w: TimeWindow, all: KEvent[]): boole
 export const filterEventsByTime = (events: KEvent[], w: TimeWindow): KEvent[] => events.filter((e) => eventMatchesTime(e, w, events));
 export const hasWindow = (w?: TimeWindow): boolean => !!w && (w.from != null || w.to != null || w.kickoff != null);
 
-// "next game" / "his next 2" / "their last match" — keep the first/last N fixtures by KICKOFF. Operates on a
-// list already narrowed to fixtures (the caller passes MATCH-tagged events only). Events with no start drop out
-// (can't order them); ties at a chosen kickoff are all kept (a double-header at the same time both count). The
-// `from=now` floor that resolveTimeWindow sets for a pick has usually already dropped past fixtures upstream.
+// "next game" / "his next 2" / "their last match" — keep the first/last N fixtures by KICKOFF. Counts EVENTS,
+// not kickoff slots: a competition-wide "next 3 events" wants exactly 3 fixtures, even when a WC group round
+// runs several at the same instant. Operates on a list already narrowed to fixtures (the caller passes
+// MATCH-tagged events only). Events with no start drop out (can't order them). The `from=now` floor that
+// resolveTimeWindow sets for a pick has usually already dropped past fixtures upstream.
 export function applyFixturePick(events: KEvent[], pick: FixturePick): KEvent[] {
-  const withStart = events.filter((e) => startOf(e) != null);
-  const times = [...new Set(withStart.map((e) => +startOf(e)!))].sort((a, b) => a - b);
-  const chosen = new Set(pick.order === "earliest" ? times.slice(0, pick.count) : times.slice(-pick.count));
-  return withStart.filter((e) => chosen.has(+startOf(e)!));
+  const sorted = events.filter((e) => startOf(e) != null).sort((a, b) => +startOf(a)! - +startOf(b)!);
+  return pick.order === "earliest" ? sorted.slice(0, pick.count) : sorted.slice(-pick.count);
 }

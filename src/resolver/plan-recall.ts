@@ -30,7 +30,12 @@ function legParticipants(leg: ResolvedLegScope): number[] {
 export function planRecall(settled: SettledEntities, plan: QueryPlan): RecallInput {
   const legs = settled.legs;
   const participantIds = [...new Set(legs.flatMap(legParticipants))];
-  const groupIds = [...new Set(legs.map((l) => settle(l.competition)?.id).filter((x): x is number => x != null))];
+  // groupIds come ONLY from legs that name NO participant: a participant leg is served by the participant endpoint
+  // (Model P), but a bare-competition leg ("next 3 in WC26") still needs its group fetched. A mixed query emits
+  // BOTH so neither leg's data starves the other (recall fetches and unions them).
+  const groupIds = [...new Set(
+    legs.filter((l) => legParticipants(l).length === 0).map((l) => settle(l.competition)?.id).filter((x): x is number => x != null),
+  )];
   const levels = [...new Set(legs.map((l) => l.level))] as Level[]; // union of leg grains -> the fan-out covers both
 
   // playState: bind server-side ONLY when every leg agrees (same non-null); else fetch broad (scopeMenu filters per leg).
@@ -50,7 +55,6 @@ export function planRecall(settled: SettledEntities, plan: QueryPlan): RecallInp
   const onlyMain = plan.selectors.every((s) => s.market_concept === "main");
 
   const base: RecallInput = { levels, ...(playState ? { playState } : {}), ...(boTypes.length ? { boTypes } : {}), ...(onlyMain ? { onlyMain: true } : {}) };
-  // Model P: any named participant -> participant endpoint; else the competition group(s).
-  if (participantIds.length) return { ...base, participantIds };
-  return { ...base, ...(groupIds.length ? { groupIds } : {}) };
+  // Model P: a named participant -> participant endpoint; a bare-competition leg -> its group; a mixed query -> both.
+  return { ...base, ...(participantIds.length ? { participantIds } : {}), ...(groupIds.length ? { groupIds } : {}) };
 }
