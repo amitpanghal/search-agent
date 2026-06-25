@@ -43,7 +43,7 @@ Per-layer outcomes are logged for **triage** (where it broke); the verdict is th
 
 - `types.ts` — `BatchQuery` / `GradeSpec` / `GradeResult`.
 - `llm-cache.ts` — content-addressed cache + `pending-llm.json` ledger + `CacheMiss`.
-- `pipeline-doubles.ts` — the `runPipeline` dependency-doubles (cached LLM steps, snapshot recall).
+- `pipeline-doubles.ts` — the `runPipeline` dependency-doubles (cached LLM steps; recall fetches the live feed FRESH every run, never cached).
 - `grader.ts` — envelope → pass/fail on the three axes.
 - `batches/batch-NNN.jsonl` — generated queries + by-construction grade specs.
 - `harness-run.ts` — the runner (wired once the `runPipeline(query, deps)` DI seam lands).

@@ -152,8 +152,10 @@ export async function* runPipeline(query: string, deps: PipelineDeps = REAL_DEPS
     const sel0 = plan.selectors[idxs[0]!]!;
     const scoped = scopeMenu(r.data, leg); // narrow the broad data to this group's leg scope
     if (scoped.timeUnresolved) {
-      const phrase = leg.time?.date_window?.value ?? leg.time?.kickoff_time_of_day ?? "you gave";
-      extraNotes.add(`Couldn't read the time "${phrase}" — showing all matching games instead.`);
+      const bad = scoped.unresolvedPhrase ?? "you gave";
+      extraNotes.add(scoped.timeApplied
+        ? `Couldn't read "${bad}" as a kickoff time — showing all kickoff times.`
+        : `Couldn't read "${bad}" — showing all matching games.`);
     }
     const keepTypes = boTypeIdSet(idxs.flatMap((i) => plan.selectors[i]!.bo_types ?? []));
     const subjId = subjectParticipantId(leg, sel0.subject);
@@ -199,7 +201,15 @@ export async function* runPipeline(query: string, deps: PipelineDeps = REAL_DEPS
 
     const pick = pickByIdx[i]!;
     const selection = pick.match !== "none" ? selectFor(offersForPick(fr.offers, pick.label)) : undefined;
-    legsOut.push({ phrase: sel.market_concept, pick, ...(selection ? { selection } : {}) });
+    // A `none` pick has no result: distinguish "the scope found no fixture at all" (a fixture-grain leg with an
+    // empty scoped slate) from "a fixture existed but no market fit the concept" — execute renders each differently.
+    const wantedFixture = sel.scope.level === "fixture" || !!sel.scope.teams?.length || !!sel.scope.time;
+    const unavailable = pick.match === "none"
+      ? (scoped.events.length === 0 && wantedFixture
+          ? { kind: "no-fixture" as const, ...(sel.scope.teams?.[0] ? { scope: sel.scope.teams[0] } : {}) }
+          : { kind: "no-market" as const })
+      : undefined;
+    legsOut.push({ phrase: sel.market_concept, pick, ...(selection ? { selection } : {}), ...(unavailable ? { unavailable } : {}) });
   }
 
   // execute gets only the REFERENCED data (union of the groups' narrowed events/offers), never the broad fetch —

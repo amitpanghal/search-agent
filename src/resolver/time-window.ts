@@ -11,7 +11,7 @@ import type { KEvent } from "./offering-client";
 type TimeField = NonNullable<Scope["time"]>;
 type Kickoff = { afterHour?: number; beforeHour?: number; relative?: "late" | "early" };
 export type FixturePick = { order: "earliest" | "latest"; count: number };
-export type TimeWindow = { from?: Date; to?: Date; kickoff?: Kickoff; pick?: FixturePick; unresolved?: boolean };
+export type TimeWindow = { from?: Date; to?: Date; kickoff?: Kickoff; pick?: FixturePick; unresolved?: boolean; unresolvedPhrase?: string };
 
 const startOfUTCDay = (d: Date) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0));
 const endOfUTCDay = (d: Date) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59, 59, 999));
@@ -80,13 +80,13 @@ export function resolveTimeWindow(time: TimeField, ctx: { now: Date; tournamentS
     if (base) {
       const r = parseDateWindow(time.date_window.value, base, ctx.now);
       if (r) [w.from, w.to] = r;
-      else w.unresolved = true; // a phrase we don't understand -> clarify (Phase 5)
+      else { w.unresolved = true; w.unresolvedPhrase = time.date_window.value; } // a phrase we don't understand -> clarify (Phase 5)
     }
     // tournament anchor + no start -> ignored (no from/to, not flagged): a rare far-fetched case [Decided]
   }
   if (time.kickoff_time_of_day) {
     const k = parseKickoff(time.kickoff_time_of_day);
-    if (k) w.kickoff = k; else w.unresolved = true;
+    if (k) w.kickoff = k; else { w.unresolved = true; w.unresolvedPhrase = time.kickoff_time_of_day; }
   }
   if (time.fixture_pick) {
     w.pick = time.fixture_pick;

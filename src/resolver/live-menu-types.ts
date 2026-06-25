@@ -77,6 +77,9 @@ export type ResolvedLeg = {
   phrase: string;
   pick: MarketPick;
   selection?: Selection;
+  // why a `none`-pick leg has no result: the scope matched no fixture (`no-fixture`, `scope` = the team it
+  // wanted) vs a fixture existed but no market fit the concept (`no-market`). Drives the clarify wording.
+  unavailable?: { kind: "no-fixture" | "no-market"; scope?: string };
 };
 
 // The whole post-fetch result handed to execute: the resolved legs, the live data they were resolved against

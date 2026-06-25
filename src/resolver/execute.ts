@@ -136,13 +136,15 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
   // market AND select returned a concrete outcome — the prune falls out: an event with no pick never appears.
   const byEvent = new Map<number, { event: KEvent; highlighted: EnvelopeHighlighted[]; byBo: Map<number, { b: BetOffer; outs: EnvelopeOutcome[] }> }>();
   const notes: string[] = [...(input.notes ?? [])]; // caller-built notes (e.g. unresolved time) ride along
-  const noPick: string[] = []; // legs whose market wasn't offered -> clarify
+  const noPick: string[] = []; // clarify sentences for legs with no pick (no-fixture vs no-market)
   let resolvedLegs = 0; // legs that produced ≥1 outcome (drives the "independent markets" caveat — count LEGS)
 
   for (const leg of input.legs) {
-    const { phrase, pick, selection } = leg;
+    const { phrase, pick, selection, unavailable } = leg;
     if (pick.match === "none" || pick.label == null) {
-      noPick.push(phrase);
+      noPick.push(unavailable?.kind === "no-fixture"
+        ? `No ${unavailable.scope ? `${unavailable.scope} ` : ""}match found for your search — so no "${phrase}" to show.`
+        : `No "${phrase}" market is available.`);
       continue;
     }
 
@@ -153,14 +155,14 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
     const founds = ids.map((id) => outcomeById.get(id)).filter((x): x is { o: KOutcome; b: BetOffer } => x != null);
     if (!founds.length) {
       const who = selection?.subject ?? "that selection";
-      if (selection?.fallback === "subject-absent") notes.push(`${who} is not offered for "${phrase}"`);
-      else if (selection?.fallback === "line-absent") notes.push(`that line isn't offered for "${phrase}"`);
-      else if (selection?.fallback === "odds-absent") notes.push(`no outcome in that price range for "${phrase}"`);
-      else notes.push(`no settling outcome found for "${phrase}"`);
+      if (selection?.fallback === "subject-absent") notes.push(`${who} isn't priced in the "${phrase}" market.`);
+      else if (selection?.fallback === "line-absent") notes.push(`that line isn't offered for "${phrase}".`);
+      else if (selection?.fallback === "odds-absent") notes.push(`no outcome in that price range for "${phrase}".`);
+      else notes.push(`no settling outcome found for "${phrase}".`);
       continue;
     }
 
-    if (pick.match === "close") notes.push(`closest market for "${phrase}" — not an exact settle`);
+    if (pick.match === "close") notes.push(`closest market for "${phrase}" — not an exact settle.`);
 
     // A single leg's pool can span MULTIPLE fixtures (a "main" market like Match Result over the next N
     // events). Group each outcome under ITS OWN betoffer's event — not the selected outcome's — else every
@@ -181,7 +183,7 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
       placed++;
     }
     if (!placed) {
-      notes.push(`selected outcome for "${phrase}" has no event in the live data`);
+      notes.push(`selected outcome for "${phrase}" has no event in the live data.`);
       continue;
     }
     resolvedLegs += 1;
@@ -196,14 +198,15 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
 
   // 2+ independent market LEGS are not a joint bet -> the same caveat the old union note carried. Count LEGS,
   // not highlighted entries: one over/under leg now spans several line-betoffers.
-  if (resolvedLegs >= 2) notes.push("showing each market on its own — not only the games that have all of these together");
+  if (resolvedLegs >= 2) notes.push("showing each market on its own — not only the games that have all of these together.");
 
   // Global fetch caveats (state a fact + a next step, never hedge): the broad fetch was capped, or a request errored.
   if (input.truncated) notes.push("This is a broad search — showing the top markets. Add a team, league, or time to see more.");
   if (input.fetchFailed) notes.push("Some live data is temporarily unavailable — showing what loaded.");
 
-  // carried entity clarifications + any leg whose market wasn't offered, folded into one string (null = clean).
-  const reasons = [...clarifications.map((c) => c.question), ...noPick.map((p) => `No market is offered for "${p}".`)];
+  // carried entity clarifications + any leg whose market wasn't offered (each already a full sentence), folded
+  // into one string (null = clean).
+  const reasons = [...clarifications.map((c) => c.question), ...noPick];
   const clarificationNeeded = reasons.length ? reasons.join(" ") : null;
 
   return { summary: "", results, notes: [...new Set(notes)], clarificationNeeded };

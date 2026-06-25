@@ -259,7 +259,7 @@ export async function recall(input: RecallInput): Promise<RecallResult> {
 // co-occurrence and the time window + "next game" pick. COMPETITION outrights + untagged events pass the
 // MATCH-only filters (same discipline finalize had), and a MISSING level/groupId is kept (never drop on missing
 // data). Returns the menu + narrowed offers/events + kept event-ids (so one leg's events stay out of another's).
-export type ScopedMenu = { menu: Menu; offers: BetOffer[]; events: KEvent[]; eventIds: number[]; timeUnresolved: boolean };
+export type ScopedMenu = { menu: Menu; offers: BetOffer[]; events: KEvent[]; eventIds: number[]; timeUnresolved: boolean; unresolvedPhrase?: string; timeApplied: boolean };
 export function scopeMenu(
   data: { betOffers: BetOffer[]; events: KEvent[] },
   leg: ResolvedLegScope,
@@ -289,5 +289,5 @@ export function scopeMenu(
   evs = [...others, ...matches];
   const keep = new Set(evs.map((e) => e.id));
   const offers = data.betOffers.filter((b) => b.eventId == null || keep.has(b.eventId));
-  return { menu: buildMenu(offers), offers, events: evs, eventIds: [...keep], timeUnresolved: !!window?.unresolved };
+  return { menu: buildMenu(offers), offers, events: evs, eventIds: [...keep], timeUnresolved: !!window?.unresolved, unresolvedPhrase: window?.unresolvedPhrase, timeApplied: !!(window && (window.from || window.to)) };
 }

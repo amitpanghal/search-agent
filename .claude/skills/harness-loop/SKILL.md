@@ -12,14 +12,14 @@ description: >-
 # harness-loop
 
 An offline test rig for the resolver pipeline. It runs the real `runPipeline(query, HARNESS_DEPS)`
-but swaps the LLM boundaries for a content-addressed cache and serves recall from a per-input cache.
+but swaps the LLM boundaries for a content-addressed cache and fetches recall live (a fresh feed pull every run).
 Grading reads only the final `ResponseEnvelope`. See `src/harness-loop/README.md` for the design.
 
 ## Hard constraint: never call the LLM API
 The three LLM steps (extract, entities, markets) are served from `src/harness-loop/llm-cache/`.
 On a miss the run records the request and aborts that query — **you (the orchestrator) fulfil it with a
 subagent**, not an API call. Never set or use `ANTHROPIC_API_KEY` here. (Recall does fetch the live feed
-once per input and caches it; that is the only network the rig uses.)
+fresh on every run — never cached; that is the only network the rig uses.)
 
 ## Run a batch
 ```
@@ -76,7 +76,7 @@ query uses `targets: []`. Optional: `oddsMin` / `oddsMax` (post-resolve price bo
 
 ## Files
 - `harness-run.ts` — the runner (run a batch, print scoreboard, flush misses).
-- `pipeline-doubles.ts` — `HARNESS_DEPS`: cached extract/entities/markets + live-cached recall.
+- `pipeline-doubles.ts` — `HARNESS_DEPS`: cached extract/entities/markets + fresh live recall (never cached).
 - `llm-cache.ts` — content-addressed cache + `pending-llm.json` ledger + `CacheMiss`.
 - `grader.ts` — envelope → pass/fail on market targets, odds bounds, time-soft.
 - `llm-cache/` — captured LLM outputs (keyed). `batches/` — generated query batches.
