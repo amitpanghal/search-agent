@@ -1,7 +1,0 @@
-[
-  {
-    "ref": 2,
-    "match": "exact",
-    "reason": "menu[2] is 'To qualify from Group Stage', exact match for the user phrase 'to qualify'"
-  }
-]

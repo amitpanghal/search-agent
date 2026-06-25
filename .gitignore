@@ -22,3 +22,7 @@ scripts/.*.txt
 scripts/.*.out
 scripts/.*.err
 scripts/.trace-out/
+
+# Harness-loop generated artifacts: content-addressed LLM/recall caches + generated query batches.
+src/harness-loop/llm-cache/
+src/harness-loop/batches/

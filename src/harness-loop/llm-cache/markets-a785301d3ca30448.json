@@ -1,7 +1,0 @@
-[
-  {
-    "ref": 9,
-    "match": "exact",
-    "reason": "menu[9] is 'Total Goals', exact match for the user phrase 'total goals'"
-  }
-]

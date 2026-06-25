@@ -1,7 +1,0 @@
-[
-  {
-    "ref": 10,
-    "match": "close",
-    "reason": "menu[10] 'To score most goals in the Competition for the Team' matches the goal-scoring concept but is team-scoped; true top-scorer (tournament-wide) not on menu"
-  }
-]
