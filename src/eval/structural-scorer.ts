@@ -67,7 +67,7 @@ type GoldSelector = ResolvedGold["selectors"][number];
 type PredLine = NonNullable<PredSelector["line"]>;
 type GoldLine = NonNullable<GoldSelector["line"]>;
 type OddsVal = { min?: number; max?: number };
-type StageVal = { round: string | null; ordinal: "first" | "last" | null; conditional: boolean };
+type StageVal = string;
 type TimeVal = {
   date_window: { value: string; anchor: "tournament" | "now" } | null;
   kickoff_time_of_day: string | null;
@@ -118,14 +118,8 @@ function bindingFailure(g: GoldSelector, p: PredSelector): string | null {
 function stageNote(g: StageVal | null, p: StageVal | null): string | null {
   if (!g && !p) return null;
   if (!g || !p) return `stage: expected ${JSON.stringify(g)}, got ${JSON.stringify(p)}`;
-  const diffs: string[] = [];
-  const gr = g.round ? normalize(g.round) : null;
-  const pr = p.round ? normalize(p.round) : null;
-  const roundOk = gr === pr || (!!gr && !!pr && (gr.includes(pr) || pr.includes(gr)));
-  if (!roundOk) diffs.push(`round ${JSON.stringify(p.round)} vs ${JSON.stringify(g.round)}`);
-  if (g.ordinal !== p.ordinal) diffs.push(`ordinal ${p.ordinal} vs ${g.ordinal}`);
-  if (g.conditional !== p.conditional) diffs.push(`conditional ${p.conditional} vs ${g.conditional}`);
-  return diffs.length ? `stage: ${diffs.join(", ")}` : null;
+  const gr = normalize(g), pr = normalize(p);
+  return gr === pr || gr.includes(pr) || pr.includes(gr) ? null : `stage: round ${JSON.stringify(p)} vs ${JSON.stringify(g)}`;
 }
 
 function timeNote(g: TimeVal | null, p: TimeVal | null): string | null {

@@ -78,8 +78,8 @@ export const BEHAVIOR_TAGS: Record<
   },
   "stage": {
     tier: "soft",
-    desc: "Tournament round, including subject-relative openers and conditional slots.",
-    example: "\"Spain opener\", \"Argentina's semi if they reach it\" -> stage round / ordinal / conditional.",
+    desc: "Tournament round.",
+    example: "\"the quarterfinal\", \"the knockout tie\" -> stage round (text).",
   },
   "time": {
     tier: "soft",

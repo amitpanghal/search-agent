@@ -48,11 +48,10 @@ function sanitizeBoTypes(rec: Record<string, unknown>): void {
   else delete rec.bo_types;
 }
 
-// Per-leg scope: an all-null stage/time skeleton fails its refine -> coerce to null (omit the facet); default
+// Per-leg scope: a blank `stage` or an all-null `time` skeleton -> coerce to null (omit the facet); default
 // the required-nullable `region`/`play_state` so an absent or garbage value still parses.
 function normalizeScope(sc: Record<string, unknown>): void {
-  const st = sc.stage as Record<string, unknown> | null;
-  if (st && st.round == null && st.ordinal == null) sc.stage = null;
+  if (typeof sc.stage === "string" && !sc.stage.trim()) sc.stage = null;
   const tm = sc.time as Record<string, unknown> | null;
   if (tm && tm.date_window == null && tm.kickoff_time_of_day == null && tm.fixture_pick == null) sc.time = null;
   if (!("region" in sc)) sc.region = null;

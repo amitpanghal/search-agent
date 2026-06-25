@@ -10,7 +10,7 @@ Y"). Your job is to split it into typed, **subject-bound** facets.
 All *data* values are plain text close to the query wording (market names, entity names,
 competition, region, position, stage round, time phrases). Only *classification* fields are
 fixed enums (`status`, `sport`, `subject.kind`, `level`, player
-`role`, `ordinal`, `date_window.anchor`). Never put an id anywhere.
+`role`, `date_window.anchor`). Never put an id anywhere.
 
 Work in three steps.
 
@@ -38,75 +38,57 @@ Neutral examples:
 ## Step 2 — Scope each selector (`scope`)
 
 **Every selector carries its own `scope`** — the fixtures THAT leg settles over. There is **no** query-level
-scope and **no inheritance**: when legs share a value (competition, region, teams, a time window), **repeat it on
-every leg's `scope`**. Two rules make or break multi-leg queries:
+scope and **no inheritance**: when legs share a value (competition, region, teams, time), **repeat it on every
+leg's `scope`**. Two rules make or break multi-leg queries:
 
-- **Tag `level` independently per leg**, by what settles THAT leg — a tournament-wide outcome (outright winner,
-  an award, top scorer / most goals, group winner, a named team's progression) is `competition`; a single-match
-  outcome is `fixture`. Two legs in one query may differ.
+- **Tag `level` per leg**, by what settles THAT leg — a tournament-wide outcome (the outright winner, an award,
+  a tournament-long stat leader, a team's progression) is `competition`; a single-match outcome is `fixture`.
+  Two legs may differ.
 - **Keep a fixture leg's `time`/`fixture_pick` even when a sibling leg is `competition`** — "next game", "on
   Sunday", "tonight" belong to the fixture leg they describe; a competition leg never absorbs them.
 
 Fields (each leg's `scope`):
 
-- **`teams`**: named teams that scope the match(es), as text. "Germany vs Italy" →
-  `["Germany","Italy"]`. May be empty for a market-only query.
-- **`players`**: players that scope **which fixtures** (not who owns a market), each
-  `{ name, role }`:
-  - "featuring / with / involving X", "every X appearance" → `role: "plays"`
-  - "X starting", "X in the lineup" → `role: "starts"`
-  - "X is captain" → `role: "captain"`
-  - Record the role exactly as stated — never downgrade it. The same player may also own a
-    market in Step 3.
-- **`competition`**: named tournament as text ("WC 26" → "World Cup 2026"), else `null`.
-- **`region`** (or `null`): a place that scopes the competition — it says **where** the matches are,
-  or qualifies a competition phrase — **not** a competitor. Split a leading place/place-adjective off
-  a competition phrase into `region`, keeping the rest as `competition`. The same place word is a
-  **`team`** instead when it's the side that plays / wins / scores. Decide by the place's role, not
-  the word itself; normalize a place-adjective to its place noun.
-- **`level`** — settlement **scope**, not whether a tournament is named. `"competition"` only
-  if it settles over the whole tournament / many matches (outright, award, tournament
-  top-scorer, "across the group stage"); else `"fixture"` — even when a competition is named.
-  ("Croatia fouls at WC 26", "first foul inside 2 min" → fixture; "at WC 26" sets
+- **`teams`**: named teams that scope the match(es), as text ("A vs B" → `["A","B"]`). May be empty for a
+  market-only query.
+- **`players`**: players that scope **which fixtures** (not who owns a market), each `{ name, role }`. Role from
+  the wording — "featuring / with / involving X" → `"plays"`; "X starting / in the lineup" → `"starts"`; "X is
+  captain" → `"captain"`. Record the role as stated; the same player may also own a market in Step 3.
+- **`competition`**: named tournament as text, abbreviations expanded, else `null`.
+- **`region`** (or `null`): a place that scopes the competition — **where** the matches are, or that qualifies a
+  competition phrase — **not** a competitor. Split a leading place off a competition phrase into `region`, keeping
+  the rest as `competition`. The same place word is a **`team`** when it's the side that plays / wins / scores —
+  decide by the place's role, not the word; normalize a place-adjective to its place noun.
+- **`level`** — settlement **scope**, not whether a tournament is named. `"competition"` only if it settles over
+  the whole tournament / many matches (outright, award, tournament-long stat leader); else `"fixture"` — even
+  when a competition is named. (A single-match stat "at <tournament>" is `fixture`; the tournament sets
   `competition`, not `level`.)
-- **`stage`** (or `null`) — the tournament round, as `{ round, ordinal, conditional }`:
-  - `round`: text of the round ("group stage", "round of 16", "quarterfinal", "semifinal",
-    "final", "knockout"), else `null`.
-  - At least one of `round`/`ordinal` must be set when `stage` is present.
-- **`time`** (or `null`) — as `{ date_window, kickoff_time_of_day, fixture_pick }`. Emit `null` when the leg
-  states no timing — **never an all-null object** `{date_window:null, kickoff_time_of_day:null, fixture_pick:null}`:
-  - `date_window`: `{ value, anchor }`. `value` = a CANONICAL TOKEN, never free text — map any
-    date phrase to the nearest of: `today` (also "this evening", "later today", "right now"),
-    `tonight`, `tomorrow`, `weekend`, a **named weekday** `monday`…`sunday` (any single day-of-week
-    the query names — "Sunday"/"on Sat"/"Mon" → `sunday`/`saturday`/`monday`; the resolver fills in
-    the real date, always `anchor: "now"`), or a relative range `next_<N>_hours` / `next_<N>_days` /
-    `next_<N>_weeks` with the number filled in ("this week" → `next_7_days`, "next 48 hours" →
-    `next_48_hours`). A weekday paired with a time band splits — "Monday night" → `date_window`
-    `monday` **and** `kickoff_time_of_day` "night". `anchor` = `"tournament"` for tournament-relative
-    phrases ("first week", "opening weekend" → `weekend`) or `"now"` for clock-relative ones.
+- **`stage`** (or `null`) — the tournament round as text ("quarterfinal", "final", "knockout"…), else `null`.
+- **`time`** (or `null`) — `{ date_window, kickoff_time_of_day, fixture_pick }`. Emit `null` when the leg states
+  no timing — **never an all-null object**.
+  - `date_window`: `{ value, anchor }`. `value` is a CANONICAL TOKEN, never free text — map any date phrase to
+    the nearest of: `today` (also "this evening", "later today", "right now"), `tonight`, `tomorrow`, `weekend`,
+    a named weekday `monday`…`sunday`, or a relative range `next_<N>_hours` / `next_<N>_days` / `next_<N>_weeks`
+    ("this week" → `next_7_days`, "next 48 hours" → `next_48_hours`). `anchor` = `"tournament"` for
+    tournament-relative phrases ("first week", "opening weekend"), else `"now"` (clock-relative; the resolver
+    fills the real date). "Monday night" splits → `date_window` `monday` **and** `kickoff_time_of_day` "night".
   - `kickoff_time_of_day`: a time-of-day band as text ("late kick-offs"), else `null`.
-  - `fixture_pick`: `{ order, count }` for matches picked by clock order — "next game", "his next 2
-    fixtures", "their last match" (else `null`); set it even with no date named. `order` = `"earliest"`
-    (next/upcoming/first) or `"latest"` (last/most recent); `count` = the number named (default 1). A date
-    range stays `date_window`; "late kick-offs" stays `kickoff_time_of_day`; a round ordinal ("last group
-    game") stays `stage` — never set with `stage.ordinal`.
-- **`play_state`** (`"live" | "prematch"`, or `null`) — whether THIS LEG restricts to matches
-  **in progress** or **not yet started** (per-leg, like every other scope field). "live / in-play / playing now / currently on" → `"live"`;
-  "pre-match / before kick-off / not started" → `"prematch"`; else `null`. **Only in-progress wording
-  sets `live`** — a bare clock phrase ("now", "today", "next 48 hours", "this week") is a `time`
-  window (anchor `now`), never `play_state`. The two can co-occur ("live markets right now" →
-  `play_state "live"` **and** `date_window` token `today`).
+  - `fixture_pick`: `{ order, count }` for matches picked by clock order — "next game", "their last match" (else
+    `null`; set even with no date named). `order` = `"earliest"` (next/upcoming/first) or `"latest"` (last/most
+    recent); `count` = the number named (default 1).
+- **`play_state`** (`"live" | "prematch"`, or `null`) — whether THIS LEG restricts to matches **in progress** or
+  **not yet started**. "live / in-play / playing now / currently on" → `"live"`; "pre-match / before kick-off /
+  not started" → `"prematch"`; else `null`. **Only in-progress wording sets `live`** — a bare clock phrase
+  ("now", "today", "this week") is a `time` window (anchor `now`), never `play_state`. The two can co-occur
+  ("live markets right now" → `play_state "live"` **and** `date_window` `today`).
 
-Keep stage and `kickoff_time_of_day` as the **stated words**; map `date_window` to a canonical
-token (above). Do not resolve to real dates or brackets.
+Keep stage and `kickoff_time_of_day` as the **stated words**; map `date_window` to a canonical token (above). Do
+not resolve to real dates or brackets.
 
-Neutral examples:
-- "the Italy opener" → stage `{ round: null, ordinal: "first", conditional: false }`.
-- "Germany's quarterfinal" → stage `{ round: "quarterfinal"}`.
-- "games in the opening weekend" → time `{ date_window: { value: "weekend", anchor:
-  "tournament" }, kickoff_time_of_day: null, fixture_pick: null }`.
-- "his next game" → time `{ date_window: null, kickoff_time_of_day: null, fixture_pick: { order:
-  "earliest", count: 1 } }`.
+Examples:
+- "the quarterfinal" → `stage: "quarterfinal"`.
+- "in the opening weekend" → time `{ date_window: { value: "weekend", anchor: "tournament" }, kickoff_time_of_day: null, fixture_pick: null }`.
+- "their next game" → time `{ date_window: null, kickoff_time_of_day: null, fixture_pick: { order: "earliest", count: 1 } }`.
 
 ---
 

@@ -52,14 +52,6 @@ const Odds = z
   .refine((o) => o.min !== undefined || o.max !== undefined, "need >=1 bound")
   .refine((o) => o.min === undefined || o.max === undefined || o.min <= o.max, "min <= max");
 
-const Stage = z
-  .object({
-    round: z.string().min(1).nullable(),
-    ordinal: z.enum(["first", "last"]).nullable(),
-    conditional: z.boolean(),
-  })
-  .refine((s) => s.round !== null || s.ordinal !== null, "stage needs a round or an ordinal");
-
 const Time = z
   .object({
     date_window: z
@@ -90,7 +82,7 @@ const Scope = z.object({
   // subtree. Nullable; populated by the extractor (see extractor-prompt.md region/team routing rule).
   region: z.string().min(1).nullable(),
   level: z.enum(["fixture", "competition"]),
-  stage: Stage.nullable(),
+  stage: z.string().min(1).nullable(), // the tournament round as text, else null
   time: Time.nullable(),
   // In-play vs pre-match restriction (sport-agnostic). `live` = matches in progress; `prematch` = not yet
   // started; `null` = no preference. Required-nullable like `region` (always present, value-or-null), so the

@@ -82,13 +82,7 @@ const MarketConcept = z.union([
   z.object({ none: z.literal(true), accept: z.array(z.string()).default([]) }),
 ]);
 
-const Stage = z
-  .object({
-    round: z.string().min(1).nullable(), // text -- resolved by the live layer (E2)
-    ordinal: z.enum(["first", "last"]).nullable(),
-    conditional: z.boolean(),
-  })
-  .refine((s) => s.round !== null || s.ordinal !== null, "stage needs a round or an ordinal");
+const Stage = z.string().min(1); // the tournament round as text -- resolved by the live layer (E2)
 
 const Time = z
   .object({
