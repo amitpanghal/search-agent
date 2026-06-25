@@ -46,12 +46,6 @@ const dirOf = (o: KOutcome): Dir | undefined => {
   if (!noType(o.type)) return undefined; // type IS informative, just not a direction (OT_ONE, OT_TWO, …)
   return (["over", "under", "yes", "no"] as const).find((d) => d === (o.label ?? "").toLowerCase());
 };
-// A direction's POLARITY: over/yes are the HIGH side of a threshold, under/no the LOW side. The query's
-// direction is only a PREFERENCE for which side to pre-select, reconciled onto whatever the market offers — so
-// "over 2+ goals" (high) lands on a Yes/No "to score 2+" market (high), while an asked "under" stays honestly
-// absent when only the "over" side exists. Polarity is preserved; only the over/under-vs-yes/no wording is bridged.
-const POLE: Record<Dir, "hi" | "lo"> = { over: "hi", yes: "hi", under: "lo", no: "lo" };
-const poleOf = (o: KOutcome): "hi" | "lo" | undefined => { const d = dirOf(o); return d ? POLE[d] : undefined; };
 
 // The outcome line is stored as integer millis (2500 = 2.5, -500 = -0.5); to decimal for matching.
 const lineOf = (o: KOutcome): number | null => (o.line != null ? o.line / 1000 : null);
@@ -179,14 +173,11 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
         const l = lineOf(c.o);
         return l != null && sameLine(c.bo) && (c.o.type === "OT_TWO" || c.o.label === "2") ? -l : l;
       };
-      // Restrict the SELECTED pick to the asked SIDE by polarity (over↔yes / under↔no): a query "over" still
-      // selects on a Yes/No market, but a side the market simply lacks stays honestly absent — exact line first,
-      // else the nearest offered line on that side.
-      const wantPole = spec.dir ? POLE[spec.dir] : undefined;
-      const sideCands = wantPole ? pool.filter(({ o }) => poleOf(o) === wantPole) : pool;
+      // Exact offered line first, else the nearest offered line. Every side rides along in the pool — the
+      // query no longer states over/under, so the rung alone picks which outcome is flagged the match.
       const nearest = (set: Cand[]) =>
         set.filter((c) => effLine(c) != null).sort((a, b) => Math.abs(effLine(a)! - spec.line!) - Math.abs(effLine(b)! - spec.line!))[0];
-      const chosen = sideCands.find((c) => effLine(c) === spec.line) ?? nearest(sideCands);
+      const chosen = pool.find((c) => effLine(c) === spec.line) ?? nearest(pool);
       return chosen ? withPool(chosen.o, effLine(chosen)!) : absent("line-absent");
     }
     // direction only. The asked side is a PREFERENCE over the live market, never a drop (same decision as the

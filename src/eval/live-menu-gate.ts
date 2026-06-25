@@ -212,17 +212,6 @@ export async function runLiveMenuGate(): Promise<GateResult> {
     check("select F: type-11 home +1.0 (no negation)", rh.outcomeId === wantHome && rh.fallback == null, `got ${rh.outcomeId} want ${wantHome}`);
   }
 
-  // (F6) Player line (type 127) — direction not offered on a 1-outcome betoffer -> honest fallback, not a wrong pick.
-  {
-    const isOver = (o: KOutcome) => o.type === "OT_OVER" || (o.label ?? "").toLowerCase() === "over";
-    const one = match.betOffers.find((b) => b.betOfferType?.id === 127 && (b.outcomes ?? []).length === 1 && isOver(b.outcomes![0]!));
-    if (one?.outcomes?.[0]) {
-      const player = one.outcomes[0].participant ?? "";
-      const r = select({ events: match.events, betOffers: [one] }, { subject: player, dir: "under", line: 2.5 }, ctx);
-      check("select F: type-127 under not offered (1-outcome bo) -> line-absent", r.fallback === "line-absent", `got ${r.fallback ?? "exact"}`);
-    }
-  }
-
   lines.unshift(`Live-menu post-fetch gate (captured snapshot ${snap.captured.slice(0, 10)}, no network/LLM): ${passed}/${total}`);
   return { pass: passed === total, lines };
 }
