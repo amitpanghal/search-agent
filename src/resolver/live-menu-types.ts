@@ -39,8 +39,9 @@ export type SettledEntities = ResolvedScope & {
 export type MenuItem = {
   label: string;
   eventId?: number;
+  outcomes?: string[]; // meaningful outcome labels (named, non-participant) — set only when they disambiguate the market
 };
-// The filtered live list handed to RESOLVE — labels only, no odds/outcomes (theory §6, §8 rule 11).
+// The filtered live list handed to RESOLVE — labels only (plus outcomes on ambiguous markets).
 export type Menu = MenuItem[];
 
 // ---- RESOLVE(market) output ----
@@ -54,6 +55,8 @@ export type MarketPick = {
   label?: string;
   match: MatchLabel;
   reason?: string;
+  outcomeLabel?: string; // the resolver-picked outcome when the menu item exposed outcomes (verbatim from MenuItem.outcomes)
+  related?: string[]; // menu labels for related markets (same fixture, intent-ranked, most direct first; absent = none)
 };
 
 // ---- SELECT output ----

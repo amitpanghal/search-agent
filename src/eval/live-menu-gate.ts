@@ -103,14 +103,14 @@ export async function runLiveMenuGate(): Promise<GateResult> {
   });
   type SCase = { phrase: string; market: string; sel: SelectSpec; want: "exact" | "subject-absent" };
   const SDECK: SCase[] = [
-    { phrase: "under 4.5 total goals", market: "Total Goals", sel: { dir: "under", line: 4.5 }, want: "exact" },
+    { phrase: "under 4.5 total goals", market: "Total Goals", sel: { dir: "under", lineValue: 4.5 }, want: "exact" },
     // nearest line is now just the SELECTED outcome (no `nearest-line` flag) — 2.25 -> 2.5, a concrete pick.
-    { phrase: "over 2.25 total goals", market: "Total Goals", sel: { dir: "over", line: 2.25 }, want: "exact" },
-    { phrase: "USA over 0.5 goals", market: "Total Goals by USA", sel: { dir: "over", line: 0.5 }, want: "exact" },
-    { phrase: "Çalhanoglu to score 2+", market: "To score at least 2 goals", sel: { subject: "Çalhanoglu", dir: "yes", line: 2 }, want: "exact" },
-    { phrase: "Turkey -0.5 handicap", market: "Asian Handicap", sel: { subject: "Turkey", line: -0.5 }, want: "exact" },
+    { phrase: "over 2.25 total goals", market: "Total Goals", sel: { dir: "over", lineValue: 2.25 }, want: "exact" },
+    { phrase: "USA over 0.5 goals", market: "Total Goals by USA", sel: { dir: "over", lineValue: 0.5 }, want: "exact" },
+    { phrase: "Çalhanoglu to score 2+", market: "To score at least 2 goals", sel: { subject: "Çalhanoglu", dir: "yes", lineValue: 2 }, want: "exact" },
+    { phrase: "Turkey -0.5 handicap", market: "Asian Handicap", sel: { subject: "Turkey", lineValue: -0.5 }, want: "exact" },
     { phrase: "home team to win", market: "Full Time", sel: { subject: "home" }, want: "exact" },
-    { phrase: "Messi over 2.5 shots", market: "Player's shots (Settled using Opta data)", sel: { subject: "Messi", dir: "over", line: 2.5 }, want: "subject-absent" },
+    { phrase: "Messi over 2.5 shots", market: "Player's shots (Settled using Opta data)", sel: { subject: "Messi", dir: "over", lineValue: 2.5 }, want: "subject-absent" },
   ];
   for (const c of SDECK) {
     const r = select(sliceFor(c.market), c.sel, ctx);
@@ -176,8 +176,8 @@ export async function runLiveMenuGate(): Promise<GateResult> {
   // (F2) Correct Score — match numeric homeScore/awayScore + englishLabel; reversal-immune (2-1 != 1-2).
   {
     const sl = sliceFor("Correct Score");
-    const r1 = select(sl, { selection: "2-1" }, ctx);
-    const r2 = select(sl, { selection: "1-2" }, ctx);
+    const r1 = select(sl, { lineValue: "2-1" }, ctx);
+    const r2 = select(sl, { lineValue: "1-2" }, ctx);
     check("select F: correct score 2-1 picks hs2/as1 (not 1-2)", r1.outcomeId === idByEng(sl, "2-1") && r1.outcomeId !== idByEng(sl, "1-2"), `got ${r1.outcomeId}`);
     check("select F: correct score 1-2 picks hs1/as2 (no AWAY_HOME reversal)", r2.outcomeId === idByEng(sl, "1-2"), `got ${r2.outcomeId}`);
   }
@@ -185,15 +185,16 @@ export async function runLiveMenuGate(): Promise<GateResult> {
   // (F3) HT/FT — combo via outcome.type / englishLabel (OT_ONE_TWO == "1/2").
   {
     const sl = sliceFor("Half Time/Full Time");
-    const r = select(sl, { selection: "1/2" }, ctx);
+    const r = select(sl, { lineValue: "1/2" }, ctx);
     check("select F: HT/FT 1/2 -> OT_ONE_TWO outcome", r.outcomeId === idByEng(sl, "1/2"), `got ${r.outcomeId}`);
   }
 
-  // (F4) Double Chance — combo via englishLabel (OT_CROSS_OR_TWO == "X2").
+  // (F4) Double Chance — production path is outcomeLabel (the extractor emits it as a binary, not a combo token;
+  // type 12 is not in the combo-market set, so lineValue is not used here).
   {
     const sl = sliceFor("Double Chance");
-    const r = select(sl, { selection: "X2" }, ctx);
-    check("select F: double chance X2 -> OT_CROSS_OR_TWO outcome", r.outcomeId === idByEng(sl, "X2"), `got ${r.outcomeId}`);
+    const r = select(sl, { outcomeLabel: "X2" }, ctx);
+    check("select F: double chance X2 via outcomeLabel -> OT_CROSS_OR_TWO outcome", r.outcomeId === idByEng(sl, "X2"), `got ${r.outcomeId}`);
   }
 
   // (F5) Type-11 3-Way Handicap — both sides store the SAME line (home perspective); the AWAY side negates.
@@ -206,8 +207,8 @@ export async function runLiveMenuGate(): Promise<GateResult> {
     const plus1 = sl.betOffers.find((b) => (b.outcomes ?? []).some((o) => o.type === "OT_ONE" && o.line === 1000));
     const wantAway = plus1?.outcomes?.find((o) => o.type === "OT_TWO")?.id;
     const wantHome = plus1?.outcomes?.find((o) => o.type === "OT_ONE")?.id;
-    const ra = select(sl, { subjectId: awayId, line: -1.0 }, ctx);
-    const rh = select(sl, { subjectId: homeId, line: 1.0 }, ctx);
+    const ra = select(sl, { subjectId: awayId, lineValue: -1.0 }, ctx);
+    const rh = select(sl, { subjectId: homeId, lineValue: 1.0 }, ctx);
     check("select F: type-11 away -1.0 negates onto the +1.0 betoffer", ra.outcomeId === wantAway && ra.fallback == null, `got ${ra.outcomeId} want ${wantAway}`);
     check("select F: type-11 home +1.0 (no negation)", rh.outcomeId === wantHome && rh.fallback == null, `got ${rh.outcomeId} want ${wantHome}`);
   }

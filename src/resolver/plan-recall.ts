@@ -12,18 +12,29 @@ import type { RecallInput } from "./recall";
 import type { QueryPlan } from "./schema";
 import type { Level } from "./offering-client";
 import { boTypeId } from "./bo-types";
+import { loadScopeCatalog } from "./scope-catalog";
 
 const settle = (r: EntityResolution | null | undefined): Candidate | null => (r && r.tier === "confident" ? r.candidates[0]! : null);
 
 // Participants a leg contributes to the broad fetch: confident teams + players + subject, plus each player's
 // club + country team (so a fixture-level player market is reachable without the criterion).
+// For competition-grain team legs, also inject the full squad: competition markets ("Tournament progress by
+// the team", "to reach the final") are hung off PLAYER participant ids in the feed, never the team id itself.
+// A single roster pick is fragile (e.g. the keeper at #1 may have no comp offers); the whole squad is bounded
+// (+~9 betoffers probed for Norway) and guarantees at least one player pulls the team markets through.
 function legParticipants(leg: ResolvedLegScope): number[] {
   const teamIds = leg.teams.map(settle).filter((c): c is Candidate => c != null).map((c) => c.id);
   const players = [...leg.players, leg.subjectPlayer].map(settle).filter((c): c is Candidate => c != null);
+  const squadIds: number[] = [];
+  if (leg.level === "competition") {
+    const cat = loadScopeCatalog();
+    for (const tid of teamIds) squadIds.push(...(cat.roster.get(tid) ?? []));
+  }
   return [
     ...teamIds,
     ...players.map((p) => p.id),
     ...players.flatMap((p) => [p.clubId, p.countryTeamId].filter((x): x is number => x != null)),
+    ...squadIds,
   ];
 }
 
@@ -44,9 +55,17 @@ export function planRecall(settled: SettledEntities, plan: QueryPlan): RecallInp
 
   // boTypes: union of the selectors' tokens -> ids, but ONLY when EVERY selector named buckets — a bare leg means
   // "all buckets", which a whole-fetch `type=` can't carry, so drop the prune entirely. Per-leg precision is FILTER's job.
-  const everyTyped = plan.selectors.every((s) => (s.bo_types?.length ?? 0) > 0);
+  // Competition-level legs never produce yesno (type 18) betoffers in this feed — those are fixture-level propositions;
+  // competition elimination/progress markets are outright/Winner (type 4). Strip yesno from competition-leg contributions
+  // so a mistaken extractor tag can't prune valid markets off the fetch.
+  const YESNO_ID = boTypeId("yesno");
+  const effectiveBoTypes = (s: (typeof plan.selectors)[number], leg: ResolvedLegScope): string[] => {
+    const types = s.bo_types ?? [];
+    return leg.level === "competition" ? types.filter((t) => boTypeId(t) !== YESNO_ID) : types;
+  };
+  const everyTyped = plan.selectors.every((s, i) => (effectiveBoTypes(s, legs[i]!).length > 0));
   const boTypes = everyTyped
-    ? [...new Set(plan.selectors.flatMap((s) => s.bo_types ?? []).map(boTypeId).filter((x): x is number => x != null))]
+    ? [...new Set(plan.selectors.flatMap((s, i) => effectiveBoTypes(s, legs[i]!)).map(boTypeId).filter((x): x is number => x != null))]
     : [];
 
   // onlyMain: bind the server-side shrink ONLY when EVERY leg is the bare-event "main" market — a mixed query

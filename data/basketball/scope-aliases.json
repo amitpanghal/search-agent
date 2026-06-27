@@ -1,0 +1,15 @@
+{
+  "competitions": {
+    "nba": "NBA",
+    "wnba": "WNBA",
+    "ncaa basketball": "NCAAB",
+    "march madness": "NCAAB",
+    "college basketball": "NCAAB",
+    "womens college basketball": "NCAAW"
+  },
+  "regions": {
+    "us": "NBA",
+    "usa": "NBA"
+  },
+  "markers": {}
+}

@@ -22,17 +22,31 @@ import type { Menu } from "./live-menu-types";
 
 export type FilterResult = { offers: BetOffer[]; menu: Menu };
 
+// The opponent team in betoffer `b`'s fixture — the side that ISN'T the subject `s`, folded ("" if unknown).
+function opponentOf(b: BetOffer, s: string, events: KEvent[]): string {
+  const e = events.find((ev) => ev.id === b.eventId);
+  if (!e) return "";
+  const home = fold(e.homeName ?? ""), away = fold(e.awayName ?? "");
+  return home.includes(s) ? away : away.includes(s) ? home : "";
+}
+
 // Does betoffer `b` price the subject, via any of the P/Q/M/E homes? P matches the outcome's participant by
 // ID when `subjectId` is known (preferred), else by folded name; Q/M/E are folded-name matches on the
 // already-folded subject `s`.
-function pricesSubject(b: BetOffer, s: string, subjectId: number | undefined, evName: (id?: number) => string): boolean {
+function pricesSubject(b: BetOffer, s: string, subjectId: number | undefined, events: KEvent[], evName: (id?: number) => string): boolean {
+  const label = fold(marketLabelOf(b));
+  // Opponent-IDENTITY market: its label names the OTHER team and not the subject -> it isn't the subject's
+  // market. The event-name home (E, below) would otherwise keep it, because the fixture name carries BOTH
+  // teams. Drops e.g. "Cape Verde to Win to Nil" when the subject resolves to Saudi Arabia (named or "away").
+  const opp = opponentOf(b, s, events);
+  if (opp && label.includes(opp) && !label.includes(s)) return false;
   return (
     (b.outcomes ?? []).some(
       (o) =>
         (subjectId != null ? o.participantId === subjectId : fold(o.participant ?? "").includes(s)) || // P (id, else name)
         fold(o.label ?? "").includes(s), // Q
     ) ||
-    fold(marketLabelOf(b)).includes(s) || // M
+    label.includes(s) || // M
     fold(evName(b.eventId)).includes(s) // E
   );
 }
@@ -40,12 +54,18 @@ function pricesSubject(b: BetOffer, s: string, subjectId: number | undefined, ev
 // Keep only the offers that price the subject, then rebuild the menu from them (so menu and offers stay in
 // lockstep for SELECT). No subject -> the menu unchanged. Over-keeping (e.g. an opponent's per-team variant at
 // match grain) is SAFE; under-dropping is the only danger, and folding + the four homes guard against it.
-export function filterBySubject(offers: BetOffer[], events: KEvent[], subject?: string, subjectId?: number, keepTypes?: Set<number>): FilterResult {
+export function filterBySubject(offers: BetOffer[], events: KEvent[], subject?: string, subjectId?: number, keepTypes?: Set<number>, side?: "home" | "away"): FilterResult {
   const evName = (id?: number) => events.find((e) => e.id === id)?.name ?? "";
+  // The subject team for an offer's fixture: a NAMED subject is constant; a RELATIONAL home/away resolves
+  // against THAT offer's own event (so a multi-fixture "home team ..." binds per match, not to one name).
+  const subjectFor = (b: BetOffer): string => {
+    if (side) { const e = events.find((ev) => ev.id === b.eventId); return fold((side === "home" ? e?.homeName : e?.awayName) ?? ""); }
+    return subject && subject.trim() ? fold(subject) : "";
+  };
   let kept = offers;
-  if (subject && subject.trim()) {
-    const s = fold(subject);
-    kept = offers.filter((b) => pricesSubject(b, s, subjectId, evName));
+  if (side || (subject && subject.trim())) {
+    // Unknown side (missing event/home-away name) -> "" -> keep (passthrough), never a wrong drop.
+    kept = offers.filter((b) => { const s = subjectFor(b); return s ? pricesSubject(b, s, subjectId, events, evName) : true; });
   }
   // bo_types prune (the resolver still picks the market — this only shrinks its menu). EMPTY-GUARD: never let
   // a (possibly-wrong) shortlist strand a non-empty menu — skip the prune if it would kill everything.

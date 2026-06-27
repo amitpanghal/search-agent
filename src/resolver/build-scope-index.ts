@@ -44,7 +44,8 @@ type OutPlayer = { id: number; name: string; clubId: number | null; countryTeamI
 type FlatNode = { id: number; name: string; sport: string; parent: number | null };
 
 function main(): void {
-  const groupsFeed = read("groups.json") as { groups?: RawGroupNode[] };
+  const rawGroupsFeed = read("groups.json") as { groups?: RawGroupNode[] } | { group: { id?: number; groups?: RawGroupNode[] } };
+  const groupsFeed = "group" in rawGroupsFeed ? rawGroupsFeed.group : rawGroupsFeed;
   const participants = read("football_participants.json") as { clubs: Club[]; players: Player[] };
 
   // ---- flatten the group tree, capturing parent pointers ----

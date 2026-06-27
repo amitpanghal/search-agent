@@ -10,7 +10,9 @@
     "eval": "tsx src/eval/run.ts",
     "build:scope": "tsx src/resolver/build-scope-index.ts",
     "gate:live-menu": "tsx src/eval/live-menu-gate.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "report:capture": "tsx src/harness-loop/harness-run.ts --batch 002 --capture src/harness-loop/report/002",
+    "report:shots": "tsx src/harness-loop/report/generate.ts --batch 002"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.100.1",
@@ -19,6 +21,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@types/node": "^25.9.1",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3"

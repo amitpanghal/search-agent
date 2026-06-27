@@ -25,6 +25,7 @@ import {
   type ResolvedScope, type EntityResolution, type ScopeTier,
 } from "./ground-scope";
 import { loadScopeCatalog } from "./scope-catalog";
+import { fold } from "./lexical";
 import type { CellRef, SettledEntities } from "./live-menu-types";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -213,6 +214,16 @@ export const defaultQuestion = (cell: Cell): string =>
     ? `I couldn't pin down "${cell.text}". Try rephrasing it more simply, or pick one of the suggestions.`
     : `I couldn't pin down "${cell.text}". Try rephrasing it more simply.`;
 
+// Append candidate names only when the LLM didn't already embed them. Check by first-name token (folded):
+// if any candidate's first name appears in the question, the LLM included names — skip; otherwise append.
+const appendNamesIfMissing = (q: string, cell: Cell): string => {
+  const names = cell.candidates.slice(0, SUGGEST_CAP).map((c) => c.name);
+  if (!names.length) return q;
+  const qFolded = fold(q);
+  const anyPresent = names.some((n) => qFolded.includes(fold(n.split(" ")[0]!)));
+  return anyPresent ? q : `${q} (${names.join(", ")})`;
+};
+
 async function runPasses(query: string, cells: Cell[], decideFn: DecideFn): Promise<Outcome[]> {
   const outcomes: Outcome[] = [];
   const open: Cell[] = []; // cells that ride into Pass 2 (re-grounded-but-unresolved, or undecided/invalid)
@@ -239,9 +250,9 @@ async function runPasses(query: string, cells: Cell[], decideFn: DecideFn): Prom
       if (d?.action === "pick" && validPick(cell, d.id)) {
         outcomes.push(settleOutcome(cell, [d.id]));
       } else if (d?.action === "clarify" && d.question.trim()) {
-        outcomes.push({ kind: "clarify", ref: cell.ref, question: d.question, suggest: (d.suggest ?? []).filter((id) => validPick(cell, id)).slice(0, SUGGEST_CAP) });
+        outcomes.push({ kind: "clarify", ref: cell.ref, question: appendNamesIfMissing(d.question, cell), suggest: (d.suggest ?? []).filter((id) => validPick(cell, id)).slice(0, SUGGEST_CAP) });
       } else {
-        outcomes.push({ kind: "clarify", ref: cell.ref, question: defaultQuestion(cell), suggest: cell.candidates.slice(0, SUGGEST_CAP).map((c) => c.id) });
+        outcomes.push({ kind: "clarify", ref: cell.ref, question: appendNamesIfMissing(defaultQuestion(cell), cell), suggest: cell.candidates.slice(0, SUGGEST_CAP).map((c) => c.id) });
       }
     }
   }

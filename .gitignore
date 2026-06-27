@@ -26,3 +26,8 @@ scripts/.trace-out/
 # Harness-loop generated artifacts: content-addressed LLM/recall caches + generated query batches.
 src/harness-loop/llm-cache/
 src/harness-loop/batches/
+src/harness-loop/report/
+data/.*.json
+
+# Intermediate basketball concat blob (regenerate with: npx tsx scripts/basketball/concat-feeds.ts)
+data/basketball/basketball_participants_raw.json

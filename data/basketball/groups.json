@@ -1,0 +1,222 @@
+{
+  "id": 1,
+  "sport": "NOT-SPECIFIED",
+  "groups": [
+    {
+      "id": 1000093204,
+      "name": "Basketball",
+      "boCount": 1193,
+      "englishName": "Basketball",
+      "groups": [
+        {
+          "id": 1000174277,
+          "name": "WNBA",
+          "boCount": 941,
+          "englishName": "WNBA",
+          "sport": "BASKETBALL",
+          "eventCount": 92,
+          "termKey": "wnba",
+          "sortOrder": "2"
+        },
+        {
+          "id": 1000093652,
+          "name": "NBA",
+          "boCount": 5,
+          "englishName": "NBA",
+          "sport": "BASKETBALL",
+          "eventCount": 10,
+          "termKey": "nba",
+          "sortOrder": "3"
+        },
+        {
+          "id": 1000093654,
+          "name": "NCAAB",
+          "boCount": 4,
+          "englishName": "NCAAB",
+          "sport": "BASKETBALL",
+          "eventCount": 4,
+          "termKey": "ncaab",
+          "sortOrder": "8"
+        },
+        {
+          "id": 2000054461,
+          "name": "NCAAW",
+          "boCount": 4,
+          "englishName": "NCAAW",
+          "sport": "BASKETBALL",
+          "eventCount": 4,
+          "termKey": "ncaaw",
+          "sortOrder": "9"
+        },
+        {
+          "id": 1000463001,
+          "name": "Australia",
+          "boCount": 70,
+          "englishName": "Australia",
+          "groups": [
+            {
+              "id": 2000130214,
+              "name": "NBL1 Central",
+              "boCount": 20,
+              "englishName": "NBL1 Central",
+              "sport": "BASKETBALL",
+              "termKey": "nbl1_central"
+            },
+            {
+              "id": 2000130215,
+              "name": "NBL1 North",
+              "boCount": 11,
+              "englishName": "NBL1 North",
+              "sport": "BASKETBALL",
+              "termKey": "nbl1_north"
+            },
+            {
+              "id": 2000130216,
+              "name": "NBL1 South",
+              "boCount": 23,
+              "englishName": "NBL1 South",
+              "sport": "BASKETBALL",
+              "termKey": "nbl1_south"
+            },
+            {
+              "id": 2000109800,
+              "name": "NBL1 West",
+              "boCount": 16,
+              "englishName": "NBL1 West",
+              "sport": "BASKETBALL",
+              "eventCount": 2,
+              "secondsToNextEvent": 1354,
+              "termKey": "nbl1_west"
+            }
+          ],
+          "sport": "BASKETBALL",
+          "eventCount": 2,
+          "secondsToNextEvent": 1354,
+          "termKey": "australia"
+        },
+        {
+          "id": 2000108371,
+          "name": "BIG3 - 3x3",
+          "boCount": 1,
+          "englishName": "BIG3 - 3x3",
+          "sport": "BASKETBALL",
+          "eventCount": 1,
+          "termKey": "big3_-_3x3"
+        },
+        {
+          "id": 2000050610,
+          "name": "Brazil",
+          "boCount": 3,
+          "englishName": "Brazil",
+          "groups": [
+            {
+              "id": 2000073505,
+              "name": "LBF (W)",
+              "boCount": 3,
+              "englishName": "LBF (W)",
+              "sport": "BASKETBALL",
+              "eventCount": 1,
+              "termKey": "lbf__w_"
+            }
+          ],
+          "sport": "BASKETBALL",
+          "eventCount": 9,
+          "termKey": "brazil"
+        },
+        {
+          "id": 2000055013,
+          "name": "Canada",
+          "boCount": 32,
+          "englishName": "Canada",
+          "groups": [
+            {
+              "id": 2010206930,
+              "name": "CEBL",
+              "boCount": 32,
+              "englishName": "CEBL",
+              "sport": "BASKETBALL",
+              "eventCount": 2,
+              "termKey": "cebl"
+            }
+          ],
+          "sport": "BASKETBALL",
+          "eventCount": 2,
+          "termKey": "canada"
+        },
+        {
+          "id": 1000093567,
+          "name": "International Friendly Matches",
+          "boCount": 45,
+          "englishName": "International Friendly Matches",
+          "sport": "BASKETBALL",
+          "eventCount": 2,
+          "termKey": "international_friendly_matches"
+        },
+        {
+          "id": 1000174871,
+          "name": "International Tournaments",
+          "boCount": 12,
+          "englishName": "International Tournaments",
+          "groups": [
+            {
+              "id": 2000059384,
+              "name": "European Championship for Small Countries",
+              "boCount": 12,
+              "englishName": "European Championship for Small Countries",
+              "sport": "BASKETBALL",
+              "eventCount": 2,
+              "termKey": "european_championship_for_small_countries"
+            }
+          ],
+          "sport": "BASKETBALL",
+          "eventCount": 2,
+          "termKey": "international_tournaments"
+        },
+        {
+          "id": 1000195635,
+          "name": "International Tournaments (W)",
+          "boCount": 12,
+          "englishName": "International Tournaments (W)",
+          "groups": [
+            {
+              "id": 2000059607,
+              "name": "European Championship for Small Countries",
+              "boCount": 12,
+              "englishName": "European Championship for Small Countries",
+              "sport": "BASKETBALL",
+              "eventCount": 3,
+              "termKey": "european_championship_for_small_countries"
+            }
+          ],
+          "sport": "BASKETBALL",
+          "eventCount": 3,
+          "termKey": "international_tournaments__w_"
+        },
+        {
+          "id": 2000066239,
+          "name": "Puerto Rico",
+          "boCount": 64,
+          "englishName": "Puerto Rico",
+          "groups": [
+            {
+              "id": 2000066240,
+              "name": "Baloncesto Superior Nacional",
+              "boCount": 64,
+              "englishName": "Baloncesto Superior Nacional",
+              "sport": "BASKETBALL",
+              "eventCount": 4,
+              "termKey": "baloncesto_superior_nacional"
+            }
+          ],
+          "sport": "BASKETBALL",
+          "eventCount": 4,
+          "termKey": "puerto_rico"
+        }
+      ],
+      "sport": "BASKETBALL",
+      "eventCount": 175,
+      "secondsToNextEvent": 1354,
+      "termKey": "basketball"
+    }
+  ]
+}

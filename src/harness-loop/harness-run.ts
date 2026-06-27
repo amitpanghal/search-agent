@@ -6,7 +6,7 @@
 // An LLM cache miss aborts that query as PEND and is recorded to pending-llm.json (exit 3). Fulfil the misses with
 // temp-0 Haiku subagents (write each into llm-cache/ under its key), then re-run — now hits, free. No API key.
 
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { runPipeline } from "../resolver/resolve";
@@ -34,9 +34,17 @@ async function drain(query: string): Promise<ResponseEnvelope> {
   return env!;
 }
 
-async function runOne(q: BatchQuery): Promise<GradeResult> {
+// When captureDir is set, freeze each query's final envelope + verdict to <dir>/<id>.json — the exact payload
+// the frontend would render, for the offline screenshot suite (src/harness-loop/report/generate.ts).
+async function runOne(q: BatchQuery, captureDir?: string): Promise<GradeResult> {
   try {
-    return grade(q, await drain(q.q));
+    const envelope = await drain(q.q);
+    const result = grade(q, envelope);
+    if (captureDir) {
+      const record = { id: q.id, query: q.q, category: q.category, grade: { pass: result.pass, reasons: result.reasons }, envelope };
+      writeFileSync(join(captureDir, `${q.id}.json`), JSON.stringify(record, null, 2));
+    }
+    return result;
   } catch (e) {
     if (e instanceof CacheMiss) return { id: q.id, category: q.category, pass: false, pending: true, reasons: [`LLM miss: ${e.req.kind}`], gotIds: [] };
     return { id: q.id, category: q.category, pass: false, pending: false, reasons: [`error: ${(e as Error).message}`], gotIds: [] };
@@ -47,11 +55,13 @@ async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const batch = flag(args, "--batch") ?? "001";
   const limit = flag(args, "--limit");
+  const captureDir = flag(args, "--capture");
+  if (captureDir) mkdirSync(captureDir, { recursive: true });
   let queries = loadBatch(batch);
   if (limit) queries = queries.slice(0, Number(limit));
 
   const results: GradeResult[] = [];
-  for (const q of queries) results.push(await runOne(q));
+  for (const q of queries) results.push(await runOne(q, captureDir));
 
   for (const r of results) {
     const tag = r.pending ? "PEND" : r.pass ? "PASS" : "FAIL";

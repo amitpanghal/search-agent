@@ -33,27 +33,45 @@ const filterSubject = (s: Subject): string | undefined =>
 const selectSubject = (s: Subject): string | undefined =>
   s.kind === "team" ? s.name : s.kind === "player" ? s.name : s.kind === "either_match_team" ? s.side : undefined;
 
+// The resolver decides market IDENTITY, which includes GRAIN. Only the PLAYER grain needs a note: a nameless-player
+// "shots on target" lost to the match aggregate because the bare concept gave no per-player signal. Append
+// `(for one player)` so the resolver picks the per-player prop, not the match total. Team/event/either_match_team
+// get NO note — their concept already names a team/match market, and a "(for the whole match)" note would clash
+// with a period qualifier in the concept ("1st half handicap") and make the resolver abstain.
+const betPhrase = (sel: { subject: Subject; market_concept: string }): string =>
+  sel.subject.kind === "player" ? `${sel.market_concept} (for one player)` : sel.market_concept;
+
 // The grounded PARTICIPANT id for a selector's subject — SELECT's preferred (robust) key, == the feed's
 // outcome.participantId on named markets. Only a CONFIDENT resolution yields an id (an unsure entity must not
 // silently mis-bind). Relational/event/soft -> undefined.
 const confidentId = (r: EntityResolution | null | undefined): number | undefined =>
   r && r.tier === "confident" ? r.candidates[0]?.id : undefined;
 
-// Read the subject's grounded id from THIS leg's scope: a player's from the leg's `subjectPlayer`, a named
-// team's from the leg's grounded `teams` (matched by folded name).
-function subjectParticipantId(leg: ResolvedLegScope, s: Subject): number | undefined {
-  if (s.kind === "player") return confidentId(leg.subjectPlayer);
-  if (s.kind === "team") {
-    const t = leg.teams.find((e) => fold(e.text) === fold(s.name)) ?? leg.teams.find((e) => fold(e.candidates[0]?.name ?? "") === fold(s.name));
-    return confidentId(t);
-  }
+// The grounded ENTITY for a selector's subject, from THIS leg's scope: a player's `subjectPlayer`, a named
+// team matched by folded name in the leg's `teams`. Relational/event subjects have none.
+function subjectEntity(leg: ResolvedLegScope, s: Subject): EntityResolution | null | undefined {
+  if (s.kind === "player") return leg.subjectPlayer;
+  if (s.kind === "team") return leg.teams.find((e) => fold(e.text) === fold(s.name)) ?? leg.teams.find((e) => fold(e.candidates[0]?.name ?? "") === fold(s.name));
   return undefined;
 }
 
-// A selector's Line + subject -> the deterministic SELECT spec (value, never a market binding). A NUMBER line
-// is a rung (over/under threshold, handicap start) -> SELECT's line matcher; a STRING is a named pick (HT/FT
-// "1/1", correct score "2-1", double chance "X2") -> SELECT's label/score matcher. No direction: the extractor
-// no longer says "which side", so an over/under resolves to all sides at the rung until SELECT returns them.
+// The subject's grounded participant id (confident only) — SELECT's robust key, == the feed's participantId.
+const subjectParticipantId = (leg: ResolvedLegScope, s: Subject): number | undefined => confidentId(subjectEntity(leg, s));
+
+// The subject's CANONICAL feed name — confident grounding ONLY. The feed builds market labels / event names
+// from this exact string, so the filter's text homes match precisely (no "Korea" vs "Korea Republic" slip).
+// An unresolved named subject never reaches the filter as the sole anchor (the entity gate clarifies and
+// stops); in a mixed query it falls through to a passthrough menu, never a raw-name half-match.
+function subjectName(leg: ResolvedLegScope, s: Subject): string | undefined {
+  const e = subjectEntity(leg, s);
+  return e && e.tier === "confident" ? e.candidates[0]?.name : undefined;
+}
+
+// A selector's Line + subject -> the deterministic SELECT spec (value, never a market binding). The line VALUE is
+// carried RAW (number or string) as `lineValue`; SELECT decides how to read it from the picked market's
+// betOfferType (a numeric rung for handicaps/over-unders, a combo token for correct-score/HT-FT) — never guessed
+// from the value's JSON type. No direction: the extractor no longer says "which side", so an over/under resolves
+// to all sides at the rung until SELECT returns them.
 function selSpec(line: Line | undefined, odds: { min?: number; max?: number } | undefined, subject?: string, subjectId?: number, sort?: "low" | "high", count?: number): SelectSpec {
   const base: SelectSpec = {
     ...(subjectId != null ? { subjectId } : {}),
@@ -63,8 +81,7 @@ function selSpec(line: Line | undefined, odds: { min?: number; max?: number } | 
     ...(sort ? { sort } : {}),
     ...(count != null ? { count } : {}),
   };
-  if (line === undefined) return base;
-  return typeof line === "number" ? { ...base, line } : { ...base, selection: line };
+  return line === undefined ? base : { ...base, lineValue: line };
 }
 
 // The picked market's betoffers, keyed by the menu LABEL (the identity — criterion englishLabel + variant).
@@ -77,6 +94,7 @@ const offersForPick = (offers: BetOffer[], label?: string): BetOffer[] =>
 export type StageEvent =
   | { stage: "resolving" }
   | { stage: "searching" }
+  | { stage: "routing" }
   | { stage: 'disambiguating' }
   | { stage: "done"; envelope: ResponseEnvelope };
 
@@ -106,12 +124,24 @@ export async function* runPipeline(query: string, deps: PipelineDeps = REAL_DEPS
     return;
   }
 
-  yield { stage: "disambiguating" };
+  yield { stage: "routing" };
   const scope = groundScope(plan);
   const settled = await deps.resolveEntities(query, scope);
-  const r = await deps.recall(planRecall(settled, plan)); // BROAD data; per-leg narrowing is scopeMenu's job below
 
-  yield { stage: "searching" };
+  // Guard: if the entity gate couldn't resolve any ids (e.g. ambiguous player with no competition anchor)
+  // and raised clarifications, return them instead of crashing in recall with "need groupIds, participantIds…".
+  const recallInput = planRecall(settled, plan);
+  if (!recallInput.participantIds?.length && !recallInput.groupIds?.length && !recallInput.eventIds?.length) {
+    if (settled.clarifications.length > 0) {
+      yield { stage: "done", envelope: execute({ legs: [], data: { betOffers: [], events: [] }, clarifications: settled.clarifications }) };
+      return;
+    }
+    // No ids AND no clarifications — fall through; recall will throw its diagnostic error.
+  }
+
+  const r = await deps.recall(recallInput); // BROAD data; per-leg narrowing is scopeMenu's job below
+
+  yield { stage: "disambiguating" };
 
   // Group selectors that share BOTH a filter-subject AND a grounded scope signature: they get ONE scopeMenu +
   // ONE filterBySubject + ONE batched resolveMarkets call. The signature spans everything that shapes the menu
@@ -123,6 +153,7 @@ export async function* runPipeline(query: string, deps: PipelineDeps = REAL_DEPS
     const teamIds = leg.teams.filter((t) => t.tier === "confident").flatMap((t) => t.candidates.map((c) => c.id)).sort((a, b) => a - b);
     return JSON.stringify([
       filterSubject(sel.subject) ?? "",
+      sel.subject.kind === "either_match_team" ? sel.subject.side ?? "" : "",
       subjectParticipantId(leg, sel.subject) ?? 0,
       leg.level,
       confidentId(leg.competition) ?? 0,
@@ -159,12 +190,13 @@ export async function* runPipeline(query: string, deps: PipelineDeps = REAL_DEPS
     }
     const keepTypes = boTypeIdSet(idxs.flatMap((i) => plan.selectors[i]!.bo_types ?? []));
     const subjId = subjectParticipantId(leg, sel0.subject);
-    const fr = filterBySubject(scoped.offers, scoped.events, filterSubject(sel0.subject), subjId, keepTypes);
+    const subjSide = sel0.subject.kind === "either_match_team" ? sel0.subject.side : undefined;
+    const fr = filterBySubject(scoped.offers, scoped.events, subjectName(leg, sel0.subject), subjId, keepTypes, subjSide);
     groupData.set(key, { scoped, fr });
     // "main" legs name no market — they skip the LLM pick entirely and fan out into every main market below.
     // Only the named legs go to resolveMarkets (keep the pick-index alignment to THOSE legs).
     const llmIdxs = idxs.filter((i) => plan.selectors[i]!.market_concept !== "main");
-    const picks = llmIdxs.length ? await deps.resolveMarkets(llmIdxs.map((i) => plan.selectors[i]!.market_concept), fr.menu) : [];
+    const picks = llmIdxs.length ? await deps.resolveMarkets(llmIdxs.map((i) => betPhrase(plan.selectors[i]!)), fr.menu) : [];
     llmIdxs.forEach((i, k) => { pickByIdx[i] = picks[k]!; });
     idxs.forEach((i) => { keyByIdx[i] = key; });
   }
@@ -176,12 +208,17 @@ export async function* runPipeline(query: string, deps: PipelineDeps = REAL_DEPS
     return events.find((e) => e.id === eid) ?? events[0];
   };
 
+  yield { stage: "searching" };
+
   const legsOut: ResolvedLeg[] = [];
   for (let i = 0; i < plan.selectors.length; i++) {
     const sel = plan.selectors[i]!;
     const leg = settled.legs[i]!;
     const { scoped, fr } = groupData.get(keyByIdx[i]!)!;
-    const spec = selSpec(sel.line, sel.odds, selectSubject(sel.subject), subjectParticipantId(leg, sel.subject), sel.odds_sort, sel.count);
+    const spec: SelectSpec = {
+      ...selSpec(sel.line, sel.odds, selectSubject(sel.subject), subjectParticipantId(leg, sel.subject), sel.odds_sort, sel.count),
+      ...(pickByIdx[i]?.outcomeLabel ? { outcomeLabel: pickByIdx[i]!.outcomeLabel } : {}),
+    };
     // select one market's outcomes; event comes off the picked offers (per-leg home/away binds to the right match).
     const selectFor = (picked: BetOffer[]) =>
       select({ events: scoped.events, betOffers: picked }, spec, { home: eventOf(picked, scoped.events)?.homeName, away: eventOf(picked, scoped.events)?.awayName });

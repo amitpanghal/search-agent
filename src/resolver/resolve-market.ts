@@ -42,6 +42,8 @@ const INPUT_SCHEMA: Anthropic.Tool.InputSchema = {
           ref: { type: ["integer", "null"], description: "the chosen menu item's ref, or null for none" },
           match: { type: "string", enum: ["exact", "close", "none"] },
           reason: { type: "string" },
+          outcome: { type: ["string", "null"], description: "verbatim outcome label from the picked item's [outcomes: …], when the bet names one; else null" },
+          related: { type: "array", items: { type: "integer" }, description: "up to 3 menu refs for closely-related markets on the same fixture, most direct first; [] if none" },
         },
         required: ["leg", "ref", "match", "reason"],
       },
@@ -51,7 +53,7 @@ const INPUT_SCHEMA: Anthropic.Tool.InputSchema = {
 };
 
 // The raw model output for one bet (a menu ref + label), before we map it back to the market identity.
-export type RawPick = { ref: number | null; match: string; reason?: string };
+export type RawPick = { ref: number | null; match: string; reason?: string; outcome?: string | null; related?: number[] };
 // Batched decider — one call for all bets sharing the menu. Injectable so the gate can replay captured decisions.
 export type DecideManyFn = (phrases: string[], menu: Menu) => Promise<RawPick[]>;
 // Singular decider — kept for the offline gates' per-phrase replay.
@@ -59,10 +61,20 @@ export type DecideFn = (phrase: string, menu: Menu) => Promise<RawPick>;
 
 // Map one raw pick -> MarketPick. `none` (or a ref the menu doesn't carry, or a missing leg) collapses to an
 // abstain with no market identity, so a hallucinated/absent pick can never become a confident wrong answer.
+// `outcomeLabel` is only accepted when it appears verbatim in the item's outcomes list (anti-hallucination).
 const toPick = (raw: RawPick | undefined, menu: Menu): MarketPick => {
   const match = (raw?.match ?? "none") as MatchLabel;
   if (!raw || match === "none" || raw.ref == null || !menu[raw.ref]) return { match: "none", reason: raw?.reason ?? "no pick" };
-  return { label: menu[raw.ref]!.label, match, reason: raw.reason };
+  const item = menu[raw.ref]!;
+  const outcomeLabel = raw.outcome && item.outcomes?.includes(raw.outcome) ? raw.outcome : undefined;
+  const pickedEventId = item.eventId;
+  const related = pickedEventId != null
+    ? [...new Set(
+        (raw.related ?? [])
+          .filter((r): r is number => typeof r === "number" && r !== raw.ref && menu[r] != null && menu[r]!.eventId === pickedEventId)
+      )].slice(0, 3).map((r) => menu[r]!.label)
+    : [];
+  return { label: item.label, match, reason: raw.reason, ...(outcomeLabel ? { outcomeLabel } : {}), ...(related.length ? { related } : {}) };
 };
 
 // Pick + label a market for EACH phrase against the one shared filtered menu, in a single model call.
@@ -80,7 +92,7 @@ export async function resolveMarket(phrase: string, menu: Menu, decideFn?: Decid
 }
 
 const callModel: DecideManyFn = async (phrases, menu) => {
-  const list = menu.map((m, i) => `${i}: ${m.label}`).join("\n");
+  const list = menu.map((m, i) => `${i}: ${m.label}${m.outcomes?.length ? `  [outcomes: ${m.outcomes.join(" | ")}]` : ""}`).join("\n");
   const bets = phrases.map((p, i) => `${i}: ${p}`).join("\n");
   const msg = await client().messages.create({
     model: RESOLVE_MARKET_MODEL,
@@ -104,6 +116,6 @@ const callModel: DecideManyFn = async (phrases, menu) => {
   // Map picks back to phrase order BY `leg` (robust to reordering); any omitted leg -> none.
   const picks = ((block.input as { picks?: unknown }).picks ?? []) as Array<{ leg?: number } & RawPick>;
   const byLeg = new Map<number, RawPick>();
-  for (const p of picks) if (typeof p.leg === "number") byLeg.set(p.leg, { ref: p.ref, match: p.match, reason: p.reason });
+  for (const p of picks) if (typeof p.leg === "number") byLeg.set(p.leg, { ref: p.ref, match: p.match, reason: p.reason, outcome: p.outcome, related: p.related });
   return phrases.map((_, i) => byLeg.get(i) ?? { ref: null, match: "none", reason: "model omitted leg" });
 };

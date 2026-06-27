@@ -17,6 +17,7 @@ import {
   batches,
   type BetOffer,
   type KEvent,
+  type KOutcome,
   type Level,
 } from "./offering-client";
 import { filterEventsByTime, hasWindow, applyFixturePick, resolveTimeWindow, type TimeWindow } from "./time-window";
@@ -173,19 +174,51 @@ export const marketLabelOf = (b: BetOffer): string => {
   return `${b.criterion?.englishLabel ?? b.criterion?.label ?? "?"}${v ? ` — ${v}` : ""}`;
 };
 
+// Outcome labels worth showing the resolver: the market name alone may not reveal the bet's direction
+// ("Tournament progress by the team"), so we surface its outcomes — but ONLY the meaningful ones. Drop typed
+// directions (Yes/No, Over/Under, 1/X/2), participant outcomes (the label IS the team/player name), and bare
+// values (a number, a single letter, a "X - Y" fixture pair). What remains is named scenario labels.
+const DROP_TYPES = new Set(["OT_YES", "OT_NO", "OT_OVER", "OT_UNDER", "OT_ONE", "OT_TWO", "OT_CROSS"]);
+const isBareValue = (s: string) => /^\d+(\.\d+)?$/.test(s) || /^[A-Za-z]$/.test(s) || /^.+\s-\s.+$/.test(s);
+// Words that mark an outcome as a structural progression/scenario label rather than a team/player name.
+// "Tournament progress" outcomes have participant === label (e.g. "Eliminated in Round of Last 16"),
+// so we must NOT treat them as participant outcomes — the structural words exempt them.
+const STRUCTURAL_LABEL = /\b(in|of|round|last|group|quarter|semi|final|eliminated|winner|runner|up|same|amount)\b/i;
+const isParticipantOutcome = (o: KOutcome) => {
+  const p = (o.participant ?? "").trim();
+  const lab = (o.englishLabel ?? o.label ?? "").trim();
+  if (p === "" || p === "Yes" || p === "No" || p !== lab) return false;
+  return !STRUCTURAL_LABEL.test(lab); // structural labels are kept even when participant === label
+};
+function meaningfulOutcomeLabels(offers: BetOffer[]): string[] {
+  const labels = new Set<string>();
+  for (const b of offers)
+    for (const o of b.outcomes ?? []) {
+      const lab = (o.englishLabel ?? o.label ?? "").trim();
+      if (!lab || (o.type && DROP_TYPES.has(o.type)) || isParticipantOutcome(o) || isBareValue(lab)) continue;
+      labels.add(lab);
+    }
+  return [...labels];
+}
+
 // Dedupe a betoffer list into the live menu: one item per distinct LABEL (criterion englishLabel + variant —
-// see marketLabelOf). Labels only — no odds or outcomes (theory §6). Across multiple fixtures the same market
-// collapses to one item (fixture-pick is a separate concern); `eventId` keeps the first fixture seen as an
-// example. The label IS the identity: same label ⇒ same market — so the at-least-N family splits into one item
-// per threshold, while over/under lines stay collapsed (their label is constant; the line lives on the outcomes).
+// see marketLabelOf). Labels only, plus meaningful outcome labels for markets where the name alone doesn't
+// reveal direction. Across multiple fixtures the same market collapses to one item (fixture-pick is a separate
+// concern); `eventId` keeps the first fixture seen as an example.
 export function buildMenu(offers: BetOffer[]): Menu {
-  const seen = new Map<string, MenuItem>();
+  const byLabel = new Map<string, BetOffer[]>();
   for (const b of offers) {
     if (b.criterion?.id == null) continue; // an offer with no criterion isn't a real market
     const label = marketLabelOf(b);
-    if (!seen.has(label)) seen.set(label, { label, ...(b.eventId != null ? { eventId: b.eventId } : {}) });
+    const group = byLabel.get(label);
+    if (group) group.push(b);
+    else byLabel.set(label, [b]);
   }
-  return [...seen.values()];
+  return [...byLabel.entries()].map(([label, group]) => {
+    const eventId = group.find((b) => b.eventId != null)?.eventId;
+    const outs = meaningfulOutcomeLabels(group);
+    return { label, ...(eventId != null ? { eventId } : {}), ...(outs.length >= 2 ? { outcomes: outs } : {}) };
+  });
 }
 
 // A fixture co-occurs a set of named teams when its TEAM participants include ALL of them (match by id).

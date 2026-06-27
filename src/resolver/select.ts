@@ -20,13 +20,16 @@ import type { Selection } from "./live-menu-types";
 export type SelectSpec = {
   subjectId?: number; // PREFERRED: the grounded participant id (== outcome.participantId on named markets)
   subject?: string; // a participant NAME (display + fallback when no id), or the relational "home" / "away"
-  line?: number; // numeric line value in the query's units (2.5, -0.5); matched against the outcome line
+  // the query's outcome VALUE, carried RAW from the extractor: a numeric rung in the query's units (2.5, -2) OR a
+  // combo token (correct score "2-1", HT/FT "1/1"). SELECT reads it per the picked market's betOfferType, not by
+  // its JS type — a numeric line for most markets, a combo token for correct-score/HT-FT.
+  lineValue?: number | string;
   dir?: "over" | "under" | "yes" | "no";
-  selection?: string; // combo token: correct score "2-1", HT/FT "1/1", double chance "X2"
   oddsMin?: number; // price floor (decimal, 5.0): keep only outcomes priced >= min ("first scorer over 5.0")
   oddsMax?: number; // price ceiling (decimal): keep only outcomes priced <= max
   sort?: "low" | "high"; // rank a field outright by price (low = favourite first) — drives count + selected
   count?: number; // surface only the top N of a many-outcome field (omitted = the whole field)
+  outcomeLabel?: string; // a feed outcome the resolver named ("Eliminated in Round of Last 16") -> exact englishLabel match
 };
 
 // The picked market as Kambi's own shape (the market's betoffers + their events). We keep the betOffer
@@ -62,6 +65,16 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
   const pick = (o: KOutcome): Selection => ({ ...withSubj, outcomeId: o.id, ...(lineOf(o) != null ? { line: lineOf(o)! } : {}) });
   const absent = (fb: NonNullable<Selection["fallback"]>): Selection => ({ ...withSubj, fallback: fb });
 
+  // The picked market's TYPE decides how the query's line VALUE is read: correct-score (3) and HT/FT (8) carry a
+  // COMBO TOKEN ("2-1", "1/1"); every other market carries a NUMERIC line ("-2", "2.5"). A picked market always has
+  // a betOfferType, so this is a clean two-way split — never a guess off the value's JS type (a handicap "-2" that
+  // the extractor typed as a string is still a numeric line here, routed to the line matcher, not the combo one).
+  const botId = slice.betOffers.find((b) => b.betOfferType?.id != null)?.betOfferType?.id;
+  const isComboMarket = botId === 3 || botId === 8;
+  const comboToken = isComboMarket && spec.lineValue != null ? String(spec.lineValue) : undefined;
+  // a numeric line for a non-combo market; may be NaN when the raw value can't parse -> the line branch degrades.
+  const numLine = !isComboMarket && spec.lineValue != null ? Number(String(spec.lineValue).trim()) : undefined;
+
   // The subject's SIDE in this fixture (for translating positional combo tokens, below). Prefer the event
   // participant whose id == the grounded subjectId and read its `home` flag — id-keyed, immune to name/diacritic
   // drift; fall back to a folded name match against the fixture's home/away names. undefined when undeterminable.
@@ -84,9 +97,9 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
   //   - HT/FT result tokens (win/draw/loss, "/"-joined) -> 1/X/2 per side  (an away team's "win/win" -> "2/2")
   //   - correct score "a-b" stated for a NAMED team is in that team's order -> reverse it for an away subject
   // (Double Chance does NOT reach here — the extractor emits it as a binary, not a selection.)
-  if (spec.selection != null) {
+  if (comboToken != null) {
     const side = subjectSide();
-    const want = norm(spec.selection);
+    const want = norm(comboToken);
     const wants = [want];
     const R: Record<string, Record<"home" | "away", string>> =
       { win: { home: "1", away: "2" }, draw: { home: "x", away: "x" }, loss: { home: "2", away: "1" } };
@@ -100,6 +113,17 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
         wants.includes(norm(o.englishLabel ?? o.label ?? "")),
     );
     return hit ? pick(hit.o) : absent("subject-absent");
+  }
+
+  // ---- OUTCOME LABEL — resolver named the exact feed outcome ("Eliminated in Round of Last 16") because
+  // the market NAME alone carries no direction. Match against all cands' englishLabel (folded) BEFORE the
+  // subject gate: "Tournament progress" markets put stage ids (not team ids) on outcomes, so the subject
+  // gate would abort with subject-absent before we ever reach this check. A miss falls through to the
+  // normal dir/line/subject logic below — honest degrade, never a blind wrong pick.
+  if (spec.outcomeLabel != null) {
+    const want = norm(spec.outcomeLabel);
+    const hit = cands.find(({ o }) => norm(o.englishLabel ?? o.label ?? "") === want);
+    if (hit) return pick(hit.o);
   }
 
   // Does any outcome carry a NAMED participant (player props, an outright with team outcomes)? A Yes/No
@@ -117,7 +141,7 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
       // direction gate it can't pass). A superlative/outright ("most goals", "golden ball", "first goalscorer")
       // arrives as binary "yes", but the named outcome has no yes/no direction, so the (2) gate would wrongly
       // drop it — so accept dir null OR "yes" here; a real "no" still falls through (a genuine negation).
-      if (byId.length === 1 && spec.line == null && dirOf(byId[0]!.o) == null && (spec.dir == null || spec.dir === "yes")) return pick(byId[0]!.o);
+      if (byId.length === 1 && numLine == null && dirOf(byId[0]!.o) == null && (spec.dir == null || spec.dir === "yes")) return pick(byId[0]!.o);
     } else if (!cands.some(({ o }) => dirOf(o) === "yes")) {
       return absent("subject-absent"); // market lists OTHER participants, not the subject (and no owner-Yes)
     }
@@ -161,8 +185,10 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
   });
 
   // ---- (2) DIRECTION + (3) LINE -> the SELECTED outcome (the rest of `pool` rides along for display) ----
-  if (spec.dir || spec.line != null) {
-    if (spec.line != null) {
+  if (spec.dir || numLine != null) {
+    if (numLine != null) {
+      // A line-type market got a value that can't parse to a number (an extractor contradiction) -> honest degrade.
+      if (Number.isNaN(numLine)) return absent("line-absent");
       // Handicap sign: a SAME-line betoffer (type-11 3-way) stores the line from the HOME perspective, so
       // negate it for the away side. Opposite-sign betoffers (type 1/7) store each team's own line -> as-is.
       const sameLine = (bo: BetOffer) => {
@@ -176,8 +202,8 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
       // Exact offered line first, else the nearest offered line. Every side rides along in the pool — the
       // query no longer states over/under, so the rung alone picks which outcome is flagged the match.
       const nearest = (set: Cand[]) =>
-        set.filter((c) => effLine(c) != null).sort((a, b) => Math.abs(effLine(a)! - spec.line!) - Math.abs(effLine(b)! - spec.line!))[0];
-      const chosen = pool.find((c) => effLine(c) === spec.line) ?? nearest(pool);
+        set.filter((c) => effLine(c) != null).sort((a, b) => Math.abs(effLine(a)! - numLine) - Math.abs(effLine(b)! - numLine))[0];
+      const chosen = pool.find((c) => effLine(c) === numLine) ?? nearest(pool);
       return chosen ? withPool(chosen.o, effLine(chosen)!) : absent("line-absent");
     }
     // direction only. The asked side is a PREFERENCE over the live market, never a drop (same decision as the

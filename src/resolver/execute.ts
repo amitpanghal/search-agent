@@ -9,6 +9,7 @@
 
 import type { BetOffer, KEvent, KOutcome, KParticipant } from "./offering-client";
 import type { ExecuteInput } from "./live-menu-types";
+import { marketLabelOf } from "./recall";
 
 export type CoarseLiveState = "PREMATCH" | "LIVE" | "FINISHED";
 
@@ -134,10 +135,11 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
 
   // group resolved legs by EVENT (insertion order preserved). A leg becomes a RESULT only when it picked a
   // market AND select returned a concrete outcome — the prune falls out: an event with no pick never appears.
-  const byEvent = new Map<number, { event: KEvent; highlighted: EnvelopeHighlighted[]; byBo: Map<number, { b: BetOffer; outs: EnvelopeOutcome[] }> }>();
+  const byEvent = new Map<number, { event: KEvent; highlighted: EnvelopeHighlighted[]; byBo: Map<number, { b: BetOffer; outs: EnvelopeOutcome[] }>; additional: EnvelopeHighlighted[]; addBos: Set<number> }>();
   const notes: string[] = [...(input.notes ?? [])]; // caller-built notes (e.g. unresolved time) ride along
   const noPick: string[] = []; // clarify sentences for legs with no pick (no-fixture vs no-market)
   let resolvedLegs = 0; // legs that produced ≥1 outcome (drives the "independent markets" caveat — count LEGS)
+  const pendingRelated: { related: string[]; eventIds: Set<number> }[] = [];
 
   for (const leg of input.legs) {
     const { phrase, pick, selection, unavailable } = leg;
@@ -173,7 +175,7 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
       const e = f.b.eventId != null ? eventById.get(f.b.eventId) : undefined;
       if (!e) continue;
       let g = byEvent.get(e.id);
-      if (!g) byEvent.set(e.id, (g = { event: e, highlighted: [], byBo: new Map() }));
+      if (!g) byEvent.set(e.id, (g = { event: e, highlighted: [], byBo: new Map(), additional: [], addBos: new Set() }));
       let grp = g.byBo.get(f.b.id ?? 0);
       if (!grp) {
         g.byBo.set(f.b.id ?? 0, (grp = { b: f.b, outs: [] }));
@@ -187,13 +189,44 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
       continue;
     }
     resolvedLegs += 1;
+
+    if (pick.related?.length) {
+      const eventIds = new Set(founds.map(f => f.b.eventId).filter((id): id is number => id != null && eventById.has(id)));
+      pendingRelated.push({ related: pick.related, eventIds });
+    }
+  }
+
+  // Round-robin across legs, rank by rank, until the global related-market budget (3) is spent.
+  // Guarantees >=1 per leg (best-effort) while keeping the total cap hard.
+  if (pendingRelated.length) {
+    let relBudget = 3;
+    const maxRank = Math.max(...pendingRelated.map(p => p.related.length));
+    outer: for (let rank = 0; rank < maxRank; rank++) {
+      for (const { related, eventIds } of pendingRelated) {
+        if (relBudget <= 0) break outer;
+        const relLabel = related[rank];
+        if (relLabel == null) continue;
+        let pushed = false;
+        for (const b of data.betOffers) {
+          if (marketLabelOf(b) !== relLabel || b.eventId == null || !eventIds.has(b.eventId)) continue;
+          const g = byEvent.get(b.eventId);
+          if (!g) continue;
+          const boId = b.id ?? 0;
+          if (g.byBo.has(boId) || g.addBos.has(boId)) continue;
+          g.addBos.add(boId);
+          g.additional.push({ betOffer: toBetOffer(b), outcomes: (b.outcomes ?? []).map(toOutcome) });
+          pushed = true;
+        }
+        if (pushed) relBudget--;
+      }
+    }
   }
 
   const results: EnvelopeResult[] = [...byEvent.values()].map((g) => ({
     event: toEventBlock(g.event),
     liveState: liveStateOf(g.event),
     highlighted: g.highlighted,
-    additional: [],
+    additional: g.additional,
   }));
 
   // 2+ independent market LEGS are not a joint bet -> the same caveat the old union note carried. Count LEGS,

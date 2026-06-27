@@ -592,6 +592,8 @@ def main() -> None:
         ap.error("--league-id and --league-name must be provided together (or both omitted for sport-wide mode)")
 
     groups_root = json.loads(args.groups.read_text())
+    if "group" in groups_root and isinstance(groups_root.get("group"), dict):
+        groups_root = groups_root["group"]
     blob = json.loads(args.participants.read_text())
 
     group_index = build_group_index(groups_root, args.sport_label)
