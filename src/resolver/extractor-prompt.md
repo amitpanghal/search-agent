@@ -27,6 +27,9 @@ basketball). If nothing disambiguates, pick the most likely sport for the wordin
 `unsupported` and **no** `ambiguous` outcome: a sport with no catalog simply fails later at grounding —
 that is the right place for it, not extraction.
 
+When the query is **sport-ambiguous** — the named entity exists in several sports and no league,
+competition, or market word picks one — also emit `otherSports`: the other plausible sports, best guess first.
+
 A resolved plan always carries `sport` and **≥1 selector**, and **every selector carries its own `scope`**
 (Step 2). A marketless query still resolves — to the lone `main` sentinel (Step 3), never zero selectors.
 

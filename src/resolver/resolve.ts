@@ -22,6 +22,7 @@ import { execute, type ResponseEnvelope } from "./execute";
 import { fold } from "./lexical";
 import { isMain, type BetOffer, type KEvent } from "./offering-client";
 import type { Subject, Line } from "./schema";
+import { getSport } from "./sports";
 import type { ResolvedLeg, MarketPick } from "./live-menu-types";
 
 // FILTER subject — a NAMED entity narrows the menu to its markets; a relational role (home/away) or `event`
@@ -124,6 +125,11 @@ export async function* runPipeline(query: string, deps: PipelineDeps = REAL_DEPS
     return;
   }
 
+  if (!getSport(plan.sport)) {
+    yield { stage: "done", envelope: { summary: "", results: [], notes: [], clarificationNeeded: `I don't cover ${plan.sport} yet.` } };
+    return;
+  }
+
   yield { stage: "routing" };
   const scope = groundScope(plan);
   const settled = await deps.resolveEntities(query, scope);
@@ -177,6 +183,9 @@ export async function* runPipeline(query: string, deps: PipelineDeps = REAL_DEPS
   const keyByIdx: string[] = new Array(plan.selectors.length);
   const pickByIdx: MarketPick[] = new Array(plan.selectors.length);
   const extraNotes = new Set<string>(); // pipeline-level notes resolve alone can build (needs per-leg scope)
+  if (plan.otherSports?.length) {
+    extraNotes.add(`Showing ${plan.sport} — did you mean ${plan.otherSports.join(" or ")}?`);
+  }
 
   for (const [key, idxs] of groups) {
     const leg = settled.legs[idxs[0]!]!;

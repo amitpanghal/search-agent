@@ -1,8 +1,6 @@
-// In-memory scope catalog — loads the build-time data/football/scope-index.json (the slim groups ⋈
-// participants join) plus the curated data/football/scope-aliases.json, builds the derived lookup indexes
-// at load, and memoizes. Mirrors catalog.ts (which does the same for market criterions): the build script
-// writes the slim lists; the loader builds the byName / roster maps here so the tokenizer & inversion can
-// never go stale on disk.
+// In-memory scope catalog — loads data/<sport>/scope-index.json (the slim groups ⋈ participants join)
+// plus data/<sport>/scope-aliases.json, builds derived lookup indexes at load, and memoizes per sport.
+// Mirrors catalog.ts (which does the same for market criterions).
 //
 // Scope grounding only (sport · region · competition · team · player). The market criterion catalog stays
 // in catalog.ts; the two are independent.
@@ -13,7 +11,6 @@ import { dirname, join } from "node:path";
 import { fold } from "./lexical";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const DATA = join(HERE, "..", "..", "data", "football");
 
 export type ScopeGroup = { id: number; name: string; sport: string; parent: number | null; branch: number | null };
 export type ScopeBranch = { id: number; name: string };
@@ -21,12 +18,13 @@ export type ScopeTeam = { id: number; name: string; competitionIds: number[]; gr
 export type ScopePlayer = { id: number; name: string; clubId: number | null; countryTeamId: number | null; competitionIds: number[] };
 
 export type ScopeCatalog = {
+  sport: string;
   version: string;
-  footballRootId: number;
-  // competition pool (303-node whitelist) + lookups
+  sportRootId: number;
+  // competition pool + lookups
   groups: ScopeGroup[];
   groupById: Map<number, ScopeGroup>;
-  competitionByName: Map<string, number[]>; // folded group name -> group id(s) (names collide, e.g. "premier league" x8)
+  competitionByName: Map<string, number[]>; // folded group name -> group id(s)
   // region branches + name lookup
   branches: ScopeBranch[];
   branchById: Map<number, ScopeBranch>;
@@ -34,23 +32,19 @@ export type ScopeCatalog = {
   // teams (clubs incl. national teams)
   teams: ScopeTeam[];
   teamById: Map<number, ScopeTeam>;
-  teamByName: Map<string, number[]>; // folded club name -> club id(s) (1 collision in the feed)
+  teamByName: Map<string, number[]>; // folded club name -> club id(s)
   // players
   players: ScopePlayer[];
   playerById: Map<number, ScopePlayer>;
   playerByFull: Map<string, number[]>; // folded full name -> player id(s)
-  playerByLast: Map<string, number[]>; // folded last-name token -> player id(s) (the mononym/surname fallback)
-  // roster inversion: competition group id OR national-team id -> player ids (player hard-scope)
+  playerByLast: Map<string, number[]>; // folded last-name token -> player id(s)
+  // roster inversion: competition group id OR national-team id -> player ids
   roster: Map<number, number[]>;
   // curated alias lexicon (scope-aliases.json), all keys folded
-  competitionAliases: Map<string, string>; // folded short-form -> competition NAME (resolved lexically downstream)
+  competitionAliases: Map<string, string>; // folded short-form -> competition NAME
   regionAliases: Map<string, string>; // folded place adjective/short-form -> branch NAME
-  markers: Map<string, string>; // folded surface marker -> normalized token ("(w)" -> "women", "u23" -> "u23")
+  markers: Map<string, string>; // folded surface marker -> normalized token
 };
-
-function readJson(file: string): any {
-  return JSON.parse(readFileSync(join(DATA, file), "utf8"));
-}
 
 function pushKey(map: Map<string, number[]>, key: string, id: number): void {
   if (!key) return;
@@ -64,12 +58,13 @@ function lastToken(folded: string): string {
   return toks[toks.length - 1] ?? "";
 }
 
-function loadAliases(): Pick<ScopeCatalog, "competitionAliases" | "regionAliases" | "markers"> {
-  const raw = readJson("scope-aliases.json") as {
-    competitions?: Record<string, string>;
-    regions?: Record<string, string>;
-    markers?: Record<string, string>;
-  };
+function loadAliases(dataDir: string): Pick<ScopeCatalog, "competitionAliases" | "regionAliases" | "markers"> {
+  let raw: { competitions?: Record<string, string>; regions?: Record<string, string>; markers?: Record<string, string> };
+  try {
+    raw = JSON.parse(readFileSync(join(dataDir, "scope-aliases.json"), "utf8"));
+  } catch {
+    raw = {};
+  }
   const fold2 = (o: Record<string, string> | undefined): Map<string, string> => {
     const m = new Map<string, string>();
     for (const [k, v] of Object.entries(o ?? {})) m.set(fold(k), v);
@@ -78,18 +73,48 @@ function loadAliases(): Pick<ScopeCatalog, "competitionAliases" | "regionAliases
   return { competitionAliases: fold2(raw.competitions), regionAliases: fold2(raw.regions), markers: fold2(raw.markers) };
 }
 
-let cached: ScopeCatalog | null = null;
-
-export function loadScopeCatalog(): ScopeCatalog {
-  if (cached) return cached;
-  const idx = readJson("scope-index.json") as {
-    version: string;
-    footballRootId: number;
-    groups: ScopeGroup[];
-    branches: ScopeBranch[];
-    teams: ScopeTeam[];
-    players: ScopePlayer[];
+function emptyBlob(sport: string): ScopeCatalog {
+  return {
+    sport,
+    version: "",
+    sportRootId: 0,
+    groups: [],
+    groupById: new Map(),
+    competitionByName: new Map(),
+    branches: [],
+    branchById: new Map(),
+    branchByName: new Map(),
+    teams: [],
+    teamById: new Map(),
+    teamByName: new Map(),
+    players: [],
+    playerById: new Map(),
+    playerByFull: new Map(),
+    playerByLast: new Map(),
+    roster: new Map(),
+    competitionAliases: new Map(),
+    regionAliases: new Map(),
+    markers: new Map(),
   };
+}
+
+const catalogCache = new Map<string, ScopeCatalog>();
+
+export function loadScopeCatalog(sport: string): ScopeCatalog {
+  const slug = sport.toLowerCase();
+  const hit = catalogCache.get(slug);
+  if (hit) return hit;
+
+  const dataDir = join(HERE, "..", "..", "data", slug);
+  let idx: { version: string; sportRootId: number; groups: ScopeGroup[]; branches: ScopeBranch[]; teams: ScopeTeam[]; players: ScopePlayer[] };
+  try {
+    idx = JSON.parse(readFileSync(join(dataDir, "scope-index.json"), "utf8"));
+  } catch {
+    // sport not yet built — return empty catalog so grounding yields nothing
+    const empty = emptyBlob(slug);
+    catalogCache.set(slug, empty);
+    return empty;
+  }
 
   const groupById = new Map<number, ScopeGroup>();
   const competitionByName = new Map<string, number[]>();
@@ -130,9 +155,10 @@ export function loadScopeCatalog(): ScopeCatalog {
     if (p.countryTeamId) enrol(p.countryTeamId);
   }
 
-  cached = {
+  const catalog: ScopeCatalog = {
+    sport: slug,
     version: idx.version,
-    footballRootId: idx.footballRootId,
+    sportRootId: idx.sportRootId,
     groups: idx.groups,
     groupById,
     competitionByName,
@@ -147,7 +173,8 @@ export function loadScopeCatalog(): ScopeCatalog {
     playerByFull,
     playerByLast,
     roster,
-    ...loadAliases(),
+    ...loadAliases(dataDir),
   };
-  return cached;
+  catalogCache.set(slug, catalog);
+  return catalog;
 }

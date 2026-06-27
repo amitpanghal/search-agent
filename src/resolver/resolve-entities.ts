@@ -87,7 +87,7 @@ type Placement = { legIdx: number; slot: Slot; idx: number };
 // entity": gate it once, record every placement, then fan the pick back per leg in applyOutcomes (never re-ask
 // the same clarification per leg). Returns the cells (for the single decide batch) + ref->placements (writeback).
 function buildEntityCells(scope: ResolvedScope): { cells: Cell[]; places: Map<CellRef, Placement[]> } {
-  const scat = loadScopeCatalog();
+  const scat = loadScopeCatalog(scope.sport);
   const cells: Cell[] = [];
   const places = new Map<CellRef, Placement[]>();
   const refByEntity = new Map<EntityResolution, CellRef>(); // identity dedup: a shared grounding -> its one cell

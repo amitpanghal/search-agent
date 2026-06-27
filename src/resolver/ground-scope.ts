@@ -82,13 +82,17 @@ const MAJOR_RATIO = 3;
 const NT_VARIANT: Record<string, string> = { u23: "youth_men_u23", u21: "youth_men_u21", u20: "youth_men_u20" };
 
 // ---- per-corpus lexicons (lexical.ts, corpus = SCOPE names, not the market catalog) ----
-let compLexCache: Lexicon | undefined;
+const compLexCache = new Map<string, Lexicon>();
 function compLex(cat: ScopeCatalog): Lexicon {
-  return (compLexCache ??= buildLexicon(cat.groups.map((g) => g.name)));
+  let l = compLexCache.get(cat.sport);
+  if (!l) compLexCache.set(cat.sport, (l = buildLexicon(cat.groups.map((g) => g.name))));
+  return l;
 }
-let branchLexCache: Lexicon | undefined;
+const branchLexCache = new Map<string, Lexicon>();
 function branchLex(cat: ScopeCatalog): Lexicon {
-  return (branchLexCache ??= buildLexicon(cat.branches.map((b) => b.name)));
+  let l = branchLexCache.get(cat.sport);
+  if (!l) branchLexCache.set(cat.sport, (l = buildLexicon(cat.branches.map((b) => b.name))));
+  return l;
 }
 
 function markerOf(text: string, cat: ScopeCatalog): string | null {
@@ -264,7 +268,7 @@ export function groundPlayer(
 // clean market_concept — so a flaky extractor LLM can't redden a grounder test. Applied to every leg; falls
 // back to each leg's own scope.region otherwise.
 export function groundScope(plan: QueryPlan, opts: { region?: string | null } = {}): ResolvedScope {
-  const cat = loadScopeCatalog();
+  const cat = loadScopeCatalog(plan.sport);
 
   // Memo by entity text + scope context: a value repeated across legs (the same competition on every leg, a
   // shared team) is grounded once, and identical references are reused. Player/subject keys fold in compId +

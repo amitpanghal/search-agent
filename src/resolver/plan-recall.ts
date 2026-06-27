@@ -12,7 +12,7 @@ import type { RecallInput } from "./recall";
 import type { QueryPlan } from "./schema";
 import type { Level } from "./offering-client";
 import { boTypeId } from "./bo-types";
-import { loadScopeCatalog } from "./scope-catalog";
+import { loadScopeCatalog, type ScopeCatalog } from "./scope-catalog";
 
 const settle = (r: EntityResolution | null | undefined): Candidate | null => (r && r.tier === "confident" ? r.candidates[0]! : null);
 
@@ -22,12 +22,11 @@ const settle = (r: EntityResolution | null | undefined): Candidate | null => (r 
 // the team", "to reach the final") are hung off PLAYER participant ids in the feed, never the team id itself.
 // A single roster pick is fragile (e.g. the keeper at #1 may have no comp offers); the whole squad is bounded
 // (+~9 betoffers probed for Norway) and guarantees at least one player pulls the team markets through.
-function legParticipants(leg: ResolvedLegScope): number[] {
+function legParticipants(leg: ResolvedLegScope, cat: ScopeCatalog): number[] {
   const teamIds = leg.teams.map(settle).filter((c): c is Candidate => c != null).map((c) => c.id);
   const players = [...leg.players, leg.subjectPlayer].map(settle).filter((c): c is Candidate => c != null);
   const squadIds: number[] = [];
   if (leg.level === "competition") {
-    const cat = loadScopeCatalog();
     for (const tid of teamIds) squadIds.push(...(cat.roster.get(tid) ?? []));
   }
   return [
@@ -39,13 +38,14 @@ function legParticipants(leg: ResolvedLegScope): number[] {
 }
 
 export function planRecall(settled: SettledEntities, plan: QueryPlan): RecallInput {
+  const cat = loadScopeCatalog(plan.sport);
   const legs = settled.legs;
-  const participantIds = [...new Set(legs.flatMap(legParticipants))];
+  const participantIds = [...new Set(legs.flatMap((l) => legParticipants(l, cat)))];
   // groupIds come ONLY from legs that name NO participant: a participant leg is served by the participant endpoint
   // (Model P), but a bare-competition leg ("next 3 in WC26") still needs its group fetched. A mixed query emits
   // BOTH so neither leg's data starves the other (recall fetches and unions them).
   const groupIds = [...new Set(
-    legs.filter((l) => legParticipants(l).length === 0).map((l) => settle(l.competition)?.id).filter((x): x is number => x != null),
+    legs.filter((l) => legParticipants(l, cat).length === 0).map((l) => settle(l.competition)?.id).filter((x): x is number => x != null),
   )];
   const levels = [...new Set(legs.map((l) => l.level))] as Level[]; // union of leg grains -> the fan-out covers both
 

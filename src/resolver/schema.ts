@@ -6,14 +6,8 @@
 // downstream, in place. The eval's `gold-record.ts` is the same shape with every groundable
 // leaf wrapped in a `Grounded` cell that carries the real id; keep the two in sync.
 //
-// Assumes `zod`. `BUILT_SPORTS` is generated at startup from data/football/groups.json
-// (decision 17) — today only FOOTBALL is built, so the `sport` enum and the `ambiguous`
-// candidates are single-valued for now.
-
 import { z } from "zod";
 import { BO_TYPE_KEYS } from "./bo-types";
-
-export const BUILT_SPORTS = ["FOOTBALL"] as const;
 
 // Who owns a market. The four concrete kinds are the BOUND readings (recall-resolve Role 1): an owner
 // named it OR the phrase reads at a single level, so the kind is certain and the hard subject-filter
@@ -120,6 +114,7 @@ const Selector = z.object({
 export const QueryPlan = z.object({
   status: z.literal("resolved"),
   sport: z.string().min(1),
+  otherSports: z.array(z.string()).optional(), // present only when sport-ambiguous (best guess first)
   selectors: z.array(Selector).min(1),
 });
 export type QueryPlan = z.infer<typeof QueryPlan>;
