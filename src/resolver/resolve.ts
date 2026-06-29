@@ -15,7 +15,6 @@ import { resolveEntities } from "./resolve-entities";
 import { planRecall } from "./plan-recall";
 import { recall, scopeMenu, marketLabelOf } from "./recall";
 import { filterBySubject } from "./filter";
-import { boTypeIdSet } from "./bo-types";
 import { resolveMarkets } from "./resolve-market";
 import { select, type SelectSpec } from "./select";
 import { execute, type ResponseEnvelope } from "./execute";
@@ -197,10 +196,9 @@ export async function* runPipeline(query: string, deps: PipelineDeps = REAL_DEPS
         ? `Couldn't read "${bad}" as a kickoff time — showing all kickoff times.`
         : `Couldn't read "${bad}" — showing all matching games.`);
     }
-    const keepTypes = boTypeIdSet(idxs.flatMap((i) => plan.selectors[i]!.bo_types ?? []));
     const subjId = subjectParticipantId(leg, sel0.subject);
     const subjSide = sel0.subject.kind === "either_match_team" ? sel0.subject.side : undefined;
-    const fr = filterBySubject(scoped.offers, scoped.events, subjectName(leg, sel0.subject), subjId, keepTypes, subjSide);
+    const fr = filterBySubject(scoped.offers, scoped.events, subjectName(leg, sel0.subject), subjId, subjSide);
     groupData.set(key, { scoped, fr });
     // "main" legs name no market — they skip the LLM pick entirely and fan out into every main market below.
     // Only the named legs go to resolveMarkets (keep the pick-index alignment to THOSE legs).

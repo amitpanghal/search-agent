@@ -50,7 +50,7 @@ async function main() {
     console.log(`  teams=${JSON.stringify(plan.event_scope?.teams)}`);
     (plan.selectors ?? []).forEach((s: any, i: number) =>
       console.log(`  sel${i}: subject=${JSON.stringify(s.subject)} concept=${JSON.stringify(s.market_concept)} ` +
-        `bo_types=${JSON.stringify(s.bo_types)} line=${JSON.stringify(s.line)}`));
+        `line=${JSON.stringify(s.line)}`));
   }
   const cost = inTok * 1e-6 + outTok * 5e-6 + cw * 1.25e-6 + cr * 0.1e-6;
   console.log(`\n--- ${QUERIES.length} extract calls | in=${inTok} out=${outTok} cacheW=${cw} cacheR=${cr} | cost=$${cost.toFixed(6)} ---`);

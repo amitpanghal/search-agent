@@ -16,7 +16,6 @@ import { resolveEntities } from "../resolver/resolve-entities";
 import { planRecall } from "../resolver/plan-recall";
 import { recall, scopeMenu, marketLabelOf } from "../resolver/recall";
 import { filterBySubject } from "../resolver/filter";
-import { boTypeIdSet } from "../resolver/bo-types";
 import { resolveMarkets } from "../resolver/resolve-market";
 import { select, type SelectSpec } from "../resolver/select";
 import { execute, type ResponseEnvelope } from "../resolver/execute";
@@ -241,17 +240,15 @@ async function main(): Promise<void> {
       timeApplied: scoped.timeApplied,
     });
 
-    const keepTypes = boTypeIdSet(idxs.flatMap((i) => plan.selectors[i]!.bo_types ?? []));
     const subjId = subjectParticipantId(leg, sel0.subject);
     const subjSide = sel0.subject.kind === "either_match_team" ? sel0.subject.side : undefined;
     currentStage = `filterBySubject[${key}]`;
     raw("filterBySubject INPUT", {
       filterSubject: subjectName(leg, sel0.subject),
       subjectId: subjId,
-      keepTypes: [...keepTypes],
       subjSide,
     });
-    const fr = filterBySubject(scoped.offers, scoped.events, subjectName(leg, sel0.subject), subjId, keepTypes, subjSide);
+    const fr = filterBySubject(scoped.offers, scoped.events, subjectName(leg, sel0.subject), subjId, subjSide);
     raw("filterBySubject OUTPUT.menu", fr.menu);
     raw("filterBySubject OUTPUT summary", { offers: fr.offers.length });
     groupData.set(key, { scoped, fr });

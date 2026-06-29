@@ -11,16 +11,12 @@ import { dirname, join } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { QueryPlan } from "./schema";
-import { BO_TYPE_REFERENCE } from "./bo-types";
 import { normalizePlan } from "./normalize-plan";
 
 export const EXTRACTION_MODEL = "claude-haiku-4-5-20251001";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const SYSTEM_PROMPT = readFileSync(join(HERE, "extractor-prompt.md"), "utf8").replace(
-  "{{BO_TYPES}}",
-  BO_TYPE_REFERENCE,
-);
+const SYSTEM_PROMPT = readFileSync(join(HERE, "extractor-prompt.md"), "utf8");
 const TOOL_NAME = "emit_query_plan";
 
 // The Anthropic tool input_schema must be a top-level object, but QueryPlan is a

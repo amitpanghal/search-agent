@@ -105,7 +105,7 @@ async function main() {
       console.log(`    teams=${j(es.teams)} players=${j(es.players)} stage=${j(es.stage)}`);
       console.log(`    time=${j(es.time)} play_state=${j(es.play_state)}`);
       (plan.selectors ?? []).forEach((s: any, i: number) =>
-        console.log(`    sel[${i}] subject=${j(s.subject)} concept=${j(s.market_concept)} line=${j(s.line)} odds=${j(s.odds)}${s.bo_types ? " bo_types=" + j(s.bo_types) : ""}`));
+        console.log(`    sel[${i}] subject=${j(s.subject)} concept=${j(s.market_concept)} line=${j(s.line)} odds=${j(s.odds)}`));
     } else console.log("\n[1] EXTRACT plan — (not captured)");
 
     // STAGE 5 — recall

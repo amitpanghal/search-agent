@@ -32,8 +32,8 @@ const raw: any = {
         time: { date_window: null, kickoff_time_of_day: null, fixture_pick: null },
       },
     },
-    // (2) leaf repairs: blank line/odds omitted; garbage bo_types dropped; nameless team -> event.
-    { subject: { kind: "team", name: "" }, market_concept: "leaf repairs", scope: { ...okScope }, line: {}, odds: null, bo_types: ["__garbage__"] },
+    // (2) leaf repairs: blank line/odds omitted; nameless team -> event.
+    { subject: { kind: "team", name: "" }, market_concept: "leaf repairs", scope: { ...okScope }, line: {}, odds: null },
     // (3) odds {min:0} removed; garbage odds_sort dropped.
     { subject: { kind: "event" }, market_concept: "odds repairs", scope: { ...okScope }, odds: { min: 0 }, odds_sort: "nope" },
   ],
@@ -50,7 +50,6 @@ check("absent play_state -> null", raw.selectors[0].scope.play_state, null);
 console.log("\nper-selector leaf repairs:");
 check("blank line omitted", "line" in raw.selectors[1], false);
 check("blank odds omitted", "odds" in raw.selectors[1], false);
-check("garbage bo_types dropped", "bo_types" in raw.selectors[1], false);
 check("nameless team -> event", raw.selectors[1].subject, { kind: "event" });
 check("odds {min:0} removed", "odds" in raw.selectors[2], false);
 check("garbage odds_sort dropped", "odds_sort" in raw.selectors[2], false);

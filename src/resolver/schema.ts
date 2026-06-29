@@ -7,7 +7,6 @@
 // leaf wrapped in a `Grounded` cell that carries the real id; keep the two in sync.
 //
 import { z } from "zod";
-import { BO_TYPE_KEYS } from "./bo-types";
 
 // Who owns a market. The four concrete kinds are the BOUND readings (recall-resolve Role 1): an owner
 // named it OR the phrase reads at a single level, so the kind is certain and the hard subject-filter
@@ -88,10 +87,6 @@ export type Scope = z.infer<typeof Scope>;
 const Selector = z.object({
   subject: Subject,
   market_concept: z.string().min(1),
-  // Over-inclusive shortlist of coarse market-type buckets that could carry this market (tokens validated
-  // against data/betoffertypes.json via BO_TYPE_KEYS). Narrows the fetch + resolve menu; omitted = keep all
-  // buckets. The resolver still picks the exact market — this only prunes, never commits.
-  bo_types: z.array(z.enum(BO_TYPE_KEYS)).optional(),
   line: Line.optional(),
   odds: Odds.optional(),
   // Rank the market's outcomes by price instead of bounding it (sport-agnostic). `low` = shortest/lowest/

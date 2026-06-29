@@ -3,8 +3,8 @@
 //   tsx scripts/phase0-perleg-probe.ts
 //
 // Mirrors src/resolver/extract.ts EXACTLY (Haiku claude-haiku-4-5, temp 0, forced tool use, the live
-// extractor-prompt.md with {{BO_TYPES}} filled) but swaps in a PROBE-LOCAL per-leg schema — so we test the
-// new prompt through real structured output WITHOUT touching shipped schema.ts. One query per call.
+// extractor-prompt.md) but swaps in a PROBE-LOCAL per-leg schema — so we test the new prompt through real
+// structured output WITHOUT touching shipped schema.ts. One query per call.
 //
 // Per query it records: rawValid (model output parses against the per-leg schema) and normValid (parses after
 // the tiny Phase-2.5-style normalizer: all-null time/stage -> null, default region/play_state). Scope-logic (a)
@@ -15,7 +15,6 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
-import { BO_TYPE_KEYS, BO_TYPE_REFERENCE } from "../src/resolver/bo-types";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "..");
@@ -72,7 +71,6 @@ const Scope = z.object({
 const Selector = z.object({
   subject: Subject,
   market_concept: z.string().min(1),
-  bo_types: z.array(z.enum(BO_TYPE_KEYS)).optional(),
   line: Line.optional(),
   odds: Odds.optional(),
   odds_sort: z.enum(["low", "high"]).optional(),
@@ -107,7 +105,7 @@ function normalize(plan: unknown): void {
   }
 }
 
-const SYSTEM_PROMPT = readFileSync(join(ROOT, "src/resolver/extractor-prompt.md"), "utf8").replace("{{BO_TYPES}}", BO_TYPE_REFERENCE);
+const SYSTEM_PROMPT = readFileSync(join(ROOT, "src/resolver/extractor-prompt.md"), "utf8");
 const MODEL = "claude-haiku-4-5-20251001";
 const TOOL_NAME = "emit_query_plan";
 

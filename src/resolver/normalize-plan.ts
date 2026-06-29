@@ -5,7 +5,7 @@
 //   1. PER-LEG SCOPE cleanups — an all-null `stage`/`time` skeleton -> null (its refine rejects the empty
 //      object); default an absent `region`/`play_state` to null (both are required-nullable).
 //   2. PER-SELECTOR leaf repairs (moved verbatim from extract.ts): drop a blank/unusable optional line/odds,
-//      sanitize odds bounds + bo_types tokens, coerce a nameless `team` subject -> the bare `event` subject.
+//      sanitize odds bounds, coerce a nameless `team` subject -> the bare `event` subject.
 //
 // NOT done here: stripping a "fabricated" competition. The Phase 0 gate (temp 0, one query per call) showed
 // ZERO fabrication across 14 queries, and a pre-grounding text check is unsafe — it would wrong-strip a
@@ -14,9 +14,6 @@
 // ground to a real competition?", so that check belongs AFTER Phase 3 grounding, not here. Revisit if
 // fabrication actually appears in the live extractor.
 
-import { BO_TYPE_KEYS } from "./bo-types";
-
-const KNOWN_BO_TYPES = new Set<string>(BO_TYPE_KEYS);
 const OPTIONAL_SELECTOR_LEAVES = ["line", "odds"] as const;
 
 function isBlank(v: unknown): boolean {
@@ -37,15 +34,6 @@ function sanitizeOdds(rec: Record<string, unknown>): void {
     if (!(typeof o[k] === "number" && (o[k] as number) > 0)) delete o[k];
   }
   if (o.min === undefined && o.max === undefined) delete rec.odds;
-}
-// Sanitize `bo_types`: keep only known bucket tokens (a hallucinated/garbage token is dropped), dedupe, and
-// remove the field entirely if nothing valid remains (fail-open — the resolver then sees all buckets).
-function sanitizeBoTypes(rec: Record<string, unknown>): void {
-  const bt = rec.bo_types;
-  if (!Array.isArray(bt)) { delete rec.bo_types; return; }
-  const kept = [...new Set(bt.filter((t): t is string => typeof t === "string" && KNOWN_BO_TYPES.has(t)))];
-  if (kept.length) rec.bo_types = kept;
-  else delete rec.bo_types;
 }
 
 // Per-leg scope: a blank `stage` or an all-null `time` skeleton -> coerce to null (omit the facet); default
@@ -75,7 +63,6 @@ export function normalizePlan(plan: unknown): void {
     }
     if (rec.line !== undefined && !isUsableLine(rec.line)) delete rec.line;
     sanitizeOdds(rec);
-    sanitizeBoTypes(rec);
     // `odds_sort` is an optional enum: drop anything that isn't "low"/"high" (incl. null/{}) so the schema parses.
     if ("odds_sort" in rec && rec.odds_sort !== "low" && rec.odds_sort !== "high") delete rec.odds_sort;
     // `count` is an optional positive integer (the field-outright limit); drop anything else so the schema parses.

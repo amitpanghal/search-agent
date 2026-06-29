@@ -101,7 +101,7 @@ Examples:
 
 ## Step 3 — Extract the selectors (one per market)
 
-Each market in the query becomes one selector: `{ subject, market_concept, bo_types?, line?, odds?,
+Each market in the query becomes one selector: `{ subject, market_concept, line?, odds?,
 odds_sort?, scope }` — every selector gets its own `scope` (Step 2).
 
 ### First: name the market for each request — the `main` fallback

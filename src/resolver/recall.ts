@@ -149,7 +149,6 @@ export type RecallInput = {
   eventIds?: number[]; // explicit fixtures, when already pinned
   playState?: "live" | "prematch"; // bound server-side ONLY when every leg agrees (else broad; scopeMenu filters)
   maxFanoutEvents?: number;
-  boTypes?: number[]; // union of the selectors' bo_types ids — the server-side `type=` fetch shrink
   onlyMain?: boolean; // EVERY leg is the bare-event "main" market -> server-side onlyMain shrink (group/event only; the participant endpoint ignores it, so a per-leg client-side MAIN-tag filter covers that case downstream)
 };
 
@@ -242,24 +241,22 @@ function out(endpoint: RecallResult["endpoint"], betOffers: BetOffer[], events: 
 // fan-out). Endpoint by Model P — a named participant wins; else the competition group(s). No criterion `type=`
 // bound (market deferred), and NO time/grain/co-occurrence narrowing here — that is per-leg, in scopeMenu.
 export async function recall(input: RecallInput): Promise<RecallResult> {
-  const typeP = input.boTypes?.length ? { type: input.boTypes } : {};
   const mainP = input.onlyMain ? { onlyMain: true } : {}; // all-main shrink; participant ignores it (filtered client-side downstream)
   // explicit fixtures -> the event endpoint (via the fan-out batcher)
   if (input.eventIds?.length) {
-    const r = await fetchEventOffers(input.eventIds, { ...typeP, ...mainP });
+    const r = await fetchEventOffers(input.eventIds, { ...mainP });
     return out("event", r.betOffers, r.events, r.truncated);
   }
   // Model P: a named participant -> participant endpoint (even for competition-grain markets like the Golden Boot);
   // a bare-competition leg -> its group(s). A MIXED query needs BOTH, so build every task and run them together —
   // runTasks fans out a capped group task. event.groupId differentiates groups so scopeMenu can separate the legs.
   const tasks: Task[] = [];
-  if (input.participantIds?.length) tasks.push({ endpoint: "participant", ids: input.participantIds, params: typeP });
+  if (input.participantIds?.length) tasks.push({ endpoint: "participant", ids: input.participantIds, params: {} });
   if (input.groupIds?.length) {
     // ONE task per group, run in parallel (each keeps its own cap/fan-out). onlyCompetitions only when EVERY leg
     // is competition-grain; the fan-out covers the UNION of levels.
     const onlyComp = input.levels.length === 1 && input.levels[0] === "competition";
     const params: Task["params"] = {
-      ...typeP,
       ...mainP,
       ...(onlyComp ? { onlyCompetitions: true } : {}),
       ...(input.playState === "live" ? { excludePrematch: true } : input.playState === "prematch" ? { excludeLive: true } : {}),

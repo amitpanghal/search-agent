@@ -54,7 +54,7 @@ function pricesSubject(b: BetOffer, s: string, subjectId: number | undefined, ev
 // Keep only the offers that price the subject, then rebuild the menu from them (so menu and offers stay in
 // lockstep for SELECT). No subject -> the menu unchanged. Over-keeping (e.g. an opponent's per-team variant at
 // match grain) is SAFE; under-dropping is the only danger, and folding + the four homes guard against it.
-export function filterBySubject(offers: BetOffer[], events: KEvent[], subject?: string, subjectId?: number, keepTypes?: Set<number>, side?: "home" | "away"): FilterResult {
+export function filterBySubject(offers: BetOffer[], events: KEvent[], subject?: string, subjectId?: number, side?: "home" | "away"): FilterResult {
   const evName = (id?: number) => events.find((e) => e.id === id)?.name ?? "";
   // The subject team for an offer's fixture: a NAMED subject is constant; a RELATIONAL home/away resolves
   // against THAT offer's own event (so a multi-fixture "home team ..." binds per match, not to one name).
@@ -67,11 +67,7 @@ export function filterBySubject(offers: BetOffer[], events: KEvent[], subject?: 
     // Unknown side (missing event/home-away name) -> "" -> keep (passthrough), never a wrong drop.
     kept = offers.filter((b) => { const s = subjectFor(b); return s ? pricesSubject(b, s, subjectId, events, evName) : true; });
   }
-  // bo_types prune (the resolver still picks the market — this only shrinks its menu). EMPTY-GUARD: never let
-  // a (possibly-wrong) shortlist strand a non-empty menu — skip the prune if it would kill everything.
-  if (keepTypes?.size) {
-    const typed = kept.filter((b) => b.betOfferType?.id != null && keepTypes.has(b.betOfferType.id));
-    if (typed.length) kept = typed;
-  }
+  // No bo_types prune: the resolver picks the market from the full subject-scoped menu (live-menu-resolution
+  // thesis). A coarse type= shortlist could prune to a wrong non-empty subset and mislead the pick.
   return { offers: kept, menu: buildMenu(kept) };
 }

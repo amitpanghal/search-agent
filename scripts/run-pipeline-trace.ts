@@ -91,7 +91,6 @@ import { resolveEntities } from "../src/resolver/resolve-entities";
 import { planRecall } from "../src/resolver/plan-recall";
 import { recall, variantOf } from "../src/resolver/recall";
 import { filterBySubject } from "../src/resolver/filter";
-import { boTypeIdSet } from "../src/resolver/bo-types";
 import { resolveMarkets } from "../src/resolver/resolve-market";
 import { select, type SelectSpec } from "../src/resolver/select";
 import { execute } from "../src/resolver/execute";
@@ -254,19 +253,16 @@ async function main() {
     banner(`GROUP "${key}" — selectors [${idxs.join(", ")}]`);
 
     const firstSel = unit.selectors[idxs[0]!]!;
-    const keepTypes = boTypeIdSet(idxs.flatMap((i) => unit.selectors[i]!.bo_types ?? []));
     const subjId = subjectParticipantId(unit, firstSel.subject, idxs[0]!);
     console.log("\nSTAGE 6 — filterBySubject(...)  [deterministic]");
     raw("FILTER INPUT.filterSubject", filterSubject(firstSel.subject) ?? null);
     raw("FILTER INPUT.subjectId (grounded id — P home matches by id)", subjId ?? null);
-    raw("FILTER INPUT.keepTypes (bo_type ids; empty = keep all)", [...keepTypes]);
     currentStage = `filter[${key}]`;
     const fr = filterBySubject(
       r.data.betOffers,
       r.data.events,
       filterSubject(firstSel.subject),
       subjId,
-      keepTypes,
     );
     filtered.set(key, fr);
     console.log(`\nFILTER OUTPUT: kept ${fr.offers.length} betOffers -> ${fr.menu.length} menu items`);

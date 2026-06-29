@@ -12,7 +12,6 @@ import { planRecall } from "../src/resolver/plan-recall";
 import { recall, scopeMenu } from "../src/resolver/recall";
 import { filterBySubject } from "../src/resolver/filter";
 import { resolveMarkets } from "../src/resolver/resolve-market";
-import { boTypeIdSet } from "../src/resolver/bo-types";
 import { fold } from "../src/resolver/lexical";
 import type { Subject } from "../src/resolver/schema";
 
@@ -49,7 +48,7 @@ async function main() {
       const leg = settled.legs[i]!;
       const scoped = scopeMenu(r.data, leg);
       const subjId = subjectParticipantId(leg, sel.subject);
-      const fr = filterBySubject(scoped.offers, scoped.events, filterSubject(sel.subject), subjId, boTypeIdSet(sel.bo_types ?? []));
+      const fr = filterBySubject(scoped.offers, scoped.events, filterSubject(sel.subject), subjId);
       const labels = fr.menu.map((m) => m.label);
       console.log(`\n  LEG ${i}: "${sel.market_concept}"  [level=${leg.level}, subject=${JSON.stringify(sel.subject)}, subjId=${subjId ?? "-"}]`);
       console.log(`    scopeMenu -> ${scoped.events.length} events; subject menu = ${labels.length} markets`);
