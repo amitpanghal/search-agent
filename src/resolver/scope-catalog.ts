@@ -9,6 +9,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { fold } from "./lexical";
+import { getSport } from "./sports";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -153,6 +154,20 @@ export function loadScopeCatalog(sport: string): ScopeCatalog {
     };
     for (const cid of p.competitionIds) enrol(cid);
     if (p.countryTeamId) enrol(p.countryTeamId);
+  }
+
+  // For individual sports (tennis): mirror each player into the team indexes so
+  // groundTeam() resolves a player name regardless of how the extractor labels the subject.
+  // Both full name and last-name token are indexed so "Djokovic" and "Novak Djokovic" both hit.
+  if (getSport(slug)?.individual) {
+    for (const p of idx.players) {
+      const teamView: ScopeTeam = { id: p.id, name: p.name, competitionIds: p.competitionIds, groupIds: [], ntVariant: null };
+      teamById.set(p.id, teamView);
+      const f = fold(p.name);
+      pushKey(teamByName, f, p.id);
+      const last = lastToken(f);
+      if (last && last !== f) pushKey(teamByName, last, p.id);
+    }
   }
 
   const catalog: ScopeCatalog = {

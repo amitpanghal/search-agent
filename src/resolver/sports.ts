@@ -7,11 +7,13 @@ export type SportConfig = {
   label: string;
   sportRootId: number;
   participantsFile: string;
+  individual?: boolean;
 };
 
 export const SPORTS: Record<string, SportConfig> = {
   football: { slug: "football", label: "FOOTBALL", sportRootId: 1000093190, participantsFile: "football_participants.json" },
   basketball: { slug: "basketball", label: "BASKETBALL", sportRootId: 1000093204, participantsFile: "basketball_participants.json" },
+  tennis: { slug: "tennis", label: "TENNIS", sportRootId: 1000093193, participantsFile: "tennis_participants.json", individual: true },
 };
 
 export function getSport(slug: string): SportConfig | undefined {

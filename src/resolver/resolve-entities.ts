@@ -21,7 +21,7 @@ import { dirname, join } from "node:path";
 import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import {
-  groundRegion, groundCompetition, groundTeam, groundPlayer,
+  groundRegion, groundCompetition, groundTeam, groundPlayer, compUnion,
   type ResolvedScope, type EntityResolution, type ScopeTier,
 } from "./ground-scope";
 import { loadScopeCatalog } from "./scope-catalog";
@@ -108,14 +108,18 @@ function buildEntityCells(scope: ResolvedScope): { cells: Cell[]; places: Map<Ce
   // Per-leg confident scoping for the reground closures (the leg this entity belongs to; deduped legs share it).
   scope.legs.forEach((leg, legIdx) => {
     const regionBranch = leg.region?.tier === "confident" ? leg.region.candidates[0]!.id : null;
-    const compId = leg.competition?.tier === "confident" ? leg.competition.candidates[0]!.id : null;
     const teamIds = leg.teams.filter((t) => t.tier === "confident").flatMap((t) => t.candidates.map((c) => c.id));
+    // anchor allow-set for a re-expressed competition — mirrors groundScope: the leg's player leagues (else
+    // team leagues, else null). compId is gone — players no longer narrow by competition (comp→player cut dropped).
+    const playerComps = compUnion([...leg.players, leg.subjectPlayer]);
+    const teamComps = compUnion(leg.teams);
+    const allow = playerComps.size ? playerComps : (teamComps.size ? teamComps : null);
     add("region", leg.region, legIdx, 0, (p) => groundRegion(p, scat));
-    add("competition", leg.competition, legIdx, 0, (p) => groundCompetition(p, regionBranch, scat));
+    add("competition", leg.competition, legIdx, 0, (p) => groundCompetition(p, regionBranch, scat, allow));
     leg.teams.forEach((t, i) => add("team", t, legIdx, i, (p) => groundTeam(p, scat)));
-    leg.players.forEach((pl, i) => add("player", pl, legIdx, i, (p) => groundPlayer(p, { compId, teamIds }, scat)));
+    leg.players.forEach((pl, i) => add("player", pl, legIdx, i, (p) => groundPlayer(p, { compId: null, teamIds }, scat)));
     // Market-owner player (the leg's subject) settles in the SAME batch — gated and re-grounded like a player.
-    add("subject", leg.subjectPlayer, legIdx, 0, (p) => groundPlayer(p, { compId, teamIds }, scat));
+    add("subject", leg.subjectPlayer, legIdx, 0, (p) => groundPlayer(p, { compId: null, teamIds }, scat));
   });
   return { cells, places };
 }

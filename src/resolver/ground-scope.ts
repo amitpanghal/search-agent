@@ -10,10 +10,12 @@
 // teams; "Italian Serie A" -> region); the grounder never re-disambiguates that.
 //
 // Adaptive cascade — resolving one entity SCOPES the next:
-//   region  (confident) ──hard-scope──▶ competition candidates restricted to the branch subtree
-//   competition (confident) ──hard-scope──▶ player pool restricted to that competition's roster
-//   confident teams in scope ──────────▶ player pool also accepts that club/country's players (the homonym
-//                                          cut: "Bruno Fernandes" + Portugal in scope -> the Portugal one)
+//   region (confident) ──hard-scope──▶ competition candidates restricted to the branch subtree
+//   confident teams in scope ─────────▶ player pool also accepts that club/country's players (the homonym
+//                                         cut: "Bruno Fernandes" + Portugal in scope -> the Portugal one)
+//   players/teams on the leg ─────────▶ competition resolved LAST within the anchor's OWN leagues, so a
+//                                         gendered/variant node ("Wimbledon Women", "Champions League (W)") is
+//                                         chosen over the bare men's node (Option B: the player drives the comp)
 // Anything not confidently scoped stays recall-first (top-k, tier `ambiguous`/`shortlist`) for the LLM.
 //
 // Per-leg-scope redesign: each selector carries its OWN scope, so groundScope runs the cascade PER leg and
@@ -134,8 +136,10 @@ export function groundRegion(text: string, cat: ScopeCatalog): EntityResolution 
   return { text, tier: "shortlist", candidates: scored.slice(0, TOP_K).map((x) => ({ id: x.id, name: branchName(x.id), score: x.cover, branch: x.id })) };
 }
 
-// ---- competition: lexical-first over the whitelist, region-hard-scoped, major-ness tie-break ----
-export function groundCompetition(text: string, regionBranch: number | null, cat: ScopeCatalog): EntityResolution {
+// ---- competition: lexical-first over the whitelist, region-hard-scoped, anchor-hard-scoped, major-ness tie-break ----
+// `allow` (when set) is the anchor allow-set: the union of the leg's player/team leagues. The competition MUST be one
+// of those leagues, so a gendered/variant node is chosen over the bare men's node. Null = today's global behaviour.
+export function groundCompetition(text: string, regionBranch: number | null, cat: ScopeCatalog, allow: Set<number> | null = null): EntityResolution {
   const folded0 = fold(text);
   const text2 = cat.competitionAliases.get(folded0) ?? text; // short-form -> a real competition name
   const folded = fold(text2);
@@ -154,6 +158,11 @@ export function groundCompetition(text: string, regionBranch: number | null, cat
     const cut = cat.groups.filter((g) => g.branch === regionBranch);
     if (cut.length) pool = cut;
   }
+  // anchor cut — HARD (runs after the soft region cut, so the two AND together): the competition must be one of
+  // the anchor's leagues. Unlike the region cut there is NO fallback — if it empties the pool, the `if
+  // (!scored.length) return none` below yields tier none, and a none competition leaves compId null downstream
+  // (the player's own events are kept; the none cell routes to the LLM clarify/reexpress path).
+  if (allow) pool = pool.filter((g) => allow.has(g.id));
 
   const scored = pool.map((g) => ({ g, cover: lex.lexicalCover(text2, g.name) })).filter((x) => x.cover > 0);
   if (!scored.length) return { text, tier: "none", candidates: [] };
@@ -263,6 +272,14 @@ export function groundPlayer(
   return { text, tier: "none", candidates: [] };
 }
 
+// Union of competitionIds across grounded entities' candidates — the anchor allow-set fed to groundCompetition.
+// Built from CANDIDATES (any tier), so an ambiguous player contributes the union of all its homonyms' leagues.
+export const compUnion = (rs: (EntityResolution | null)[]): Set<number> => {
+  const s = new Set<number>();
+  for (const r of rs) if (r) for (const c of r.candidates) for (const id of c.competitionIds ?? []) s.add(id);
+  return s;
+};
+
 // ---- the cascade, run PER leg with a memo cache ----
 // `opts.region` lets a caller (the eval gate) feed region as GIVEN, exactly as the market grounder is fed a
 // clean market_concept — so a flaky extractor LLM can't redden a grounder test. Applied to every leg; falls
@@ -271,8 +288,9 @@ export function groundScope(plan: QueryPlan, opts: { region?: string | null } = 
   const cat = loadScopeCatalog(plan.sport);
 
   // Memo by entity text + scope context: a value repeated across legs (the same competition on every leg, a
-  // shared team) is grounded once, and identical references are reused. Player/subject keys fold in compId +
-  // teamIds because those change the result. ` ` joins parts (never present in folded text).
+  // shared team) is grounded once, and identical references are reused. Player/subject keys fold in teamIds,
+  // and the competition key folds in the anchor allow-set, because those change the result. `\u0000` joins
+  // parts (never present in folded text).
   const memo = new Map<string, EntityResolution>();
   const once = (key: string, fn: () => EntityResolution): EntityResolution => {
     let r = memo.get(key);
@@ -284,26 +302,34 @@ export function groundScope(plan: QueryPlan, opts: { region?: string | null } = 
     const sc = sel.scope;
 
     const regionText = opts.region !== undefined ? opts.region : sc.region;
-    const region = regionText ? once(`region ${fold(regionText)}`, () => groundRegion(regionText, cat)) : null;
+    const region = regionText ? once(`region\u0000${fold(regionText)}`, () => groundRegion(regionText, cat)) : null;
     const regionBranch = region && region.tier === "confident" ? region.candidates[0]!.id : null;
 
-    const competition = sc.competition
-      ? once(`comp ${fold(sc.competition)} ${regionBranch}`, () => groundCompetition(sc.competition!, regionBranch, cat))
-      : null;
-    const compId = competition && competition.tier === "confident" ? competition.candidates[0]!.id : null;
-
-    // teams first (a confident team scopes the player pool — the homonym cut), then players.
-    const teams = sc.teams.map((t) => once(`team ${fold(t)}`, () => groundTeam(t, cat)));
+    // teams first (a confident team scopes the player pool — the team→player homonym cut), then players. The
+    // comp→player cut is GONE (Option B): players ground by name + teamIds only, so the competition resolves
+    // LAST against the player's OWN leagues (picking the gendered/variant node).
+    const teams = sc.teams.map((t) => once(`team\u0000${fold(t)}`, () => groundTeam(t, cat)));
     const teamIds = teams.filter((r) => r.tier === "confident").flatMap((r) => r.candidates.map((c) => c.id));
-    const pKey = (name: string) => `player ${fold(name)} ${compId} ${[...teamIds].sort((a, b) => a - b).join(",")}`;
-    const players = sc.players.map((p) => once(pKey(p.name), () => groundPlayer(p.name, { compId, teamIds }, cat)));
+    const pKey = (name: string) => `player\u0000${fold(name)}\u0000${[...teamIds].sort((a, b) => a - b).join(",")}`;
+    const players = sc.players.map((p) => once(pKey(p.name), () => groundPlayer(p.name, { compId: null, teamIds }, cat)));
 
     // the market-OWNER player named on this leg's subject (recall: same player pool as scope.players).
     // Capture the name in a local const so the memo closure keeps the narrowing (TS drops property-narrowing
     // inside a closure).
     const subjName = sel.subject.kind === "player" ? sel.subject.name : undefined;
     const subjectPlayer = subjName
-      ? once(pKey(subjName), () => groundPlayer(subjName, { compId, teamIds }, cat))
+      ? once(pKey(subjName), () => groundPlayer(subjName, { compId: null, teamIds }, cat))
+      : null;
+
+    // anchor allow-set drives competition resolution: the union of this leg's player leagues (else team
+    // leagues, else null = today's global behaviour). Built from candidates BEFORE LLM disambiguation.
+    const playerComps = compUnion([...players, subjectPlayer]);
+    const teamComps = compUnion(teams);
+    const allow = playerComps.size ? playerComps : (teamComps.size ? teamComps : null);
+    const allowSig = allow ? [...allow].sort((a, b) => a - b).join(",") : "*";
+
+    const competition = sc.competition
+      ? once(`comp\u0000${fold(sc.competition)}\u0000${regionBranch}\u0000${allowSig}`, () => groundCompetition(sc.competition!, regionBranch, cat, allow))
       : null;
 
     return {

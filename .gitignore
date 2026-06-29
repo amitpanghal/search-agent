@@ -27,7 +27,9 @@ scripts/.trace-out/
 src/harness-loop/llm-cache/
 src/harness-loop/batches/
 src/harness-loop/report/
-data/.*.json
+data/*
 
 # Intermediate basketball concat blob (regenerate with: npx tsx scripts/basketball/concat-feeds.ts)
 data/basketball/basketball_participants_raw.json
+# Intermediate tennis concat blob (regenerate with: npx tsx scripts/tennis/concat-feeds.ts)
+data/tennis/tennis_participants_raw.json

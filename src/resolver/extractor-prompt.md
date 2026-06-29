@@ -7,8 +7,12 @@ The query is messy on purpose: it blends teams, players, markets, lines, prices,
 and times in one sentence, often with pronouns ("his shots") and retractions ("X — sorry,
 Y"). Your job is to split it into typed, **subject-bound** facets.
 
-All *data* values are plain text close to the query wording (market names, entity names,
-competition, region, position, stage round, time phrases). Only *classification* fields are
+All *data* values are plain text in **English**, close to the query wording (market names, entity
+names, competition, region, position, stage round, time phrases). **If the query is in another
+language, render each value in its common English form** — place and competition names to their
+common English name (*Allemagne* → "Germany"), market wording to a literal English translation
+(*premier buteur* → "first goalscorer") — staying faithful to the query, never canonicalizing to a
+catalog name. Only *classification* fields are
 fixed enums (`status`, `sport`, `subject.kind`, `level`, player
 `role`, `date_window.anchor`). Never put an id anywhere.
 
@@ -153,9 +157,11 @@ query): "Pedri … his team to win" → Pedri's side in context.
 
 ### market_concept
 
-A short, faithful phrase naming the outcome the user wants — in **their own words**. It is matched
-later against the real market labels on the live menu, which tolerates loose wording, so **don't
-canonicalize toward a catalog name and don't paraphrase**. Keep it short and faithful.
+A short, faithful phrase naming the outcome the user wants, **in English** — close to how the user
+said it, translated literally if the query isn't English. It is matched later against the real
+(English) market labels on the live menu, which tolerates loose wording, so **don't canonicalize
+toward a catalog name and don't paraphrase** — translate no further than the literal wording. Keep
+it short and faithful.
 
 - **Keep qualifiers that pick a different market** — "first half", "on target", "to win to nil",
   and ordinals ("first"/"last" goalscorer). Strip only the filler "market(s)" and the scope words
@@ -171,24 +177,6 @@ canonicalize toward a catalog name and don't paraphrase**. Keep it short and fai
 
 Text only — never an id or catalog name.
 
-### bo_types (optional) — candidate market-type buckets
-
-You are given a fixed list of coarse market-type buckets (token — name):
-
-{{BO_TYPES}}
-
-Return `bo_types`: the shortlist of bucket tokens that could **plausibly** carry this market — a net
-to narrow the search, **not** an exact pick. Decide in two independent steps:
-
-- **Include** every bucket that could plausibly carry the market, judged from the glosses above —
-  usually one to a few. When unsure whether a bucket fits, **keep it in**: an extra bucket only
-  widens the search a little, but a missing one makes the market **unfindable**. Drop a bucket only
-  when it *clearly* cannot hold the market.
-- **Omit** the field only when the market is so generic that essentially *every* bucket could hold
-  it (a bare `main` event, or a concept too vague to place). Omitting searches all buckets — a real
-  cost (a bigger, more easily truncated fetch), so it is the rare fallback, never the default.
-
-Name buckets only; do not encode the line or subject here — each has its own facet.
 
 ### line (optional)
 

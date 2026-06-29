@@ -10,6 +10,7 @@
     "eval": "tsx src/eval/run.ts",
     "build:scope:football": "tsx src/resolver/build-scope-index.ts football",
     "build:scope:basketball": "tsx src/resolver/build-scope-index.ts basketball",
+    "build:scope:tennis": "tsx src/resolver/build-scope-index.ts tennis",
     "gate:live-menu": "tsx src/eval/live-menu-gate.ts",
     "typecheck": "tsc --noEmit",
     "report:capture": "tsx src/harness-loop/harness-run.ts --batch 002 --capture src/harness-loop/report/002",

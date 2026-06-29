@@ -362,6 +362,8 @@ def _remove_noise(
     clubs: list[dict],
     players: dict[int, dict],
     group_index: dict[int, dict],
+    *,
+    individual: bool = False,
 ) -> tuple[list[dict], dict[int, dict]]:
     """Post-flatten cleanup — see refactor_participants.md §'Noise removal'.
 
@@ -415,7 +417,10 @@ def _remove_noise(
     surviving_ids = {c["id"] for c in clubs}
     surviving_names = {c["id"]: c["name"] for c in clubs}
 
-    players = {pid: p for pid, p in players.items() if p["clubId"] in surviving_ids}
+    if individual:
+        players = {pid: p for pid, p in players.items() if p["clubId"] is None or p["clubId"] in surviving_ids}
+    else:
+        players = {pid: p for pid, p in players.items() if p["clubId"] in surviving_ids}
 
     # c/d/e. Player name patterns.
     drop_players: set[int] = set()
@@ -457,8 +462,11 @@ def _remove_noise(
 
     # i. Final zero-roster sweep — clubs whose only roster members were
     # dropped (e.g. by the name-pattern filter) become orphans.
-    clubs_with_roster = {p["clubId"] for p in players.values()}
-    clubs = [c for c in clubs if c["id"] in clubs_with_roster]
+    # Skipped for individual sports where clubs (e.g. Davis Cup country teams)
+    # are standalone entities with no players in the individual roster.
+    if not individual:
+        clubs_with_roster = {p["clubId"] for p in players.values()}
+        clubs = [c for c in clubs if c["id"] in clubs_with_roster]
 
     return clubs, players
 
@@ -471,6 +479,7 @@ def refactor(
     league_name: str | None,
     sport_label: str,
     sport_slug: str,
+    individual: bool = False,
 ) -> dict:
     """Transform a raw participants blob into the embedding-ready shape.
 
@@ -484,6 +493,48 @@ def refactor(
     country_map = build_country_map(group_index)
     clubs: list[dict] = []
     players: dict[int, dict] = {}
+
+    if individual:
+        # Individual-sport ingest (e.g. tennis): players are top-level PARTICIPANT entries;
+        # clubs are TEAM entries (e.g. Davis Cup country teams) with no roster.
+        # All in-tree group nodes are allowed so tour nodes (ATP/WTA/Grand Slam) survive
+        # split_group_ids. Both get the group→comp fold so competitionIds includes them.
+        ind_allowed = {gid for gid, n in group_index.items() if classify(n) == "group"}
+        for p in blob.get("participants", []):
+            if p.get("type") == "PARTICIPANT":
+                pid = int(p["id"])
+                pname = normalise_player_name(pick_en_name(p.get("names") or []))
+                pcomp, pgrp = split_group_ids(p.get("groupIds") or [], group_index, ind_allowed)
+                comp_ids = sorted(set(pcomp) | (set(pgrp) - {sport_root_id}))
+                players[pid] = {
+                    "id": pid,
+                    "kind": "player",
+                    "sport": sport_slug,
+                    "name": pname,
+                    "clubId": None,
+                    "competitionIds": comp_ids,
+                    "groupIds": [],
+                }
+            elif p.get("type") == "TEAM":
+                club_id = int(p["id"])
+                club_name = pick_en_name(p.get("names") or [])
+                ccomp, cgrp = split_group_ids(p.get("groupIds") or [], group_index, ind_allowed)
+                clubs.append({
+                    "id": club_id,
+                    "kind": "club",
+                    "sport": sport_slug,
+                    "name": club_name,
+                    "competitionIds": sorted(set(ccomp) | (set(cgrp) - {sport_root_id})),
+                    "groupIds": [],
+                })
+        clubs, players = _remove_noise(clubs, players, group_index, individual=True)
+        source: dict = {"sport": sport_slug, "sportLabel": sport_label}
+        return {
+            "source": source,
+            "counts": {"clubs": len(clubs), "players": len(players)},
+            "clubs": clubs,
+            "players": list(players.values()),
+        }
 
     if league_id is not None:
         fixed_allowlist = compute_allowed_groups(group_index, league_id)
@@ -563,7 +614,7 @@ def refactor(
     # clubs, label-leakage / placeholder / hygiene-fail players, and
     # same-shape duplicates. Subsumes the original zero-roster sweep —
     # _remove_noise runs the final sweep itself after all player drops.
-    clubs, players = _remove_noise(clubs, players, group_index)
+    clubs, players = _remove_noise(clubs, players, group_index, individual=False)
 
     source: dict = {"sport": sport_slug, "sportLabel": sport_label}
     if league_id is not None:
@@ -585,6 +636,7 @@ def main() -> None:
     ap.add_argument("--league-name", help="Per-league mode: label for output source metadata")
     ap.add_argument("--sport-label", default="FOOTBALL", help="Sport label in groups.json (default: FOOTBALL)")
     ap.add_argument("--sport-slug", default="football", help="Sport slug used in output records (default: football)")
+    ap.add_argument("--individual", action="store_true", help="Individual-sport mode: players from top-level PARTICIPANT entries")
     ap.add_argument("--out", required=True, type=Path)
     args = ap.parse_args()
 
@@ -604,6 +656,7 @@ def main() -> None:
         league_name=args.league_name,
         sport_label=args.sport_label,
         sport_slug=args.sport_slug,
+        individual=args.individual,
     )
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
