@@ -38,6 +38,20 @@ type OutPlayer = { id: number; name: string; clubId: number | null; countryTeamI
 
 type FlatNode = { id: number; name: string; sport: string; parent: number | null };
 
+// ---- gendered-edition de-pollution (individual sports only) ----
+// Kambi's participant feed tags each player with a large "ever associated" group dump, so a women's-tour
+// player (e.g. Sabalenka) carries the men's "Wimbledon" node right next to "Wimbledon Women". Left in, the
+// competition grounder picks the men's node by exact-name match, and a query like "Sabalenka at Wimbledon"
+// resolves to the wrong (empty-for-her) edition. We drop the wrong-gender node of each gendered pair
+// (bare "X" <-> "X Women") from a player's competitionIds, using the player's gender derived from which TOUR
+// FEED FILE they came from (provenance that concat-feeds discards on dedup). Gender is trusted only when
+// unambiguous — the main tour (ATP/WTA) breaks feeder-tour ties, and anything still in both is left untouched.
+// A woman is never in men's singles, so a drop only ever removes noise; the men's node itself stays whitelisted
+// (real men still reference it). This does NOT clean the global whitelist, only the per-player membership list.
+const FEMALE_FEEDS = ["WTA", "ITFW", "UTRW"]; // women's tours (main + ITF/UTR feeders)
+const MALE_FEEDS = ["ATP", "ITFM", "UTRM"];   // men's tours
+const MAIN_FEMALE = "WTA", MAIN_MALE = "ATP"; // a main-tour membership breaks a feeder-tour tie
+
 function main(): void {
   const sportSlug = process.argv[2] ?? "football";
   const config = getSport(sportSlug);
@@ -107,6 +121,52 @@ function main(): void {
     }))
     .sort((a, b) => a.id - b.id);
 
+  // ---- gender de-pollution setup (individual sports only) ----
+  // Gendered competition pairs: a bare node "X" that also has a sibling "X Women" -> men's id maps to women's id.
+  const genderedPairs = (): Map<number, number> => {
+    const idByName = new Map<string, number>();
+    for (const n of flat.values()) idByName.set(n.name.toLowerCase(), n.id);
+    const pairs = new Map<number, number>();
+    for (const n of flat.values()) {
+      const w = idByName.get(`${n.name.toLowerCase()} women`);
+      if (w != null && !n.name.toLowerCase().includes("women")) pairs.set(n.id, w);
+    }
+    return pairs;
+  };
+  // Player id -> "F" | "M" from tour-feed-file provenance; ambiguous (both/neither) players are omitted.
+  const genderByProvenance = (): Map<number, "F" | "M"> => {
+    const load = (code: string): number[] => {
+      try { return ((read(`${code}_participants.json`).participants ?? []) as { id: number }[]).map((p) => p.id); }
+      catch { return []; } // feed absent -> skip
+    };
+    const feeds = new Map<string, Set<number>>();
+    for (const code of [...FEMALE_FEEDS, ...MALE_FEEDS]) feeds.set(code, new Set(load(code)));
+    const inAny = (id: number, codes: string[]) => codes.some((c) => feeds.get(c)!.has(id));
+    const g = new Map<number, "F" | "M">();
+    for (const set of feeds.values()) for (const id of set) {
+      if (g.has(id)) continue;
+      const mF = feeds.get(MAIN_FEMALE)!.has(id), mM = feeds.get(MAIN_MALE)!.has(id);
+      if (mF !== mM) { g.set(id, mF ? "F" : "M"); continue; } // main tour decides (and breaks a feeder tie)
+      if (mF && mM) continue; // in both main tours -> genuinely ambiguous, leave untouched
+      const f = inAny(id, FEMALE_FEEDS), m = inAny(id, MALE_FEEDS);
+      if (f !== m) g.set(id, f ? "F" : "M"); // exactly one feeder gender; neither/both -> untouched
+    }
+    return g;
+  };
+
+  const genderMap = config.individual ? genderByProvenance() : new Map<number, "F" | "M">();
+  const pairs = config.individual ? genderedPairs() : new Map<number, number>();
+  const mensNodes = new Set(pairs.keys()), womensNodes = new Set(pairs.values());
+  let prunedRefs = 0;
+  const pruneComps = (id: number, comps: number[]): number[] => {
+    const g = genderMap.get(id);
+    if (!g) return comps; // gender unknown/ambiguous -> leave the membership list as-is
+    const drop = g === "F" ? mensNodes : womensNodes;
+    const kept = comps.filter((c) => !drop.has(c));
+    prunedRefs += comps.length - kept.length;
+    return kept;
+  };
+
   // ---- player index source ----
   const players: OutPlayer[] = participants.players
     .map((p) => ({
@@ -114,7 +174,7 @@ function main(): void {
       name: p.name,
       clubId: p.clubId ?? null,
       countryTeamId: p.countryTeamId ?? null,
-      competitionIds: p.competitionIds ?? [],
+      competitionIds: pruneComps(p.id, p.competitionIds ?? []),
     }))
     .sort((a, b) => a.id - b.id);
 
@@ -157,6 +217,7 @@ function main(): void {
   console.log(`[${config.slug}] scope index rebuilt — version ${version}`);
   console.log(`  whitelist groups=${groups.length}  branches=${branches.length}`);
   console.log(`  teams=${teams.length}  (national=${nationalTeams})  players=${players.length}`);
+  if (config.individual) console.log(`  gender prune: removed ${prunedRefs} wrong-gender competition refs (${pairs.size} gendered pairs, ${genderMap.size} gendered players)`);
   const sampleBranches = branches.slice(0, 4).map((b) => b.name).join(", ");
   console.log(`  first branches: ${sampleBranches || "(none)"}`);
   console.log(`  wrote data/${config.slug}/scope-index.json`);

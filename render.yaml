@@ -1,0 +1,14 @@
+# Render Blueprint — deploys the resolver as a free web service.
+# Setup: push this repo to GitHub, then in Render pick "New > Blueprint" and point it here.
+# Render will prompt for ANTHROPIC_API_KEY (kept out of this file, so it's never committed).
+services:
+  - type: web
+    name: search-agent
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      # Secret: enter this in the Render dashboard when prompted. Never commit the key.
+      - key: ANTHROPIC_API_KEY
+        sync: false

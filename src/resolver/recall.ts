@@ -15,10 +15,12 @@ import {
   eventsByGroup,
   levelOf,
   batches,
+  prePackByGroups,
   type BetOffer,
   type KEvent,
   type KOutcome,
   type Level,
+  type PrePackResponse,
 } from "./offering-client";
 import { filterEventsByTime, hasWindow, applyFixturePick, resolveTimeWindow, type TimeWindow } from "./time-window";
 import type { ResolvedLegScope } from "./ground-scope";
@@ -54,12 +56,12 @@ const CAP = 2000;
 // (small responses omit it — verified live), the only signal is hitting the cap exactly.
 export const isTruncated = (returned: number, total?: number): boolean => (total != null ? total > returned : returned >= CAP);
 
-async function runTask(task: Task): Promise<TaskResult> {
+async function runTask(task: Task, lang?: string): Promise<TaskResult> {
   try {
     const res =
       task.endpoint === "group"
-        ? await betOffersByGroup(task.ids[0]!, task.params)
-        : await betOffersByParticipants(task.ids, { type: task.params.type });
+        ? await betOffersByGroup(task.ids[0]!, task.params, lang)
+        : await betOffersByParticipants(task.ids, { type: task.params.type }, lang);
     const returned = res.betOffers.length;
     const total = res.range?.total ?? returned;
     return { task, betOffers: res.betOffers, events: res.events, total, returned, truncated: isTruncated(returned, res.range?.total) };
@@ -71,14 +73,14 @@ async function runTask(task: Task): Promise<TaskResult> {
 // The fan-out workhorse: fetch ALL offers for a set of events, batched under the cap and run in parallel.
 // Batch size is conservative (~810 offers/match untyped, ~518 typed -> stay under 2000). `truncated` flips if
 // any single batch itself caps (a batch with an unusually offer-dense event).
-export async function fetchEventOffers(eventIds: number[], opts: { type?: number[]; onlyMain?: boolean } = {}, pool = 6): Promise<{ betOffers: BetOffer[]; events: KEvent[]; truncated: boolean }> {
+export async function fetchEventOffers(eventIds: number[], opts: { type?: number[]; onlyMain?: boolean; lang?: string } = {}, pool = 6): Promise<{ betOffers: BetOffer[]; events: KEvent[]; truncated: boolean }> {
   const size = opts.type?.length ? 3 : 2;
   const chunks = [...batches(eventIds, size)];
   const betOffers: BetOffer[] = [];
   const evById = new Map<number, KEvent>();
   let truncated = false;
   for (let i = 0; i < chunks.length; i += pool) {
-    const responses = await Promise.all(chunks.slice(i, i + pool).map((c) => betOffersByEvents(c, { type: opts.type, onlyMain: opts.onlyMain })));
+    const responses = await Promise.all(chunks.slice(i, i + pool).map((c) => betOffersByEvents(c, { type: opts.type, onlyMain: opts.onlyMain }, opts.lang)));
     for (const r of responses) {
       betOffers.push(...r.betOffers);
       for (const e of r.events) evById.set(e.id, e);
@@ -91,9 +93,9 @@ export async function fetchEventOffers(eventIds: number[], opts: { type?: number
 // A capped GROUP task -> fan out: the never-capped event list, pre-filtered by level/playState (region/comp are
 // already the group; time/stage narrow later), then batched events. `maxEvents` is a safety backstop (the
 // broad-query gate is the real guard) — exceeding it fans the first N and marks the result incomplete.
-async function fanOutGroup(task: Task, maxEvents?: number, window?: TimeWindow): Promise<TaskResult> {
+async function fanOutGroup(task: Task, maxEvents?: number, window?: TimeWindow, lang?: string): Promise<TaskResult> {
   try {
-    const all = await eventsByGroup(task.ids[0]!);
+    const all = await eventsByGroup(task.ids[0]!, lang);
     const want = new Set(task.fanout?.levels ?? []);
     const ps = task.fanout?.playState;
     let picked = all.filter((e) => {
@@ -106,7 +108,7 @@ async function fanOutGroup(task: Task, maxEvents?: number, window?: TimeWindow):
     if (hasWindow(window)) picked = filterEventsByTime(picked, window!); // time-scope the event list BEFORE batching
     let capped = false;
     if (maxEvents != null && picked.length > maxEvents) { picked = picked.slice(0, maxEvents); capped = true; }
-    const { betOffers, events, truncated } = await fetchEventOffers(picked.map((e) => e.id), { type: task.params.type, onlyMain: task.params.onlyMain });
+    const { betOffers, events, truncated } = await fetchEventOffers(picked.map((e) => e.id), { type: task.params.type, onlyMain: task.params.onlyMain, lang });
     const evById = new Map<number, KEvent>();
     for (const e of picked) evById.set(e.id, e); // keep the source events' tags/state
     for (const e of events) evById.set(e.id, e); // overlay the batch events' richer participants
@@ -119,13 +121,13 @@ async function fanOutGroup(task: Task, maxEvents?: number, window?: TimeWindow):
 // Run tasks on a small parallel pool (~5). A truncated GROUP task fans out to complete it; a truncated
 // PARTICIPANT task is a tripwire — kept partial (no events-by-participant endpoint), surfaced as a note by
 // postFilter. `maxFanoutEvents` bounds the fan-out (default: unbounded).
-export async function runTasks(tasks: Task[], opts: { pool?: number; maxFanoutEvents?: number; window?: TimeWindow } = {}): Promise<TaskResult[]> {
+export async function runTasks(tasks: Task[], opts: { pool?: number; maxFanoutEvents?: number; window?: TimeWindow; lang?: string } = {}): Promise<TaskResult[]> {
   const pool = opts.pool ?? 5;
   const out: TaskResult[] = [];
   for (let i = 0; i < tasks.length; i += pool) {
-    const results = await Promise.all(tasks.slice(i, i + pool).map(runTask));
+    const results = await Promise.all(tasks.slice(i, i + pool).map((t) => runTask(t, opts.lang)));
     for (const res of results) {
-      if (res.truncated && res.task.endpoint === "group") out.push(await fanOutGroup(res.task, opts.maxFanoutEvents, opts.window));
+      if (res.truncated && res.task.endpoint === "group") out.push(await fanOutGroup(res.task, opts.maxFanoutEvents, opts.window, opts.lang));
       else out.push(res);
     }
   }
@@ -148,8 +150,10 @@ export type RecallInput = {
   participantIds?: number[]; // team/player ids (Model P). May COEXIST with groupIds (a mixed query) — recall fetches + unions both
   eventIds?: number[]; // explicit fixtures, when already pinned
   playState?: "live" | "prematch"; // bound server-side ONLY when every leg agrees (else broad; scopeMenu filters)
+  lang?: string; // Kambi locale (already mapped from plan.language) for the fetch's `lang`; absent -> en_GB. Only localizes labels; `market` stays fixed.
   maxFanoutEvents?: number;
   onlyMain?: boolean; // EVERY leg is the bare-event "main" market -> server-side onlyMain shrink (group/event only; the participant endpoint ignores it, so a per-leg client-side MAIN-tag filter covers that case downstream)
+  prepackGroupIds?: number[]; // competition group ids (one per leg's resolved competition) for the PARALLEL prepack-coupon fetch — never used for betoffer routing (Bet-builder Phase 1)
 };
 
 export type RecallResult = {
@@ -158,11 +162,12 @@ export type RecallResult = {
   data: { betOffers: BetOffer[]; events: KEvent[] };
   truncated: boolean;
   failed: boolean; // a group/participant fetch errored (degraded to empty via failedTask, never thrown)
+  prepacks?: PrePackResponse; // pre-configured combinations fetched in parallel (Bet-builder Phase 1); absent when no competition group / on fetch failure
 };
 
 // The betoffer `description` ("Winner", "Top 4", …) — the market's VARIANT, part of its identity (theory §4).
 // NOTE: the live API returns this field but offering-client's BetOffer type does not declare it yet (probes cast too).
-export const variantOf = (b: BetOffer): string => String((b as Record<string, unknown>).description ?? "").trim();
+export const variantOf = (b: BetOffer): string => (b.description ?? "").trim();
 
 // The single display label fed to the resolver AND the market's identity: criterion englishLabel + variant.
 // englishLabel (not the localized `label`) keeps the identity locale-stable, and it distinguishes markets that
@@ -178,6 +183,9 @@ export const marketLabelOf = (b: BetOffer): string => {
 // directions (Yes/No, Over/Under, 1/X/2), participant outcomes (the label IS the team/player name), and bare
 // values (a number, a single letter, a "X - Y" fixture pair). What remains is named scenario labels.
 const DROP_TYPES = new Set(["OT_YES", "OT_NO", "OT_OVER", "OT_UNDER", "OT_ONE", "OT_TWO", "OT_CROSS"]);
+// The SAME pure directions as DROP_TYPES, matched on the locale-stable englishLabel — the live feed types outright
+// Yes/No as OT_UNTYPED, so the type set alone misses them and they leak into the menu as noise.
+const DROP_LABELS = new Set(["yes", "no", "over", "under", "1", "x", "2"]);
 const isBareValue = (s: string) => /^\d+(\.\d+)?$/.test(s) || /^[A-Za-z]$/.test(s) || /^.+\s-\s.+$/.test(s);
 // Words that mark an outcome as a structural progression/scenario label rather than a team/player name.
 // "Tournament progress" outcomes have participant === label (e.g. "Eliminated in Round of Last 16"),
@@ -194,7 +202,7 @@ function meaningfulOutcomeLabels(offers: BetOffer[]): string[] {
   for (const b of offers)
     for (const o of b.outcomes ?? []) {
       const lab = (o.englishLabel ?? o.label ?? "").trim();
-      if (!lab || (o.type && DROP_TYPES.has(o.type)) || isParticipantOutcome(o) || isBareValue(lab)) continue;
+      if (!lab || (o.type && DROP_TYPES.has(o.type)) || DROP_LABELS.has((o.englishLabel ?? "").trim().toLowerCase()) || isParticipantOutcome(o) || isBareValue(lab)) continue;
       labels.add(lab);
     }
   return [...labels];
@@ -233,19 +241,34 @@ function fixtureHasAllTeams(e: KEvent, teamIds: number[]): boolean {
 
 // Build the BROAD RecallResult — NO narrowing (finalize is deleted): per-leg time/grain/co-occurrence narrowing
 // is scopeMenu's job now. The menu here is the broad menu; the orchestrator rebuilds a narrowed one per leg.
-function out(endpoint: RecallResult["endpoint"], betOffers: BetOffer[], events: KEvent[], truncated: boolean, failed = false): RecallResult {
-  return { endpoint, menu: buildMenu(betOffers), data: { betOffers, events }, truncated, failed };
+function out(endpoint: RecallResult["endpoint"], betOffers: BetOffer[], events: KEvent[], truncated: boolean, failed = false, prepacks?: PrePackResponse): RecallResult {
+  return { endpoint, menu: buildMenu(betOffers), data: { betOffers, events }, truncated, failed, ...(prepacks ? { prepacks } : {}) };
 }
 
 // RECALL: deterministic endpoint + ids -> the BROAD live data, via the fetch engine above (cap detection + group
 // fan-out). Endpoint by Model P — a named participant wins; else the competition group(s). No criterion `type=`
 // bound (market deferred), and NO time/grain/co-occurrence narrowing here — that is per-leg, in scopeMenu.
 export async function recall(input: RecallInput): Promise<RecallResult> {
+  // Bet-builder Phase 1: pre-configured combinations. When the query GROUNDED a competition, fetch its coupons in
+  // PARALLEL with the betoffer fetch (kicked off here, awaited at the return) so they never delay resolution.
+  const prepacksP: Promise<PrePackResponse | undefined> = input.prepackGroupIds?.length
+    ? prePackByGroups(input.prepackGroupIds, input.lang).catch(() => undefined)
+    : Promise.resolve(undefined);
+  // Fallback for a league-LESS query (no competition grounded, so prepackGroupIds empty): derive the group(s)
+  // from the resolved fixtures' own groupId and fetch coupons THEN — serial, but only in this case. This is the
+  // ACTIVE competition set (only groups with a fetched fixture), not every competition the entity is registered
+  // in. Any failure degrades to no coupons.
+  const prepacksFor = async (events: KEvent[]): Promise<PrePackResponse | undefined> => {
+    const primary = await prepacksP;
+    if (primary || input.prepackGroupIds?.length) return primary;
+    const groupIds = [...new Set(events.map((e) => e.groupId).filter((x): x is number => x != null))];
+    return groupIds.length ? prePackByGroups(groupIds, input.lang).catch(() => undefined) : undefined;
+  };
   const mainP = input.onlyMain ? { onlyMain: true } : {}; // all-main shrink; participant ignores it (filtered client-side downstream)
   // explicit fixtures -> the event endpoint (via the fan-out batcher)
   if (input.eventIds?.length) {
-    const r = await fetchEventOffers(input.eventIds, { ...mainP });
-    return out("event", r.betOffers, r.events, r.truncated);
+    const r = await fetchEventOffers(input.eventIds, { ...mainP, lang: input.lang });
+    return out("event", r.betOffers, r.events, r.truncated, false, await prepacksFor(r.events));
   }
   // Model P: a named participant -> participant endpoint (even for competition-grain markets like the Golden Boot);
   // a bare-competition leg -> its group(s). A MIXED query needs BOTH, so build every task and run them together —
@@ -266,7 +289,7 @@ export async function recall(input: RecallInput): Promise<RecallResult> {
   }
   if (!tasks.length) throw new Error("recall: need groupIds, participantIds, or eventIds");
 
-  const results = await runTasks(tasks, { maxFanoutEvents: input.maxFanoutEvents });
+  const results = await runTasks(tasks, { maxFanoutEvents: input.maxFanoutEvents, lang: input.lang });
   // Union the task results into ONE broad dataset. A participant fetch and a group fetch overlap on a named team's
   // OWN fixture, so dedup events AND betoffers by id (else that fixture's outcomes double up in every per-leg menu).
   const evById = new Map<number, KEvent>();
@@ -279,8 +302,9 @@ export async function recall(input: RecallInput): Promise<RecallResult> {
       betOffers.push(b);
     }
   }
+  const events = [...evById.values()];
   const endpoint = input.participantIds?.length && input.groupIds?.length ? "mixed" : input.participantIds?.length ? "participant" : "group";
-  return out(endpoint, betOffers, [...evById.values()], results.some((r) => r.truncated), results.some((r) => r.failed));
+  return out(endpoint, betOffers, events, results.some((r) => r.truncated), results.some((r) => r.failed), await prepacksFor(events));
 }
 
 // scopeMenu — narrow the BROAD recall data to ONE leg's scope, then build that leg's menu (replaces finalize's

@@ -215,8 +215,8 @@ function settleOutcome(cell: Cell, ids: number[]): Outcome {
 // wrong + what to do); the "pick one of the suggestions" half is dropped when there are no candidates.
 export const defaultQuestion = (cell: Cell): string =>
   cell.candidates.length
-    ? `I couldn't pin down "${cell.text}". Try rephrasing it more simply, or pick one of the suggestions.`
-    : `I couldn't pin down "${cell.text}". Try rephrasing it more simply.`;
+    ? `We couldn't identify "${cell.text}". Try rewording it, or choose one of these suggestions.`
+    : `We couldn't identify "${cell.text}". Try rewording it with a team, player, league, or market name.`;
 
 // Append candidate names only when the LLM didn't already embed them. Check by first-name token (folded):
 // if any candidate's first name appears in the question, the LLM included names — skip; otherwise append.

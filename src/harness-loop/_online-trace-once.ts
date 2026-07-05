@@ -135,7 +135,7 @@ async function main(): Promise<void> {
   const incomplete = checkComplete(plan);
   raw("OUTPUT", incomplete ?? { ok: true });
   if (incomplete) {
-    const env: ResponseEnvelope = { summary: "", results: [], notes: [], clarificationNeeded: incomplete.question };
+    const env: ResponseEnvelope = { summary: "", events: [], results: [], additional: [], notes: [], clarificationNeeded: incomplete.question };
     raw("EARLY STOP — ResponseEnvelope", env);
     return;
   }

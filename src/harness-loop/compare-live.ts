@@ -47,12 +47,15 @@ function criterionLabels(env: ResponseEnvelope): string[] {
   );
 }
 
+// Result events only (a card's event = its highlighted[].eventId) — NOT combination-leg events, so the drift
+// check stays on the query's own slate and isn't perturbed by live prepack variance.
 function eventIds(env: ResponseEnvelope): number[] {
-  return env.results.map((r) => r.event.id);
+  return env.results.map((r) => r.highlighted[0]?.eventId ?? 0);
 }
 
 function eventNames(env: ResponseEnvelope): string[] {
-  return env.results.map((r) => r.event.name);
+  const nameById = new Map(env.events.map((e) => [e.id, e.name]));
+  return env.results.map((r) => nameById.get(r.highlighted[0]?.eventId ?? -1) ?? "");
 }
 
 function outcomeLabels(env: ResponseEnvelope): string[] {
@@ -92,7 +95,7 @@ let nMatch = 0, nDrift = 0, nMismatch = 0, nBothEmpty = 0;
 for (const cap of captures) {
   process.stdout.write(`${DIM}[${cap.id}]${RESET} ${cap.query.slice(0, 70)}… `);
 
-  let liveEnv: ResponseEnvelope = { summary: "", results: [], notes: [], clarificationNeeded: null };
+  let liveEnv: ResponseEnvelope = { summary: "", events: [], results: [], additional: [], notes: [], clarificationNeeded: null };
   try {
     for await (const evt of runPipeline(cap.query)) {
       if (evt.stage === "done") liveEnv = evt.envelope;

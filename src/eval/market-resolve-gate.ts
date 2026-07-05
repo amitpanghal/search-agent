@@ -110,7 +110,7 @@ export async function resolveEyeball(concept: string, grain: "match" | "competit
   const menu = menuOf(grain === "competition" ? snap.competition : snap.match);
   const pick = await resolveMarket(concept, menu);
   const label = pick.match === "none" ? "—" : pick.label ?? "?";
-  console.log(`resolve "${concept}" [${grain}, menu=${menu.length}] -> ${pick.match}  ${label}${pick.reason ? `  (${pick.reason})` : ""}`);
+  console.log(`resolve "${concept}" [${grain}, menu=${menu.length}] -> ${pick.match}  ${label}`);
 }
 
 // CLI: `npx tsx src/eval/market-resolve-gate.ts` — run the live gate standalone (mirrors live-menu-gate.ts).

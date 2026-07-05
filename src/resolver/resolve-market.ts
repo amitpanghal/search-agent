@@ -41,11 +41,10 @@ const INPUT_SCHEMA: Anthropic.Tool.InputSchema = {
           leg: { type: "integer", description: "the bet's leg index this pick answers" },
           ref: { type: ["integer", "null"], description: "the chosen menu item's ref, or null for none" },
           match: { type: "string", enum: ["exact", "close", "none"] },
-          reason: { type: "string" },
           outcome: { type: ["string", "null"], description: "verbatim outcome label from the picked item's [outcomes: …], when the bet names one; else null" },
-          related: { type: "array", items: { type: "integer" }, description: "up to 3 menu refs for closely-related markets on the same fixture, most direct first; [] if none" },
+          related: { type: "array", items: { type: "integer" }, description: "the (up to 3) menu refs for other markets on the same fixture, most related first; [] only if the fixture has no other market" },
         },
-        required: ["leg", "ref", "match", "reason"],
+        required: ["leg", "ref", "match"],
       },
     },
   },
@@ -53,7 +52,7 @@ const INPUT_SCHEMA: Anthropic.Tool.InputSchema = {
 };
 
 // The raw model output for one bet (a menu ref + label), before we map it back to the market identity.
-export type RawPick = { ref: number | null; match: string; reason?: string; outcome?: string | null; related?: number[] };
+export type RawPick = { ref: number | null; match: string; outcome?: string | null; related?: number[] };
 // Batched decider — one call for all bets sharing the menu. Injectable so the gate can replay captured decisions.
 export type DecideManyFn = (phrases: string[], menu: Menu) => Promise<RawPick[]>;
 // Singular decider — kept for the offline gates' per-phrase replay.
@@ -64,17 +63,16 @@ export type DecideFn = (phrase: string, menu: Menu) => Promise<RawPick>;
 // `outcomeLabel` is only accepted when it appears verbatim in the item's outcomes list (anti-hallucination).
 const toPick = (raw: RawPick | undefined, menu: Menu): MarketPick => {
   const match = (raw?.match ?? "none") as MatchLabel;
-  if (!raw || match === "none" || raw.ref == null || !menu[raw.ref]) return { match: "none", reason: raw?.reason ?? "no pick" };
+  if (!raw || match === "none" || raw.ref == null || !menu[raw.ref]) return { match: "none" };
   const item = menu[raw.ref]!;
   const outcomeLabel = raw.outcome && item.outcomes?.includes(raw.outcome) ? raw.outcome : undefined;
-  const pickedEventId = item.eventId;
-  const related = pickedEventId != null
-    ? [...new Set(
-        (raw.related ?? [])
-          .filter((r): r is number => typeof r === "number" && r !== raw.ref && menu[r] != null && menu[r]!.eventId === pickedEventId)
-      )].slice(0, 3).map((r) => menu[r]!.label)
-    : [];
-  return { label: item.label, match, reason: raw.reason, ...(outcomeLabel ? { outcomeLabel } : {}), ...(related.length ? { related } : {}) };
+  // related: the model's suggested refs (deduped, self dropped, capped 3). No same-event filter here — execute
+  // attaches a related market only if a betoffer with that label exists on the pick's OWN event, so the real
+  // event guard is downstream; filtering here on the menu's example eventId only dropped valid same-event markets.
+  const related = [...new Set(
+    (raw.related ?? []).filter((r): r is number => typeof r === "number" && r !== raw.ref && menu[r] != null)
+  )].slice(0, 3).map((r) => menu[r]!.label);
+  return { label: item.label, match, ...(outcomeLabel ? { outcomeLabel } : {}), ...(related.length ? { related } : {}) };
 };
 
 // Pick + label a market for EACH phrase against the one shared filtered menu, in a single model call.
@@ -116,6 +114,6 @@ const callModel: DecideManyFn = async (phrases, menu) => {
   // Map picks back to phrase order BY `leg` (robust to reordering); any omitted leg -> none.
   const picks = ((block.input as { picks?: unknown }).picks ?? []) as Array<{ leg?: number } & RawPick>;
   const byLeg = new Map<number, RawPick>();
-  for (const p of picks) if (typeof p.leg === "number") byLeg.set(p.leg, { ref: p.ref, match: p.match, reason: p.reason, outcome: p.outcome, related: p.related });
-  return phrases.map((_, i) => byLeg.get(i) ?? { ref: null, match: "none", reason: "model omitted leg" });
+  for (const p of picks) if (typeof p.leg === "number") byLeg.set(p.leg, { ref: p.ref, match: p.match, outcome: p.outcome, related: p.related });
+  return phrases.map((_, i) => byLeg.get(i) ?? { ref: null, match: "none" });
 };

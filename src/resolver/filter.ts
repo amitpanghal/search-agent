@@ -44,7 +44,7 @@ function pricesSubject(b: BetOffer, s: string, subjectId: number | undefined, ev
     (b.outcomes ?? []).some(
       (o) =>
         (subjectId != null ? o.participantId === subjectId : fold(o.participant ?? "").includes(s)) || // P (id, else name)
-        fold(o.label ?? "").includes(s), // Q
+        fold(o.englishLabel ?? o.label ?? "").includes(s), // Q (un-localized label — locale-immune once the fetch follows the query language)
     ) ||
     label.includes(s) || // M
     fold(evName(b.eventId)).includes(s) // E

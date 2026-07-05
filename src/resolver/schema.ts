@@ -109,6 +109,11 @@ const Selector = z.object({
 export const QueryPlan = z.object({
   status: z.literal("resolved"),
   sport: z.string().min(1),
+  // The query's LANGUAGE, named in English ("Swedish", "German") — free text like `sport`, never a locale code
+  // and never an enum: the extractor just detects, and code maps the name to a supported Kambi locale (an
+  // unmapped or absent language degrades to English labels downstream). Omitted when the query is English or the
+  // language is unclear. Used only to localize the feed's market/outcome LABELS; all resolution stays in English.
+  language: z.string().min(1).optional(),
   otherSports: z.array(z.string()).optional(), // present only when sport-ambiguous (best guess first)
   selectors: z.array(Selector).min(1),
 });

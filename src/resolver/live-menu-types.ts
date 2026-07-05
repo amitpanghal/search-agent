@@ -7,7 +7,8 @@
 // never re-declared.
 
 import type { ResolvedScope } from "./ground-scope";
-import type { BetOfferResponse } from "./offering-client";
+import type { BetOfferResponse, KEvent } from "./offering-client";
+import type { Combination } from "./combinations";
 
 // Which entity cell a resolution/clarification belongs to (entity-only after the cut — the old "market:i" ref
 // is gone). Owned here so resolve-entities can depend on it without a cycle. Per-leg-scope: every kind is
@@ -54,7 +55,6 @@ export type MatchLabel = "exact" | "close" | "none";
 export type MarketPick = {
   label?: string;
   match: MatchLabel;
-  reason?: string;
   outcomeLabel?: string; // the resolver-picked outcome when the menu item exposed outcomes (verbatim from MenuItem.outcomes)
   related?: string[]; // menu labels for related markets (same fixture, intent-ranked, most direct first; absent = none)
 };
@@ -63,11 +63,14 @@ export type MarketPick = {
 // The deterministic outcome lookup against the picked market's REAL outcomes (theory §5, zero LLM). `outcomeId`
 // is the SELECTED outcome (the query's line/side match); `outcomeIds` is the participant's WHOLE pool in this
 // market — every line and side they're offered, returned so the consumer can show alternatives with the matched
-// one flagged. `line` / `subject` are the resolved values. `fallback` is set ONLY on an honest not-offered (the
-// subject, or the asked side, the market doesn't carry). Absent `fallback` === a concrete pick.
+// one flagged. `selectedIds` is the pick(s) to flag: usually just `outcomeId`, but a RELATIONAL multi-fixture
+// leg ("home teams to win in the next 2 games") picks one outcome PER fixture, so it lists them all — execute
+// flags each in its own event block. `line` / `subject` are the resolved values. `fallback` is set ONLY on an
+// honest not-offered (the subject, or the asked side, the market doesn't carry). Absent `fallback` === a pick.
 export type Selection = {
   outcomeId?: number;
   outcomeIds?: number[];
+  selectedIds?: number[];
   line?: number;
   subject?: string;
   fallback?: "subject-absent" | "line-absent" | "odds-absent";
@@ -80,6 +83,9 @@ export type ResolvedLeg = {
   phrase: string;
   pick: MarketPick;
   selection?: Selection;
+  // the grounded participant id of this leg's subject — carried so execute can trim related-market suggestions
+  // to the SAME subject as the highlighted pick (a player-anchored query shouldn't list every player again).
+  subjectId?: number;
   // why a `none`-pick leg has no result: the scope matched no fixture (`no-fixture`, `scope` = the team it
   // wanted) vs a fixture existed but no market fit the concept (`no-market`). Drives the clarify wording.
   unavailable?: { kind: "no-fixture" | "no-market"; scope?: string };
@@ -96,4 +102,6 @@ export type ExecuteInput = {
   notes?: string[];        // caller-built notes (e.g. unresolved time — needs the per-leg phrase)
   truncated?: boolean;     // recall hit the 2000-betoffer cap / a capped group fan-out
   fetchFailed?: boolean;   // a group/participant fetch errored (degraded to empty, not thrown)
+  combinations?: Combination[]; // pre-configured combinations already ranked/capped for this query (Bet-builder Phase 1)
+  combinationEvents?: KEvent[]; // events referenced by a combination leg that are NOT among the shown results — for envelope enrichment
 };

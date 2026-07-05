@@ -785,3 +785,18 @@ pulling it apart.
 **Fix direction:** per-leg scope (move `level` + `time`/`fixture_pick` onto the selector). Pairs with the rule
 that the time/next-game filter runs ONLY on `MATCH`-tagged events (never `COMPETITION`), so an outright leg's
 event is never touched while the fixture leg narrows to its next match.
+
+---
+
+## 2026-07-03 — Swedish top-scorer query (multilingual `language` field)
+
+Probe (extraction only) validating the new free-text `language` plan field + prompt rule.
+
+**Query:** `"Vem gör flest mål i VM 26?"` (Swedish: "Who scores the most goals in the World Cup 26?")
+
+**Plan:** everything normalized to English, `language` names the source:
+- `sport: "football"`, `language: "Swedish"`
+- selector: `subject {kind: player}` (generic — "Vem"/who, no named player), `market_concept: "most goals"` (← "flest mål")
+- scope: `competition: "World Cup 2026"` (← "VM 26"), `level: "competition"`, others null
+
+`localeOf("Swedish")` → `sv_SE`, so the fetch would request Swedish labels while identity/resolution stay on `englishLabel`.

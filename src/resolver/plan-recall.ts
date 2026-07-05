@@ -10,7 +10,7 @@ import type { Candidate, EntityResolution, ResolvedLegScope } from "./ground-sco
 import type { SettledEntities } from "./live-menu-types";
 import type { RecallInput } from "./recall";
 import type { QueryPlan } from "./schema";
-import type { Level } from "./offering-client";
+import { localeOf, type Level } from "./offering-client";
 import { loadScopeCatalog, type ScopeCatalog } from "./scope-catalog";
 
 const settle = (r: EntityResolution | null | undefined): Candidate | null => (r && r.tier === "confident" ? r.candidates[0]! : null);
@@ -54,6 +54,11 @@ export function planRecall(settled: SettledEntities, plan: QueryPlan): RecallInp
     legs.filter((l) => legParticipants(l, cat).length === 0).map((l) => settle(l.competition)?.id).filter((x): x is number => x != null),
   )];
   const levels = [...new Set(legs.map((l) => l.level))] as Level[]; // union of leg grains -> the fan-out covers both
+  // Bet-builder Phase 1: pre-configured combinations are fetched per COMPETITION, in parallel with the betoffers.
+  // Unlike `groupIds` (routing — only participant-less legs), this takes the resolved competition off EVERY leg,
+  // so a participant-routed query ("Mbappé + France in WC26") still knows its tournament group. No competition
+  // resolved -> no coupons fetched for that query.
+  const prepackGroupIds = [...new Set(legs.map((l) => settle(l.competition)?.id).filter((x): x is number => x != null))];
 
   // playState: bind server-side ONLY when every leg agrees (same non-null); else fetch broad (scopeMenu filters per leg).
   const states = new Set(legs.map((l) => l.playState));
@@ -64,7 +69,8 @@ export function planRecall(settled: SettledEntities, plan: QueryPlan): RecallInp
   // those cases fetch broad and the main leg's MAIN-tag filter is applied per-leg downstream (resolve.ts).
   const onlyMain = plan.selectors.every((s) => s.market_concept === "main");
 
-  const base: RecallInput = { levels, ...(playState ? { playState } : {}), ...(onlyMain ? { onlyMain: true } : {}) };
+  // Localize the feed's labels to the query's language (code owns the name->locale map; unmapped/absent -> en_GB).
+  const base: RecallInput = { levels, lang: localeOf(plan.language), ...(playState ? { playState } : {}), ...(onlyMain ? { onlyMain: true } : {}) };
   // Model P: a named participant -> participant endpoint; a bare-competition leg -> its group; a mixed query -> both.
-  return { ...base, ...(participantIds.length ? { participantIds } : {}), ...(groupIds.length ? { groupIds } : {}) };
+  return { ...base, ...(participantIds.length ? { participantIds } : {}), ...(groupIds.length ? { groupIds } : {}), ...(prepackGroupIds.length ? { prepackGroupIds } : {}) };
 }

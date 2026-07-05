@@ -6,7 +6,8 @@
 //
 // The market is READ, not guessed. Every outcome carries a stable `type` enum (OT_OVER/OT_UNDER/OT_YES/
 // OT_NO, OT_ONE/OT_CROSS/OT_TWO, OT_ONE_ONE…, OT_UNTYPED) — a far more reliable key than the localized
-// `label`. We key off `type`, falling back to the label ONLY when the type is uninformative (OT_UNTYPED or
+// `label`. We key off `type`, falling back to the un-localized `englishLabel` (never the reversible, now
+// possibly-localized `label`) ONLY when the type is uninformative (OT_UNTYPED or
 // missing). That fallback is LOAD-BEARING, not a rare safety net: ~half the live feed is OT_UNTYPED (the
 // outright Yes/No outcomes, Asian-Handicap sides, correct score), so a gate that ignored it would silently
 // drop them. Combos match the un-localized `englishLabel` / numeric `homeScore`/`awayScore` (never the
@@ -40,14 +41,16 @@ type Cand = { o: KOutcome; bo: BetOffer };
 
 type Dir = "over" | "under" | "yes" | "no";
 const DIR_OF_TYPE: Record<string, Dir> = { OT_OVER: "over", OT_OVER_EXACT: "over", OT_UNDER: "under", OT_YES: "yes", OT_NO: "no" };
-// `type` is uninformative when absent or the catch-all OT_UNTYPED — then (and only then) read the label.
+// `type` is uninformative when absent or the catch-all OT_UNTYPED — then (and only then) read the englishLabel.
 const noType = (t?: string) => !t || t === "OT_UNTYPED";
-// The direction an outcome represents: from its `type`, else (untyped/absent) an EXACT lowercased label.
+// The direction an outcome represents: from its `type`, else (untyped/absent) an EXACT lowercased englishLabel.
+// The un-localized englishLabel — NOT the localized `label`, which would be e.g. Swedish "över"/"ja" once the
+// fetch follows the query's language, silently breaking this match.
 const dirOf = (o: KOutcome): Dir | undefined => {
   const byType = DIR_OF_TYPE[o.type ?? ""];
   if (byType) return byType;
   if (!noType(o.type)) return undefined; // type IS informative, just not a direction (OT_ONE, OT_TWO, …)
-  return (["over", "under", "yes", "no"] as const).find((d) => d === (o.label ?? "").toLowerCase());
+  return (["over", "under", "yes", "no"] as const).find((d) => d === (o.englishLabel ?? o.label ?? "").toLowerCase());
 };
 
 // The outcome line is stored as integer millis (2500 = 2.5, -500 = -0.5); to decimal for matching.
@@ -57,11 +60,46 @@ const oddsOf = (o: KOutcome): number | null => (o.odds != null ? o.odds / 1000 :
 // Combo tokens compare loosely: case-insensitive, whitespace-stripped ("X2" == "x 2", "2 - 1" == "2-1").
 const norm = (s: string) => s.toLowerCase().replace(/\s+/g, "");
 
+// An outcome is participant-KEYED when it carries a real participant name — not a Yes/No mirrored into
+// `participant`, not the label echoed back. The shape (one outcome per player/team) is what lets a related-market
+// suggestion be trimmed to the asked subject. Exported so execute classifies suggestions the same way the
+// subject gate below does.
+export const isNamedOutcome = (o: KOutcome): boolean => {
+  const p = o.participant ?? "";
+  return p !== "" && p !== (o.englishLabel ?? o.label) && p !== "Yes" && p !== "No";
+};
+
+// The outcomes that belong to the query's subject: by grounded id (preferred, diacritic-immune), else a folded
+// participant-name match. A relational home/away (resolved to a team name upstream) or no subject -> all pass.
+export const subjectOutcomes = (outcomes: KOutcome[], spec: { subjectId?: number; subject?: string }): KOutcome[] => {
+  if (spec.subjectId != null) return outcomes.filter((o) => o.participantId === spec.subjectId);
+  if (spec.subject && spec.subject !== "home" && spec.subject !== "away") {
+    const s = fold(spec.subject);
+    return outcomes.filter((o) => fold(o.participant ?? "").includes(s));
+  }
+  return outcomes;
+};
+
 export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; away?: string } = {}): Selection {
   // resolve a relational subject to the fixture's team name; a plain name passes through
   const subjName = spec.subject === "home" ? ctx.home : spec.subject === "away" ? ctx.away : spec.subject;
+  const relational = spec.subject === "home" || spec.subject === "away";
   const withSubj = subjName ? { subject: subjName } : {};
   const cands: Cand[] = slice.betOffers.flatMap((bo) => (bo.outcomes ?? []).map((o) => ({ o, bo })));
+
+  // The outcome's OWN fixture, via its betoffer's eventId — execute's step: any event fact (here home/away) is
+  // read from THIS outcome's event, never a single shared `ctx`. A leg's pool can span fixtures, so a relational
+  // subject must bind per-outcome.
+  const eventOfBo = (bo: BetOffer): KEvent | undefined =>
+    bo.eventId != null ? slice.events.find((e) => e.id === bo.eventId) : undefined;
+  // Is cand `c` the home/away side IN ITS OWN fixture? Static 1X2/handicap: OT_ONE/"1" = home, OT_TWO/"2" = away
+  // (no event lookup needed). Named 1X2: the outcome's participant == that event's home/away team (folded).
+  const relationalSide = (c: Cand, side: "home" | "away"): boolean => {
+    const [t, l] = side === "home" ? ["OT_ONE", "1"] : ["OT_TWO", "2"];
+    if (c.o.type === t || (noType(c.o.type) && (c.o.englishLabel ?? c.o.label) === l)) return true;
+    const team = side === "home" ? eventOfBo(c.bo)?.homeName : eventOfBo(c.bo)?.awayName;
+    return !!team && isNamedOutcome(c.o) && fold(c.o.participant ?? "").includes(fold(team));
+  };
   const pick = (o: KOutcome): Selection => ({ ...withSubj, outcomeId: o.id, ...(lineOf(o) != null ? { line: lineOf(o)! } : {}) });
   const absent = (fb: NonNullable<Selection["fallback"]>): Selection => ({ ...withSubj, fallback: fb });
 
@@ -128,7 +166,7 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
 
   // Does any outcome carry a NAMED participant (player props, an outright with team outcomes)? A Yes/No
   // mirrored into `participant` does NOT count (so an owner-bound market reads as owner-bound, not named).
-  const hasNamed = cands.some(({ o }) => { const p = o.participant ?? ""; return p !== "" && p !== o.label && p !== "Yes" && p !== "No"; });
+  const hasNamed = cands.some(({ o }) => isNamedOutcome(o));
 
   // ---- (1) SUBJECT -> the candidate pool ----
   let pool = cands;
@@ -146,16 +184,18 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
       return absent("subject-absent"); // market lists OTHER participants, not the subject (and no owner-Yes)
     }
     // else (byId empty, an affirmative exists): owner-bound Yes/No market ABOUT the subject -> keep all; (3) picks Yes.
+  } else if (relational) {
+    // RELATIONAL subject (home/away) — bind PER FIXTURE against each outcome's OWN event, never a single
+    // ctx.home: a multi-fixture "home teams to win" holds a different home team per game, so one shared name
+    // would collapse the pool to that one fixture. relationalSide reads outcome -> betoffer -> event -> side,
+    // unifying static-label (OT_ONE/OT_TWO) and named (participant == fixture's home/away) markets.
+    pool = cands.filter((c) => relationalSide(c, spec.subject as "home" | "away"));
+    if (!pool.length) return absent("subject-absent");
   } else if (spec.subject) {
     if (hasNamed) {
-      // a participant NAME (or a relational home/away already resolved to one) -> folded participant match.
+      // a participant NAME -> folded participant match.
       const s = fold(subjName ?? "");
       pool = cands.filter(({ o }) => fold(o.participant ?? "").includes(s));
-      if (!pool.length) return absent("subject-absent");
-    } else if (spec.subject === "home" || spec.subject === "away") {
-      // static-label 1X2/handicap (no participant on outcomes): home -> "1"/OT_ONE, away -> "2"/OT_TWO.
-      const [t, l] = spec.subject === "home" ? ["OT_ONE", "1"] : ["OT_TWO", "2"];
-      pool = cands.filter(({ o }) => o.type === t || (noType(o.type) && o.label === l));
       if (!pool.length) return absent("subject-absent");
     }
     // else: owner-bound market -> keep all outcomes; the affirmative is picked at (3).
@@ -177,11 +217,12 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
   // query's match, flagged downstream. The extractor's line/dir only choose WHICH is selected — never a filter
   // that drops the rest (the live market is the source of truth; the query is a preference over it).
   const ids = pool.map(({ o }) => o.id).filter((id): id is number => id != null);
-  const withPool = (o: KOutcome, line?: number, idList: number[] = ids): Selection => ({
+  const withPool = (o: KOutcome, line?: number, idList: number[] = ids, selIds?: number[]): Selection => ({
     ...withSubj,
     outcomeId: o.id,
     ...(line != null ? { line } : lineOf(o) != null ? { line: lineOf(o)! } : {}),
     outcomeIds: idList,
+    ...(selIds?.length ? { selectedIds: selIds } : {}),
   });
 
   // ---- (2) DIRECTION + (3) LINE -> the SELECTED outcome (the rest of `pool` rides along for display) ----
@@ -197,7 +238,7 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
       };
       const effLine = (c: Cand): number | null => {
         const l = lineOf(c.o);
-        return l != null && sameLine(c.bo) && (c.o.type === "OT_TWO" || c.o.label === "2") ? -l : l;
+        return l != null && sameLine(c.bo) && (c.o.type === "OT_TWO" || (c.o.englishLabel ?? c.o.label) === "2") ? -l : l;
       };
       // Exact offered line first, else the nearest offered line. Every side rides along in the pool — the
       // query no longer states over/under, so the rung alone picks which outcome is flagged the match.
@@ -226,5 +267,8 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
   // ---- (4) no direction / no line -> the owner-bound affirmative (Yes), else the single survivor ----
   const yes = !hasNamed ? pool.find(({ o }) => dirOf(o) === "yes") : undefined;
   const chosen = (yes ?? pool[0])?.o;
-  return chosen ? withPool(chosen) : absent("subject-absent");
+  if (!chosen) return absent("subject-absent");
+  // RELATIONAL multi-fixture ("home teams to win"): the pool holds ONE side-outcome per fixture, each its OWN
+  // answer -> flag them ALL selected, not just the first. A named/owner subject keeps single-pick semantics.
+  return withPool(chosen, undefined, ids, relational ? ids : undefined);
 }

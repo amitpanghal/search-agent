@@ -15,8 +15,7 @@ export type Clarification = { ref: string; question: string; suggest?: number[] 
 
 // Two parts: (1) what's wrong, (2) what to do. No example query — the gate has no data to build a valid one.
 export const INCOMPLETE_QUESTION =
-  "Your search doesn't name a team, player, or league. " +
-  "Add a team, player, or league and search again.";
+  "We couldn't find a team, player, or league in your search. Add one to narrow your search, then try again.";
 
 export function checkComplete(plan: QueryPlan): Clarification | null {
   // A player named ONLY as a market owner (selector subject) is still an anchor — the extractor doesn't always

@@ -18,6 +18,7 @@ import { filterBySubject } from "./filter";
 import { resolveMarkets } from "./resolve-market";
 import { select, type SelectSpec } from "./select";
 import { execute, type ResponseEnvelope } from "./execute";
+import { pickCombinations } from "./combinations";
 import { fold } from "./lexical";
 import { isMain, type BetOffer, type KEvent } from "./offering-client";
 import type { Subject, Line } from "./schema";
@@ -38,8 +39,10 @@ const selectSubject = (s: Subject): string | undefined =>
 // `(for one player)` so the resolver picks the per-player prop, not the match total. Team/event/either_match_team
 // get NO note — their concept already names a team/match market, and a "(for the whole match)" note would clash
 // with a period qualifier in the concept ("1st half handicap") and make the resolver abstain.
-const betPhrase = (sel: { subject: Subject; market_concept: string }): string =>
-  sel.subject.kind === "player" ? `${sel.market_concept} (for one player)` : sel.market_concept;
+// INDIVIDUAL sports (tennis): the player IS the competitor, so there is no match/team total twin to disambiguate
+// from — the note only misleads the resolver into rejecting the player's OWN market as "team-scoped". Skip it.
+const betPhrase = (sel: { subject: Subject; market_concept: string }, individual: boolean): string =>
+  sel.subject.kind === "player" && !individual ? `${sel.market_concept} (for one player)` : sel.market_concept;
 
 // The grounded PARTICIPANT id for a selector's subject — SELECT's preferred (robust) key, == the feed's
 // outcome.participantId on named markets. Only a CONFIDENT resolution yields an id (an unsure entity must not
@@ -120,12 +123,12 @@ export async function* runPipeline(query: string, deps: PipelineDeps = REAL_DEPS
   // grounding/fetch/LLM and ask the user to add one (canned message; no network spent).
   const incomplete = checkComplete(plan);
   if (incomplete) {
-    yield { stage: "done", envelope: { summary: "", results: [], notes: [], clarificationNeeded: incomplete.question } };
+    yield { stage: "done", envelope: { summary: "", events: [], results: [], additional: [], notes: [], clarificationNeeded: incomplete.question } };
     return;
   }
 
   if (!getSport(plan.sport)) {
-    yield { stage: "done", envelope: { summary: "", results: [], notes: [], clarificationNeeded: `I don't cover ${plan.sport} yet.` } };
+    yield { stage: "done", envelope: { summary: "", events: [], results: [], additional: [], notes: [], clarificationNeeded: `We don't support ${plan.sport} yet. Try searching for another sport, or check back later as we continue adding more.` } };
     return;
   }
 
@@ -185,6 +188,7 @@ export async function* runPipeline(query: string, deps: PipelineDeps = REAL_DEPS
   if (plan.otherSports?.length) {
     extraNotes.add(`Showing ${plan.sport} — did you mean ${plan.otherSports.join(" or ")}?`);
   }
+  const individual = !!getSport(plan.sport)?.individual; // gates the per-player grain note off for individual sports
 
   for (const [key, idxs] of groups) {
     const leg = settled.legs[idxs[0]!]!;
@@ -203,7 +207,7 @@ export async function* runPipeline(query: string, deps: PipelineDeps = REAL_DEPS
     // "main" legs name no market — they skip the LLM pick entirely and fan out into every main market below.
     // Only the named legs go to resolveMarkets (keep the pick-index alignment to THOSE legs).
     const llmIdxs = idxs.filter((i) => plan.selectors[i]!.market_concept !== "main");
-    const picks = llmIdxs.length ? await deps.resolveMarkets(llmIdxs.map((i) => betPhrase(plan.selectors[i]!)), fr.menu) : [];
+    const picks = llmIdxs.length ? await deps.resolveMarkets(llmIdxs.map((i) => betPhrase(plan.selectors[i]!, individual)), fr.menu) : [];
     llmIdxs.forEach((i, k) => { pickByIdx[i] = picks[k]!; });
     idxs.forEach((i) => { keyByIdx[i] = key; });
   }
@@ -238,7 +242,7 @@ export async function* runPipeline(query: string, deps: PipelineDeps = REAL_DEPS
       const mainOffers = fr.offers.filter((b) => isMain(b.tags) && b.criterion?.id != null);
       for (const label of new Set(mainOffers.map(marketLabelOf))) {
         const selection = selectFor(offersForPick(mainOffers, label));
-        legsOut.push({ phrase: label, pick: { label, match: "exact" }, ...(selection ? { selection } : {}) });
+        legsOut.push({ phrase: label, pick: { label, match: "exact" }, ...(selection ? { selection } : {}), ...(spec.subjectId != null ? { subjectId: spec.subjectId } : {}) });
       }
       continue;
     }
@@ -253,7 +257,7 @@ export async function* runPipeline(query: string, deps: PipelineDeps = REAL_DEPS
           ? { kind: "no-fixture" as const, ...(sel.scope.teams?.[0] ? { scope: sel.scope.teams[0] } : {}) }
           : { kind: "no-market" as const })
       : undefined;
-    legsOut.push({ phrase: sel.market_concept, pick, ...(selection ? { selection } : {}), ...(unavailable ? { unavailable } : {}) });
+    legsOut.push({ phrase: sel.market_concept, pick, ...(selection ? { selection } : {}), ...(spec.subjectId != null ? { subjectId: spec.subjectId } : {}), ...(unavailable ? { unavailable } : {}) });
   }
 
   // execute gets only the REFERENCED data (union of the groups' narrowed events/offers), never the broad fetch —
@@ -264,6 +268,26 @@ export async function* runPipeline(query: string, deps: PipelineDeps = REAL_DEPS
     for (const e of scoped.events) if (e.id != null) execEvents.set(e.id, e);
     for (const b of scoped.offers) execOffers.add(b);
   }
+
+  // Bet-builder Phase 1: rank the recalled prepack coupons against THIS query's resolved picks. Collect the
+  // selected outcome ids, then — via the offers those outcomes came from — their betOffer + criterion ids (the
+  // ranking tiers: exact outcome -> same betoffer -> same market). scopeMenu already scoped the events shown.
+  const resolvedOutcomeIds = new Set<number>();
+  for (const l of legsOut) for (const id of l.selection?.selectedIds ?? (l.selection?.outcomeId != null ? [l.selection.outcomeId] : [])) resolvedOutcomeIds.add(id);
+  const resolvedBetofferIds = new Set<number>();
+  const resolvedCriterionIds = new Set<number>();
+  for (const b of execOffers) for (const o of b.outcomes ?? []) {
+    if (o.id == null || !resolvedOutcomeIds.has(o.id)) continue;
+    if (b.id != null) resolvedBetofferIds.add(b.id);
+    if (b.criterion?.id != null) resolvedCriterionIds.add(b.criterion.id);
+  }
+  const combinations = pickCombinations(r.prepacks, new Set(execEvents.keys()), resolvedOutcomeIds, resolvedBetofferIds, resolvedCriterionIds);
+  // Enrich: a kept combination may reference a game we're NOT otherwise showing (a cross-game coupon). Attach
+  // those events (from the prepack response, deduped, shown games excluded) so the frontend can render each leg.
+  const comboEventIds = new Set<number>();
+  for (const c of combinations) for (const l of c.legs) if (l.eventId != null) comboEventIds.add(l.eventId);
+  const combinationEvents = (r.prepacks?.events ?? []).filter((e) => comboEventIds.has(e.id) && !execEvents.has(e.id));
+
   yield {
     stage: "done",
     envelope: execute({
@@ -273,6 +297,8 @@ export async function* runPipeline(query: string, deps: PipelineDeps = REAL_DEPS
       notes: [...extraNotes],
       truncated: r.truncated,
       fetchFailed: r.failed,
+      combinations,
+      combinationEvents,
     }),
   };
 }

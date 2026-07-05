@@ -15,15 +15,19 @@ const query = process.argv.slice(2).join(" ").trim()
 
 function printEnvelope(env: ResponseEnvelope): void {
   console.log(`\nQUERY: ${query}\n`);
+  const evById = new Map(env.events.map((e) => [e.id, e]));
   console.log(`results: ${env.results.length} event(s)`);
   for (const r of env.results) {
-    console.log(`\n  ▸ EVENT ${r.event.id}  ${r.event.name}  [${r.liveState ?? "?"}]  start=${r.event.start}  group=${r.event.group}`);
+    const e = evById.get(r.highlighted[0]?.eventId ?? -1);
+    console.log(`\n  ▸ EVENT ${e?.id ?? "?"}  ${e?.name ?? "?"}  [${e?.state ?? "?"}]  start=${e?.start ?? ""}  group=${e?.group ?? ""}`);
     for (const h of r.highlighted) {
       const sel = h.outcomes.find((o) => o.selected);
       const tag = h.betOffer.criterion.englishLabel ?? h.betOffer.criterion.label;
       console.log(`      · ${tag}  (${h.outcomes.length} outcomes)${sel ? `  selected="${sel.englishLabel ?? sel.label}" @${sel.odds}` : ""}`);
     }
   }
+  if (env.additional.length) console.log(`\nadditional: ${env.additional.length} market(s)`);
+  if (env.combinations?.length) console.log(`combinations: ${env.combinations.length}`);
   console.log(`\nnotes: ${env.notes.length ? env.notes.join(" | ") : "(none)"}`);
   console.log(`clarificationNeeded: ${env.clarificationNeeded ?? "(none)"}`);
 }

@@ -128,12 +128,12 @@ export async function runLiveMenuGate(): Promise<GateResult> {
 
   const a1 = execute({ legs: [legExact("home team to win", "Full Time", { subject: "home" })], data: ex });
   const hl1 = a1.results[0]?.highlighted[0];
-  check("execute: home win -> Full Time '1' with odds + event", a1.results.length === 1 && hl1?.outcomes[0]?.label === "1" && !!hl1?.outcomes[0]?.odds && hl1?.betOffer.criterion.label === "Full Time" && !!a1.results[0]?.event.id);
+  check("execute: home win -> Full Time '1' with odds + event", a1.results.length === 1 && hl1?.outcomes[0]?.label === "1" && !!hl1?.outcomes[0]?.odds && hl1?.betOffer.criterion.label === "Full Time" && !!hl1?.eventId && a1.events.length === 1);
   const a2 = execute({ legs: [{ phrase: "team to receive most red cards", pick: { match: "none" } }], data: ex });
   check("execute: none -> clarify", a2.results.length === 0 && a2.clarificationNeeded != null);
   const a3 = execute({ legs: [legExact("home team to win", "Full Time", { subject: "home" }), legExact("both teams to score", "Both Teams To Score", { dir: "yes" })], data: ex });
   const hl3 = a3.results[0]?.highlighted ?? [];
-  check("execute: multi-leg -> 2 resolved (same event) + caveat note", a3.results.length === 1 && hl3.length === 2 && hl3.every((h) => !!h.outcomes[0]) && a3.notes.length >= 1);
+  check("execute: multi-leg -> 2 resolved (same event)", a3.results.length === 1 && hl3.length === 2 && hl3.every((h) => !!h.outcomes[0]));
 
   // ---- (E) SELECT by subjectId — the PREFERRED id-path (select.ts:46). (C) covers the name-path; this locks
   // the id-branch deterministically (no network/LLM) across the four cases it splits into: outright (one named

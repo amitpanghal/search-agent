@@ -34,12 +34,19 @@ that is the right place for it, not extraction.
 When the query is **sport-ambiguous** — the named entity exists in several sports and no league,
 competition, or market word picks one — also emit `otherSports`: the other plausible sports, best guess first.
 
+Also emit `language` — the language of the query's **wording**, named in English ("Swedish", "German") —
+**when that wording is not English**. Judge it by the **betting-intent words** (verbs, market and time
+phrasing), never by team / player / competition names: proper nouns don't change the language
+("Manchester United vinner" is Swedish). If the intent words genuinely mix two languages, pick the
+**dominant** one.
+
 A resolved plan always carries `sport` and **≥1 selector**, and **every selector carries its own `scope`**
 (Step 2). A marketless query still resolves — to the lone `main` sentinel (Step 3), never zero selectors.
 
 Neutral examples:
 - "corner markets priced over 1.5" → sport "football" (inferred from the market vocabulary).
 - "Djokovic vs Alcaraz total games over 22.5" → sport "tennis";
+- "Vem vinner Real Madrid mot Barcelona?" → sport "football", `language: "Swedish"` (club names ignored).
 ---
 
 ## Step 2 — Scope each selector (`scope`)
@@ -167,9 +174,11 @@ it short and faithful.
   and ordinals ("first"/"last" goalscorer). Strip only the filler "market(s)" and the scope words
   (teams/competition/stage/time), leaving a short noun phrase or infinitive — never a full clause
   ("<stat> if it goes to extra time" → "<stat>").
-- **Numbers and prices are not market words** — an over/under goes to `line`, a price bound to
-  `odds`, and a price *ranking* ("shortest/best odds") to `odds_sort` — never a market named
-  "shortest odds".
+- **Numbers, prices, and over/under direction are not market words** — an over/under sends BOTH
+  its number and its direction word ("over"/"under", "more than"/"fewer than", and the equivalent
+  in the query's own language) to `line`, leaving only the bare stat in the concept
+  ("over 2.5 <stat>" → concept "<stat>", `line 2.5`). A price bound goes to `odds`, and a price
+  *ranking* ("shortest/best odds") to `odds_sort` — never a market named "shortest odds".
 - **A question still names a market** — give the outcome it asks about in the user's words, never
   skip it ("who wins" → "who wins"; "how many corners" → "corners"; "most fouls" → "most fouls").
 - **Never invent or fuse** — record only a market the query states; never invent a "match"/"fixture"

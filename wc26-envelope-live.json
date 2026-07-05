@@ -1,0 +1,507 @@
+{
+  "summary": "",
+  "results": [
+    {
+      "event": {
+        "id": 1025853068,
+        "name": "France Markets 2026",
+        "homeName": "France Markets 2026",
+        "start": "2026-07-19T10:15:00Z",
+        "group": "World Cup 2026",
+        "sport": "FOOTBALL",
+        "tags": [
+          "COMPETITION"
+        ],
+        "participants": [
+          {
+            "participantId": 1004371460,
+            "name": "Aurélien Tchouaméni",
+            "englishName": "Aurélien Tchouaméni",
+            "termKey": "aurelien_tchouameni",
+            "participantType": "PARTICIPANT",
+            "home": false
+          },
+          {
+            "participantId": 1006137498,
+            "name": "Michael Olise",
+            "englishName": "Michael Olise",
+            "termKey": "michael_olise",
+            "participantType": "PARTICIPANT",
+            "home": false
+          },
+          {
+            "participantId": 1030474863,
+            "name": "No France Goalscorer",
+            "englishName": "No France Goalscorer",
+            "termKey": "no_france_goalscorer",
+            "participantType": "LABEL",
+            "home": false
+          },
+          {
+            "participantId": 1000020985,
+            "name": "No",
+            "englishName": "No",
+            "termKey": "no",
+            "participantType": "LABEL",
+            "home": false
+          },
+          {
+            "participantId": 1030487385,
+            "name": "0",
+            "englishName": "0",
+            "termKey": "0",
+            "participantType": "LABEL",
+            "home": false
+          },
+          {
+            "participantId": 1003483198,
+            "name": "Jean-Philippe Mateta",
+            "englishName": "Jean-Philippe Mateta",
+            "termKey": "jean-philippe_mateta",
+            "participantType": "PARTICIPANT",
+            "home": false
+          },
+          {
+            "participantId": 1000085419,
+            "name": "Yes",
+            "englishName": "Yes",
+            "termKey": "yes",
+            "participantType": "LABEL",
+            "home": false
+          },
+          {
+            "participantId": 1007847241,
+            "name": "Malo Gusto",
+            "englishName": "Malo Gusto",
+            "termKey": "malo_gusto",
+            "participantType": "PARTICIPANT",
+            "home": false
+          },
+          {
+            "participantId": 1003026206,
+            "name": "Kylian Mbappé",
+            "englishName": "Kylian Mbappé",
+            "termKey": "kylian_mbappe",
+            "participantType": "PARTICIPANT",
+            "home": false
+          },
+          {
+            "participantId": 1000036012,
+            "name": "Lucas Hernández",
+            "englishName": "Lucas Hernández",
+            "termKey": "lucas_hernandez",
+            "participantType": "PARTICIPANT",
+            "home": false
+          },
+          {
+            "participantId": 1006806327,
+            "name": "Maxence Lacroix",
+            "englishName": "Maxence Lacroix",
+            "termKey": "maxence_lacroix",
+            "participantType": "PARTICIPANT",
+            "home": false
+          },
+          {
+            "participantId": 1030487392,
+            "name": "7",
+            "englishName": "7",
+            "termKey": "7",
+            "participantType": "LABEL",
+            "home": false
+          },
+          {
+            "participantId": 1000070627,
+            "name": "Eliminated in Quarter Final",
+            "englishName": "Eliminated in Quarter Final",
+            "termKey": "eliminated_in_quarter_final",
+            "participantType": "LABEL",
+            "home": false
+          },
+          {
+            "participantId": 1030487387,
+            "name": "3",
+            "englishName": "3",
+            "termKey": "3",
+            "participantType": "LABEL",
+            "home": false
+          },
+          {
+            "participantId": 1001325757,
+            "name": "Adrien Rabiot",
+            "englishName": "Adrien Rabiot",
+            "termKey": "adrien_rabiot",
+            "participantType": "PARTICIPANT",
+            "home": false
+          },
+          {
+            "participantId": 1028245344,
+            "name": "Désiré Doué",
+            "englishName": "Désiré Doué",
+            "termKey": "desire_doue",
+            "participantType": "PARTICIPANT",
+            "home": false
+          },
+          {
+            "participantId": 1030487389,
+            "name": "8",
+            "englishName": "8",
+            "termKey": "8",
+            "participantType": "LABEL",
+            "home": false
+          },
+          {
+            "participantId": 1002792489,
+            "name": "Ousmane Dembélé",
+            "englishName": "Ousmane Dembélé",
+            "termKey": "ousmane_dembele",
+            "participantType": "PARTICIPANT",
+            "home": false
+          },
+          {
+            "participantId": 1008210809,
+            "name": "Maghnes Akliouche",
+            "englishName": "Maghnes Akliouche",
+            "termKey": "maghnes_akliouche",
+            "participantType": "PARTICIPANT",
+            "home": false
+          },
+          {
+            "participantId": 1006050950,
+            "name": "Rayan Cherki",
+            "englishName": "Rayan Cherki",
+            "termKey": "rayan_cherki",
+            "participantType": "PARTICIPANT",
+            "home": false
+          },
+          {
+            "participantId": 1004106897,
+            "name": "Marcus Thuram",
+            "englishName": "Marcus Thuram",
+            "termKey": "marcus_thuram",
+            "participantType": "PARTICIPANT",
+            "home": false
+          },
+          {
+            "participantId": 1004442405,
+            "name": "Jules Koundé",
+            "englishName": "Jules Koundé",
+            "termKey": "jules_kounde",
+            "participantType": "PARTICIPANT",
+            "home": false
+          },
+          {
+            "participantId": 1028351978,
+            "name": "Football World Cup 2026",
+            "englishName": "Football World Cup 2026",
+            "termKey": "football_world_cup_2026",
+            "participantType": "TEAM",
+            "home": false
+          },
+          {
+            "participantId": 1004273472,
+            "name": "Eliminated in Semi Final",
+            "englishName": "Eliminated in Semi Final",
+            "termKey": "eliminated_in_semi_final",
+            "participantType": "LABEL",
+            "home": false
+          },
+          {
+            "participantId": 1030487388,
+            "name": "4",
+            "englishName": "4",
+            "termKey": "4",
+            "participantType": "LABEL",
+            "home": false
+          },
+          {
+            "participantId": 1030487393,
+            "name": "9",
+            "englishName": "9",
+            "termKey": "9",
+            "participantType": "LABEL",
+            "home": false
+          },
+          {
+            "participantId": 1004098447,
+            "name": "Ibrahima Konaté",
+            "englishName": "Ibrahima Konaté",
+            "termKey": "ibrahima_konate",
+            "participantType": "PARTICIPANT",
+            "home": false
+          },
+          {
+            "participantId": 1003393617,
+            "name": "Théo Hernández",
+            "englishName": "Théo Hernández",
+            "termKey": "theo_hernandez",
+            "participantType": "PARTICIPANT",
+            "home": false
+          },
+          {
+            "participantId": 1005318666,
+            "name": "Eduardo Camavinga",
+            "englishName": "Eduardo Camavinga",
+            "termKey": "eduardo_camavinga",
+            "participantType": "PARTICIPANT",
+            "home": false
+          },
+          {
+            "participantId": 1030487386,
+            "name": "1",
+            "englishName": "1",
+            "termKey": "1",
+            "participantType": "LABEL",
+            "home": false
+          },
+          {
+            "participantId": 1004897061,
+            "name": "William Saliba",
+            "englishName": "William Saliba",
+            "termKey": "william_saliba",
+            "participantType": "PARTICIPANT",
+            "home": false
+          },
+          {
+            "participantId": 1001145178,
+            "name": "Winner",
+            "englishName": "Winner",
+            "termKey": "winner",
+            "participantType": "LABEL",
+            "home": false
+          },
+          {
+            "participantId": 1006201490,
+            "name": "Kylian Mbappe (D)",
+            "englishName": "Kylian Mbappe (D)",
+            "termKey": "kylian_mbappe",
+            "participantType": "LABEL",
+            "home": false
+          },
+          {
+            "participantId": 1028322152,
+            "name": "Warren Zaïre-Emery",
+            "englishName": "Warren Zaïre-Emery",
+            "termKey": "warren_zaire-emery",
+            "participantType": "PARTICIPANT",
+            "home": false
+          },
+          {
+            "participantId": 1005875178,
+            "name": "Kouadio Kone",
+            "englishName": "Kouadio Kone",
+            "termKey": "kouadio_kone",
+            "participantType": "PARTICIPANT",
+            "home": false
+          },
+          {
+            "participantId": 1003128260,
+            "name": "Eliminated in Round of Last 16",
+            "englishName": "Eliminated in Round of Last 16",
+            "termKey": "eliminated_in_round_of_last_16",
+            "participantType": "LABEL",
+            "home": false
+          },
+          {
+            "participantId": 1030487390,
+            "name": "5",
+            "englishName": "5",
+            "termKey": "5",
+            "participantType": "LABEL",
+            "home": false
+          },
+          {
+            "participantId": 1001825620,
+            "name": "Runner Up",
+            "englishName": "Runner Up",
+            "termKey": "runner_up",
+            "participantType": "LABEL",
+            "home": false
+          },
+          {
+            "participantId": 1030416982,
+            "name": "Eliminated in Round of Last 32",
+            "englishName": "Eliminated in Round of Last 32",
+            "termKey": "eliminated_in_round_of_last_32",
+            "participantType": "LABEL",
+            "home": false
+          },
+          {
+            "participantId": 1001946413,
+            "name": "N'Golo Kante",
+            "englishName": "N'Golo Kante",
+            "termKey": "n_golo_kante",
+            "participantType": "PARTICIPANT",
+            "home": false
+          },
+          {
+            "participantId": 1008119280,
+            "name": "Bradley Barcola",
+            "englishName": "Bradley Barcola",
+            "termKey": "bradley_barcola",
+            "participantType": "PARTICIPANT",
+            "home": false
+          },
+          {
+            "participantId": 1030487384,
+            "name": "2",
+            "englishName": "2",
+            "termKey": "2",
+            "participantType": "LABEL",
+            "home": false
+          },
+          {
+            "participantId": 1000000321,
+            "name": "France",
+            "englishName": "France",
+            "termKey": "france",
+            "participantType": "TEAM",
+            "home": false
+          },
+          {
+            "participantId": 1002774429,
+            "name": "Dayot Upamecano",
+            "englishName": "Dayot Upamecano",
+            "termKey": "dayot_upamecano",
+            "participantType": "PARTICIPANT",
+            "home": false
+          },
+          {
+            "participantId": 1004166294,
+            "name": "Randal Kolo Muani",
+            "englishName": "Randal Kolo Muani",
+            "termKey": "randal_kolo_muani",
+            "participantType": "PARTICIPANT",
+            "home": false
+          },
+          {
+            "participantId": 1030487391,
+            "name": "6",
+            "englishName": "6",
+            "termKey": "6",
+            "participantType": "LABEL",
+            "home": false
+          },
+          {
+            "participantId": 1000864965,
+            "name": "Lucas Digne",
+            "englishName": "Lucas Digne",
+            "termKey": "lucas_digne",
+            "participantType": "PARTICIPANT",
+            "home": false
+          },
+          {
+            "participantId": 1000070712,
+            "name": "Eliminated in Group Stage",
+            "englishName": "Eliminated in Group Stage",
+            "termKey": "eliminated_in_group_stage",
+            "participantType": "LABEL",
+            "home": false
+          }
+        ]
+      },
+      "liveState": "PREMATCH",
+      "highlighted": [
+        {
+          "betOffer": {
+            "id": 2655060811,
+            "criterion": {
+              "id": 1001159600,
+              "label": "To Win The Trophy",
+              "englishLabel": "To Win The Trophy"
+            },
+            "betOfferType": {
+              "id": 4,
+              "name": "Winner",
+              "englishName": "Winner"
+            },
+            "tags": [
+              "OFFERED_PREMATCH"
+            ]
+          },
+          "outcomes": [
+            {
+              "label": "Yes",
+              "englishLabel": "Yes",
+              "odds": 2870,
+              "participant": "Yes",
+              "participantId": 1000085419,
+              "type": "OT_UNTYPED",
+              "status": "OPEN",
+              "selected": true
+            }
+          ]
+        }
+      ],
+      "additional": [
+        {
+          "betOffer": {
+            "id": 2584691025,
+            "criterion": {
+              "id": 1001159964,
+              "label": "Tournament progress by the team",
+              "englishLabel": "Tournament progress by the team"
+            },
+            "betOfferType": {
+              "id": 4,
+              "name": "Winner",
+              "englishName": "Winner"
+            },
+            "tags": [
+              "OFFERED_PREMATCH",
+              "NOT_COMBINABLE"
+            ]
+          },
+          "outcomes": [
+            {
+              "label": "Eliminated in Round of Last 16",
+              "englishLabel": "Eliminated in Round of Last 16",
+              "odds": 9000,
+              "participant": "Eliminated in Round of Last 16",
+              "participantId": 1003128260,
+              "type": "OT_UNTYPED",
+              "status": "OPEN"
+            },
+            {
+              "label": "Eliminated in Quarter Final",
+              "englishLabel": "Eliminated in Quarter Final",
+              "odds": 4300,
+              "participant": "Eliminated in Quarter Final",
+              "participantId": 1000070627,
+              "type": "OT_UNTYPED",
+              "status": "OPEN"
+            },
+            {
+              "label": "Eliminated in Semi Final",
+              "englishLabel": "Eliminated in Semi Final",
+              "odds": 3600,
+              "participant": "Eliminated in Semi Final",
+              "participantId": 1004273472,
+              "type": "OT_UNTYPED",
+              "status": "OPEN"
+            },
+            {
+              "label": "Runner Up",
+              "englishLabel": "Runner Up",
+              "odds": 4300,
+              "participant": "Runner Up",
+              "participantId": 1001825620,
+              "type": "OT_UNTYPED",
+              "status": "OPEN"
+            },
+            {
+              "label": "Winner",
+              "englishLabel": "Winner",
+              "odds": 2870,
+              "participant": "Winner",
+              "participantId": 1001145178,
+              "type": "OT_UNTYPED",
+              "status": "OPEN"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "notes": [],
+  "clarificationNeeded": null
+}
