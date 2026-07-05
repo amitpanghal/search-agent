@@ -6,7 +6,9 @@ services:
     name: search-agent
     runtime: node
     plan: free
-    buildCommand: npm install
+    # Production-only install: runtime needs just the deps (tsx included). Skips playwright/
+    # typescript devDeps — smaller build, and no Playwright browser download on deploy.
+    buildCommand: npm install --omit=dev
     startCommand: npm start
     envVars:
       # Secret: enter this in the Render dashboard when prompted. Never commit the key.
