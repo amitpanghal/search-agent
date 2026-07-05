@@ -1,0 +1,11 @@
+{
+  "competitions": {
+    "atp": "ATP",
+    "wta": "WTA",
+    "grand slam": "Grand Slam",
+    "wimbledon": "Wimbledon",
+    "us open": "US Open"
+  },
+  "regions": {},
+  "markers": {}
+}
