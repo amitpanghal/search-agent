@@ -13,12 +13,11 @@
 //     (Pass 1 = pick|reexpress, Pass 2 = pick|clarify) so the model can't emit an illegal action.
 //   - `resolveEntities(query, scope)` — the DETERMINISTIC orchestrator: build entity cells, call `decide` per
 //     pass, re-ground any reexpress, collapse picks to confident cells, raise clarifications.
-// Replayable: eval injects a captured `decide()` through the deterministic orchestrator with no Haiku call.
+// Replayable: eval injects a captured `decide()` through the deterministic orchestrator with no model call.
 
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import {
   groundRegion, groundCompetition, groundTeam, groundPlayer, compUnion,
@@ -26,12 +25,10 @@ import {
 } from "./ground-scope";
 import { loadScopeCatalog } from "./scope-catalog";
 import { fold } from "./lexical";
+import { bedrockToolCall } from "./bedrock-call";
 import type { CellRef, SettledEntities } from "./live-menu-types";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-
-// Model = Haiku, temp 0 (mirror extract.ts). Swappable — bumping to Sonnet later is one line.
-export const ENTITY_MODEL = "claude-haiku-4-5-20251001";
 
 const ENTITY_CAP = 5; // entity candidates shown to the model
 const SUGGEST_CAP = 5; // ids a clarify may suggest
@@ -59,7 +56,7 @@ export type Cell = {
   reground: (phrase: string) => Cell;
 };
 
-// The (only) non-deterministic step, injectable so eval can REPLAY captured decisions with no Haiku call.
+// The (only) non-deterministic step, injectable so eval can REPLAY captured decisions with no model call.
 export type DecideFn = (query: string, cells: Cell[], pass: 1 | 2) => Promise<Decision[]> | Decision[];
 
 // ---- builder: gate + caps + reground closures (entity-only) ----
@@ -134,23 +131,14 @@ const Pass2Item = z.discriminatedUnion("action", [zPick, zClarify]);
 const Pass1Out = z.object({ decisions: z.array(Pass1Item) });
 const Pass2Out = z.object({ decisions: z.array(Pass2Item) });
 
-function toInputSchema(s: z.ZodType): Anthropic.Tool.InputSchema {
+function toInputSchema(s: z.ZodType): Record<string, unknown> {
   const j = z.toJSONSchema(s) as Record<string, unknown>;
   delete j.$schema;
-  return j as Anthropic.Tool.InputSchema;
+  return j;
 }
 const PASS1_SCHEMA = toInputSchema(Pass1Out);
 const PASS2_SCHEMA = toInputSchema(Pass2Out);
 const TOOL_NAME = "settle_cells";
-
-let cachedClient: Anthropic | null = null;
-function client(): Anthropic {
-  if (!cachedClient) {
-    if (!process.env.ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY is not set (export it or put it in .env).");
-    cachedClient = new Anthropic();
-  }
-  return cachedClient;
-}
 
 let cachedPrompt: string | undefined;
 function systemPrompt(): string {
@@ -169,21 +157,13 @@ function userMessage(query: string, cells: Cell[], pass: 1 | 2): string {
 }
 
 export async function decide(query: string, cells: Cell[], pass: 1 | 2): Promise<Decision[]> {
-  const msg = await client().messages.create({
-    model: ENTITY_MODEL,
-    max_tokens: 1024,
-    temperature: 0,
-    system: [{ type: "text", text: systemPrompt(), cache_control: { type: "ephemeral" } }],
-    tools: [{ name: TOOL_NAME, description: "Return exactly one action per cell.", input_schema: pass === 1 ? PASS1_SCHEMA : PASS2_SCHEMA }],
-    tool_choice: { type: "tool", name: TOOL_NAME },
-    messages: [{ role: "user", content: userMessage(query, cells, pass) }],
-  });
-  const block = msg.content.find((b) => b.type === "tool_use");
-  if (!block || block.type !== "tool_use") {
-    const text = msg.content.map((b) => (b.type === "text" ? b.text : `[${b.type}]`)).join(" ");
-    throw new Error(`Entity resolver returned no tool_use block. Got: ${text || "(empty)"}`);
-  }
-  const raw = block.input as { decisions?: unknown };
+  const raw = await bedrockToolCall(
+    systemPrompt(),
+    userMessage(query, cells, pass),
+    TOOL_NAME,
+    pass === 1 ? PASS1_SCHEMA : PASS2_SCHEMA,
+    1024,
+  ) as { decisions?: unknown };
   const items = Array.isArray(raw.decisions) ? (raw.decisions as Array<Record<string, unknown>>) : [];
   // Per-decision parse, NOT all-or-nothing: keep every well-formed action, drop only the malformed ones (a
   // dropped cell rides to Pass 2 / clarify as before).

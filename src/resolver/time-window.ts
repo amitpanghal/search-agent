@@ -11,7 +11,7 @@ import type { KEvent } from "./offering-client";
 type TimeField = NonNullable<Scope["time"]>;
 type Kickoff = { afterHour?: number; beforeHour?: number; relative?: "late" | "early" };
 export type FixturePick = { order: "earliest" | "latest"; count: number };
-export type TimeWindow = { from?: Date; to?: Date; kickoff?: Kickoff; pick?: FixturePick; unresolved?: boolean; unresolvedPhrase?: string };
+export type TimeWindow = { from?: Date; to?: Date; kickoff?: Kickoff; pick?: FixturePick; unresolved?: boolean; unresolvedPhrase?: string; liveOk?: boolean };
 
 const startOfUTCDay = (d: Date) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0));
 const endOfUTCDay = (d: Date) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59, 59, 999));
@@ -92,6 +92,10 @@ export function resolveTimeWindow(time: TimeField, ctx: { now: Date; tournamentS
     w.pick = time.fixture_pick;
     if (!w.from) w.from = ctx.now; // lower-bound at now so "earliest"/"latest" never reach past fixtures
   }
+  // A now-floored window (from === now: today/tonight/next_N/same-day weekday) still covers the present, so an
+  // in-progress match belongs in it — let live events bypass the `s < from` drop below. NOT for pick ("next game"
+  // stays strictly upcoming) nor future-day windows (tomorrow/weekend), where a live game would be the wrong day.
+  w.liveOk = w.from != null && +w.from === +ctx.now && !w.pick;
   return w;
 }
 
@@ -103,7 +107,7 @@ const dateKey = (d: Date) => `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUT
 export function eventMatchesTime(e: KEvent, w: TimeWindow, all: KEvent[]): boolean {
   const s = startOf(e);
   if (!s) return true;
-  if (w.from && s < w.from) return false;
+  if (w.from && s < w.from && !(w.liveOk && e.state === "STARTED")) return false; // live match survives a now-floored window
   if (w.to && s > w.to) return false;
   const k = w.kickoff;
   if (k) {

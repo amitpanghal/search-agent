@@ -127,7 +127,6 @@ const GoldSelector = z.object({
 // is the lone `main` sentinel selector (market_concept {main:true}), graded like the former fixture_lookup
 // (fixture-selecting facets HARD, Option A).
 const GoldPlan = z.object({
-  status: z.literal("resolved"),
   sport: z.string().min(1),
   selectors: z.array(GoldSelector).min(1),
 });
@@ -136,7 +135,7 @@ export const GoldRecord = z.object({
   id: z.string().min(1), // gold row id, e.g. "g001"
   query: z.string().min(1), // the raw natural-language query under test
   tags: z.array(z.enum(BEHAVIOR_TAG_IDS)).min(1), // behaviors this query stresses (E7)
-  expect: GoldPlan, // the grounded plan it must produce (expect.status is the abstain bucket)
+  expect: GoldPlan, // the grounded plan it must produce
   // Default true: the row is graded by the extractor/market ship gate (scoreRun). Set false for a
   // pure-SCOPE row whose point is the deterministic entity gate only (entity text fed from gold) — it is
   // skipped by the LLM market gate so a not-yet-taught extractor (e.g. region routing) can't redden it.

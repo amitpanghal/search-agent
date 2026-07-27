@@ -13,7 +13,7 @@ language, render each value in its common English form** — place and competiti
 common English name (*Allemagne* → "Germany"), market wording to a literal English translation
 (*premier buteur* → "first goalscorer") — staying faithful to the query, never canonicalizing to a
 catalog name. Only *classification* fields are
-fixed enums (`status`, `sport`, `subject.kind`, `level`, player
+fixed enums (`sport`, `subject.kind`, `level`, player
 `role`, `date_window.anchor`). Never put an id anywhere.
 
 Work in three steps.
@@ -22,7 +22,7 @@ Work in three steps.
 
 ## Step 1 — Identify the sport and resolve
 
-**Every query resolves** — `status: "resolved"`. You **never abstain**.
+**Every query resolves** — you **never abstain**.
 
 Identify the **sport** the query is about and emit it as `sport` — free text, lowercase ("football",
 "tennis", "basketball", …). Read it from a named sport, the teams/players/competition, or the **market
@@ -78,7 +78,7 @@ Fields (each leg's `scope`):
   when a competition is named. (A single-match stat "at <tournament>" is `fixture`; the tournament sets
   `competition`, not `level`.)
 - **`stage`** (or `null`) — the tournament round as text ("quarterfinal", "final", "knockout"…), else `null`.
-- **`time`** (or `null`) — `{ date_window, kickoff_time_of_day, fixture_pick }`. Emit `null` when the leg states
+- **`time`** (or `null`) — `{ date_window, kickoff_time_of_day, fixture_pick }`. Omit `time` when the leg states
   no timing — **never an all-null object**.
   - `date_window`: `{ value, anchor }`. `value` is a CANONICAL TOKEN, never free text — map any date phrase to
     the nearest of: `today` (also "this evening", "later today", "right now"), `tonight`, `tomorrow`, `weekend`,
@@ -101,8 +101,8 @@ not resolve to real dates or brackets.
 
 Examples:
 - "the quarterfinal" → `stage: "quarterfinal"`.
-- "in the opening weekend" → time `{ date_window: { value: "weekend", anchor: "tournament" }, kickoff_time_of_day: null, fixture_pick: null }`.
-- "their next game" → time `{ date_window: null, kickoff_time_of_day: null, fixture_pick: { order: "earliest", count: 1 } }`.
+- "in the opening weekend" → time `{ date_window: { value: "weekend", anchor: "tournament" } }`.
+- "their next game" → time `{ fixture_pick: { order: "earliest", count: 1 } }`.
 
 ---
 
@@ -144,9 +144,11 @@ Pick one `kind` — or `soft` when genuinely two-faced (below):
   *named* owner). Add **`side: "home" | "away"`** when the query points at a specific side ("the hosts"
   → `{ kind: "either_match_team", side: "home" }`); omit `side` when it's either team ("team total
   tackles" → `{ kind: "either_match_team" }`). Never split into two selectors.
-- **`event`** — **one outcome for the whole match or tournament** (*not* a line per player),
-  including a tournament award/outright with a single winner among many players → `{ kind:
-  "event" }` (bare).
+- **`event`** — **one whole-match or tournament outcome that no single named team or player
+  owns** (*not* a line per player): the result/total/scoreline, or an outright/award priced on
+  the field as a whole (many possible winners, none named) → `{ kind: "event" }` (bare). Teams
+  named only as the fixture ("A vs B") are scope, not owners. But when the bet is **on a
+  specific named team or player — even an outright — that owner wins**, not `event`.
 - **`soft`** — **no owner AND the phrase reads at more than one level** (a per-player line *or* a
   single whole-match/tournament outcome). Don't pick: emit `{ kind: "soft", kinds: [...] }` with the
   ≥2 plausible kinds; grounding decides. **Rare** — never a fallback for a missing name (a bare
@@ -252,6 +254,9 @@ field but wants the one most-likely competitor — "who wins", "the winner", "th
 ## Boundaries
 
 - Output **only** the structured plan. No prose, no notes, no ids, no catalog names.
+- **Emit only fields that carry a value.** Omit any key whose value would be `null` or an empty
+  array/object — leave it out rather than writing it, code backfills the defaults. The required
+  `sport`, `subject`, `market_concept`, and `level` always stay.
 - Do **not** judge whether a line value or a price is plausible — that is resolved later
   against real markets. Just record what was said.
 - Do **not** expand a squad or roster from world knowledge; only use entities the query
@@ -271,7 +276,6 @@ Plan:
 
 ```json
 {
-  "status": "resolved",
   "sport": "football",
   "selectors": [
     {
@@ -279,13 +283,7 @@ Plan:
       "market_concept": "most goals",
       "scope": {
         "level": "competition",
-        "competition": "World Cup 2026",
-        "region": null,
-        "teams": [],
-        "players": [],
-        "stage": null,
-        "time": null,
-        "play_state": null
+        "competition": "World Cup 2026"
       }
     },
     {
@@ -296,12 +294,8 @@ Plan:
       "scope": {
         "level": "fixture",
         "competition": "World Cup 2026",
-        "region": null,
         "teams": ["France"],
-        "players": [],
-        "stage": null,
-        "time": { "date_window": null, "kickoff_time_of_day": null, "fixture_pick": { "order": "earliest", "count": 1 } },
-        "play_state": null
+        "time": { "fixture_pick": { "order": "earliest", "count": 1 } }
       }
     }
   ]

@@ -38,14 +38,10 @@ wrong id).
 
 ## Scoring one run
 
-### 1. Status gate (E6)
+### 1. Status gate (E6) — removed
 
-`grounded.status` must equal `gold.expect.status`.
-- Mismatch → **hard fail** (this is the abstain axis; a fabricated plan where we expected
-  `unsupported`, or vice-versa, is the worst error).
-- `unsupported` / `ambiguous` → grade is finished here. For `unsupported`, also do a **loose
-  text** check of `recognizedAs` (substring / fuzzy, diagnostic — not pass-blocking).
-- `resolved` → continue.
+The extractor never abstains and there is no `status` field: every plan resolves. Grading starts
+at sport. (Heading kept so the step numbers below stay stable.)
 
 ### 2. Sport (costly)
 
@@ -84,7 +80,6 @@ reads as *"found the markets, mis-bound them"*, keeping the make-or-break (bindi
 
 A run **passes** iff **every costly facet is exact**:
 
-- `status` (+ correct abstain bucket),
 - `sport`,
 - every market id (markets-found recall = 100%, no false-positive market),
 - **binding** on every selector,
@@ -129,7 +124,6 @@ Suppose one run returns the **markets right but Bruno and Vitinha swapped**:
 
 | step | result |
 |---|---|
-| status gate | `resolved` == `resolved` ✓ |
 | sport | `FOOTBALL` ✓ |
 | align by market id | all 3 market ids pair → **markets-found = 3/3 (100%)** |
 | axis (b) binding — corners pair | gold owner Bruno (1001699381), predicted Vitinha (1001982735) → **fail** |

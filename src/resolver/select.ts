@@ -160,7 +160,8 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
   // normal dir/line/subject logic below — honest degrade, never a blind wrong pick.
   if (spec.outcomeLabel != null) {
     const want = norm(spec.outcomeLabel);
-    const hit = cands.find(({ o }) => norm(o.englishLabel ?? o.label ?? "") === want);
+    const hit = cands.find(({ o }) =>
+      norm(o.englishLabel ?? o.label ?? "") === want || (want === "draw" && o.type === "OT_CROSS"));
     if (hit) return pick(hit.o);
   }
 
@@ -180,10 +181,12 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
       // arrives as binary "yes", but the named outcome has no yes/no direction, so the (2) gate would wrongly
       // drop it — so accept dir null OR "yes" here; a real "no" still falls through (a genuine negation).
       if (byId.length === 1 && numLine == null && dirOf(byId[0]!.o) == null && (spec.dir == null || spec.dir === "yes")) return pick(byId[0]!.o);
-    } else if (!cands.some(({ o }) => dirOf(o) === "yes")) {
-      return absent("subject-absent"); // market lists OTHER participants, not the subject (and no owner-Yes)
+    } else if (hasNamed && !cands.some(({ o }) => dirOf(o) === "yes")) {
+      return absent("subject-absent"); // market NAMES other participants, not the subject (and no owner-Yes)
     }
-    // else (byId empty, an affirmative exists): owner-bound Yes/No market ABOUT the subject -> keep all; (3) picks Yes.
+    // else (byId empty): either NO outcome names anyone — an owner-scoped market whose outcomes carry no
+    // participant, e.g. "Total Aces - Taylor Fritz" with anonymous Over/Under — or an affirmative Yes exists.
+    // Both are ABOUT the subject, so keep the whole pool; the line/dir/(3)/(4) branches pick the outcome.
   } else if (relational) {
     // RELATIONAL subject (home/away) — bind PER FIXTURE against each outcome's OWN event, never a single
     // ctx.home: a multi-fixture "home teams to win" holds a different home team per game, so one shared name

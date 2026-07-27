@@ -1,5 +1,5 @@
 // normalize-plan — deterministic repair of the extracted QueryPlan, run after extract() and before grounding
-// (per-leg-scope redesign Phase 2.5). Structured output + Haiku occasionally emit an unusable-but-clear shape;
+// (per-leg-scope redesign Phase 2.5). Structured output occasionally emits an unusable-but-clear shape;
 // repair it at the parse boundary rather than throw — the extractor never abstains, so one malformed leaf must
 // not sink the whole query. Two classes of repair:
 //   1. PER-LEG SCOPE cleanups — an all-null `stage`/`time` skeleton -> null (its refine rejects the empty
@@ -26,7 +26,7 @@ function isUsableLine(v: unknown): boolean {
 }
 // Sanitize `odds`: drop any min/max that isn't a positive number; an odds object left with no valid bound is
 // removed (the schema needs >=1 positive bound). Repairs the `{ min: 0 }` placeholder a superlative like
-// "shortest odds" produces — Haiku invents a 0 bound when "odds" is named with no real number.
+// "shortest odds" produces — the model invents a 0 bound when "odds" is named with no real number.
 function sanitizeOdds(rec: Record<string, unknown>): void {
   const o = rec.odds as Record<string, unknown> | undefined;
   if (!o || typeof o !== "object") return;
@@ -39,11 +39,25 @@ function sanitizeOdds(rec: Record<string, unknown>): void {
 // Per-leg scope: a blank `stage` or an all-null `time` skeleton -> coerce to null (omit the facet); default
 // the required-nullable `region`/`play_state` so an absent or garbage value still parses.
 function normalizeScope(sc: Record<string, unknown>): void {
-  if (typeof sc.stage === "string" && !sc.stage.trim()) sc.stage = null;
+  // required-nullable fields: an ABSENT or blank value means "no value" -> null. Models may omit nulls to save
+  // output tokens (some models emit them, others omit them), so backfill deterministically here rather than force the
+  // model to spend tokens emitting nulls.
+  for (const k of ["competition", "region", "stage", "time"] as const) {
+    if (!(k in sc) || (typeof sc[k] === "string" && !(sc[k] as string).trim())) sc[k] = null;
+  }
   const tm = sc.time as Record<string, unknown> | null;
-  if (tm && tm.date_window == null && tm.kickoff_time_of_day == null && tm.fixture_pick == null) sc.time = null;
-  if (!("region" in sc)) sc.region = null;
+  if (tm && typeof tm === "object") {
+    // Time's own sub-fields are required-nullable too — backfill omitted ones, then collapse an all-null skeleton.
+    for (const k of ["date_window", "kickoff_time_of_day", "fixture_pick"] as const) if (!(k in tm)) tm[k] = null;
+    if (tm.date_window == null && tm.kickoff_time_of_day == null && tm.fixture_pick == null) sc.time = null;
+  }
   if (sc.play_state !== "live" && sc.play_state !== "prematch") sc.play_state = null;
+  // `level` is a required enum with NO null option, so a weak model that drops it would sink the whole
+  // query at parse. Default an absent/garbage value to the majority grain `fixture` (a bare league is forced
+  // to fixture in resolve.ts anyway; a real competition query names a market and gets tagged competition).
+  if (sc.level !== "fixture" && sc.level !== "competition") sc.level = "fixture";
+  if (!Array.isArray(sc.teams)) sc.teams = [];
+  if (!Array.isArray(sc.players)) sc.players = [];
 }
 
 export function normalizePlan(plan: unknown): void {

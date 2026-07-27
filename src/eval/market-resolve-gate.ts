@@ -10,7 +10,7 @@
 // here — their abstain behavior is covered by the offline Phase 5 gate (live-menu-gate.ts) and resolve-market's
 // contract probe. A side-split `id` cell lists both side criteria; picking EITHER is a correct type resolution.
 //
-// LIVE — calls the resolve-market LLM (needs ANTHROPIC_API_KEY), like run.ts's extractor gate. Wired into the
+// LIVE — calls the resolve-market LLM (needs AWS creds + BEDROCK_MODEL), like run.ts's extractor gate. Wired into the
 // `npm run eval` exit code (run.ts); no standalone main (mirrors disambig-replay's old structure).
 
 import { readFileSync, existsSync } from "node:fs";
@@ -114,7 +114,7 @@ export async function resolveEyeball(concept: string, grain: "match" | "competit
 }
 
 // CLI: `npx tsx src/eval/market-resolve-gate.ts` — run the live gate standalone (mirrors live-menu-gate.ts).
-// Needs ANTHROPIC_API_KEY (loaded from .env if present). Also run as part of `npm run eval`.
+// Needs AWS creds + BEDROCK_MODEL (loaded from .env if present). Also run as part of `npm run eval`.
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const envPath = join(HERE, "..", "..", ".env");
   if (existsSync(envPath)) {

@@ -1,4 +1,4 @@
-// Structural scorer for scorer.spec.md's costly facets (status, sport, market-found, binding,
+// Structural scorer for scorer.spec.md's costly facets (sport, market-found, binding,
 // line/odds); event_scope facets are tracked as soft notes only (E5).
 //
 // The market axis grades in one of two modes:
@@ -59,8 +59,8 @@ export type RunResult = {
 
 // ---- narrowed structural types (local, to avoid cross-module type identity issues) ----
 
-type ResolvedPlan = Extract<QueryPlan, { status: "resolved" }>;
-type ResolvedGold = Extract<GoldRecord["expect"], { status: "resolved" }>;
+type ResolvedPlan = QueryPlan;
+type ResolvedGold = GoldRecord["expect"];
 type PredSelector = ResolvedPlan["selectors"][number];
 type GoldSelector = ResolvedGold["selectors"][number];
 

@@ -39,7 +39,6 @@ const textOf = (cell: GroundedCell): string => cell.accept[0] ?? "";
 // Build a QueryPlan straight from the gold's entity text — the deterministic input to groundScope.
 function syntheticPlan(sc: GoldScope): QueryPlan {
   return {
-    status: "resolved",
     sport: "FOOTBALL",
     selectors: [
       {

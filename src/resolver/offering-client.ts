@@ -21,6 +21,7 @@ export const Q = qs(); // back-compat: the default (English) query string, still
 const LOCALES: Record<string, string> = {
   english: "en_GB",
   swedish: "sv_SE",
+  french: "fr_FR",
 };
 export const localeOf = (language?: string): string => LOCALES[(language ?? "").trim().toLowerCase()] ?? DEFAULT_LOCALE;
 
@@ -133,6 +134,18 @@ export async function betOffersByEvents(eventIds: number[], opts: EventBetOfferO
 // /betoffer/participant/{ids} — `type` is the ONLY server filter that bites here (onlyMain/level/playState ignored).
 export async function betOffersByParticipants(ids: number[], opts: ParticipantBetOfferOpts = {}, lang: string = DEFAULT_LOCALE): Promise<BetOfferResponse> {
   return normBo(await getJson(`${BASE}/betoffer/participant/${ids.join("%2C")}?${qs(lang)}&includeParticipants=true${boParams(opts)}`));
+}
+
+// /onDemandPricing/event/{id}/outcome/{ids} — the CORRELATED same-event combined price (bet-builder Phase 2).
+// Same-event legs don't multiply (probed live: two legs price 41.00, not 4.10×4.80=19.68) — only this endpoint
+// knows the real joint price. Combinability signal is purely HTTP status: 200 = combinable (returns the combined
+// `selectedOdds.decimal` in RAW millis), any non-200 (400 = not combinable, or a transient error) -> null. Uses
+// its own status-tolerant fetch because getJson throws on non-2xx and a 400 here is an expected answer, not a fault.
+export async function onDemandPricing(eventId: number, outcomeIds: number[], lang: string = DEFAULT_LOCALE): Promise<number | null> {
+  const res = await fetch(`${BASE}/onDemandPricing/event/${eventId}/outcome/${outcomeIds.join("%2C")}?${qs(lang)}`);
+  if (!res.ok) return null;
+  const d = ((await res.json()) as any)?.selectedOdds?.decimal;
+  return typeof d === "number" ? d : null;
 }
 
 // ---- prepack coupons (bet-builder Phase 1): PRE-CONFIGURED combinations, a whole betslip already priced ----

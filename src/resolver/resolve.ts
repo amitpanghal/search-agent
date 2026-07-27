@@ -18,12 +18,13 @@ import { filterBySubject } from "./filter";
 import { resolveMarkets } from "./resolve-market";
 import { select, type SelectSpec } from "./select";
 import { execute, type ResponseEnvelope } from "./execute";
-import { pickCombinations } from "./combinations";
+import { pickCombinations, buildBetslip } from "./combinations";
 import { fold } from "./lexical";
-import { isMain, type BetOffer, type KEvent } from "./offering-client";
+import { isMain, onDemandPricing, type BetOffer, type KEvent } from "./offering-client";
+import { usageStore, summarizeCost, type RawCall } from "./cost";
 import type { Subject, Line } from "./schema";
 import { getSport } from "./sports";
-import type { ResolvedLeg, MarketPick } from "./live-menu-types";
+import type { ResolvedLeg, MarketPick, EnvelopeLeg } from "./live-menu-types";
 
 // FILTER subject — a NAMED entity narrows the menu to its markets; a relational role (home/away) or `event`
 // subject has no name to filter on, so the whole fixture menu is kept (the per-side precision is a SELECT job).
@@ -34,15 +35,15 @@ const filterSubject = (s: Subject): string | undefined =>
 const selectSubject = (s: Subject): string | undefined =>
   s.kind === "team" ? s.name : s.kind === "player" ? s.name : s.kind === "either_match_team" ? s.side : undefined;
 
-// The resolver decides market IDENTITY, which includes GRAIN. Only the PLAYER grain needs a note: a nameless-player
-// "shots on target" lost to the match aggregate because the bare concept gave no per-player signal. Append
-// `(for one player)` so the resolver picks the per-player prop, not the match total. Team/event/either_match_team
-// get NO note — their concept already names a team/match market, and a "(for the whole match)" note would clash
-// with a period qualifier in the concept ("1st half handicap") and make the resolver abstain.
-// INDIVIDUAL sports (tennis): the player IS the competitor, so there is no match/team total twin to disambiguate
-// from — the note only misleads the resolver into rejecting the player's OWN market as "team-scoped". Skip it.
-const betPhrase = (sel: { subject: Subject; market_concept: string }, individual: boolean): string =>
-  sel.subject.kind === "player" && !individual ? `${sel.market_concept} (for one player)` : sel.market_concept;
+// The resolver decides market IDENTITY, which includes GRAIN + WHICH player. A PLAYER-subject leg appends a
+// parenthetical so the picker (a) prefers the per-player prop over the match/team total of the same stat, and
+// (b) picks the RIGHT player's market when the feed scopes it by name in its LABEL ("Total Aces - Taylor Fritz"
+// vs the combined "Total Aces" — the name is the only thing that separates them). Prefer the subject's NAME (it
+// carries both the grain AND the identity); fall back to the bare "one player" grain hint when the leg named no
+// player (a nameless player prop). Team/event/either_match_team get NO note — their concept already names a
+// team/match market, and a note would clash with a period qualifier ("1st half handicap") and make it abstain.
+const betPhrase = (sel: { subject: Subject; market_concept: string }): string =>
+  sel.subject.kind === "player" ? `${sel.market_concept} (for ${sel.subject.name ?? "one player"})` : sel.market_concept;
 
 // The grounded PARTICIPANT id for a selector's subject — SELECT's preferred (robust) key, == the feed's
 // outcome.participantId on named markets. Only a CONFIDENT resolution yields an id (an unsure entity must not
@@ -101,53 +102,55 @@ export type StageEvent =
   | { stage: 'disambiguating' }
   | { stage: "done"; envelope: ResponseEnvelope };
 
-// The pipeline's injectable boundaries — the three LLM steps + the network fetch. Production passes nothing and
-// gets REAL_DEPS (identical behaviour); the harness-loop rig injects cached/subagent + live-cached doubles so it
-// can run the WHOLE real pipeline with no LLM API. Pure plumbing: defaults preserve every production call.
-export type PipelineDeps = {
-  extract: typeof extract;
-  recall: typeof recall;
-  resolveEntities: typeof resolveEntities;
-  resolveMarkets: typeof resolveMarkets;
-};
-const REAL_DEPS: PipelineDeps = { extract, recall, resolveEntities, resolveMarkets };
-
 // runPipeline — the orchestrator as an async generator. It yields a coarse progress marker before each
 // expensive phase (extract LLM, recall fetch, market-resolve LLM) and a final `done` carrying the envelope.
 // The SSE server forwards each yield; resolveQuery (below) drains it to the single envelope for non-streaming
-// callers (eval, probes). The phase logic is UNCHANGED — only the yields are new.
-export async function* runPipeline(query: string, deps: PipelineDeps = REAL_DEPS): AsyncGenerator<StageEvent> {
+// callers (eval, probes).
+export async function* runPipeline(query: string): AsyncGenerator<StageEvent> {
+  // Per-query LLM usage: each stage runs inside usageStore so bedrock-call records its tokens here (cost.ts).
+  // Stamp every `done` envelope with the running total so the frontend can show per-query token/cost.
+  const calls: RawCall[] = [];
+  const withCost = (e: ResponseEnvelope): ResponseEnvelope => { e.cost = summarizeCost(calls); return e; };
+
   yield { stage: "resolving" };
-  const plan = await deps.extract(query);
+  const plan = await usageStore.run(calls, () => extract(query));
+  // Bare-competition browse: a `main` sentinel (no market named) tagged competition-level has nothing to show —
+  // main markets are per-match, and outright-less leagues (Allsvenskan, most non-marquee comps) carry no
+  // competition-level offer at all, so `onlyCompetitions` comes back empty. The intent of a bare league name is
+  // "show its events with their main markets" = fixture level. Force it here (a real outright query NAMES a
+  // market, so market_concept !== "main" and stays competition-level).
+  for (const sel of plan.selectors) {
+    if (sel.market_concept === "main" && sel.scope.level === "competition") sel.scope.level = "fixture";
+  }
   // Incomplete-query gate: no team/player/league/region anchor -> nothing to scope to. Stop BEFORE any
   // grounding/fetch/LLM and ask the user to add one (canned message; no network spent).
   const incomplete = checkComplete(plan);
   if (incomplete) {
-    yield { stage: "done", envelope: { summary: "", events: [], results: [], additional: [], notes: [], clarificationNeeded: incomplete.question } };
+    yield { stage: "done", envelope: withCost({ summary: "", events: [], results: [], legs: [], additional: [], notes: [], clarificationNeeded: incomplete.question }) };
     return;
   }
 
   if (!getSport(plan.sport)) {
-    yield { stage: "done", envelope: { summary: "", events: [], results: [], additional: [], notes: [], clarificationNeeded: `We don't support ${plan.sport} yet. Try searching for another sport, or check back later as we continue adding more.` } };
+    yield { stage: "done", envelope: withCost({ summary: "", events: [], results: [], legs: [], additional: [], notes: [], clarificationNeeded: `We don't support ${plan.sport} yet. Try searching for another sport, or check back later as we continue adding more.` }) };
     return;
   }
 
   yield { stage: "routing" };
   const scope = groundScope(plan);
-  const settled = await deps.resolveEntities(query, scope);
+  const settled = await usageStore.run(calls, () => resolveEntities(query, scope));
 
   // Guard: if the entity gate couldn't resolve any ids (e.g. ambiguous player with no competition anchor)
   // and raised clarifications, return them instead of crashing in recall with "need groupIds, participantIds…".
   const recallInput = planRecall(settled, plan);
   if (!recallInput.participantIds?.length && !recallInput.groupIds?.length && !recallInput.eventIds?.length) {
     if (settled.clarifications.length > 0) {
-      yield { stage: "done", envelope: execute({ legs: [], data: { betOffers: [], events: [] }, clarifications: settled.clarifications }) };
+      yield { stage: "done", envelope: withCost(execute({ legs: [], data: { betOffers: [], events: [] }, clarifications: settled.clarifications })) };
       return;
     }
     // No ids AND no clarifications — fall through; recall will throw its diagnostic error.
   }
 
-  const r = await deps.recall(recallInput); // BROAD data; per-leg narrowing is scopeMenu's job below
+  const r = await recall(recallInput); // BROAD data; per-leg narrowing is scopeMenu's job below
 
   yield { stage: "disambiguating" };
 
@@ -188,12 +191,33 @@ export async function* runPipeline(query: string, deps: PipelineDeps = REAL_DEPS
   if (plan.otherSports?.length) {
     extraNotes.add(`Showing ${plan.sport} — did you mean ${plan.otherSports.join(" or ")}?`);
   }
-  const individual = !!getSport(plan.sport)?.individual; // gates the per-player grain note off for individual sports
 
-  for (const [key, idxs] of groups) {
+  // Fixture inheritance. A FLOATING leg names no subject, team, competition or time: alone it fans across the whole
+  // broad fetch (e.g. "total goals over 2.5" in a single-match combo landing on every club game a fetched player's
+  // team dragged in). Resolve ANCHORED groups first, collect the fixtures they price, then feed each floating group
+  // only those events. No anchor in the query -> floats stay broad (unchanged).
+  const isFloating = (i: number): boolean => {
+    const leg = settled.legs[i]!;
+    return filterSubject(plan.selectors[i]!.subject) == null
+      && !leg.teams.some((t) => t.tier === "confident")
+      && leg.competition?.tier !== "confident"
+      && !leg.time && leg.level !== "competition";
+  };
+  const anchorEventIds = new Set<number>();
+  const ordered = [...groups].sort(([, a], [, b]) => Number(isFloating(a[0]!)) - Number(isFloating(b[0]!)));
+
+  // Per group: scopeMenu + filterBySubject (deterministic, synchronous), then ONE resolveMarkets LLM call for that
+  // group's named legs against its shared filtered menu (the answer-preserving multi=false batch). Ordered
+  // anchored-first so the sync prep populates anchorEventIds before any floating group reads it.
+  const pickJobs: { idxs: number[]; picks: Promise<MarketPick[]> }[] = [];
+  for (const [key, idxs] of ordered) {
     const leg = settled.legs[idxs[0]!]!;
     const sel0 = plan.selectors[idxs[0]!]!;
-    const scoped = scopeMenu(r.data, leg); // narrow the broad data to this group's leg scope
+    const floating = isFloating(idxs[0]!);
+    const data = floating && anchorEventIds.size
+      ? { events: r.data.events.filter((e) => e.id != null && anchorEventIds.has(e.id)), betOffers: r.data.betOffers }
+      : r.data;
+    const scoped = scopeMenu(data, leg); // narrow the (possibly fixture-restricted) data to this group's leg scope
     if (scoped.timeUnresolved) {
       const bad = scoped.unresolvedPhrase ?? "you gave";
       extraNotes.add(scoped.timeApplied
@@ -204,13 +228,22 @@ export async function* runPipeline(query: string, deps: PipelineDeps = REAL_DEPS
     const subjSide = sel0.subject.kind === "either_match_team" ? sel0.subject.side : undefined;
     const fr = filterBySubject(scoped.offers, scoped.events, subjectName(leg, sel0.subject), subjId, subjSide);
     groupData.set(key, { scoped, fr });
+    idxs.forEach((i) => { keyByIdx[i] = key; });
     // "main" legs name no market — they skip the LLM pick entirely and fan out into every main market below.
     // Only the named legs go to resolveMarkets (keep the pick-index alignment to THOSE legs).
     const llmIdxs = idxs.filter((i) => plan.selectors[i]!.market_concept !== "main");
-    const picks = llmIdxs.length ? await deps.resolveMarkets(llmIdxs.map((i) => betPhrase(plan.selectors[i]!, individual)), fr.menu) : [];
-    llmIdxs.forEach((i, k) => { pickByIdx[i] = picks[k]!; });
-    idxs.forEach((i) => { keyByIdx[i] = key; });
+    // Kick the pick off WITHOUT awaiting — each group resolves against its own menu with no cross-group
+    // dependency, so all groups' picks run concurrently; awaited together after the loop.
+    // ponytail: unbounded fan-out (one call per group). If a query splits into enough groups to hit Bedrock's
+    // per-second limit, pool it like recall.ts (chunk + Promise.all).
+    if (llmIdxs.length) pickJobs.push({ idxs: llmIdxs, picks: usageStore.run(calls, () => resolveMarkets(llmIdxs.map((i) => betPhrase(plan.selectors[i]!)), fr.menu, undefined, query)) });
+    // anchored group -> remember the fixtures it prices, so later floating groups inherit them
+    if (!floating) for (const b of fr.offers) if (b.eventId != null) anchorEventIds.add(b.eventId);
   }
+  // All group picks were kicked off concurrently above; await together, then map each group's results back to its
+  // leg indices (order within a group == llmIdxs order == resolveMarkets phrase order).
+  const jobResults = await Promise.all(pickJobs.map((j) => j.picks));
+  pickJobs.forEach((j, ji) => j.idxs.forEach((i, k) => { pickByIdx[i] = jobResults[ji]![k]!; }));
 
   // Relational subjects need the fixture's home/away — from THIS leg's picked betoffer's event, within the
   // group's NARROWED events (so "home"/"away" binds to the right match, never another leg's).
@@ -222,12 +255,18 @@ export async function* runPipeline(query: string, deps: PipelineDeps = REAL_DEPS
   yield { stage: "searching" };
 
   const legsOut: ResolvedLeg[] = [];
+  const legsUnderstood: EnvelopeLeg[] = []; // "We understood" echo, one per selector in query order
   for (let i = 0; i < plan.selectors.length; i++) {
     const sel = plan.selectors[i]!;
     const leg = settled.legs[i]!;
     const { scoped, fr } = groupData.get(keyByIdx[i]!)!;
+    const subj = selectSubject(sel.subject); // subject AS ASKED (raw name / "home"|"away"; undefined for whole-match)
+    // Shared echo fields for this selector; `matched` + `market` are branch-specific (set at each push below).
+    // ponytail: `matched` is the resolve-side "found market + a non-fallback outcome"; execute's data-level prune
+    // can still drop a leg whose ids don't land — rare (execute is fed exactly what select resolved against).
+    const under = { ...(subj ? { subject: subj } : {}), phrase: sel.market_concept, ...(sel.line != null ? { line: sel.line } : {}) };
     const spec: SelectSpec = {
-      ...selSpec(sel.line, sel.odds, selectSubject(sel.subject), subjectParticipantId(leg, sel.subject), sel.odds_sort, sel.count),
+      ...selSpec(sel.line, sel.odds, subj, subjectParticipantId(leg, sel.subject), sel.odds_sort, sel.count),
       ...(pickByIdx[i]?.outcomeLabel ? { outcomeLabel: pickByIdx[i]!.outcomeLabel } : {}),
     };
     // select one market's outcomes; event comes off the picked offers (per-leg home/away binds to the right match).
@@ -239,11 +278,19 @@ export async function* runPipeline(query: string, deps: PipelineDeps = REAL_DEPS
     // then emit one leg per distinct main market so execute groups them under their events. Line/subject/odds still
     // apply per market via the same select() path; only the market-naming LLM step is skipped.
     if (sel.market_concept === "main") {
-      const mainOffers = fr.offers.filter((b) => isMain(b.tags) && b.criterion?.id != null);
+      // A bare PLAYER subject has no "main market" — main markets price the teams, not him — so `isMain` cuts
+      // everything and the browse comes back empty. His intent is "show his priced markets": fr.offers is already
+      // exactly those (filterBySubject kept only markets where he's a participant). Every other subject keeps the
+      // MAIN-tagged cut (a team/league browse = the match's main markets).
+      const isPlayerBrowse = sel.subject.kind === "player";
+      const mainOffers = fr.offers.filter((b) => (isPlayerBrowse || isMain(b.tags)) && b.criterion?.id != null);
+      let matched = false;
       for (const label of new Set(mainOffers.map(marketLabelOf))) {
         const selection = selectFor(offersForPick(mainOffers, label));
+        if (selection && !selection.fallback) matched = true;
         legsOut.push({ phrase: label, pick: { label, match: "exact" }, ...(selection ? { selection } : {}), ...(spec.subjectId != null ? { subjectId: spec.subjectId } : {}) });
       }
+      legsUnderstood.push({ ...under, matched });
       continue;
     }
 
@@ -258,6 +305,7 @@ export async function* runPipeline(query: string, deps: PipelineDeps = REAL_DEPS
           : { kind: "no-market" as const })
       : undefined;
     legsOut.push({ phrase: sel.market_concept, pick, ...(selection ? { selection } : {}), ...(spec.subjectId != null ? { subjectId: spec.subjectId } : {}), ...(unavailable ? { unavailable } : {}) });
+    legsUnderstood.push({ ...under, matched: !!selection && !selection.fallback, ...(pick.label ? { market: pick.label } : {}) });
   }
 
   // execute gets only the REFERENCED data (union of the groups' narrowed events/offers), never the broad fetch —
@@ -288,19 +336,23 @@ export async function* runPipeline(query: string, deps: PipelineDeps = REAL_DEPS
   for (const c of combinations) for (const l of c.legs) if (l.eventId != null) comboEventIds.add(l.eventId);
   const combinationEvents = (r.prepacks?.events ?? []).filter((e) => comboEventIds.has(e.id) && !execEvents.has(e.id));
 
-  yield {
-    stage: "done",
-    envelope: execute({
-      legs: legsOut,
-      data: { events: [...execEvents.values()], betOffers: [...execOffers] },
-      clarifications: settled.clarifications,
-      notes: [...extraNotes],
-      truncated: r.truncated,
-      fetchFailed: r.failed,
-      combinations,
-      combinationEvents,
-    }),
-  };
+  // Bet-builder Phase 2: price the user's OWN resolved legs together as one EXACT betslip (same-event legs via the
+  // correlated priceCombo endpoint, cross-event legs multiply). Same inputs pickCombinations used; omitted when <2 legs combine.
+  const betslip = await buildBetslip(legsOut, [...execOffers], [...execEvents.values()], onDemandPricing, recallInput.lang);
+
+  const envelope = execute({
+    legs: legsOut,
+    data: { events: [...execEvents.values()], betOffers: [...execOffers] },
+    clarifications: settled.clarifications,
+    notes: [...extraNotes],
+    truncated: r.truncated,
+    fetchFailed: r.failed,
+    combinations,
+    combinationEvents,
+    ...(betslip ? { betslip } : {}),
+  });
+  envelope.legs = legsUnderstood; // the per-selector "We understood" echo (execute groups by event and loses order)
+  yield { stage: "done", envelope: withCost(envelope) };
 }
 
 // resolveQuery — the non-streaming entry: drain runPipeline and return the final envelope. Existing callers

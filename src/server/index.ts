@@ -1,5 +1,5 @@
-// Server entry — boots the Hono app on PORT (default 3000). Env (ANTHROPIC_API_KEY, ANTHROPIC_MODEL) is
-// loaded by the `--env-file=.env` flag in the npm scripts, same as the eval/probe runners.
+// Server entry — boots the Hono app on PORT (default 3000). Env (AWS creds + BEDROCK_MODEL) is
+// loaded by the `--env-file=.env` flag in the npm scripts, same as the eval runner.
 
 import { serve } from "@hono/node-server";
 import { buildApp } from "./app";

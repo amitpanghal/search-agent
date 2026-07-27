@@ -36,10 +36,9 @@ export type SettledEntities = ResolvedScope & {
 // "To score at least 2 goals" / "— 3 goals" (SAME criterion id, different englishLabel) are all distinct items
 // (theory §4). englishLabel — not the localized label — keeps the identity locale-stable. The criterion id is
 // NOT part of the identity: it can't tell the at-least-N family apart, and it's invisible to the resolver
-// anyway. `eventId` ties a match-grain item to its fixture.
+// anyway.
 export type MenuItem = {
   label: string;
-  eventId?: number;
   outcomes?: string[]; // meaningful outcome labels (named, non-participant) — set only when they disambiguate the market
 };
 // The filtered live list handed to RESOLVE — labels only (plus outcomes on ambiguous markets).
@@ -91,6 +90,20 @@ export type ResolvedLeg = {
   unavailable?: { kind: "no-fixture" | "no-market"; scope?: string };
 };
 
+// One leg of the "We understood" echo — the resolver's per-selector interpretation, in QUERY order (NOT grouped
+// by event like `results`). Present for EVERY selector, matched or not, so the frontend can show what we read from
+// the query and grey out any leg we couldn't offer. `subject` is the subject AS ASKED (raw name, or "home"/"away";
+// absent for a whole-match market like Both Teams To Score); `phrase` is our reading of the market (market_concept);
+// `market` is the resolved canonical label (absent on a `none` pick); `line` is the stated value; `matched` = it
+// resolved to a real, offered outcome.
+export type EnvelopeLeg = {
+  subject?: string;
+  phrase: string;
+  market?: string;
+  line?: number | string;
+  matched: boolean;
+};
+
 // The whole post-fetch result handed to execute: the resolved legs, the live data they were resolved against
 // (so execute reads odds/labels without re-fetching), and any carried-forward clarifications. Today execute
 // takes a FetchPlan with pre-committed `marketIds`; that field goes away, since the market is no longer known
@@ -104,4 +117,5 @@ export type ExecuteInput = {
   fetchFailed?: boolean;   // a group/participant fetch errored (degraded to empty, not thrown)
   combinations?: Combination[]; // pre-configured combinations already ranked/capped for this query (Bet-builder Phase 1)
   combinationEvents?: KEvent[]; // events referenced by a combination leg that are NOT among the shown results — for envelope enrichment
+  betslip?: Combination;        // the user's OWN resolved legs priced together as one betslip (Bet-builder Phase 2); omitted when <2 combinable legs
 };

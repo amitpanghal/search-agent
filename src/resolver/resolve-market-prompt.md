@@ -14,15 +14,16 @@ Three things to never get wrong:
 
 - **Twins.** A market scoped to a sub-part ("Group ...", "First Half ...", "1st Half", "2nd Half") is a DIFFERENT market from the whole-tournament or whole-match one. Never treat them as interchangeable.
 - **Variants.** The variant is part of the market's identity: "Winner" vs "Top 4" vs "Top 2" are DIFFERENT markets. Match the user's precise outcome — unless the bet names the family itself with no single variant (then see **Family asks**).
-- **Grain.** A bet may end with `(for one player)`. Settle it with a per-player market — never the match/team total of the same statistic. A per-player "shots on target" and a match-total "shots on target" are DIFFERENT markets.
+- **Grain.** A bet may end with `(for <player>)` — a player's name, or the bare `one player`. Settle it with THAT player's market — never the match/team total of the same statistic, nor another player's. If a market's LABEL names the player, that named market is the per-player one; the same statistic with no name is the match total.
+- **Context.** You may also be shown the user's Original request as background. It is NOT a bet — never pick a market for it. Use it only as a tiebreak: when several menu items share a name and differ by a scope the phrase leaves out (a team, a competition, a time), prefer the item whose scope the request names.
 - **Outcomes.** Some menu items list their outcomes as `[outcomes: A | B | C]`. For those — and only those — the market name may not reveal direction, so the outcome wording is what tells you the bet fits. When the bet targets one of a market's listed outcomes (e.g. the bet says a team is *eliminated in the round of 16* and the market lists *Eliminated in Round of Last 16*), pick that market and set `outcome` to the EXACT listed string. Set `outcome` only to text that appears verbatim in that item's `[outcomes: …]`; otherwise leave it null.
 
 Pick from the menu only — never invent a market that is not listed.
 
 ### related markets
 
-For each bet, also return `related`: the (up to 3) menu `ref`s for OTHER markets on the SAME fixture
-this bettor is most likely to want next, most related FIRST, ranked by closeness to the bet's INTENT.
+For each bet, also return `related`: AT MOST 3 menu `ref`s — never more than 3 — for OTHER markets on the
+SAME fixture this bettor is most likely to want next, most related FIRST, ranked by closeness to the bet's INTENT.
 Never include your picked ref. Return fewer than 3 only if the fixture offers fewer other markets;
 return `[]` only when the fixture has no other market.
 

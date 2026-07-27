@@ -3,33 +3,23 @@
 // the ref back to the menu item's label (the market identity). The model may always abstain (`none`). BATCHED (Q2): legs that share
 // one filtered menu resolve in a SINGLE call — the menu is sent once, not per leg — saving repeated input tokens
 // and a round-trip. `resolveMarket` (singular) is a thin wrapper kept for the offline gates. The contract —
-// confident-wrong ≈ 1 in 180 case-evaluations — was validated by scripts/.contract-probe.ts.
+// confident-wrong ≈ 1 in 180 case-evaluations. Model is BEDROCK_MODEL via the Converse API (see bedrock-call.ts).
 
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import Anthropic from "@anthropic-ai/sdk";
+import { bedrockToolCall } from "./bedrock-call";
 import type { Menu, MarketPick, MatchLabel } from "./live-menu-types";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-export const RESOLVE_MARKET_MODEL = "claude-haiku-4-5-20251001";
 const TOOL_NAME = "pick";
-
-let cachedClient: Anthropic | null = null;
-function client(): Anthropic {
-  if (!cachedClient) {
-    if (!process.env.ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY is not set (export it or put it in .env).");
-    cachedClient = new Anthropic();
-  }
-  return cachedClient;
-}
 
 let cachedPrompt: string | undefined;
 const systemPrompt = (): string => (cachedPrompt ??= readFileSync(join(HERE, "resolve-market-prompt.md"), "utf8"));
 
 // One pick per BET: `leg` echoes which bet it answers (so a missing/reordered pick is detectable, never silently
 // mis-bound), `ref` indexes the shared menu (null = none).
-const INPUT_SCHEMA: Anthropic.Tool.InputSchema = {
+const INPUT_SCHEMA: Record<string, unknown> = {
   type: "object",
   properties: {
     picks: {
@@ -54,7 +44,7 @@ const INPUT_SCHEMA: Anthropic.Tool.InputSchema = {
 // The raw model output for one bet (a menu ref + label), before we map it back to the market identity.
 export type RawPick = { ref: number | null; match: string; outcome?: string | null; related?: number[] };
 // Batched decider — one call for all bets sharing the menu. Injectable so the gate can replay captured decisions.
-export type DecideManyFn = (phrases: string[], menu: Menu) => Promise<RawPick[]>;
+export type DecideManyFn = (phrases: string[], menu: Menu, query?: string) => Promise<RawPick[]>;
 // Singular decider — kept for the offline gates' per-phrase replay.
 export type DecideFn = (phrase: string, menu: Menu) => Promise<RawPick>;
 
@@ -76,10 +66,10 @@ const toPick = (raw: RawPick | undefined, menu: Menu): MarketPick => {
 };
 
 // Pick + label a market for EACH phrase against the one shared filtered menu, in a single model call.
-export async function resolveMarkets(phrases: string[], menu: Menu, decideFn: DecideManyFn = callModel): Promise<MarketPick[]> {
+export async function resolveMarkets(phrases: string[], menu: Menu, decideFn: DecideManyFn = callModel, query?: string): Promise<MarketPick[]> {
   if (!phrases.length) return [];
   if (!menu.length) return phrases.map(() => ({ match: "none", reason: "empty menu" }));
-  const raws = await decideFn(phrases, menu);
+  const raws = await decideFn(phrases, menu, query);
   return phrases.map((_, i) => toPick(raws[i], menu));
 }
 
@@ -89,30 +79,15 @@ export async function resolveMarket(phrase: string, menu: Menu, decideFn?: Decid
   return (await resolveMarkets([phrase], menu, many))[0]!;
 }
 
-const callModel: DecideManyFn = async (phrases, menu) => {
+const callModel: DecideManyFn = async (phrases, menu, query) => {
   const list = menu.map((m, i) => `${i}: ${m.label}${m.outcomes?.length ? `  [outcomes: ${m.outcomes.join(" | ")}]` : ""}`).join("\n");
   const bets = phrases.map((p, i) => `${i}: ${p}`).join("\n");
-  const msg = await client().messages.create({
-    model: RESOLVE_MARKET_MODEL,
-    max_tokens: Math.min(2048, 256 + 256 * phrases.length),
-    temperature: 0,
-    system: [{ type: "text", text: systemPrompt(), cache_control: { type: "ephemeral" } }],
-    tools: [{ name: TOOL_NAME, description: "For each bet, pick one market from the live menu and label it exact/close/none.", input_schema: INPUT_SCHEMA }],
-    tool_choice: { type: "tool", name: TOOL_NAME },
-    messages: [
-      {
-        role: "user",
-        content: `LIVE menu (ref: label) — the only markets actually offered:\n${list}\n\nBETS (leg: phrase):\n${bets}\n\nFor EACH bet, pick one market by ref (or none) and label it exact/close/none.`,
-      },
-    ],
-  });
-  const block = msg.content.find((b) => b.type === "tool_use");
-  if (!block || block.type !== "tool_use") {
-    const text = msg.content.map((b) => (b.type === "text" ? b.text : `[${b.type}]`)).join(" ");
-    throw new Error(`resolveMarket returned no tool_use block. Got: ${text || "(empty)"}`);
-  }
+  const user =
+    `LIVE menu (ref: label) — the only markets actually offered:\n${list}\n\nBETS (leg: phrase):\n${bets}\n\n` +
+    `${query ? `Original request (context):\n"${query}"\n\n` : ""}For EACH bet, pick one market by ref (or none) and label it exact/close/none.`;
+  const out = await bedrockToolCall(systemPrompt(), user, TOOL_NAME, INPUT_SCHEMA, Math.min(2048, 256 + 256 * phrases.length));
   // Map picks back to phrase order BY `leg` (robust to reordering); any omitted leg -> none.
-  const picks = ((block.input as { picks?: unknown }).picks ?? []) as Array<{ leg?: number } & RawPick>;
+  const picks = (Array.isArray(out.picks) ? out.picks : []) as Array<{ leg?: number } & RawPick>;
   const byLeg = new Map<number, RawPick>();
   for (const p of picks) if (typeof p.leg === "number") byLeg.set(p.leg, { ref: p.ref, match: p.match, outcome: p.outcome, related: p.related });
   return phrases.map((_, i) => byLeg.get(i) ?? { ref: null, match: "none" });

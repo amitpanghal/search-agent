@@ -184,8 +184,8 @@ async function main(): Promise<void> {
   const last = flagValue(args, "--last");
   const release = args.includes("--release");
 
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.error("ANTHROPIC_API_KEY is not set. Export it, or copy .env.example -> .env.");
+  if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY || !process.env.BEDROCK_MODEL) {
+    console.error("AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and BEDROCK_MODEL must be set. Export them, or copy .env.example -> .env.");
     process.exit(2);
   }
 

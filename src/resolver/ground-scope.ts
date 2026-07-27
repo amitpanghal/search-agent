@@ -83,6 +83,18 @@ const MAJOR_RATIO = 3;
 // National-team ntVariant selection from a surface marker; default senior_men (the catalog's senior NT row).
 const NT_VARIANT: Record<string, string> = { u23: "youth_men_u23", u21: "youth_men_u21", u20: "youth_men_u20" };
 
+// Club "twins" — a gendered/reserve/youth side shares its base name with the senior men's club and differs only
+// by a marker token in the name ("(W)"->w, "II"/"III", "U21", "Youth"…). The senior side carries no marker. When
+// the query names no variant, these are a deterministic pick (the senior), NOT a question for the LLM. fold (not
+// stem) so markers stay literal. Single-letter markers kept to the unambiguous women's "w"; "b" reserves are left
+// out as too collision-prone. ponytail: static marker list; broaden only against a measured miss.
+const VARIANT_MARKERS = new Set<string>([
+  "w", "women", "ladies", "feminine",
+  "ii", "iii", "reserve", "reserves",
+  "u16", "u17", "u18", "u19", "u20", "u21", "u23", "youth", "academy", "junior",
+]);
+const hasVariantMarker = (s: string): boolean => fold(s).split(" ").some((t) => VARIANT_MARKERS.has(t));
+
 // ---- per-corpus lexicons (lexical.ts, corpus = SCOPE names, not the market catalog) ----
 const compLexCache = new Map<string, Lexicon>();
 function compLex(cat: ScopeCatalog): Lexicon {
@@ -221,7 +233,15 @@ export function groundTeam(text: string, cat: ScopeCatalog): EntityResolution {
       .filter((t) => { const nt = contentTokens(t.name); return qTokens.every((q) => nt.has(q)); })
       .slice(0, TOP_K);
     if (hits.length === 1) return { text, tier: "confident", candidates: [cand(hits[0]!.id, 0.8)] };
-    if (hits.length > 1) return { text, tier: "shortlist", candidates: hits.map((t) => cand(t.id, 0.8)) };
+    if (hits.length > 1) {
+      // Deterministic twin collapse: when the query named no variant, drop the gendered/reserve/youth siblings
+      // and keep the senior side — resolves at grounding, so the twin never reaches the entity LLM (pass or clarify).
+      if (!hasVariantMarker(text)) {
+        const seniors = hits.filter((t) => !hasVariantMarker(t.name));
+        if (seniors.length === 1) return { text, tier: "confident", candidates: [cand(seniors[0]!.id, 0.8)] };
+      }
+      return { text, tier: "shortlist", candidates: hits.map((t) => cand(t.id, 0.8)) };
+    }
   }
   return { text, tier: "none", candidates: [] };
 }

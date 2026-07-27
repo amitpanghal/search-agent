@@ -1,6 +1,6 @@
 // The extractor's output schema — the decision-18 `QueryPlan`, TEXT-valued.
 //
-// This is what the single Haiku extraction call emits via structured output, BEFORE any
+// This is what the single extraction call emits via structured output, BEFORE any
 // grounding: `market_concept`, entity names, `competition`,
 // stage round, and time windows are all plain strings. Grounding maps text -> catalog ids
 // downstream, in place. The eval's `gold-record.ts` is the same shape with every groundable
@@ -107,7 +107,6 @@ const Selector = z.object({
 // status. A query naming no market still resolves to the lone `main` sentinel selector (decision 24); a plan
 // always carries `sport` and >=1 selector, and every selector carries its own `scope`.
 export const QueryPlan = z.object({
-  status: z.literal("resolved"),
   sport: z.string().min(1),
   // The query's LANGUAGE, named in English ("Swedish", "German") — free text like `sport`, never a locale code
   // and never an enum: the extractor just detects, and code maps the name to a supported Kambi locale (an

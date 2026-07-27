@@ -199,9 +199,18 @@ const isParticipantOutcome = (o: KOutcome) => {
 };
 function meaningfulOutcomeLabels(offers: BetOffer[]): string[] {
   const labels = new Set<string>();
+  // A result market (1/X/2) is identified by its draw side. Surface BOTH team sides as "1"/"2" next to the draw:
+  // the rules below otherwise drop them (participant-named + bare value), leaving only "Draw" so the winner market
+  // reads as a draw market ("[outcomes: Draw]") and "<team> to win" can't map to it. "1 | Draw | 2" marks it as
+  // the 1X2 result market; select still picks the actual side from the subject (the codes name no team, so the
+  // resolver doesn't set outcomeLabel for a plain win — outcome selection stays in select).
+  const isResult = offers.some((b) => (b.outcomes ?? []).some((o) => o.type === "OT_CROSS"));
   for (const b of offers)
     for (const o of b.outcomes ?? []) {
       const lab = (o.englishLabel ?? o.label ?? "").trim();
+      if (o.type === "OT_CROSS") { labels.add("Draw"); continue; }
+      if (isResult && o.type === "OT_ONE") { labels.add("1"); continue; }
+      if (isResult && o.type === "OT_TWO") { labels.add("2"); continue; }
       if (!lab || (o.type && DROP_TYPES.has(o.type)) || DROP_LABELS.has((o.englishLabel ?? "").trim().toLowerCase()) || isParticipantOutcome(o) || isBareValue(lab)) continue;
       labels.add(lab);
     }
@@ -222,9 +231,8 @@ export function buildMenu(offers: BetOffer[]): Menu {
     else byLabel.set(label, [b]);
   }
   return [...byLabel.entries()].map(([label, group]) => {
-    const eventId = group.find((b) => b.eventId != null)?.eventId;
     const outs = meaningfulOutcomeLabels(group);
-    return { label, ...(eventId != null ? { eventId } : {}), ...(outs.length >= 2 ? { outcomes: outs } : {}) };
+    return { label, ...(outs.length >= 2 || outs.includes("Draw") ? { outcomes: outs } : {}) };
   });
 }
 

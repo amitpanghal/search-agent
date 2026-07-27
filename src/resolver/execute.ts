@@ -11,8 +11,9 @@
 // -0.5); formatting to decimals is the consumer's job. (SELECT still matches lines in decimals internally.)
 
 import type { BetOffer, KEvent, KOutcome, KParticipant } from "./offering-client";
-import type { ExecuteInput } from "./live-menu-types";
+import type { ExecuteInput, EnvelopeLeg } from "./live-menu-types";
 import type { Combination } from "./combinations";
+import type { QueryCost } from "./cost";
 import { marketLabelOf } from "./recall";
 import { isNamedOutcome, subjectOutcomes } from "./select";
 
@@ -75,10 +76,13 @@ export type ResponseEnvelope = {
   summary: string;
   events: ResponseEvent[]; // every event referenced by a result OR a combination leg, stored once (deduped by id)
   results: EnvelopeResult[];
+  legs: EnvelopeLeg[]; // "We understood" echo — one per selector in QUERY order (see EnvelopeLeg); orchestrator fills it
   additional: EnvelopeHighlighted[]; // query-scoped related-market suggestions, flat + globally capped at 3
   notes: string[];
   clarificationNeeded: string | null;
   combinations?: Combination[]; // pre-configured combinations for this query, ranked + capped (Bet-builder Phase 1); omitted when none
+  betslip?: Combination; // the user's own resolved legs priced together (Bet-builder Phase 2); omitted when <2 combinable legs
+  cost?: QueryCost; // per-query LLM token usage + Bedrock cost, attached by runPipeline (see cost.ts)
 };
 
 // ---- raw -> envelope mappers (NO unit conversion: odds/line stay integer millis) ----
@@ -286,9 +290,11 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
     summary: "",
     events,
     results,
+    legs: [], // filled by the orchestrator (it holds the per-selector plan); [] on execute-only callers/tests
     additional,
     notes: [...new Set(notes)],
     clarificationNeeded,
     ...(input.combinations?.length ? { combinations: input.combinations } : {}),
+    ...(input.betslip ? { betslip: input.betslip } : {}),
   };
 }
