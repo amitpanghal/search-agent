@@ -12,7 +12,7 @@
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { getSport, SPORTS, BUILD_DIR, GROUPS_PATH } from "../src/resolver/sports";
+import { getSport, BUILD_DIR, GROUPS_PATH } from "../src/resolver/sports";
 import { curlJsonOrNull } from "./curl-fetch";
 
 const FEED = (id: number) => `https://feeds-eu.offering-api.kambicdn.com/feeds/api/kambi/participant/group/${id}.json`;
@@ -75,7 +75,7 @@ function findNode(root: Node, id: number): Node | null {
 async function main(): Promise<void> {
   const slug = process.argv[2] ?? "football";
   const config = getSport(slug);
-  if (!config) throw new Error(`Unknown sport "${slug}". Known: ${Object.keys(SPORTS).join(", ")}`);
+  if (!config) throw new Error(`Unknown sport "${slug}" — not a top-level node in the offering tree (run fetch-groups first).`);
   const DATA = BUILD_DIR; // flat scratch: <slug>_participants_raw.json (+ tour feeds); groups.json is shared
 
   // Reads the FRESH tree fetch-groups wrote. GROUPS_FILE overrides the path (testing / validation).

@@ -20,7 +20,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { join } from "node:path";
-import { getSport, SPORTS, BUILD_DIR, CATALOG_DIR, scopeIndexPath } from "./sports";
+import { getSport, BUILD_DIR, CATALOG_DIR, scopeIndexPath } from "./sports";
 
 // ---- input feed shapes (only the fields we read) ----
 type RawGroupNode = { id: number; name: string; sport: string; groups?: RawGroupNode[] };
@@ -52,7 +52,7 @@ const MAIN_FEMALE = "WTA", MAIN_MALE = "ATP"; // a main-tour membership breaks a
 function main(): void {
   const sportSlug = process.argv[2] ?? "football";
   const config = getSport(sportSlug);
-  if (!config) throw new Error(`Unknown sport: "${sportSlug}". Known: ${Object.keys(SPORTS).join(", ")}`);
+  if (!config) throw new Error(`Unknown sport "${sportSlug}" — not a top-level node in the offering tree (run fetch-groups first).`);
 
   const DATA = BUILD_DIR; // build intermediates: groups.json (shared) + <slug>_participants.json (+ tour feeds)
   const read = (f: string): any => JSON.parse(readFileSync(join(DATA, f), "utf8"));

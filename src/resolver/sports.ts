@@ -1,7 +1,10 @@
-// Per-sport config registry. Each entry drives build-scope-index, scope-catalog, and ground-scope.
+// Per-sport config. Most of a config is derived from the offering tree (rootId, label, participant
+// filename); only the tuning that can't be — SPORT_OVERRIDES below — is hand-maintained. Drives
+// build-scope-index, scope-catalog, and ground-scope.
 // slug names the sport's catalogData/<slug>-scope-index.json file and the index's "sport" field.
 // label is what the extractor emits (uppercase free-text in plan.sport).
 
+import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -32,16 +35,53 @@ export type SportConfig = {
   tourFeeds?: Record<string, string>;
 };
 
-export const SPORTS: Record<string, SportConfig> = {
-  football: { slug: "football", label: "FOOTBALL", sportRootId: 1000093190, participantsFile: "football_participants.json", nationalTeams: true },
-  basketball: { slug: "basketball", label: "BASKETBALL", sportRootId: 1000093204, participantsFile: "basketball_participants.json" },
-  baseball: { slug: "baseball", label: "BASEBALL", sportRootId: 1000093211, participantsFile: "baseball_participants.json" },
+// Per-sport tuning that CANNOT be read from the offering tree: individual-sport ingest,
+// national-team detection, and the tour->feed map for gender de-pollution. Keyed by slug.
+// A sport with no entry builds as a plain team sport, NT off — correct for the majority.
+// Doubles / NT-variant support for more sports plugs in here (see project notes).
+const SPORT_OVERRIDES: Record<string, Pick<SportConfig, "individual" | "nationalTeams" | "tourFeeds">> = {
+  football: { nationalTeams: true },
   tennis: {
-    slug: "tennis", label: "TENNIS", sportRootId: 1000093193, participantsFile: "tennis_participants.json", individual: true, nationalTeams: true,
+    individual: true, nationalTeams: true,
     tourFeeds: { "ATP": "ATP", "WTA": "WTA", "ITF Men": "ITFM", "ITF Women": "ITFW", "UTR Pro Tennis Series": "UTRM", "UTR Pro Tennis Series Women": "UTRW" },
   },
 };
 
-export function getSport(slug: string): SportConfig | undefined {
-  return SPORTS[slug.toLowerCase()];
+type TreeNode = { id: number; name: string; groups?: TreeNode[] };
+let topLevelCache: TreeNode[] | undefined; // memoized parse of GROUPS_PATH (build time); absent at runtime
+function topLevelSports(): TreeNode[] {
+  if (topLevelCache) return topLevelCache;
+  try {
+    const raw = JSON.parse(readFileSync(GROUPS_PATH, "utf8")) as { group?: TreeNode } & TreeNode;
+    topLevelCache = (raw.group ?? raw).groups ?? [];
+    return topLevelCache;
+  } catch {
+    return []; // no tree yet (runtime, or before fetch-groups) — not cached, so a later read retries
+  }
+}
+
+// Full build config for a tree sport node: rootId + label + participant filename come from the node,
+// the flags from SPORT_OVERRIDES.
+export function sportConfigFromNode(node: { id: number; name: string }): SportConfig {
+  const slug = slugify(node.name);
+  return { slug, label: node.name.toUpperCase(), sportRootId: node.id, participantsFile: `${slug}_participants.json`, ...SPORT_OVERRIDES[slug] };
+}
+
+// Every top-level sport in the offering tree, as build configs. Drives scripts/build-catalogs.ts.
+export function allSportConfigs(): SportConfig[] {
+  return topLevelSports().map(sportConfigFromNode);
+}
+
+// Resolve a sport by name/slug. KNOWN when it's a top-level node in the offering tree (build time,
+// GROUPS_PATH present) OR its catalog was already built (runtime: catalogData/<slug>-scope-index.json).
+// undefined otherwise — resolve.ts uses that as the "we don't support this sport yet" gate. sportRootId
+// is 0 in the runtime (catalog-only) path since nothing downstream reads it there.
+export function getSport(sport: string): SportConfig | undefined {
+  const slug = slugify(sport);
+  const node = topLevelSports().find((n) => slugify(n.name) === slug);
+  if (node) return sportConfigFromNode(node);
+  if (existsSync(scopeIndexPath(slug))) {
+    return { slug, label: slug.toUpperCase(), sportRootId: 0, participantsFile: `${slug}_participants.json`, ...SPORT_OVERRIDES[slug] };
+  }
+  return undefined;
 }
