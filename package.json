@@ -12,6 +12,7 @@
     "build:scope:football": "tsx src/resolver/build-scope-index.ts football",
     "build:scope:basketball": "tsx src/resolver/build-scope-index.ts basketball",
     "build:scope:tennis": "tsx src/resolver/build-scope-index.ts tennis",
+    "build:scope:baseball": "tsx src/resolver/build-scope-index.ts baseball",
     "gate:live-menu": "tsx src/eval/live-menu-gate.ts",
     "typecheck": "tsc --noEmit"
   },

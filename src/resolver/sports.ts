@@ -19,6 +19,7 @@ export type SportConfig = {
 export const SPORTS: Record<string, SportConfig> = {
   football: { slug: "football", label: "FOOTBALL", sportRootId: 1000093190, participantsFile: "football_participants.json", nationalTeams: true },
   basketball: { slug: "basketball", label: "BASKETBALL", sportRootId: 1000093204, participantsFile: "basketball_participants.json" },
+  baseball: { slug: "baseball", label: "BASEBALL", sportRootId: 1000093211, participantsFile: "baseball_participants.json" },
   tennis: {
     slug: "tennis", label: "TENNIS", sportRootId: 1000093193, participantsFile: "tennis_participants.json", individual: true, nationalTeams: true,
     tourFeeds: { "ATP": "ATP", "WTA": "WTA", "ITF Men": "ITFM", "ITF Women": "ITFW", "UTR Pro Tennis Series": "UTRM", "UTR Pro Tennis Series Women": "UTRW" },
