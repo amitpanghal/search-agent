@@ -6,12 +6,8 @@
 // in catalog.ts; the two are independent.
 
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
 import { fold } from "./lexical";
-import { getSport } from "./sports";
-
-const HERE = dirname(fileURLToPath(import.meta.url));
+import { getSport, slugify, scopeIndexPath, scopeAliasPath } from "./sports";
 
 export type ScopeGroup = { id: number; name: string; sport: string; parent: number | null; branch: number | null };
 export type ScopeBranch = { id: number; name: string };
@@ -59,10 +55,10 @@ function lastToken(folded: string): string {
   return toks[toks.length - 1] ?? "";
 }
 
-function loadAliases(dataDir: string): Pick<ScopeCatalog, "competitionAliases" | "regionAliases" | "markers"> {
+function loadAliases(slug: string): Pick<ScopeCatalog, "competitionAliases" | "regionAliases" | "markers"> {
   let raw: { competitions?: Record<string, string>; regions?: Record<string, string>; markers?: Record<string, string> };
   try {
-    raw = JSON.parse(readFileSync(join(dataDir, "scope-aliases.json"), "utf8"));
+    raw = JSON.parse(readFileSync(scopeAliasPath(slug), "utf8"));
   } catch {
     raw = {};
   }
@@ -102,14 +98,13 @@ function emptyBlob(sport: string): ScopeCatalog {
 const catalogCache = new Map<string, ScopeCatalog>();
 
 export function loadScopeCatalog(sport: string): ScopeCatalog {
-  const slug = sport.toLowerCase();
+  const slug = slugify(sport);
   const hit = catalogCache.get(slug);
   if (hit) return hit;
 
-  const dataDir = join(HERE, "..", "..", "data", slug);
   let idx: { version: string; sportRootId: number; groups: ScopeGroup[]; branches: ScopeBranch[]; teams: ScopeTeam[]; players: ScopePlayer[] };
   try {
-    idx = JSON.parse(readFileSync(join(dataDir, "scope-index.json"), "utf8"));
+    idx = JSON.parse(readFileSync(scopeIndexPath(slug), "utf8"));
   } catch {
     // sport not yet built — return empty catalog so grounding yields nothing
     const empty = emptyBlob(slug);
@@ -188,7 +183,7 @@ export function loadScopeCatalog(sport: string): ScopeCatalog {
     playerByFull,
     playerByLast,
     roster,
-    ...loadAliases(dataDir),
+    ...loadAliases(slug),
   };
   catalogCache.set(slug, catalog);
   return catalog;

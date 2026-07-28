@@ -17,13 +17,10 @@
 // the build step writes the slim list, scope-catalog builds byName/bySubject — so the artifact stays the
 // slim join and the tokenizer/inversion never go stale on disk.
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { createHash } from "node:crypto";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
-import { getSport, SPORTS } from "./sports";
-
-const HERE = dirname(fileURLToPath(import.meta.url));
+import { join } from "node:path";
+import { getSport, SPORTS, BUILD_DIR, CATALOG_DIR, scopeIndexPath } from "./sports";
 
 // ---- input feed shapes (only the fields we read) ----
 type RawGroupNode = { id: number; name: string; sport: string; groups?: RawGroupNode[] };
@@ -57,7 +54,7 @@ function main(): void {
   const config = getSport(sportSlug);
   if (!config) throw new Error(`Unknown sport: "${sportSlug}". Known: ${Object.keys(SPORTS).join(", ")}`);
 
-  const DATA = join(HERE, "..", "..", "data", config.slug);
+  const DATA = BUILD_DIR; // build intermediates: groups.json (shared) + <slug>_participants.json (+ tour feeds)
   const read = (f: string): any => JSON.parse(readFileSync(join(DATA, f), "utf8"));
   const SPORT_ROOT = config.sportRootId;
 
@@ -211,7 +208,8 @@ function main(): void {
     players,
   };
 
-  writeFileSync(join(DATA, "scope-index.json"), JSON.stringify(out) + "\n");
+  mkdirSync(CATALOG_DIR, { recursive: true });
+  writeFileSync(scopeIndexPath(config.slug), JSON.stringify(out) + "\n");
 
   // ---- report ----
   console.log(`[${config.slug}] scope index rebuilt — version ${version}`);
@@ -220,7 +218,7 @@ function main(): void {
   if (config.individual) console.log(`  gender prune: removed ${prunedRefs} wrong-gender competition refs (${pairs.size} gendered pairs, ${genderMap.size} gendered players)`);
   const sampleBranches = branches.slice(0, 4).map((b) => b.name).join(", ");
   console.log(`  first branches: ${sampleBranches || "(none)"}`);
-  console.log(`  wrote data/${config.slug}/scope-index.json`);
+  console.log(`  wrote catalogData/${config.slug}-scope-index.json`);
 }
 
 main();

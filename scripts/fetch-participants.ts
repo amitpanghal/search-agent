@@ -11,16 +11,13 @@
 // Needs data/<sport>/groups.json first (run fetch-groups.ts). Feeds operator is `kambi` and takes no query.
 
 import { readFileSync, writeFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { getSport, SPORTS } from "../src/resolver/sports";
+import { getSport, SPORTS, BUILD_DIR, GROUPS_PATH } from "../src/resolver/sports";
 import { curlJsonOrNull } from "./curl-fetch";
 
 const FEED = (id: number) => `https://feeds-eu.offering-api.kambicdn.com/feeds/api/kambi/participant/group/${id}.json`;
 const TIMEOUT_MS = 120_000; // client abort → treat the group as too-big, split into children (NCAA feeds are slow: ~31s)
 const CONCURRENCY = 4;      // ponytail: pool the sport's direct children; kept modest so slow feeds don't get transient errors under load
-
-const HERE = dirname(fileURLToPath(import.meta.url));
 
 type Node = { id: number; name?: string; groups?: Node[] };
 type Participant = { id: number; [k: string]: unknown };
@@ -79,10 +76,10 @@ async function main(): Promise<void> {
   const slug = process.argv[2] ?? "football";
   const config = getSport(slug);
   if (!config) throw new Error(`Unknown sport "${slug}". Known: ${Object.keys(SPORTS).join(", ")}`);
-  const DATA = join(HERE, "..", "data", config.slug);
+  const DATA = BUILD_DIR; // flat scratch: <slug>_participants_raw.json (+ tour feeds); groups.json is shared
 
   // Reads the FRESH tree fetch-groups wrote. GROUPS_FILE overrides the path (testing / validation).
-  const raw = JSON.parse(readFileSync(process.env.GROUPS_FILE ?? join(DATA, "groups.json"), "utf8"));
+  const raw = JSON.parse(readFileSync(process.env.GROUPS_FILE ?? GROUPS_PATH, "utf8"));
   const root: Node = "group" in raw ? raw.group : raw; // offering API wraps in {group:...}
   const sportNode = findNode(root, config.sportRootId);
   if (!sportNode) throw new Error(`sport root ${config.sportRootId} not in groups.json — run fetch-groups.ts first`);
