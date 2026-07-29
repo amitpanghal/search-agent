@@ -165,7 +165,7 @@ def is_test_node(name: str) -> bool:
     return "(TEST" in name or "Request a Bet" in name
 
 
-def build_group_index(groups_root: dict, sport_label: str) -> dict[int, dict]:
+def build_group_index(groups_root: dict, sport_root_id: int) -> dict[int, dict]:
     """Walk the offering tree and index every node under the requested sport.
 
     The index records each node's depth, child-count, and full ancestor path
@@ -173,11 +173,11 @@ def build_group_index(groups_root: dict, sport_label: str) -> dict[int, dict]:
     classification time.
     """
     sport_node = next(
-        (g for g in groups_root.get("groups", []) if g.get("sport") == sport_label),
+        (g for g in groups_root.get("groups", []) if int(g.get("id", 0)) == sport_root_id),
         None,
     )
     if sport_node is None:
-        raise RuntimeError(f"Sport node {sport_label!r} not found in groups.json")
+        raise RuntimeError(f"Sport root id {sport_root_id} not found in groups.json")
 
     index: dict[int, dict] = {}
 
@@ -705,7 +705,8 @@ def main() -> None:
     ap.add_argument("--participants", required=True, type=Path)
     ap.add_argument("--league-id", type=int, help="Per-league mode: pin allowlist + home country to this league's ancestors")
     ap.add_argument("--league-name", help="Per-league mode: label for output source metadata")
-    ap.add_argument("--sport-label", default="FOOTBALL", help="Sport label in groups.json (default: FOOTBALL)")
+    ap.add_argument("--sport-label", default="FOOTBALL", help="Human sport label for output metadata (default: FOOTBALL)")
+    ap.add_argument("--sport-root-id", type=int, required=True, help="Top-level sport node id in groups.json — the unique key that locates the subtree (the tree's 'sport' field is NOT unique: e.g. 3 sports share NOT-SPECIFIED)")
     ap.add_argument("--sport-slug", default="football", help="Sport slug used in output records (default: football)")
     ap.add_argument("--individual", action="store_true", help="Individual-sport mode: players from top-level PARTICIPANT entries")
     ap.add_argument("--national-teams", action="store_true", help="Flag national-team clubs (ntVariant) and link players to them (countryTeamId). Detection: a TEAM whose groups collapse to the sport root. Football only for now.")
@@ -720,7 +721,7 @@ def main() -> None:
         groups_root = groups_root["group"]
     blob = json.loads(args.participants.read_text())
 
-    group_index = build_group_index(groups_root, args.sport_label)
+    group_index = build_group_index(groups_root, args.sport_root_id)
     result = refactor(
         blob,
         group_index,

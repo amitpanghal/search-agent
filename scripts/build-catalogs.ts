@@ -28,7 +28,7 @@ function buildOne(cfg: SportConfig): { teams: number; players: number } {
 
   sh("npx", ["tsx", "scripts/fetch-participants.ts", cfg.slug]);
 
-  const nArgs = ["--sport-label", cfg.label, "--sport-slug", cfg.slug, "--groups", GROUPS_PATH, "--participants", raw, "--out", norm];
+  const nArgs = ["--sport-label", cfg.label, "--sport-root-id", String(cfg.sportRootId), "--sport-slug", cfg.slug, "--groups", GROUPS_PATH, "--participants", raw, "--out", norm];
   if (cfg.individual) nArgs.push("--individual");
   if (cfg.nationalTeams) nArgs.push("--national-teams");
   sh("python3", [NORMALIZER, ...nArgs]);

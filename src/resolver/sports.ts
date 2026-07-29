@@ -45,6 +45,24 @@ const SPORT_OVERRIDES: Record<string, Pick<SportConfig, "individual" | "national
     individual: true, nationalTeams: true,
     tourFeeds: { "ATP": "ATP", "WTA": "WTA", "ITF Men": "ITFM", "ITF Women": "ITFW", "UTR Pro Tennis Series": "UTRM", "UTR Pro Tennis Series Women": "UTRW" },
   },
+  // Individual sports: competitors are top-level PARTICIPANT entries, not team rosters. Marked
+  // individual so they build via the individual path (players captured, not dropped). Fuller
+  // doubles / NT-variant handling (Ryder Cup, Davis-Cup-style, etc.) is deferred — see project notes.
+  golf: { individual: true },
+  darts: { individual: true },
+  snooker: { individual: true },
+  chess: { individual: true },
+  boxing: { individual: true },
+  cycling: { individual: true },
+  motorsports: { individual: true },
+  "formula-1": { individual: true },
+  "ufc-mma": { individual: true },
+  "table-tennis": { individual: true },
+  padel: { individual: true },
+  "winter-sports": { individual: true },
+  "horse-racing": { individual: true },
+  greyhounds: { individual: true },
+  trotting: { individual: true },
 };
 
 type TreeNode = { id: number; name: string; groups?: TreeNode[] };
