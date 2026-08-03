@@ -42,8 +42,13 @@ const selectSubject = (s: Subject): string | undefined =>
 // carries both the grain AND the identity); fall back to the bare "one player" grain hint when the leg named no
 // player (a nameless player prop). Team/event/either_match_team get NO note — their concept already names a
 // team/match market, and a note would clash with a period qualifier ("1st half handicap") and make it abstain.
-const betPhrase = (sel: { subject: Subject; market_concept: string }): string =>
-  sel.subject.kind === "player" ? `${sel.market_concept} (for ${sel.subject.name ?? "one player"})` : sel.market_concept;
+// COMPETITION-grain player legs get no note either: an outright (win overall, top scorer) has no per-player-vs-
+// match-total twin — the player is an OUTCOME inside one market (Winner) — so the note only makes the picker read
+// the plain outright as an aggregate "total" and prefer a narrower Top-N (confirmed: TdF "win overall" -> Top 10).
+const betPhrase = (sel: { subject: Subject; market_concept: string }, level?: string): string =>
+  sel.subject.kind === "player" && level !== "competition"
+    ? `${sel.market_concept} (for ${sel.subject.name ?? "one player"})`
+    : sel.market_concept;
 
 // The grounded PARTICIPANT id for a selector's subject — SELECT's preferred (robust) key, == the feed's
 // outcome.participantId on named markets. Only a CONFIDENT resolution yields an id (an unsure entity must not
@@ -236,7 +241,7 @@ export async function* runPipeline(query: string): AsyncGenerator<StageEvent> {
     // dependency, so all groups' picks run concurrently; awaited together after the loop.
     // ponytail: unbounded fan-out (one call per group). If a query splits into enough groups to hit Bedrock's
     // per-second limit, pool it like recall.ts (chunk + Promise.all).
-    if (llmIdxs.length) pickJobs.push({ idxs: llmIdxs, picks: usageStore.run(calls, () => resolveMarkets(llmIdxs.map((i) => betPhrase(plan.selectors[i]!)), fr.menu, undefined, query)) });
+    if (llmIdxs.length) pickJobs.push({ idxs: llmIdxs, picks: usageStore.run(calls, () => resolveMarkets(llmIdxs.map((i) => betPhrase(plan.selectors[i]!, settled.legs[i]!.level)), fr.menu, undefined, query)) });
     // anchored group -> remember the fixtures it prices, so later floating groups inherit them
     if (!floating) for (const b of fr.offers) if (b.eventId != null) anchorEventIds.add(b.eventId);
   }

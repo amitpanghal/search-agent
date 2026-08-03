@@ -25,6 +25,7 @@ import {
 import { filterEventsByTime, hasWindow, applyFixturePick, resolveTimeWindow, type TimeWindow } from "./time-window";
 import type { ResolvedLegScope } from "./ground-scope";
 import type { Menu, MenuItem } from "./live-menu-types";
+import { fold } from "./lexical";
 
 // ============================================================================
 // Fetch engine (moved verbatim from executor.ts — behaviour unchanged).
@@ -330,11 +331,20 @@ export function scopeMenu(
   const compId = leg.competition?.tier === "confident" ? leg.competition.candidates[0]!.id : null;
   const teamIds = leg.teams.filter((t) => t.tier === "confident").flatMap((t) => t.candidates.map((c) => c.id));
   const window = leg.time ? resolveTimeWindow(leg.time, { now: opts.now ?? new Date() }) : undefined;
+  // Named round/stage narrowing. Cycling stages & jersey classifications are COMPETITION-tagged SUB-events whose
+  // NAME carries the round ("Stage 3", "General Classification") — pin to them, and let them through the grain
+  // filter (they're COMPETITION-tagged even when the leg reads as a fixture). But a team-sport round name
+  // ("quarterfinal") usually is NOT in the fixture name, so only engage when some event name actually encodes the
+  // stage (stageEncoded); otherwise stage stays a no-op, as before. Space-pad the fold so "Stage 1" ≠ "Stage 10".
+  const stageTok = leg.stage ? ` ${fold(leg.stage)} ` : null;
+  const nameOf = (e: KEvent) => fold(e.englishName ?? e.name ?? "");
+  const stageEncoded = !!stageTok && data.events.some((e) => nameOf(e) !== "" && ` ${nameOf(e)} `.includes(stageTok));
 
   let evs = data.events.filter((e) => {
     const el = levelOf(e.tags);
-    if (el && el !== leg.level) return false; // grain (untagged kept)
-    if (compId != null && e.groupId != null && e.groupId !== compId) return false; // competition (no-groupId kept)
+    if (el && el !== leg.level && !stageEncoded) return false; // grain (untagged kept); a name-encoded stage is a COMPETITION sub-event, so the stage filter narrows it instead
+    if (compId != null && e.groupId != null && e.groupId !== compId && !e.path?.some((p) => p.id === compId)) return false; // competition: match compId to the groupId OR anywhere in the path ancestry (parent umbrella group → child stage/sub-group); no-groupId/no-path kept
+    if (stageEncoded) { const n = nameOf(e); if (n !== "" && !` ${n} `.includes(stageTok!)) return false; } // pin to the named stage's sub-event(s); nameless kept (lenient)
     if (leg.playState === "prematch" && e.state !== "NOT_STARTED") return false;
     if (leg.playState === "live" && e.state === "NOT_STARTED") return false;
     return true;

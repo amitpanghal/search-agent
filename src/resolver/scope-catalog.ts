@@ -35,6 +35,7 @@ export type ScopeCatalog = {
   playerById: Map<number, ScopePlayer>;
   playerByFull: Map<string, number[]>; // folded full name -> player id(s)
   playerByLast: Map<string, number[]>; // folded last-name token -> player id(s)
+  playerByFirst: Map<string, number[]>; // folded first-name token -> player id(s) (last-resort fallback)
   // roster inversion: competition group id OR national-team id -> player ids
   roster: Map<number, number[]>;
   // curated alias lexicon (scope-aliases.json), all keys folded
@@ -53,6 +54,10 @@ function pushKey(map: Map<string, number[]>, key: string, id: number): void {
 function lastToken(folded: string): string {
   const toks = folded.split(" ").filter(Boolean);
   return toks[toks.length - 1] ?? "";
+}
+
+function firstToken(folded: string): string {
+  return folded.split(" ").filter(Boolean)[0] ?? "";
 }
 
 function loadAliases(slug: string): Pick<ScopeCatalog, "competitionAliases" | "regionAliases" | "markers"> {
@@ -88,6 +93,7 @@ function emptyBlob(sport: string): ScopeCatalog {
     playerById: new Map(),
     playerByFull: new Map(),
     playerByLast: new Map(),
+    playerByFirst: new Map(),
     roster: new Map(),
     competitionAliases: new Map(),
     regionAliases: new Map(),
@@ -136,12 +142,14 @@ export function loadScopeCatalog(sport: string): ScopeCatalog {
   const playerById = new Map<number, ScopePlayer>();
   const playerByFull = new Map<string, number[]>();
   const playerByLast = new Map<string, number[]>();
+  const playerByFirst = new Map<string, number[]>();
   const roster = new Map<number, number[]>();
   for (const p of idx.players) {
     playerById.set(p.id, p);
     const f = fold(p.name);
     pushKey(playerByFull, f, p.id);
     pushKey(playerByLast, lastToken(f), p.id);
+    pushKey(playerByFirst, firstToken(f), p.id);
     const enrol = (cid: number): void => {
       const arr = roster.get(cid);
       if (arr) arr.push(p.id);
@@ -182,6 +190,7 @@ export function loadScopeCatalog(sport: string): ScopeCatalog {
     playerById,
     playerByFull,
     playerByLast,
+    playerByFirst,
     roster,
     ...loadAliases(slug),
   };

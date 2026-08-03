@@ -11,8 +11,14 @@ All *data* values are plain text in **English**, close to the query wording (mar
 names, competition, region, position, stage round, time phrases). **If the query is in another
 language, render each value in its common English form** — place and competition names to their
 common English name (*Allemagne* → "Germany"), market wording to a literal English translation
-(*premier buteur* → "first goalscorer") — staying faithful to the query, never canonicalizing to a
-catalog name. Only *classification* fields are
+(*premier buteur* → "first goalscorer") — staying faithful to the query wording for markets, regions,
+and time.
+
+**Name each `team`, `competition`, and `player` by its normal full name from your own knowledge** —
+expand a short-form, nickname, or partial name to what the entity is usually called, even when the query
+wrote it differently (not a squad roster — Boundaries).
+
+Only *classification* fields are
 fixed enums (`sport`, `subject.kind`, `level`, player
 `role`, `date_window.anchor`). Never put an id anywhere.
 

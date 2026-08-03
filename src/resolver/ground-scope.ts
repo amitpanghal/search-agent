@@ -176,31 +176,47 @@ export function groundCompetition(text: string, regionBranch: number | null, cat
   // (the player's own events are kept; the none cell routes to the LLM clarify/reexpress path).
   if (allow) pool = pool.filter((g) => allow.has(g.id));
 
-  const scored = pool.map((g) => ({ g, cover: lex.lexicalCover(text2, g.name) })).filter((x) => x.cover > 0);
-  if (!scored.length) return { text, tier: "none", candidates: [] };
+  const decide = (want: Set<string>): EntityResolution => {
+    const scored = pool.map((g) => ({ g, cover: lex.idfCover(contentTokens(g.name), want) })).filter((x) => x.cover > 0);
+    if (!scored.length) return { text, tier: "none", candidates: [] };
 
-  const full = scored.filter((x) => x.cover >= COVER_FLOOR); // (near-)full coverage of the query's IDF mass
-  if (!full.length) {
-    // no full cover -> best-effort shortlist (clarify) if the top is at least plausible, else abstain.
-    const ranked = scored.sort((a, b) => b.cover - a.cover || major(b.g.id) - major(a.g.id));
-    if (ranked[0]!.cover < SHORTLIST_FLOOR) return { text, tier: "none", candidates: [] };
-    return { text, tier: "shortlist", candidates: ranked.slice(0, TOP_K).map((x) => cand(x.g.id, x.cover)) };
-  }
+    const full = scored.filter((x) => x.cover >= COVER_FLOOR); // (near-)full coverage of the query's IDF mass
+    if (!full.length) {
+      // no full cover -> best-effort shortlist (clarify) if the top is at least plausible, else abstain.
+      const ranked = scored.sort((a, b) => b.cover - a.cover || major(b.g.id) - major(a.g.id));
+      if (ranked[0]!.cover < SHORTLIST_FLOOR) return { text, tier: "none", candidates: [] };
+      return { text, tier: "shortlist", candidates: ranked.slice(0, TOP_K).map((x) => cand(x.g.id, x.cover)) };
+    }
 
-  // rank full-cover candidates by major-ness (roster), then tighter name (fewer extra tokens via cover).
-  const ranked = full.sort((a, b) => major(b.g.id) - major(a.g.id) || b.cover - a.cover);
-  if (ranked.length === 1) return { text, tier: "confident", candidates: [cand(ranked[0]!.g.id, ranked[0]!.cover)] };
+    // rank full-cover candidates by major-ness (roster), then tighter name (fewer extra tokens via cover).
+    const ranked = full.sort((a, b) => major(b.g.id) - major(a.g.id) || b.cover - a.cover);
+    if (ranked.length === 1) return { text, tier: "confident", candidates: [cand(ranked[0]!.g.id, ranked[0]!.cover)] };
 
-  // a UNIQUE exact-name match is confident unless a substantially-more-major rival exists (edition trap).
-  const exact = full.filter((x) => fold(x.g.name) === folded);
-  if (exact.length === 1) {
-    const e = exact[0]!;
-    const rival = full.some((x) => x.g.id !== e.g.id && major(x.g.id) > MAJOR_RATIO * major(e.g.id));
-    if (!rival) return { text, tier: "confident", candidates: [cand(e.g.id, e.cover)] };
-  }
+    // a UNIQUE exact-name match is confident unless a substantially-more-major rival exists (edition trap).
+    const exact = full.filter((x) => fold(x.g.name) === folded);
+    if (exact.length === 1) {
+      const e = exact[0]!;
+      const rival = full.some((x) => x.g.id !== e.g.id && major(x.g.id) > MAJOR_RATIO * major(e.g.id));
+      if (!rival) return { text, tier: "confident", candidates: [cand(e.g.id, e.cover)] };
+    }
 
-  // genuine multi-candidate (cross-edition / cross-country / collision) -> ambiguous, top-k by major-ness.
-  return { text, tier: "ambiguous", candidates: ranked.slice(0, TOP_K).map((x) => cand(x.g.id, x.cover)) };
+    // genuine multi-candidate (cross-edition / cross-country / collision) -> ambiguous, top-k by major-ness.
+    return { text, tier: "ambiguous", candidates: ranked.slice(0, TOP_K).map((x) => cand(x.g.id, x.cover)) };
+  };
+
+  const want = contentTokens(text2);
+  const res = decide(want);
+  if (res.tier !== "none") return res;
+
+  // Fallback on `none`: a single-sport catalog stores events WITHOUT the sport word ("World Championship",
+  // not "World CHESS Championship") and without a year. Those tokens are in NO competition name, so they
+  // score as maximal-IDF unseen terms and crater coverage. Drop them — guarded by df=0, so a sport whose
+  // competitions really use the word (rugby's "Rugby Championship") is untouched — and ground once more.
+  const vocab = new Set<string>();
+  for (const g of cat.groups) for (const t of contentTokens(g.name)) vocab.add(t);
+  const sportToks = contentTokens(cat.sport.replace(/-/g, " "));
+  const pruned = new Set([...want].filter((t) => vocab.has(t) || !(sportToks.has(t) || /^\d{4}$/.test(t))));
+  return pruned.size < want.size ? decide(pruned) : res;
 }
 
 // ---- team: full-name exact (ntVariant-aware) -> token-subset shortlist ----
@@ -289,6 +305,13 @@ export function groundPlayer(
   const byLast = last ? cat.playerByLast.get(last) : undefined;
   if (byLast?.length) return resolveSet(byLast, true);
 
+  // first-name / mononym fallback: player known by their first name where the catalog stores a trailing
+  // token ("Gukesh" -> "Gukesh D"). Last resort, after full-name and last-name both miss. weak=true →
+  // shortlist alone, confident when a team/league scope narrows it to one (via resolveSet).
+  const first = folded.split(" ").filter(Boolean)[0] ?? "";
+  const byFirst = first ? cat.playerByFirst.get(first) : undefined;
+  if (byFirst?.length) return resolveSet(byFirst, true);
+
   return { text, tier: "none", candidates: [] };
 }
 
@@ -329,6 +352,14 @@ export function groundScope(plan: QueryPlan, opts: { region?: string | null } = 
     // comp→player cut is GONE (Option B): players ground by name + teamIds only, so the competition resolves
     // LAST against the player's OWN leagues (picking the gendered/variant node).
     const teams = sc.teams.map((t) => once(`team\u0000${fold(t)}`, () => groundTeam(t, cat)));
+    // A TEAM named only as the market OWNER (subject), with scope.teams left empty, is still a scope anchor — ground
+    // it and fold it into `teams` so recall/scopeMenu/filter/grouping treat it like any scope team (mirrors
+    // subjectPlayer for players; same asymmetry check-complete handles for the gate). Skip if already in scope.teams.
+    const subjTeam = sel.subject.kind === "team" ? sel.subject.name : undefined;
+    if (subjTeam && !sc.teams.some((t) => fold(t) === fold(subjTeam))) {
+      const name = subjTeam;
+      teams.push(once(`team-subj:${fold(name)}`, () => groundTeam(name, cat)));
+    }
     const teamIds = teams.filter((r) => r.tier === "confident").flatMap((r) => r.candidates.map((c) => c.id));
     const pKey = (name: string) => `player\u0000${fold(name)}\u0000${[...teamIds].sort((a, b) => a - b).join(",")}`;
     const players = sc.players.map((p) => once(pKey(p.name), () => groundPlayer(p.name, { compId: null, teamIds }, cat)));

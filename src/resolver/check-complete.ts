@@ -18,12 +18,13 @@ export const INCOMPLETE_QUESTION =
   "We couldn't find a team, player, or league in your search. Add one to narrow your search, then try again.";
 
 export function checkComplete(plan: QueryPlan): Clarification | null {
-  // A player named ONLY as a market owner (selector subject) is still an anchor — the extractor doesn't always
-  // mirror it into a leg's scope.players, so check the subjects too (else "Cody Gakpo over 1.5 shots" false-clarifies).
-  const hasSubjectPlayer = plan.selectors.some((sel) => sel.subject.kind === "player" && !!sel.subject.name);
+  // A player OR team named ONLY as a market owner (selector subject) is still an anchor — the extractor doesn't
+  // always mirror it into a leg's scope, so check the subjects too (else "Cody Gakpo over 1.5 shots" or
+  // "Shopify Rebellion to win map 1" false-clarifies).
+  const hasSubjectAnchor = plan.selectors.some((sel) => (sel.subject.kind === "player" || sel.subject.kind === "team") && !!sel.subject.name);
   // Per-leg scope: ANY leg naming a team / player / competition / region is an anchor for the whole query.
   const hasScopeAnchor = plan.selectors.some(
     (sel) => sel.scope.teams.length > 0 || sel.scope.players.length > 0 || sel.scope.competition !== null || sel.scope.region !== null,
   );
-  return hasSubjectPlayer || hasScopeAnchor ? null : { ref: "query", question: INCOMPLETE_QUESTION };
+  return hasSubjectAnchor || hasScopeAnchor ? null : { ref: "query", question: INCOMPLETE_QUESTION };
 }
