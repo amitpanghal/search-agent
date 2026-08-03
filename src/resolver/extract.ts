@@ -10,6 +10,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { z } from "zod";
 import { QueryPlan } from "./schema";
+import { builtSports } from "./sports";
 import { normalizePlan } from "./normalize-plan";
 import { bedrockToolCall } from "./bedrock-call";
 
@@ -17,7 +18,12 @@ import { bedrockToolCall } from "./bedrock-call";
 export const EXTRACTION_MODEL = process.env.BEDROCK_MODEL ?? "bedrock";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const SYSTEM_PROMPT = readFileSync(join(HERE, "extractor-prompt.md"), "utf8");
+// The live SUPPORTED SPORTS menu — every built catalog, de-slugified for reading ("ice-hockey" → "ice
+// hockey"). Injected so the extractor emits a sport getSport will actually match; slugify() on the read side
+// turns the model's answer back into the file slug. Built once at load (catalogData/ ships with the app).
+const SUPPORTED_SPORTS = [...builtSports(), "other"].join(", ");
+const SYSTEM_PROMPT = readFileSync(join(HERE, "extractor-prompt.md"), "utf8")
+  .replace("{{SUPPORTED_SPORTS}}", SUPPORTED_SPORTS);
 const TOOL_NAME = "emit_query_plan";
 
 // The tool inputSchema must be a top-level object, but QueryPlan is a discriminated union

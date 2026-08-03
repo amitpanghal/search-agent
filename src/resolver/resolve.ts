@@ -135,8 +135,9 @@ export async function* runPipeline(query: string): AsyncGenerator<StageEvent> {
     return;
   }
 
-  if (!getSport(plan.sport)) {
-    yield { stage: "done", envelope: withCost({ summary: "", events: [], results: [], legs: [], additional: [], notes: [], clarificationNeeded: `We don't support ${plan.sport} yet. Try searching for another sport, or check back later as we continue adding more.` }) };
+  if (plan.sport === "other" || !getSport(plan.sport)) {
+    const what = plan.sport === "other" ? "that sport" : plan.sport;
+    yield { stage: "done", envelope: withCost({ summary: "", events: [], results: [], legs: [], additional: [], notes: [], clarificationNeeded: `We don't support ${what} yet. Try searching for another sport, or check back later as we continue adding more.` }) };
     return;
   }
 

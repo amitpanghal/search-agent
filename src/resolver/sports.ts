@@ -4,7 +4,7 @@
 // slug names the sport's catalogData/<slug>-scope-index.json file and the index's "sport" field.
 // label is what the extractor emits (uppercase free-text in plan.sport).
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -102,4 +102,18 @@ export function getSport(sport: string): SportConfig | undefined {
     return { slug, label: slug.toUpperCase(), sportRootId: 0, participantsFile: `${slug}_participants.json`, ...SPORT_OVERRIDES[slug] };
   }
   return undefined;
+}
+
+// Runtime-safe list of built sports: the slug of every catalogData/<slug>-scope-index.json — the same
+// source getSport trusts at runtime (the offering tree is build-time only). The extractor's sport menu is
+// built from this, so it can never drift from what actually grounds. Empty only if catalogData/ is missing.
+export function builtSports(): string[] {
+  try {
+    return readdirSync(CATALOG_DIR)
+      .filter((f) => f.endsWith("-scope-index.json"))
+      .map((f) => f.slice(0, -"-scope-index.json".length))
+      .sort();
+  } catch {
+    return [];
+  }
 }

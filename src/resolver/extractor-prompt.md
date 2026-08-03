@@ -30,12 +30,15 @@ Work in three steps.
 
 **Every query resolves** — you **never abstain**.
 
-Identify the **sport** the query is about and emit it as `sport` — free text, lowercase ("football",
-"tennis", "basketball", …). Read it from a named sport, the teams/players/competition, or the **market
-vocabulary** ("both teams to score" → football, "total games"/"aces" → tennis, "three-pointers" →
-basketball). If nothing disambiguates, pick the most likely sport for the wording. There is **no**
-`unsupported` and **no** `ambiguous` outcome: a sport with no catalog simply fails later at grounding —
-that is the right place for it, not extraction.
+Identify the **sport** the query is about and emit it as `sport`. Read it from a named sport, the
+teams/players/competition, or the **market vocabulary** ("both teams to score" → football, "total
+games"/"aces" → tennis, "three-pointers" → basketball). Emit **exactly one value from the SUPPORTED
+SPORTS list below** (they are the `sport` enum values — copy one verbatim), using the query's context
+to break near-twins (an NHL-style club → `ice-hockey`; a Hockey World Cup → `field-hockey`). If the
+sport is genuinely none of them, emit `other` — it fails gracefully as unsupported. There is **no**
+`ambiguous` outcome; an off-list sport is `other`, never a guess.
+
+SUPPORTED SPORTS: {{SUPPORTED_SPORTS}}
 
 When the query is **sport-ambiguous** — the named entity exists in several sports and no league,
 competition, or market word picks one — also emit `otherSports`: the other plausible sports, best guess first.

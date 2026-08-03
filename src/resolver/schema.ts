@@ -7,6 +7,7 @@
 // leaf wrapped in a `Grounded` cell that carries the real id; keep the two in sync.
 //
 import { z } from "zod";
+import { builtSports } from "./sports";
 
 // Who owns a market. The four concrete kinds are the BOUND readings (recall-resolve Role 1): an owner
 // named it OR the phrase reads at a single level, so the kind is certain and the hard subject-filter
@@ -101,13 +102,17 @@ const Selector = z.object({
   scope: Scope,
 });
 
-// The extractor ALWAYS resolves and identifies the sport — `sport` is free text (any sport: "football",
-// "tennis", …), not a built-sport enum. It never abstains: a sport with no catalog simply fails downstream
+// The extractor ALWAYS resolves and identifies the sport. `sport` is a HARD ENUM of the built sports
+// (extract.ts injects the same list into the prompt) plus `other` — the model can't typo or pick an
+// off-list name, and `other` is the graceful path for a genuinely-unknown sport. It never abstains: an
+// `other`/unknown sport simply fails downstream
 // at grounding, which is the right place for it, not extraction. So there is no `unsupported`/`ambiguous`
 // status. A query naming no market still resolves to the lone `main` sentinel selector (decision 24); a plan
 // always carries `sport` and >=1 selector, and every selector carries its own `scope`.
 export const QueryPlan = z.object({
-  sport: z.string().min(1),
+  // ponytail: the enum makes extract stricter — an off-enum value fails validation instead of failing
+  // downstream. Forced tool use + `other` make that near-impossible; widen to z.string() if a model can't hold it.
+  sport: z.enum(["other", ...builtSports()] as [string, ...string[]]),
   // The query's LANGUAGE, named in English ("Swedish", "German") — free text like `sport`, never a locale code
   // and never an enum: the extractor just detects, and code maps the name to a supported Kambi locale (an
   // unmapped or absent language degrades to English labels downstream). Omitted when the query is English or the
