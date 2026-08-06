@@ -16,6 +16,28 @@ import { getSport, BUILD_DIR, GROUPS_PATH } from "../src/resolver/sports";
 import { curlJsonOrNull } from "./curl-fetch";
 
 const FEED = (id: number) => `https://feeds-eu.offering-api.kambicdn.com/feeds/api/kambi/participant/group/${id}.json`;
+// Live betoffer-group menu with participants — the clean player source for `participantsFrom:"betoffer"` sports.
+const BETOFFER_GROUP = (id: number) => `https://eu.offering-api.kambicdn.com/offering/v2018/kambi/betoffer/group/${id}.json?lang=en_GB&market=GB&client_id=200&channel_id=1&includeParticipants=true`;
+
+// Reshape a betoffer-group response into the participant blob the normalizer's individual path reads.
+// Each distinct outcome participantId → one PARTICIPANT row; its competitions are the groupIds of the
+// events it has offers in. Clean single players by construction (no LABEL, no dead ids). ponytail: no
+// combo strip — the flip-worthy sports (darts/snooker/cycling) have zero; add one if flipping golf/tennis.
+function participantsFromBetOffers(bo: { betOffers?: any[]; events?: any[] }): Participant[] {
+  const eventGroup = new Map<number, number>();
+  for (const e of bo.events ?? []) if (e.id && e.groupId) eventGroup.set(e.id, e.groupId);
+  const byId = new Map<number, { name: string; groups: Set<number> }>();
+  for (const b of bo.betOffers ?? []) {
+    const g = eventGroup.get(b.eventId);
+    for (const o of b.outcomes ?? []) {
+      if (!o.participantId || !o.participant) continue;
+      const rec = byId.get(o.participantId) ?? { name: o.participant, groups: new Set<number>() };
+      if (g) rec.groups.add(g);
+      byId.set(o.participantId, rec);
+    }
+  }
+  return [...byId].map(([id, r]) => ({ id, type: "PARTICIPANT", names: [{ locale: "en_GB", name: r.name }], groupIds: [...r.groups] }));
+}
 const TIMEOUT_MS = 120_000; // client abort → treat the group as too-big, split into children (NCAA feeds are slow: ~31s)
 const CONCURRENCY = 4;      // ponytail: pool the sport's direct children; kept modest so slow feeds don't get transient errors under load
 
@@ -77,6 +99,18 @@ async function main(): Promise<void> {
   const config = getSport(slug);
   if (!config) throw new Error(`Unknown sport "${slug}" — not a top-level node in the offering tree (run fetch-groups first).`);
   const DATA = BUILD_DIR; // flat scratch: <slug>_participants_raw.json (+ tour feeds); groups.json is shared
+  const out = process.argv[3] ?? join(DATA, `${config.slug}_participants_raw.json`);
+
+  // Clean-source path: one betoffer-group call, reshape outcomes → participant blob. No tree, no crawl.
+  if (config.participantsFrom === "betoffer") {
+    const bo = await curlJsonOrNull(BETOFFER_GROUP(config.sportRootId), 90);
+    if (!bo) throw new Error(`betoffer-group fetch failed for ${config.slug} (${config.sportRootId})`);
+    const participants = participantsFromBetOffers(bo);
+    writeFileSync(out, JSON.stringify({ participants }) + "\n");
+    console.log(`[${config.slug}] betoffer-group: ${participants.length} players from ${(bo.events ?? []).length} events / ${(bo.betOffers ?? []).length} betOffers`);
+    console.log(`wrote ${out}`);
+    return;
+  }
 
   // Reads the FRESH tree fetch-groups wrote. GROUPS_FILE overrides the path (testing / validation).
   const raw = JSON.parse(readFileSync(process.env.GROUPS_FILE ?? GROUPS_PATH, "utf8"));
@@ -87,8 +121,6 @@ async function main(): Promise<void> {
   const children = sportNode.groups ?? [];
   console.log(`[${config.slug}] fetching participants across ${children.length} groups under ${sportNode.name}…`);
   const perChild = await mapPool(children, CONCURRENCY, (c) => fetchSubtree(c));
-
-  const out = process.argv[3] ?? join(DATA, `${config.slug}_participants_raw.json`);
 
   // Per-tour feed files (individual sports): build-scope-index reads <code>_participants.json to derive
   // each player's gender. Written next to `out` so a --out override keeps all outputs together.

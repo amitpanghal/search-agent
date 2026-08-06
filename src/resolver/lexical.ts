@@ -63,9 +63,15 @@ export function tokenize(s: string): string[] {
   return lc(stripSettle(s)).split(" ").filter(Boolean).flatMap((t) => DECOMPOUND[t] ?? [t]);
 }
 
-// The query/name CONTENT tokens (stopwords dropped, lightly singularized). Corpus-independent.
+// Women's-edition markers all fold to one token. The feeds mark the women's competition/team two ways — "(W)"
+// (-> token "w") and spelled "Women/Ladies/Feminine" (-> "women"/"ladie"/…) — while a query says "women's". Map
+// every form to "w" so a "Women's World Cup" query matches a "World Cup (W)" name. Keys are POST-stem (this runs
+// after map(stem): womens->women, ladies->ladie). Men's is the unmarked default, so nothing to canonicalize there.
+const GENDER_CANON: Record<string, string> = { women: "w", ladie: "w", feminine: "w", female: "w" };
+
+// The query/name CONTENT tokens (stopwords dropped, lightly singularized, women's-markers folded). Corpus-independent.
 export function contentTokens(s: string): Set<string> {
-  return new Set(tokenize(s).filter((t) => !SPEC_STOPWORDS.has(t)).map(stem));
+  return new Set(tokenize(s).filter((t) => !SPEC_STOPWORDS.has(t)).map(stem).map((t) => GENDER_CANON[t] ?? t));
 }
 
 // BM25 term-saturation / length-norm knobs (standard; mild on short proper-noun names).

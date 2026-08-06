@@ -24,7 +24,9 @@ import { isMain, onDemandPricing, type BetOffer, type KEvent } from "./offering-
 import { usageStore, summarizeCost, type RawCall } from "./cost";
 import type { Subject, Line } from "./schema";
 import { getSport } from "./sports";
+import { recoverSport } from "./recover-sport";
 import type { ResolvedLeg, MarketPick, EnvelopeLeg } from "./live-menu-types";
+import { emit } from "./trace";
 
 // FILTER subject — a NAMED entity narrows the menu to its markets; a relational role (home/away) or `event`
 // subject has no name to filter on, so the whole fixture menu is kept (the per-side precision is a SELECT job).
@@ -111,7 +113,7 @@ export type StageEvent =
 // expensive phase (extract LLM, recall fetch, market-resolve LLM) and a final `done` carrying the envelope.
 // The SSE server forwards each yield; resolveQuery (below) drains it to the single envelope for non-streaming
 // callers (eval, probes).
-export async function* runPipeline(query: string): AsyncGenerator<StageEvent> {
+export async function* runPipeline(query: string, opts: { until?: string } = {}): AsyncGenerator<StageEvent> {
   // Per-query LLM usage: each stage runs inside usageStore so bedrock-call records its tokens here (cost.ts).
   // Stamp every `done` envelope with the running total so the frontend can show per-query token/cost.
   const calls: RawCall[] = [];
@@ -119,6 +121,8 @@ export async function* runPipeline(query: string): AsyncGenerator<StageEvent> {
 
   yield { stage: "resolving" };
   const plan = await usageStore.run(calls, () => extract(query));
+  emit({ kind: "stage", stage: "extract", out: plan });
+  if (opts.until === "extract") return;
   // Bare-competition browse: a `main` sentinel (no market named) tagged competition-level has nothing to show —
   // main markets are per-match, and outright-less leagues (Allsvenskan, most non-marquee comps) carry no
   // competition-level offer at all, so `onlyCompetitions` comes back empty. The intent of a bare league name is
@@ -135,6 +139,16 @@ export async function* runPipeline(query: string): AsyncGenerator<StageEvent> {
     return;
   }
 
+  // Sport self-correction: the extractor's sport is a prior. If it's blind to a team/player the query names,
+  // let the entity's real catalog home override it before the unsupported-sport stop below (see recover-sport.ts).
+  const fix = recoverSport(plan);
+  if (fix.kind === "switch") plan.sport = fix.sport;
+  else if (fix.kind === "clarify") {
+    const names = fix.sports.map((s) => s.replace(/-/g, " ")).join(" or ");
+    yield { stage: "done", envelope: withCost({ summary: "", events: [], results: [], legs: [], additional: [], notes: [], clarificationNeeded: `That name matches more than one sport — did you mean ${names}? Add the sport or a league to your search.` }) };
+    return;
+  }
+
   if (plan.sport === "other" || !getSport(plan.sport)) {
     const what = plan.sport === "other" ? "that sport" : plan.sport;
     yield { stage: "done", envelope: withCost({ summary: "", events: [], results: [], legs: [], additional: [], notes: [], clarificationNeeded: `We don't support ${what} yet. Try searching for another sport, or check back later as we continue adding more.` }) };
@@ -143,7 +157,11 @@ export async function* runPipeline(query: string): AsyncGenerator<StageEvent> {
 
   yield { stage: "routing" };
   const scope = groundScope(plan);
+  emit({ kind: "stage", stage: "ground", out: scope });
+  if (opts.until === "ground") return;
   const settled = await usageStore.run(calls, () => resolveEntities(query, scope));
+  emit({ kind: "stage", stage: "entities", out: settled });
+  if (opts.until === "entities") return;
 
   // Guard: if the entity gate couldn't resolve any ids (e.g. ambiguous player with no competition anchor)
   // and raised clarifications, return them instead of crashing in recall with "need groupIds, participantIds…".
@@ -157,6 +175,8 @@ export async function* runPipeline(query: string): AsyncGenerator<StageEvent> {
   }
 
   const r = await recall(recallInput); // BROAD data; per-leg narrowing is scopeMenu's job below
+  emit({ kind: "stage", stage: "recall", out: r });
+  if (opts.until === "recall") return;
 
   yield { stage: "disambiguating" };
 
@@ -234,6 +254,8 @@ export async function* runPipeline(query: string): AsyncGenerator<StageEvent> {
     const subjSide = sel0.subject.kind === "either_match_team" ? sel0.subject.side : undefined;
     const fr = filterBySubject(scoped.offers, scoped.events, subjectName(leg, sel0.subject), subjId, subjSide);
     groupData.set(key, { scoped, fr });
+    emit({ kind: "stage", stage: "scopeMenu", out: scoped });
+    emit({ kind: "stage", stage: "filter", out: fr });
     idxs.forEach((i) => { keyByIdx[i] = key; });
     // "main" legs name no market — they skip the LLM pick entirely and fan out into every main market below.
     // Only the named legs go to resolveMarkets (keep the pick-index alignment to THOSE legs).
@@ -250,6 +272,7 @@ export async function* runPipeline(query: string): AsyncGenerator<StageEvent> {
   // leg indices (order within a group == llmIdxs order == resolveMarkets phrase order).
   const jobResults = await Promise.all(pickJobs.map((j) => j.picks));
   pickJobs.forEach((j, ji) => j.idxs.forEach((i, k) => { pickByIdx[i] = jobResults[ji]![k]!; }));
+  emit({ kind: "stage", stage: "market", out: pickByIdx });
 
   // Relational subjects need the fixture's home/away — from THIS leg's picked betoffer's event, within the
   // group's NARROWED events (so "home"/"away" binds to the right match, never another leg's).
@@ -307,12 +330,13 @@ export async function* runPipeline(query: string): AsyncGenerator<StageEvent> {
     const wantedFixture = sel.scope.level === "fixture" || !!sel.scope.teams?.length || !!sel.scope.time;
     const unavailable = pick.match === "none"
       ? (scoped.events.length === 0 && wantedFixture
-          ? { kind: "no-fixture" as const, ...(sel.scope.teams?.[0] ? { scope: sel.scope.teams[0] } : {}) }
+          ? { kind: "no-fixture" as const, ...(sel.scope.teams?.length ? { scope: sel.scope.teams.join(" vs ") } : {}) }
           : { kind: "no-market" as const })
       : undefined;
     legsOut.push({ phrase: sel.market_concept, pick, ...(selection ? { selection } : {}), ...(spec.subjectId != null ? { subjectId: spec.subjectId } : {}), ...(unavailable ? { unavailable } : {}) });
     legsUnderstood.push({ ...under, matched: !!selection && !selection.fallback, ...(pick.label ? { market: pick.label } : {}) });
   }
+  emit({ kind: "stage", stage: "select", out: legsOut });
 
   // execute gets only the REFERENCED data (union of the groups' narrowed events/offers), never the broad fetch —
   // so a leg's result can never carry another leg's event. execute prunes further to picked-outcome events.
@@ -358,6 +382,7 @@ export async function* runPipeline(query: string): AsyncGenerator<StageEvent> {
     ...(betslip ? { betslip } : {}),
   });
   envelope.legs = legsUnderstood; // the per-selector "We understood" echo (execute groups by event and loses order)
+  emit({ kind: "stage", stage: "execute", out: envelope });
   yield { stage: "done", envelope: withCost(envelope) };
 }
 

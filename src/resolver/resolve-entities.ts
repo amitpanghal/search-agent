@@ -21,9 +21,9 @@ import { dirname, join } from "node:path";
 import { z } from "zod";
 import {
   groundRegion, groundCompetition, groundTeam, groundPlayer, compUnion,
-  type ResolvedScope, type EntityResolution, type ScopeTier,
+  type ResolvedScope, type EntityResolution, type ScopeTier, type Candidate,
 } from "./ground-scope";
-import { loadScopeCatalog } from "./scope-catalog";
+import { loadScopeCatalog, type ScopeCatalog } from "./scope-catalog";
 import { fold } from "./lexical";
 import { bedrockToolCall } from "./bedrock-call";
 import type { CellRef, SettledEntities } from "./live-menu-types";
@@ -63,15 +63,30 @@ export type DecideFn = (query: string, cells: Cell[], pass: 1 | 2) => Promise<De
 
 // An entity cell wraps the grounder call so its reground returns a fresh Cell. `ground` closes over the
 // entity's structural context (a competition over its region branch, a player over its comp/team scope).
-function buildEntityCell(ref: CellRef, res: EntityResolution, ground: (phrase: string) => EntityResolution): Cell {
+// Same-named twins get their game appended so the LLM/clarify can tell them apart: esports lists "Team Liquid"
+// once per game, so an unresolved head-to-head reaches here as N identical "Team Liquid" candidates. Label only on
+// a name collision, by the candidate's non-sport-root group ("Dota 2"). No-ops for unique names and for entities
+// without groups (players/competitions carry no groupIds).
+function labelCandidates(cands: Candidate[], cat: ScopeCatalog): { id: number; name: string }[] {
+  const count = new Map<string, number>();
+  for (const c of cands) count.set(c.name, (count.get(c.name) ?? 0) + 1);
+  const gameOf = (c: Candidate): string => (c.groupIds ?? [])
+    .filter((id) => id !== cat.sportRootId).map((id) => cat.groupById.get(id)?.name).filter(Boolean).join(", ");
+  return cands.map((c) => {
+    const g = (count.get(c.name) ?? 0) > 1 ? gameOf(c) : "";
+    return { id: c.id, name: g ? `${c.name} (${g})` : c.name };
+  });
+}
+
+function buildEntityCell(ref: CellRef, res: EntityResolution, ground: (phrase: string) => EntityResolution, cat: ScopeCatalog): Cell {
   return {
     ref,
     text: res.text,
     tier: res.tier,
     ids: res.candidates.map((c) => c.id),
-    candidates: res.candidates.slice(0, ENTITY_CAP).map((c) => ({ id: c.id, name: c.name })),
+    candidates: labelCandidates(res.candidates.slice(0, ENTITY_CAP), cat),
     entity: res,
-    reground: (phrase) => buildEntityCell(ref, ground(phrase), ground),
+    reground: (phrase) => buildEntityCell(ref, ground(phrase), ground, cat),
   };
 }
 
@@ -97,7 +112,7 @@ function buildEntityCells(scope: ResolvedScope): { cells: Cell[]; places: Map<Ce
       ref = `${slot}:${count[slot]++}` as CellRef;
       refByEntity.set(res, ref);
       places.set(ref, []);
-      cells.push(buildEntityCell(ref, res, ground));
+      cells.push(buildEntityCell(ref, res, ground, scat));
     }
     places.get(ref)!.push({ legIdx, slot, idx });
   };

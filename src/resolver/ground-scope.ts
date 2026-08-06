@@ -26,6 +26,7 @@
 import type { QueryPlan, Scope } from "./schema";
 import { loadScopeCatalog, type ScopeCatalog } from "./scope-catalog";
 import { fold, contentTokens, buildLexicon, type Lexicon } from "./lexical";
+import { getSport } from "./sports";
 
 export type ScopeTier = "confident" | "variants" | "ambiguous" | "shortlist" | "none";
 
@@ -323,12 +324,46 @@ export const compUnion = (rs: (EntityResolution | null)[]): Set<number> => {
   return s;
 };
 
+// Head-to-head twin lock. Esports (and other multi-game orgs) list the SAME club once per game — "Team Liquid" in
+// Dota 2, in Valorant, in LoL — so a bare name grounds `ambiguous` across games and the entity LLM sees N identical
+// "Team Liquid" candidates it can't tell apart. When a leg names >=2 teams the real match is the game they BOTH
+// play: keep only each team's candidates that share a competition with another named team; if that leaves one it's
+// confident (recall's confident-only fetch + co-occurrence then resolve it). competitionIds, not groupIds — every
+// esports team shares the sport-root group, only the specific league distinguishes the twins. No shared competition
+// (nothing pruned) -> left untouched for the LLM. ponytail: O(teams^2) comp-set scan, fine at a handful of teams.
+function lockHeadToHead(teams: EntityResolution[]): EntityResolution[] {
+  if (teams.length < 2) return teams;
+  const compsOf = (t: EntityResolution): Set<number> => new Set(t.candidates.flatMap((c) => c.competitionIds ?? []));
+  const others = teams.map((_, i) => {
+    const u = new Set<number>();
+    teams.forEach((o, j) => { if (j !== i) for (const id of compsOf(o)) u.add(id); });
+    return u;
+  });
+  return teams.map((t, i) => {
+    if (t.candidates.length <= 1) return t;
+    const kept = t.candidates.filter((c) => (c.competitionIds ?? []).some((id) => others[i]!.has(id)));
+    if (!kept.length || kept.length === t.candidates.length) return t;
+    return { ...t, tier: kept.length === 1 ? "confident" : t.tier, candidates: kept };
+  });
+}
+
 // ---- the cascade, run PER leg with a memo cache ----
 // `opts.region` lets a caller (the eval gate) feed region as GIVEN, exactly as the market grounder is fed a
 // clean market_concept — so a flaky extractor LLM can't redden a grounder test. Applied to every leg; falls
 // back to each leg's own scope.region otherwise.
 export function groundScope(plan: QueryPlan, opts: { region?: string | null } = {}): ResolvedScope {
   const cat = loadScopeCatalog(plan.sport);
+
+  // Event-centric sports (F1): the named "competition" is really an EVENT (a Grand Prix / a championship) under
+  // the sport-root group, so ground it straight to the root — recall then fetches every event under the sport
+  // (their path carries the root id) and resolveMarkets picks race-vs-season by the disjoint criteria. Also pin
+  // level to "competition": every F1 event is COMPETITION-tagged, so the grain filter must not drop them as
+  // non-fixtures. One shared reference across legs (grounded once, like the memo path).
+  // ponytail: named-GP precision deferred — only the imminent race is live, so a named non-live GP falls back to
+  // the live one; add event-name matching in scopeMenu if multiple races are ever live at once.
+  const eventCentricComp: EntityResolution | null = getSport(plan.sport)?.eventCentric
+    ? { text: plan.sport, tier: "confident", candidates: [{ id: cat.sportRootId, name: plan.sport, score: 1 }] }
+    : null;
 
   // Memo by entity text + scope context: a value repeated across legs (the same competition on every leg, a
   // shared team) is grounded once, and identical references are reused. Player/subject keys fold in teamIds,
@@ -351,7 +386,7 @@ export function groundScope(plan: QueryPlan, opts: { region?: string | null } = 
     // teams first (a confident team scopes the player pool — the team→player homonym cut), then players. The
     // comp→player cut is GONE (Option B): players ground by name + teamIds only, so the competition resolves
     // LAST against the player's OWN leagues (picking the gendered/variant node).
-    const teams = sc.teams.map((t) => once(`team\u0000${fold(t)}`, () => groundTeam(t, cat)));
+    let teams = sc.teams.map((t) => once(`team\u0000${fold(t)}`, () => groundTeam(t, cat)));
     // A TEAM named only as the market OWNER (subject), with scope.teams left empty, is still a scope anchor — ground
     // it and fold it into `teams` so recall/scopeMenu/filter/grouping treat it like any scope team (mirrors
     // subjectPlayer for players; same asymmetry check-complete handles for the gate). Skip if already in scope.teams.
@@ -360,6 +395,7 @@ export function groundScope(plan: QueryPlan, opts: { region?: string | null } = 
       const name = subjTeam;
       teams.push(once(`team-subj:${fold(name)}`, () => groundTeam(name, cat)));
     }
+    teams = lockHeadToHead(teams); // esports twins: keep only the shared-competition pair when a leg names >=2 teams
     const teamIds = teams.filter((r) => r.tier === "confident").flatMap((r) => r.candidates.map((c) => c.id));
     const pKey = (name: string) => `player\u0000${fold(name)}\u0000${[...teamIds].sort((a, b) => a - b).join(",")}`;
     const players = sc.players.map((p) => once(pKey(p.name), () => groundPlayer(p.name, { compId: null, teamIds }, cat)));
@@ -379,14 +415,15 @@ export function groundScope(plan: QueryPlan, opts: { region?: string | null } = 
     const allow = playerComps.size ? playerComps : (teamComps.size ? teamComps : null);
     const allowSig = allow ? [...allow].sort((a, b) => a - b).join(",") : "*";
 
-    const competition = sc.competition
+    const competition = eventCentricComp
+      ?? (sc.competition
       ? once(`comp\u0000${fold(sc.competition)}\u0000${regionBranch}\u0000${allowSig}`, () => groundCompetition(sc.competition!, regionBranch, cat, allow))
-      : null;
+      : null);
 
     return {
       region,
       competition,
-      level: sc.level,
+      level: eventCentricComp ? "competition" : sc.level,
       stage: sc.stage,
       time: sc.time,
       playState: sc.play_state,

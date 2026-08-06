@@ -4,6 +4,8 @@
 // auth). NOTE the cap: every BET-OFFER response is capped at 2000 betoffers and the truncation is SILENT
 // (read `range.total` to detect it) — added in a later phase; the EVENT endpoint is never capped.
 
+import { emit } from "./trace";
+
 export const BASE = "https://eu.offering-api.kambicdn.com/offering/v2018/kambi";
 
 // The query string every offering call carries: a localized `lang` + a FIXED `market`. Only `lang` varies per
@@ -35,7 +37,9 @@ export const levelOf = (tags: string[] = []): Level | null =>
 export const isMain = (tags: string[] = []): boolean => tags.includes("MAIN");
 
 export async function getJson(url: string): Promise<any> {
+  emit({ kind: "kambi-req", url });
   const r = await fetch(url);
+  emit({ kind: "kambi-resp", url, ok: r.ok, status: r.status });
   if (!r.ok) throw new Error(`HTTP ${r.status} for ${url}`);
   return r.json();
 }

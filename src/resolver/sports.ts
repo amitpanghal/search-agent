@@ -30,16 +30,27 @@ export type SportConfig = {
   // Pass --national-teams to the normalizer (flag NT clubs / link countryTeamId). Basketball is off until
   // FIBA competitions appear in the offering (see project notes); flip to true when they do.
   nationalTeams?: boolean;
+  // Event-centric sports (F1): the "competition" a query names is an EVENT (a Grand Prix, a championship) under
+  // the sport-root group, not a league group. groundScope grounds it to the sport root so recall fetches every
+  // event under the sport (their path carries the root id); resolveMarkets splits race-vs-season by the disjoint
+  // criteria. See ground-scope.ts.
+  eventCentric?: boolean;
   // Individual sports only: maps a sport-root child (tour) NAME to the feed CODE that build-scope-index
   // reads for gender de-pollution. fetch-participants writes one <code>_participants.json per entry.
   tourFeeds?: Record<string, string>;
+  // Individual sports whose participant feed is polluted (dead/404 ids, matchup combos, missing top
+  // players): source players from the LIVE betoffer-group outcomes instead. Every outcome carries a
+  // real betoffer-serving participantId. Only players with a live market appear — correct for small
+  // event-driven fields (darts/snooker/cycling); a big-roster sport would lose coverage. See
+  // project_darts_catalog_wrong_source + fetch-participants.ts.
+  participantsFrom?: "betoffer";
 };
 
 // Per-sport tuning that CANNOT be read from the offering tree: individual-sport ingest,
 // national-team detection, and the tour->feed map for gender de-pollution. Keyed by slug.
 // A sport with no entry builds as a plain team sport, NT off — correct for the majority.
 // Doubles / NT-variant support for more sports plugs in here (see project notes).
-const SPORT_OVERRIDES: Record<string, Pick<SportConfig, "individual" | "nationalTeams" | "tourFeeds">> = {
+const SPORT_OVERRIDES: Record<string, Pick<SportConfig, "individual" | "nationalTeams" | "tourFeeds" | "eventCentric" | "participantsFrom">> = {
   football: { nationalTeams: true },
   tennis: {
     individual: true, nationalTeams: true,
@@ -49,13 +60,13 @@ const SPORT_OVERRIDES: Record<string, Pick<SportConfig, "individual" | "national
   // individual so they build via the individual path (players captured, not dropped). Fuller
   // doubles / NT-variant handling (Ryder Cup, Davis-Cup-style, etc.) is deferred — see project notes.
   golf: { individual: true },
-  darts: { individual: true },
+  darts: { individual: true, participantsFrom: "betoffer" },
   snooker: { individual: true },
   chess: { individual: true },
   boxing: { individual: true },
   cycling: { individual: true },
   motorsports: { individual: true },
-  "formula-1": { individual: true },
+  "formula-1": { individual: true, eventCentric: true },
   "ufc-mma": { individual: true },
   "table-tennis": { individual: true },
   padel: { individual: true },

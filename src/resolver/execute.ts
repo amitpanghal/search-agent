@@ -183,7 +183,7 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
     const { phrase, pick, selection, unavailable } = leg;
     if (pick.match === "none" || pick.label == null) {
       noPick.push(unavailable?.kind === "no-fixture"
-        ? `No ${unavailable.scope ? `${unavailable.scope} ` : ""} event matched your search, so we couldn't find anything for "${phrase}"`
+        ? `No ${unavailable.scope ? `${unavailable.scope} ` : ""}event matched your search, so we couldn't find anything for "${phrase}"`
         : `No "${phrase}" market is available. It may not be offered for the selected game or event.`);
       continue;
     }
