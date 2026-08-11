@@ -1,6 +1,6 @@
 # Render Blueprint — deploys the resolver as a free web service.
 # Setup: push this repo to GitHub, then in Render pick "New > Blueprint" and point it here.
-# Render will prompt for ANTHROPIC_API_KEY (kept out of this file, so it's never committed).
+# Render will prompt for the Bedrock creds below (kept out of this file, so they're never committed).
 services:
   - type: web
     name: search-agent
@@ -11,6 +11,12 @@ services:
     buildCommand: npm install --omit=dev
     startCommand: npm start
     envVars:
-      # Secret: enter this in the Render dashboard when prompted. Never commit the key.
-      - key: ANTHROPIC_API_KEY
+      # Bedrock creds — enter these in the Render dashboard when prompted. Never commit them.
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_REGION
+        sync: false
+      - key: BEDROCK_MODEL
         sync: false
