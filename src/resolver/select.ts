@@ -57,6 +57,12 @@ const dirOf = (o: KOutcome): Dir | undefined => {
 const lineOf = (o: KOutcome): number | null => (o.line != null ? o.line / 1000 : null);
 // The outcome odds, stored as integer millis (1800 = 1.80); to decimal for the [min,max] bound check.
 const oddsOf = (o: KOutcome): number | null => (o.odds != null ? o.odds / 1000 : null);
+// Is an outcome inside the query's [min,max] price bound? A priceless outcome is KEPT (lenient, like the line
+// gate). Shared by the outright-field block and the (1.5) odds gate.
+const withinOdds = (o: KOutcome, min?: number, max?: number): boolean => {
+  const d = oddsOf(o);
+  return d == null || ((min == null || d >= min) && (max == null || d <= max));
+};
 // Combo tokens compare loosely: case-insensitive, whitespace-stripped ("X2" == "x 2", "2 - 1" == "2-1").
 const norm = (s: string) => s.toLowerCase().replace(/\s+/g, "");
 
@@ -67,6 +73,16 @@ const norm = (s: string) => s.toLowerCase().replace(/\s+/g, "");
 export const isNamedOutcome = (o: KOutcome): boolean => {
   const p = o.participant ?? "";
   return p !== "" && p !== (o.englishLabel ?? o.label) && p !== "Yes" && p !== "No";
+};
+
+// An OUTRIGHT-FIELD outcome: the outcome's own label IS a competitor — its participant name equals its
+// englishLabel/label (one outcome per player/team: a top-scorer / MVP / winner list). This is the live feed's
+// real shape for outright fields (participant == englishLabel == "Alexander Isak"), and it's the MIRROR IMAGE of
+// isNamedOutcome — the distinguishing signal from a player-prop line (participant "Isak", label "Over 16.5"),
+// which isNamedOutcome catches but this does not.
+const isOutrightOutcome = (o: KOutcome): boolean => {
+  const p = o.participant ?? "";
+  return p !== "" && p !== "Yes" && p !== "No" && p === (o.englishLabel ?? o.label);
 };
 
 // The outcomes that belong to the query's subject: by grounded id (preferred, diacritic-immune), else a folded
@@ -109,9 +125,13 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
   // the extractor typed as a string is still a numeric line here, routed to the line matcher, not the combo one).
   const botId = slice.betOffers.find((b) => b.betOfferType?.id != null)?.betOfferType?.id;
   const isComboMarket = botId === 3 || botId === 8;
-  const comboToken = isComboMarket && spec.lineValue != null ? String(spec.lineValue) : undefined;
-  // a numeric line for a non-combo market; may be NaN when the raw value can't parse -> the line branch degrades.
-  const numLine = !isComboMarket && spec.lineValue != null ? Number(String(spec.lineValue).trim()) : undefined;
+  // token: extractor's line, or — when it stated none (an idiom like "straight sets" it can't resolve blind to
+  // the menu) — the picker's named outcome. Both are in the SUBJECT's view; the flip below maps to the feed side.
+  const comboToken = isComboMarket ? (spec.lineValue != null ? String(spec.lineValue) : spec.outcomeLabel) : undefined;
+  // a numeric line for a non-combo market; an unparseable value (e.g. the extractor put the side-word "over" in a
+  // number field) reads as NO line stated -> fall through to show every side, never drop the leg.
+  const rawLine = !isComboMarket && spec.lineValue != null ? Number(String(spec.lineValue).trim()) : undefined;
+  const numLine = Number.isNaN(rawLine) ? undefined : rawLine;
 
   // The subject's SIDE in this fixture (for translating positional combo tokens, below). Prefer the event
   // participant whose id == the grounded subjectId and read its `home` flag — id-keyed, immune to name/diacritic
@@ -144,7 +164,9 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
     const parts = want.split("/");
     if (side && parts.every((p) => p in R)) wants.push(parts.map((p) => R[p]![side]).join("/"));
     const score = want.match(/^(\d+)-(\d+)$/);
-    if (side === "away" && score) wants.push(`${score[2]}-${score[1]}`);
+    // away subject: the feed scoreline is the REVERSED one; the literal is the OPPONENT's. Replace, don't add —
+    // else "2-0" and "0-2" both sit in `wants` and the match is decided by feed order, not the subject.
+    if (side === "away" && score) { wants.length = 0; wants.push(`${score[2]}-${score[1]}`); }
     const hit = cands.find(
       ({ o }) =>
         (o.homeScore != null && o.awayScore != null && wants.includes(`${o.homeScore}-${o.awayScore}`)) ||
@@ -169,18 +191,38 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
   // mirrored into `participant` does NOT count (so an owner-bound market reads as owner-bound, not named).
   const hasNamed = cands.some(({ o }) => isNamedOutcome(o));
 
+  // ---- OUTRIGHT FIELD (a "who wins / MVP / top scorer" list of named competitors — no side, no line, no
+  // combo, no directional axis) — RENDER THE WHOLE FIELD ranked by odds (favourite first, or `high` for
+  // underdog-first). The list IS the answer, so we never narrow to the subject and never slice to `count`.
+  // `selectedIds` carries only the id(s) to HIGHLIGHT (the frontend flags them): the named subject if the query
+  // has one, else the favourite / top-`count` on a "who's the favourite / top N" ask (odds_sort/count set), else
+  // nothing. A "no" is a genuine negation -> falls through to the normal gates below.
+  const isField =
+    cands.some(({ o }) => isOutrightOutcome(o)) && !isComboMarket && numLine == null && spec.dir !== "no" && !cands.some(({ o }) => dirOf(o) != null);
+  if (isField) {
+    const field = cands.filter(({ o }) => withinOdds(o, spec.oddsMin, spec.oddsMax));
+    if (!field.length) return absent("odds-absent");
+    const desc = spec.sort === "high";
+    field.sort((a, b) => {
+      const ka = oddsOf(a.o) ?? Infinity, kb = oddsOf(b.o) ?? Infinity;
+      return desc ? kb - ka : ka - kb; // default favourite-first
+    });
+    const ids = field.map(({ o }) => o.id).filter((id): id is number => id != null);
+    const asked = spec.subjectId != null || (spec.subject != null && spec.subject !== "home" && spec.subject !== "away");
+    const subj = asked ? subjectOutcomes(field.map(({ o }) => o), spec).map((o) => o.id).filter((id): id is number => id != null) : [];
+    const sel = subj.length ? subj : !asked && (spec.sort != null || spec.count != null) ? ids.slice(0, spec.count ?? 1) : [];
+    return { ...withSubj, ...(sel.length ? { outcomeId: sel[0], selectedIds: sel } : {}), outcomeIds: ids };
+  }
+
   // ---- (1) SUBJECT -> the candidate pool ----
   let pool = cands;
   if (spec.subjectId != null) {
     const byId = cands.filter(({ o }) => o.participantId === spec.subjectId);
     if (byId.length) {
       pool = byId;
-      // OUTRIGHT pick: one named outcome (label is the participant, not a direction word) with no line and only
-      // the DEFAULT affirmative left to satisfy -> that outcome IS the bet, returned directly (sidesteps the
-      // direction gate it can't pass). A superlative/outright ("most goals", "golden ball", "first goalscorer")
-      // arrives as binary "yes", but the named outcome has no yes/no direction, so the (2) gate would wrongly
-      // drop it — so accept dir null OR "yes" here; a real "no" still falls through (a genuine negation).
-      if (byId.length === 1 && numLine == null && dirOf(byId[0]!.o) == null && (spec.dir == null || spec.dir === "yes")) return pick(byId[0]!.o);
+      // (An outright field with a named subject is already handled above by the OUTRIGHT FIELD block, which
+      // renders the whole list and highlights the subject. Here byId is a subject-scoped DIRECTIONAL/line
+      // market — the line/dir gates below pick the outcome.)
     } else if (hasNamed && !cands.some(({ o }) => dirOf(o) === "yes")) {
       return absent("subject-absent"); // market NAMES other participants, not the subject (and no owner-Yes)
     }
@@ -207,11 +249,7 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
   // ---- (1.5) ODDS BOUND — narrow the pool to outcomes priced within [min,max]. A price FILTER, not a pick:
   // a priceless outcome is KEPT (lenient, like the line/time gates); an empty result is an honest degrade.
   if (spec.oddsMin != null || spec.oddsMax != null) {
-    const within = (o: KOutcome) => {
-      const d = oddsOf(o);
-      return d == null || ((spec.oddsMin == null || d >= spec.oddsMin) && (spec.oddsMax == null || d <= spec.oddsMax));
-    };
-    const bounded = pool.filter(({ o }) => within(o));
+    const bounded = pool.filter(({ o }) => withinOdds(o, spec.oddsMin, spec.oddsMax));
     if (!bounded.length) return absent("odds-absent");
     pool = bounded;
   }
@@ -231,8 +269,6 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
   // ---- (2) DIRECTION + (3) LINE -> the SELECTED outcome (the rest of `pool` rides along for display) ----
   if (spec.dir || numLine != null) {
     if (numLine != null) {
-      // A line-type market got a value that can't parse to a number (an extractor contradiction) -> honest degrade.
-      if (Number.isNaN(numLine)) return absent("line-absent");
       // Handicap sign: a SAME-line betoffer (type-11 3-way) stores the line from the HOME perspective, so
       // negate it for the away side. Opposite-sign betoffers (type 1/7) store each team's own line -> as-is.
       const sameLine = (bo: BetOffer) => {
@@ -243,11 +279,14 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
         const l = lineOf(c.o);
         return l != null && sameLine(c.bo) && (c.o.type === "OT_TWO" || (c.o.englishLabel ?? c.o.label) === "2") ? -l : l;
       };
-      // Exact offered line first, else the nearest offered line. Every side rides along in the pool — the
-      // query no longer states over/under, so the rung alone picks which outcome is flagged the match.
+      // Exact offered line first, else the nearest offered line. When the query stated a SIDE (over/under),
+      // pick from that side so "over 9.5" doesn't flag the Under at 9.5; a handicap has no over/under axis
+      // (dirOf undefined) so sidePool == pool, unchanged. A preference, never a drop — every side still rides
+      // along in the returned pool for display.
       const nearest = (set: Cand[]) =>
         set.filter((c) => effLine(c) != null).sort((a, b) => Math.abs(effLine(a)! - numLine) - Math.abs(effLine(b)! - numLine))[0];
-      const chosen = pool.find((c) => effLine(c) === numLine) ?? nearest(pool);
+      const sidePool = spec.dir && pool.some(({ o }) => dirOf(o) === spec.dir) ? pool.filter(({ o }) => dirOf(o) === spec.dir) : pool;
+      const chosen = sidePool.find((c) => effLine(c) === numLine) ?? nearest(sidePool);
       return chosen ? withPool(chosen.o, effLine(chosen)!) : absent("line-absent");
     }
     // direction only. The asked side is a PREFERENCE over the live market, never a drop (same decision as the

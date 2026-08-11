@@ -130,9 +130,11 @@ noun naming the event ("match", "game", "fixture"), and a verb that only asks to
 
 Strip those never-markets and the scope words (teams/competition/stage/time/players). If a bettable
 outcome remains, name it in the user's words — a named market always wins, however event-flavoured the
-rest reads. If **nothing** bettable remains, emit one sentinel selector
-`{ subject: { kind: "event" }, market_concept: "main" }` — never drop a request, never emit zero
-selectors, never invent a "match"/"fixture" market.
+rest reads. If **nothing** bettable remains — including a query naming **only an entity** (a bare
+league, team, or player, with no market) — emit one `main` sentinel selector
+`{ subject: { kind: "event" }, market_concept: "main", scope: { … } }` and place the named entity in
+its `scope` (a league → `competition`, a team → `teams`, a player → `players`). Never drop the entity,
+never emit zero selectors, never invent a "match"/"fixture" market.
 
 _Examples:_
 - "what's on this weekend" → one `main` selector (+ the `weekend` `scope.time`).
@@ -185,15 +187,15 @@ it short and faithful.
   and ordinals ("first"/"last" goalscorer). Strip only the filler "market(s)" and the scope words
   (teams/competition/stage/time), leaving a short noun phrase or infinitive — never a full clause
   ("<stat> if it goes to extra time" → "<stat>").
-- **Numbers, prices, and over/under direction are not market words** — an over/under sends BOTH
-  its number and its direction word ("over"/"under", "more than"/"fewer than", and the equivalent
-  in the query's own language) to `line`, leaving only the bare stat in the concept
-  ("over 2.5 <stat>" → concept "<stat>", `line 2.5`). A price bound goes to `odds`, and a price
-  *ranking* ("shortest/best odds") to `odds_sort` — never a market named "shortest odds".
+- **Numbers, prices, and over/under direction are not market words** — an over/under sends its
+  number to `line` and its side word ("over"/"under", "more than"/"fewer than", "won't", and the
+  equivalent in the query's own language) to `direction`, leaving only the bare stat in the concept
+  ("over 2.5 <stat>" → concept "<stat>", `line 2.5`, `direction "over"`). A price bound goes to
+  `odds`, and a price *ranking* ("shortest/best odds") to `odds_sort` — never a market named "shortest odds".
 - **A question still names a market** — give the outcome it asks about in the user's words, never
   skip it ("who wins" → "who wins"; "how many corners" → "corners"; "most fouls" → "most fouls").
 - **Never invent or fuse** — record only a market the query states; never invent a "match"/"fixture"
-  market; each comma/"and"-separated ask is its own selector (rule 1).
+  market; one market per selector — by settlement, not punctuation (rule 1).
 
 Text only — never an id or catalog name.
 
@@ -203,6 +205,14 @@ Text only — never an id or catalog name.
 Add a `line` only when the query states a value that picks the market's outcome: a **number** for a
 threshold/rung (an over/under line, a handicap start), or **text** for one named outcome of a
 multi-outcome market (a result combination, a score, an enumerated instance).
+
+### direction (optional) — which side of a two-sided market
+
+Add `direction` when the query names the SIDE: `"over"` for "over / more than / at least",
+`"under"` for "under / fewer than / less than", `"no"` for a negation ("won't score", "no goal"),
+`"yes"` for an explicit affirmative. It rides ALONGSIDE `line` — "over 2.5 goals" → `line 2.5`,
+`direction "over"`. A team handicap names a team, not a side — leave `direction` off there (the
+team is the subject).
 
 ### odds (optional) — a **price** bound
 
@@ -243,9 +253,11 @@ field but wants the one most-likely competitor — "who wins", "the winner", "th
 1. **Binding & splitting** — nearest preceding named subject owns the market; no owner →
    **what gets priced** (line per player → `player` no name; one match/tournament outcome →
    `event`; generic team market, ≥2 teams, no side → `either_match_team`; two-faced → `soft`).
-   Never bind to a neighbouring subject, and **never fuse two asks into one `market_concept`** —
-   each comma/"and"-separated proposition is its own selector. ("Kane tackles, Saka
-   interceptions" → Kane↔tackles, Saka↔interceptions.)
+   Never bind to a neighbouring subject. **One selector = one market that settles on its own** —
+   split by settlement, not punctuation: separate two independently-settling outcomes even under
+   one subject joined by a bare "and", but keep a single market whose own name contains
+   "and"/"both"/a list intact (a team "to win and cover the handicap" → match-winner + handicap =
+   two selectors: the lead result clause is its own market, not scope).
 2. **Coreference → concrete name** — resolve "his/their"; "his/their team" = that player's side
    in context (national side in a tournament, club in a league query).
 3. **Line vs price** — a number on a counted thing is a `line`; a bare or "priced" number is

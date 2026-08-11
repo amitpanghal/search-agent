@@ -161,6 +161,18 @@ const trimRelatedOutcomes = (outcomes: KOutcome[], subj: { subjectId?: number; s
     : outcomes;
 };
 
+// Sentence for a leg that produced no pick, sized to how much the query pinned down. no-market: the fixture was
+// found but the concept isn't offered. no-fixture: we know the scope (teams joined by " vs "); two teams => the
+// matchup isn't live, one team => nudge for an opponent/competition (which also disambiguates the sport).
+const noPickReason = (unavailable: { kind: "no-fixture" | "no-market"; scope?: string } | undefined, phrase: string): string => {
+  if (unavailable?.kind !== "no-fixture")
+    return `No "${phrase}" market is available. It may not be offered for the selected game or event.`;
+  const { scope } = unavailable;
+  if (scope?.includes(" vs ")) return `We couldn't find a ${scope} match on the schedule right now.`;
+  if (scope) return `We couldn't find an upcoming match for ${scope}. Try adding the opponent or competition to narrow your search.`;
+  return `No event matched your search, so we couldn't find anything for "${phrase}".`;
+};
+
 export function execute(input: ExecuteInput): ResponseEnvelope {
   const { data } = input;
   const clarifications = input.clarifications ?? [];
@@ -182,9 +194,7 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
   for (const leg of input.legs) {
     const { phrase, pick, selection, unavailable } = leg;
     if (pick.match === "none" || pick.label == null) {
-      noPick.push(unavailable?.kind === "no-fixture"
-        ? `No ${unavailable.scope ? `${unavailable.scope} ` : ""}event matched your search, so we couldn't find anything for "${phrase}"`
-        : `No "${phrase}" market is available. It may not be offered for the selected game or event.`);
+      noPick.push(noPickReason(unavailable, phrase));
       continue;
     }
 
@@ -283,7 +293,7 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
 
   // carried entity clarifications + any leg whose market wasn't offered (each already a full sentence), folded
   // into one string (null = clean).
-  const reasons = [...clarifications.map((c) => c.question), ...noPick];
+  const reasons = [...clarifications.map((c) => c.question), ...new Set(noPick)];
   const clarificationNeeded = reasons.length ? reasons.join(" ") : null;
 
   return {

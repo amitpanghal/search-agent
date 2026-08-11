@@ -82,6 +82,7 @@ export function pickCombinations(
   type Scored = { c: PrePackCoupon; exact: number; bo: number; ev: number; market: number };
   const scored: Scored[] = [];
   for (const c of prepacks.prePackCoupons) {
+    if (!isCustom(c)) continue; // only CUSTOM coupons are operator-curated "specials"; drop AUTO prepacks/matchparlays
     const evs = eventsOf(c);
     if (!evs.length) continue;
     let exact = 0, bo = 0, ev = 0, market = 0;
@@ -104,8 +105,7 @@ export function pickCombinations(
     b.exact - a.exact ||
     b.bo - a.bo ||
     b.ev - a.ev ||
-    b.market - a.market ||
-    (isCustom(b.c) ? 1 : 0) - (isCustom(a.c) ? 1 : 0),
+    b.market - a.market,
   );
   return scored.slice(0, limit).map(({ c }) => toCombination(c, byOutcome, resolvedOutcomeIds));
 }

@@ -81,8 +81,8 @@ function subjectName(leg: ResolvedLegScope, s: Subject): string | undefined {
 // A selector's Line + subject -> the deterministic SELECT spec (value, never a market binding). The line VALUE is
 // carried RAW (number or string) as `lineValue`; SELECT decides how to read it from the picked market's
 // betOfferType (a numeric rung for handicaps/over-unders, a combo token for correct-score/HT-FT) — never guessed
-// from the value's JSON type. No direction: the extractor no longer says "which side", so an over/under resolves
-// to all sides at the rung until SELECT returns them.
+// from the value's JSON type. The side (over/under, yes/no) rides in SEPARATELY as `dir` from the selector's
+// `direction` (set at the call site, not here) — omitted when the query names no side, so every side rides along.
 function selSpec(line: Line | undefined, odds: { min?: number; max?: number } | undefined, subject?: string, subjectId?: number, sort?: "low" | "high", count?: number): SelectSpec {
   const base: SelectSpec = {
     ...(subjectId != null ? { subjectId } : {}),
@@ -296,6 +296,7 @@ export async function* runPipeline(query: string, opts: { until?: string } = {})
     const under = { ...(subj ? { subject: subj } : {}), phrase: sel.market_concept, ...(sel.line != null ? { line: sel.line } : {}) };
     const spec: SelectSpec = {
       ...selSpec(sel.line, sel.odds, subj, subjectParticipantId(leg, sel.subject), sel.odds_sort, sel.count),
+      ...(sel.direction ? { dir: sel.direction } : {}),
       ...(pickByIdx[i]?.outcomeLabel ? { outcomeLabel: pickByIdx[i]!.outcomeLabel } : {}),
     };
     // select one market's outcomes; event comes off the picked offers (per-leg home/away binds to the right match).
@@ -327,10 +328,11 @@ export async function* runPipeline(query: string, opts: { until?: string } = {})
     const selection = pick.match !== "none" ? selectFor(offersForPick(fr.offers, pick.label)) : undefined;
     // A `none` pick has no result: distinguish "the scope found no fixture at all" (a fixture-grain leg with an
     // empty scoped slate) from "a fixture existed but no market fit the concept" — execute renders each differently.
-    const wantedFixture = sel.scope.level === "fixture" || !!sel.scope.teams?.length || !!sel.scope.time;
+    const namedTeams = [...(sel.scope.teams ?? []), ...(sel.subject.kind === "team" ? [sel.subject.name] : [])];
+    const wantedFixture = sel.scope.level === "fixture" || namedTeams.length > 0 || !!sel.scope.time;
     const unavailable = pick.match === "none"
       ? (scoped.events.length === 0 && wantedFixture
-          ? { kind: "no-fixture" as const, ...(sel.scope.teams?.length ? { scope: sel.scope.teams.join(" vs ") } : {}) }
+          ? { kind: "no-fixture" as const, ...(namedTeams.length ? { scope: [...new Set(namedTeams)].join(" vs ") } : {}) }
           : { kind: "no-market" as const })
       : undefined;
     legsOut.push({ phrase: sel.market_concept, pick, ...(selection ? { selection } : {}), ...(spec.subjectId != null ? { subjectId: spec.subjectId } : {}), ...(unavailable ? { unavailable } : {}) });

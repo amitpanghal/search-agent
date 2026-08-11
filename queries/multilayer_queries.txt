@@ -1,0 +1,159 @@
+# Multi-layered sportsbook queries - all sports
+# RE-VALIDATED against the live Kambi feed (10 Aug 2026). Stale fixtures rewritten.
+# Each query combines event betoffers and/or player props.
+
+## Football (Premier League / Serie A)
+1. In Manchester City versus Bournemouth, I want Phil Foden to score at any time, City to win, and more than 2.5 total goals.
+2. In Newcastle United versus Liverpool, I want Alexander Isak to score, Liverpool to win, both teams to score, and more than 9.5 corners.
+3. In Arsenal versus Coventry City, I want Viktor Gyokeres to score first, Arsenal to win to nil, and under 1.5 first-half goals.
+
+## Baseball (MLB)
+4. In Toronto Blue Jays versus Boston Red Sox, I want George Springer to hit a home run, the Blue Jays to win, and more than 8.5 total runs.
+5. Will Alejandro Kirk record two or more total bases, the Blue Jays win the first five innings, and no runs be scored in the first inning?
+6. In Toronto Blue Jays versus Boston Red Sox, I want Jarren Duran to get a hit, the Red Sox to cover the run line, and the total to go over.
+
+## Basketball (WNBA)
+7. In Atlanta Dream versus Toronto Tempo, I want Allisha Gray to score more than 20 points, the Dream to win, and more than 160.5 total points.
+8. Will Rhyne Howard make more than two three-pointers, the Dream cover the spread, and Angel Reese record a double-double?
+9. In Indiana Fever versus New York Liberty, I want Caitlin Clark to score more than 20 points and record more than six assists, and the Fever to win.
+
+## Tennis (Canadian Masters)
+10. In Iga Swiatek versus Diana Shnaider, I want Swiatek to win in straight sets, hit the most aces, and more than 20.5 total games.
+11. Will Coco Gauff beat Belinda Bencic, win the first set, and will there be a tie-break?
+12. In Arthur Fils versus Rafael Jodar, I want Fils to win, cover the game handicap, and more than 21.5 total games.
+
+## Cricket (The Hundred / internationals)
+13. In Ireland versus Afghanistan, who wins, and will there be a fifty scored in the match?
+14. In Trent Rockets versus Southern Brave, I want Trent Rockets to win, hit the most sixes, and a half-century in the match.
+15. In United Arab Emirates versus Canada, who wins the match, and who is the top batter?
+
+## Australian Rules (AFL)
+16. In Fremantle versus Adelaide, I want Fremantle to win, cover the line, the total to go over, and a player to kick two or more goals.
+17. Will Adelaide win and score the first goal of the match?
+18. In Richmond versus St Kilda, who wins, covers the line, and which team scores first?
+
+## Rugby League (NRL)
+19. In Penrith Panthers versus Sydney Roosters, who wins, covers the line, goes over the total, and who scores the first try?
+20. Will Manly Sea Eagles beat The Dolphins and cover the handicap?
+21. In Canterbury Bulldogs versus South Sydney Rabbitohs, who wins, and will both teams score more than two tries?
+
+## Rugby Union
+22. Will South Africa beat New Zealand, cover the handicap, and the total points go over?
+23. In Australia versus Japan, who wins, covers the handicap, and will both teams score a try?
+24. Will New Zealand beat the Sharks and win both halves?
+
+## Esports (CS2 / League of Legends)
+25. In Ilbirs eSports versus Zero Tenacity, I want Ilbirs eSports to win two maps to nothing, win map one, and go over the map-one total kills.
+26. Will Zero Tenacity win the first map and go over the total-kills line?
+27. In JLY versus Undefeated United Gamers, who wins map one, and will it go over the total-rounds line?
+
+## E-Basketball (NBA 2K esports)
+28. In Oklahoma City Thunder versus Miami Heat, who wins, covers the handicap, and goes over the total?
+29. In Dallas Mavericks versus Minnesota Timberwolves, who wins and covers the handicap?
+30. In Portland Trail Blazers versus Chicago Bulls, who wins and goes over the total points?
+
+## American Football (NFL preseason)
+31. In Cincinnati Bengals versus Detroit Lions, who wins, covers the spread, and goes over the total?
+32. Will the Pittsburgh Steelers beat the Green Bay Packers and cover the spread?
+33. In New England Patriots versus Indianapolis Colts, who wins and will the total go over?
+
+## Ice Hockey (NHL futures + one fixture)
+34. Will the Carolina Hurricanes beat the Florida Panthers, cover the puck line, and the total goals go over?
+35. Who wins the Eastern Conference in 2026/27, and will the Panthers reach it?
+36. Who wins the Atlantic Division in 2026/27?
+
+## Volleyball (Women's European Championship - outright only now)
+37. Who is the favourite to win the 2026 Women's Volleyball European Championship - is it Italy?
+38. Will Poland or Bulgaria win the Women's Volleyball European Championship?
+39. Will France win the 2026 Women's Volleyball European Championship?
+
+## Table Tennis
+40. In Honoka Hashimoto versus Yi-tian Yeh, who wins and covers the points handicap?
+41. Will Oleksandr Kolisnyk beat Jan Junior Mecl in straight games?
+42. In Petr Sebera versus Sebastian Kasnik, who wins and covers the handicap?
+
+## Virtual Sports
+43. Who wins the virtual match between Brooklyn and Portland, and will the total go over?
+44. Will Peru beat Mexico in the virtual game and cover the handicap?
+45. Who wins the virtual match between Turkey and Saudi Arabia?
+
+## Pesapallo
+46. In Manse PP Tampere versus Hyvinkaan Tahko, who wins and covers the handicap?
+47. Will the total go over the line in that match?
+48. Are Manse PP Tampere the favourites?
+
+## Boxing (winner markets only right now)
+49. Will Jack Bowen beat Mielifeier Dalielibieke?
+50. Who wins the women's bout between Jazzy Parr and Jemma Peart?
+51. Will LeKaysha Woodbridge beat Sothita Sitthichai?
+
+## UFC / MMA (winner markets only right now)
+52. Will Abe Alsaghir beat Fabrizio Escarrega?
+53. Who wins between Ananias Mulumba and Tom Pagliarulo?
+54. Will Bilal Hasan beat Mridul Saikia?
+
+## Golf (majors / team futures)
+55. Who is the favourite for the 2027 Masters, and will Scottie Scheffler finish in the top 5?
+56. In the 2026 Solheim Cup, will the United States or Europe win?
+57. Will Rory McIlroy win the 2027 Masters, or finish in the top 10 if not?
+
+## Cycling (Tour de France Femmes)
+58. Can Demi Vollering win the next stage of the women's Tour de France and the overall title?
+59. Will Demi Vollering finish ahead of Pauline Ferrand-Prevot on the next stage?
+60. Who wins the 2027 Tour de France overall?
+
+## Darts (PDC World Championship 2027)
+61. Is Luke Littler the favourite to win the 2027 PDC World Championship?
+62. Will Luke Humphries or Michael van Gerwen win the title?
+63. Will Gerwyn Price win the world darts title in 2027?
+
+## Snooker (World Championship 2027)
+64. Who is the favourite for the 2027 World Snooker Championship - is it Zhao Xintong?
+65. Will Ronnie O'Sullivan or Judd Trump win the world title?
+66. Will Kyren Wilson win the 2026 UK Championship?
+
+## Chess (World Championship 2026)
+67. Who is the favourite to win the 2026 World Chess Championship?
+68. Show me the head-to-head odds between Sindarov and Gukesh.
+69. Will Gukesh be crowned world chess champion in 2026?
+
+## Formula 1
+70. Who will win the 2026 Dutch Grand Prix, and can Kimi Antonelli win the Drivers' Championship?
+71. Will Lewis Hamilton finish ahead of George Russell in the Drivers' standings?
+72. Who wins the 2026 Constructors' Championship?
+
+## Handball (World Championship 2027)
+73. Who is the favourite to win the 2027 Handball World Championship - is it Denmark?
+74. Will France or Germany win the title?
+75. Are Sweden among the contenders?
+
+## Field Hockey (World Cups 2026)
+76. Who is the favourite for the 2026 Women's Hockey World Cup - is it the Netherlands?
+77. Will Argentina or Belgium win the women's tournament?
+78. Who will win the 2026 Men's Hockey World Cup?
+
+## Motorsports (IndyCar)
+79. Is Alex Palou the favourite to win the 2026 IndyCar Championship?
+80. Will Pato O'Ward or Josef Newgarden win the title?
+81. Will David Malukas win the IndyCar Championship?
+
+## Winter Sports (Alpine / Biathlon World Cup)
+82. Is Marco Odermatt the favourite to win the men's overall Alpine World Cup?
+83. Will Lucas Pinheiro Braathen or Henrik Kristoffersen win the overall?
+84. Who wins the men's biathlon World Cup overall?
+
+## WWE / Pro Wrestling (Royal Rumble 2027)
+85. Who is the favourite to win the 2027 men's Royal Rumble - Oba Femi or Sami Zayn?
+86. Will Gunther or Bron Breakker win it?
+87. Who wins the 2026 men's Money in the Bank?
+
+## Lacrosse (Women's Lacrosse League)
+88. Who wins the 2026 WLL championship - California Palms or Maryland Charm?
+89. Are the Maryland Charm favourites?
+90. Will the New York Charging win the title?
+
+## Gaelic Sports (All-Ireland Hurling)
+91. Who is the favourite for the All-Ireland Hurling Championship - is it Limerick?
+92. Will Cork or Galway win the hurling title?
+93. Who wins the All-Ireland Football Championship?
+

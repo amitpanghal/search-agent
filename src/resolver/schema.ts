@@ -89,6 +89,11 @@ const Selector = z.object({
   subject: Subject,
   market_concept: z.string().min(1),
   line: Line.optional(),
+  // Which SIDE of a two-sided market the query named — carried alongside `line`, never inside it. Add it when
+  // the query states an over/under side ("over"/"more than" -> "over"; "under"/"fewer than" -> "under") or a
+  // yes/no side (a negation "won't"/"no" -> "no"; an explicit affirmative -> "yes"). A handicap names a team,
+  // not a side, so leave it off there (the team is the subject). SELECT reads it as its `dir`.
+  direction: z.enum(["over", "under", "yes", "no"]).optional(),
   odds: Odds.optional(),
   // Rank the market's outcomes by price instead of bounding it (sport-agnostic). `low` = shortest/lowest/
   // best price first (favourite); `high` = longest/highest/biggest first (underdog). Optional
