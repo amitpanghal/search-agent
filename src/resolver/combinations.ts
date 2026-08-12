@@ -21,7 +21,7 @@ export type CombinationLeg = {
   participant?: string;
   line?: number;       // RAW millis (3500 = 3.5)
   matched?: boolean;   // true when this leg is one of the user's exact resolved picks
-  outcomeId?: number;  // the SELECTED outcome id (EXACT betslip legs only) — lets the frontend link a leg to its pick
+  outcomeId: number;   // the feed outcome id (the betslip selection id) — set on every leg so the frontend can add it
 };
 // A priced betslip. Phase 1: a pre-configured coupon (`tag` AUTO/CUSTOM, carries the coupon `id`). Phase 2: the
 // user's OWN resolved legs priced together (`tag` EXACT, no coupon `id`).
@@ -122,6 +122,7 @@ function toCombination(c: PrePackCoupon, byOutcome: Map<number, { b: BetOffer; o
       outcome: o.englishLabel ?? o.label ?? "?",
       ...(o.participant ? { participant: o.participant } : {}),
       ...(o.line != null ? { line: o.line } : {}),
+      outcomeId: r.id,
       ...(resolved.has(r.id) ? { matched: true } : {}),
     });
   }

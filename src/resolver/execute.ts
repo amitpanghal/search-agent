@@ -29,6 +29,7 @@ export type EnvelopeParticipant = {
 };
 
 export type EnvelopeOutcome = {
+  id?: number; // raw Kambi feed outcome id — the betslip selection id (omitted only if the feed sent none)
   label: string;
   englishLabel?: string;
   odds: number; // RAW integer millis (1800 = 1.80) — passed straight through, never divided
@@ -98,6 +99,7 @@ const toParticipant = (p: KParticipant): EnvelopeParticipant => ({
 
 const STATUSES = new Set(["OPEN", "SUSPENDED", "CLOSED", "SETTLED"]);
 const toOutcome = (o: KOutcome): EnvelopeOutcome => ({
+  ...(o.id != null ? { id: o.id } : {}),
   label: o.label ?? "",
   ...(o.englishLabel ? { englishLabel: o.englishLabel } : {}),
   odds: o.odds ?? 0,
