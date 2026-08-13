@@ -40,6 +40,17 @@ export type Subject = z.infer<typeof Subject>;
 export const Line = z.union([z.number(), z.string().min(1)]);
 export type Line = z.infer<typeof Line>;
 
+// A BOUND on the line rather than a rung of it: "only games with a runs line above 8.5", "the total sits
+// below 158". This is a FIXTURE filter, not an outcome filter — every baseball game offers the whole 6.5-12.5
+// ladder, so keeping outcomes above 8.5 would drop no game at all. What the query means is the fixture's
+// HEADLINE line (the feed's MAIN_LINE betoffer), so SELECT reads that per event and keeps the ones in bounds.
+// Distinct from `odds` (a price) and from a scalar `line` (a rung to select).
+export const LineRange = z
+  .object({ min: z.number().optional(), max: z.number().optional() })
+  .refine((o) => o.min !== undefined || o.max !== undefined, "need >=1 bound")
+  .refine((o) => o.min === undefined || o.max === undefined || o.min <= o.max, "min <= max");
+export type LineRange = z.infer<typeof LineRange>;
+
 // A price bound on the outcome. At least one of min/max; min <= max.
 const Odds = z
   .object({ min: z.number().positive().optional(), max: z.number().positive().optional() })
@@ -88,7 +99,8 @@ export type Scope = z.infer<typeof Scope>;
 const Selector = z.object({
   subject: Subject,
   market_concept: z.string().min(1),
-  line: Line.optional(),
+  // A rung to SELECT (number / combo token), or a RANGE that bounds which fixtures qualify (see LineRange).
+  line: z.union([Line, LineRange]).optional(),
   // Which SIDE of a two-sided market the query named — carried alongside `line`, never inside it. Add it when
   // the query states an over/under side ("over"/"more than" -> "over"; "under"/"fewer than" -> "under") or a
   // yes/no side (a negation "won't"/"no" -> "no"; an explicit affirmative -> "yes"). A handicap names a team,
@@ -99,6 +111,10 @@ const Selector = z.object({
   // best price first (favourite); `high` = longest/highest/biggest first (underdog). Optional
   // — omitted = no price ranking. Carried per-selector into the FetchPlan (postFilters.outcomes), with line/odds.
   odds_sort: z.enum(["low", "high"]).optional(),
+  // Rank fixtures by the size of their LINE — a different axis from `odds_sort`, which ranks by PRICE.
+  // "which game has the biggest handicap" / "the highest total line" / "the widest spread" -> "high".
+  // Read off each fixture's headline (MAIN_LINE) betoffer, magnitude-wise so a -12.5 handicap outranks a -2.5.
+  line_sort: z.enum(["low", "high"]).optional(),
   // How many outcomes of a multi-outcome FIELD to surface (an outright / award / top-scorer with many named
   // competitors). A singular ask ("who wins", "the winner", a "top <stat>" leader) -> 1, paired with
   // odds_sort "low" (the favourite); "top 3" -> 3; omitted = the whole field. Ignored on non-field markets.
@@ -124,6 +140,12 @@ export const QueryPlan = z.object({
   // language is unclear. Used only to localize the feed's market/outcome LABELS; all resolution stays in English.
   language: z.string().min(1).optional(),
   otherSports: z.array(z.string()).optional(), // present only when sport-ambiguous (best guess first)
+  // A price bound on the COMBINED return of every leg ("only if the combined odds clear 2.0") — QUERY-level,
+  // because it constrains the parlay, not any single bet. Put per-selector instead it deletes the leg it lands
+  // on: "Gyökeres anytime AND Arsenal to win, combined over 2.0" applied {min:2} to Arsenal at 1.2, so the
+  // winner leg was dropped as odds-absent. Checked ONCE against the priced betslip; a miss is reported, never
+  // a silent drop.
+  combined_odds: Odds.optional(),
   selectors: z.array(Selector).min(1),
 });
 export type QueryPlan = z.infer<typeof QueryPlan>;

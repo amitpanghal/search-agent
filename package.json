@@ -10,9 +10,11 @@
     "start": "tsx src/server/index.ts",
     "eval": "tsx src/eval/run.ts",
     "catalogs": "tsx scripts/build-catalogs.ts",
+    "sweep": "tsx scripts/sweep-offerings.ts",
     "probe": "tsx --env-file=.env scripts/probe.ts",
     "gate:live-menu": "tsx src/eval/live-menu-gate.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "gold": "tsx scripts/expand-gold.ts"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.967.0",

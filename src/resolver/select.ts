@@ -14,7 +14,7 @@
 // reversible `label`). Participant matching is diacritic-FOLDED, like the filter ("Çalhanoglu" / "Mbappé").
 
 import { fold } from "./lexical";
-import type { BetOffer, KEvent, KOutcome } from "./offering-client";
+import { isMainLine, type BetOffer, type KEvent, type KOutcome } from "./offering-client";
 import type { Selection } from "./live-menu-types";
 
 // The query's outcome constraints, carried by the extractor as-is (value + direction) — never a market binding.
@@ -28,6 +28,11 @@ export type SelectSpec = {
   dir?: "over" | "under" | "yes" | "no";
   oddsMin?: number; // price floor (decimal, 5.0): keep only outcomes priced >= min ("first scorer over 5.0")
   oddsMax?: number; // price ceiling (decimal): keep only outcomes priced <= max
+  // FIXTURE-level line bounds/ranking ("games with a runs line above 8.5", "the biggest handicap"). These read
+  // each fixture's HEADLINE line (its MAIN_LINE betoffer), never the whole ladder — see the schema's LineRange.
+  lineMin?: number;
+  lineMax?: number;
+  lineSort?: "low" | "high"; // rank fixtures by |headline line|; pairs with `count` (default 1)
   sort?: "low" | "high"; // rank a field outright by price (low = favourite first) — drives count + selected
   count?: number; // surface only the top N of a many-outcome field (omitted = the whole field)
   outcomeLabel?: string; // a feed outcome the resolver named ("Eliminated in Round of Last 16") -> exact englishLabel match
@@ -101,7 +106,7 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
   const subjName = spec.subject === "home" ? ctx.home : spec.subject === "away" ? ctx.away : spec.subject;
   const relational = spec.subject === "home" || spec.subject === "away";
   const withSubj = subjName ? { subject: subjName } : {};
-  const cands: Cand[] = slice.betOffers.flatMap((bo) => (bo.outcomes ?? []).map((o) => ({ o, bo })));
+  let cands: Cand[] = slice.betOffers.flatMap((bo) => (bo.outcomes ?? []).map((o) => ({ o, bo })));
 
   // The outcome's OWN fixture, via its betoffer's eventId — execute's step: any event fact (here home/away) is
   // read from THIS outcome's event, never a single shared `ctx`. A leg's pool can span fixtures, so a relational
@@ -118,6 +123,38 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
   };
   const pick = (o: KOutcome): Selection => ({ ...withSubj, outcomeId: o.id, ...(lineOf(o) != null ? { line: lineOf(o)! } : {}) });
   const absent = (fb: NonNullable<Selection["fallback"]>): Selection => ({ ...withSubj, fallback: fb });
+
+  // ---- (0) FIXTURE LINE — bound or rank fixtures by their HEADLINE line, before anything picks an outcome.
+  // "games with a runs line above 8.5" is about the fixture's headline, not a rung of its ladder: every game
+  // offers the whole 6.5-12.5 ladder, so an outcome-level bound would keep every game and filter nothing. The
+  // headline is the feed's MAIN_LINE betoffer (one per market family per event).
+  // MAGNITUDE, not signed value — "a handicap bigger than 10" means a 10-point head start either way, and the
+  // feed stores it as -12.5. Totals are positive so |x| is a no-op there.
+  // Lenient like the other gates: a fixture whose market carries no MAIN_LINE is KEPT (never dropped on missing
+  // data); a bound that matches nothing degrades to an honest `line-absent` rather than silently widening.
+  const headline = new Map<number, number>();
+  for (const bo of slice.betOffers) {
+    if (bo.eventId == null || headline.has(bo.eventId) || !isMainLine(bo.tags)) continue;
+    const l = (bo.outcomes ?? []).map(lineOf).find((x): x is number => x != null);
+    if (l != null) headline.set(bo.eventId, Math.abs(l));
+  }
+  const headlineOf = (bo: BetOffer): number | undefined => (bo.eventId != null ? headline.get(bo.eventId) : undefined);
+  if (spec.lineMin != null || spec.lineMax != null) {
+    const kept = cands.filter(({ bo }) => {
+      const h = headlineOf(bo);
+      return h == null || ((spec.lineMin == null || h >= spec.lineMin) && (spec.lineMax == null || h <= spec.lineMax));
+    });
+    if (!kept.length) return absent("line-absent");
+    cands = kept;
+  }
+  if (spec.lineSort) {
+    // Rank the FIXTURES (not the outcomes) and keep the top `count` — "which game has the biggest handicap"
+    // wants one game, with all of its outcomes intact for display.
+    const ranked = [...new Set(cands.map((c) => c.bo.eventId).filter((id): id is number => id != null && headline.has(id)))]
+      .sort((a, b) => (spec.lineSort === "low" ? headline.get(a)! - headline.get(b)! : headline.get(b)! - headline.get(a)!));
+    const top = new Set(ranked.slice(0, spec.count ?? 1));
+    if (top.size) cands = cands.filter((c) => c.bo.eventId != null && top.has(c.bo.eventId));
+  }
 
   // The picked market's TYPE decides how the query's line VALUE is read: correct-score (3) and HT/FT (8) carry a
   // COMBO TOKEN ("2-1", "1/1"); every other market carries a NUMERIC line ("-2", "2.5"). A picked market always has

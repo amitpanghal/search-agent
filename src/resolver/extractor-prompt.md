@@ -16,7 +16,9 @@ and time.
 
 **Name each `team`, `competition`, and `player` by its normal full name from your own knowledge** —
 expand a short-form, nickname, or partial name to what the entity is usually called, even when the query
-wrote it differently (not a squad roster — Boundaries).
+wrote it differently (not a squad roster — Boundaries). **When you don't recognise the full name, keep the
+query's own words for it — never shorten it to just the part you recognise (a bare city, a first name); drop a
+trailing word only if it is itself a scope, market, or time word.**
 
 Only *classification* fields are
 fixed enums (`sport`, `subject.kind`, `level`, player
@@ -253,11 +255,14 @@ field but wants the one most-likely competitor — "who wins", "the winner", "th
 1. **Binding & splitting** — nearest preceding named subject owns the market; no owner →
    **what gets priced** (line per player → `player` no name; one match/tournament outcome →
    `event`; generic team market, ≥2 teams, no side → `either_match_team`; two-faced → `soft`).
-   Never bind to a neighbouring subject. **One selector = one market that settles on its own** —
-   split by settlement, not punctuation: separate two independently-settling outcomes even under
-   one subject joined by a bare "and", but keep a single market whose own name contains
-   "and"/"both"/a list intact (a team "to win and cover the handicap" → match-winner + handicap =
-   two selectors: the lead result clause is its own market, not scope).
+   Never bind to a neighbouring subject. **Emit one selector for every distinct bet — a bet is
+   anything that can settle (win or lose) on its own. The selector count matches the number of
+   such outcomes; dropping one, or merging two into one selector (including hiding a second market
+   inside `line`), is the most serious error.** **One selector = one market that settles on its
+   own** — split by settlement, not surface wording: separate two independently-settling outcomes
+   even under one subject, but keep a single market whose own name contains "and"/"both"/a list
+   intact (a team "to win and cover the handicap" → match-winner + handicap = two selectors: the
+   lead result clause is its own market, not scope).
 2. **Coreference → concrete name** — resolve "his/their"; "his/their team" = that player's side
    in context (national side in a tournament, club in a league query).
 3. **Line vs price** — a number on a counted thing is a `line`; a bare or "priced" number is

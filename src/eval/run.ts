@@ -1,5 +1,6 @@
 // Structural eval harness (CLI).
 //   npm run eval                  -> all gold records, 1x each
+//   npm run eval -- --runs 3      -> 3x each; query passes only if all 3 pass (the measuring default)
 //   npm run eval -- --release     -> 5x each; query passes only if all 5 pass (E10) (Always ask permission before running this)
 //   npm run eval -- --id g001     -> a single record
 //   npm run eval -- --last 10     -> only the last N gold records (by file order)
@@ -56,11 +57,26 @@ function loadMeta(): { schemaVersion?: string; catalogVersion?: string } {
   }
 }
 
+// `--from <probe.jsonl>`: replay plans already captured by `npm run probe --until=extract` instead of calling
+// the model. Same scorer, same report, zero cost — this is how a baseline gets re-scored after the GOLD changes
+// (only a prompt/model change needs fresh extractions).
+let replay: Map<string, QueryPlan> | null = null;
+function loadReplay(path: string): Map<string, QueryPlan> {
+  const m = new Map<string, QueryPlan>();
+  for (const line of readFileSync(path, "utf8").split("\n")) {
+    if (!line.trim()) continue;
+    const row = JSON.parse(line) as { query: string; trace?: { stage?: string; out?: QueryPlan }[] };
+    const plan = row.trace?.find((t) => t.stage === "extract")?.out;
+    if (plan) m.set(row.query, plan);
+  }
+  return m;
+}
+
 async function runQuery(rec: GoldRecord, n: number): Promise<QueryReport> {
   const outcomes: RunOutcome[] = [];
   for (let r = 0; r < n; r++) {
     try {
-      const plan = await extract(rec.query);
+      const plan = replay?.get(rec.query) ?? (await extract(rec.query));
       // TEXT mode (no `grounded`): the extractor gate grades the concept WORDING; criterion-id resolution is
       // graded post-fetch by the separate live market gate below.
       outcomes.push({ result: scoreRun(rec, plan), plan });
@@ -70,6 +86,24 @@ async function runQuery(rec: GoldRecord, n: number): Promise<QueryReport> {
   }
   const passes = outcomes.filter((o) => o.result.pass).length;
   return { rec, outcomes, passes, passed: passes === n };
+}
+
+// Run at most `max` extractions at once. The deck went from 18 football rows to ~300 across 37 sports, and
+// sequential 1x runs put a prompt edit ~15 minutes away from its measurement — too slow to iterate against.
+// Order is preserved: callers await the promises in index order, so the report still streams top-to-bottom.
+function limiter(max: number) {
+  let active = 0;
+  const waiting: (() => void)[] = [];
+  return async <T>(fn: () => Promise<T>): Promise<T> => {
+    if (active >= max) await new Promise<void>((r) => waiting.push(r));
+    active++;
+    try {
+      return await fn();
+    } finally {
+      active--;
+      waiting.shift()?.();
+    }
+  };
 }
 
 function indent(s: string, pad: string): string {
@@ -183,8 +217,10 @@ async function main(): Promise<void> {
   const onlyId = flagValue(args, "--id");
   const last = flagValue(args, "--last");
   const release = args.includes("--release");
+  const from = flagValue(args, "--from");
+  if (from) replay = loadReplay(from);
 
-  if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY || !process.env.BEDROCK_MODEL) {
+  if (!replay && (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY || !process.env.BEDROCK_MODEL)) {
     console.error("AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and BEDROCK_MODEL must be set. Export them, or copy .env.example -> .env.");
     process.exit(2);
   }
@@ -209,17 +245,25 @@ async function main(): Promise<void> {
     process.exit(2);
   }
 
-  const n = release ? 5 : 1;
-  console.log(`Structural eval — model ${EXTRACTION_MODEL}, ${n}x per query (temp 0)`);
+  // Repeats per query; a row passes only if ALL runs pass. The extractor is genuinely noisy run-to-run
+  // (two identical 1x runs of this gate gave 6/11 and 5/11), so a single run can't tell a prompt delta from
+  // a coin flip. `--runs 3` is the measuring default for the tuning gold; holdout stays 1x; `--release` (5x)
+  // is the final sign-off.
+  const n = replay ? 1 : Number(flagValue(args, "--runs")) || (release ? 5 : 1);
+  console.log(replay ? `Structural eval — REPLAY of ${from} (${replay.size} captured plans, no model call)` : `Structural eval — model ${EXTRACTION_MODEL}, ${n}x per query (temp 0)`);
   console.log(`Gold: ${gold.length} record(s) | schema ${meta.schemaVersion ?? "?"} | catalog ${meta.catalogVersion ?? "?"}`);
   console.log("Mode: TEXT market axis (extraction); criterion-id resolution graded by the live market gate.\n");
 
   // The market/extractor ship gate runs the LLM on gradeMarket rows; pure-scope rows (gradeMarket:false)
   // are graded only by the deterministic entity gate below.
-  const marketGold = gold.filter((g) => g.gradeMarket !== false);
+  // Replay grades exactly the rows the capture covers — a gold row the sweep never ran is out of scope for it,
+  // not a failure of the extractor.
+  const marketGold = gold.filter((g) => g.gradeMarket !== false && (!replay || replay.has(g.query)));
+  const limit = limiter(Number(flagValue(args, "--jobs")) || 8);
+  const pending = marketGold.map((rec) => limit(() => runQuery(rec, n)));
   const reports: QueryReport[] = [];
-  for (const rec of marketGold) {
-    const rep = await runQuery(rec, n);
+  for (const p of pending) {
+    const rep = await p;
     reports.push(rep);
     printReport(rep, n);
   }
@@ -237,8 +281,10 @@ async function main(): Promise<void> {
   // Live market-resolution gate: resolve each gold `id` cell against the captured snapshot menu and assert the
   // pick is exact on a gold criterion id (market-resolve-gate.ts). Replaces the old disambiguator/marketIds
   // replay — market is resolved post-fetch now. Independent of the gates above.
+  // Replay has no model, and this gate resolves markets LIVE against the snapshot menu — skip it rather than
+  // spend on a stage the replayed capture says nothing about.
   console.log("");
-  const market = await runMarketResolveGate(gold);
+  const market = replay ? { pass: true, lines: ["Market-resolution gate: SKIPPED (--from replay)"] } : await runMarketResolveGate(gold);
   for (const l of market.lines) console.log(l);
 
   process.exit(gatePass && entity.pass && market.pass ? 0 : 1);

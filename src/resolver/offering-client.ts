@@ -35,6 +35,11 @@ export const levelOf = (tags: string[] = []): Level | null =>
 // A "main"/headline market carries the MAIN tag. NOTE the distinct "MAIN_LINE" tag (an over/under's main line)
 // must NOT match here — only the exact "MAIN" tag marks a bare-event main market.
 export const isMain = (tags: string[] = []): boolean => tags.includes("MAIN");
+// The HEADLINE line of a line-ladder market: exactly one betoffer per market family per event carries it
+// (Total Runs 6.5..12.5 -> MAIN_LINE on 9.5). It is what a punter means by "the game's line", so a line
+// RANGE or a line SORT reads this one, not the whole ladder. Distinct from `isMain` above (the MAIN tag,
+// which marks a headline MARKET for a browse).
+export const isMainLine = (tags: string[] = []): boolean => tags.includes("MAIN_LINE");
 
 export async function getJson(url: string): Promise<any> {
   emit({ kind: "kambi-req", url });

@@ -18,6 +18,10 @@ src/resolver/index/
 # Durable artifacts are data/football/{criterion-doc-views,doc-views-gen-cache}.json.
 .docviews/
 
+# Per-sport offering fact sheets (`npm run sweep`). Regenerate any time — they track the live feed, so a
+# committed copy would be stale within days. The durable read-out is planning/offering-sweep-findings.md.
+.sweep/
+
 # Transient probe-script scratch (dot-prefixed under scripts/: scratch .ts probes + their JSON/txt/out/err dumps).
 scripts/.*.ts
 scripts/.*.json

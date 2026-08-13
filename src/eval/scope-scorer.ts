@@ -31,9 +31,12 @@ export type EntityGrade = {
 };
 
 type GoldScope = GoldRecord["expect"]["selectors"][number]["scope"];
-type GroundedCell = { id: number | number[]; accept: string[]; tier?: ScopeTier };
+type GroundedCell = { id?: number | number[]; accept: string[]; tier?: ScopeTier };
 
-const idsOf = (cell: GroundedCell): number[] => (Array.isArray(cell.id) ? cell.id : [cell.id]);
+// An id-less cell is text-only (the multi-sport corpus): it asserts wording for the extractor gate and has
+// nothing for this gate to grade, so it is skipped rather than failed.
+const graded = (cell: GroundedCell | null | undefined): boolean => cell?.id !== undefined;
+const idsOf = (cell: GroundedCell): number[] => (Array.isArray(cell.id) ? cell.id : [cell.id!]);
 const textOf = (cell: GroundedCell): string => cell.accept[0] ?? "";
 
 // Build a QueryPlan straight from the gold's entity text — the deterministic input to groundScope.
@@ -85,7 +88,7 @@ function gradeCell(rec: string, type: EntityType, cell: GroundedCell, res: Entit
 export function gradeScope(gold: GoldRecord): EntityGrade[] {
   // Migrated golds repeat scope on every leg, so leg 0's scope carries the record's entities.
   const sc = gold.expect.selectors[0]!.scope;
-  const hasEntities = sc.region != null || sc.competition != null || sc.teams.length > 0 || sc.players.length > 0;
+  const hasEntities = [sc.region, sc.competition, ...sc.teams, ...sc.players.map((p) => p.name)].some(graded);
   if (!hasEntities) return [];
 
   const regionText = sc.region ? textOf(sc.region) : undefined;
@@ -93,10 +96,10 @@ export function gradeScope(gold: GoldRecord): EntityGrade[] {
   const leg = resolved.legs[0]!;
   const grades: EntityGrade[] = [];
 
-  if (sc.region && leg.region) grades.push(gradeCell(gold.id, "region", sc.region, leg.region));
-  if (sc.competition && leg.competition) grades.push(gradeCell(gold.id, "competition", sc.competition, leg.competition));
-  sc.teams.forEach((t, i) => { if (leg.teams[i]) grades.push(gradeCell(gold.id, "team", t, leg.teams[i]!)); });
-  sc.players.forEach((p, i) => { if (leg.players[i]) grades.push(gradeCell(gold.id, "player", p.name, leg.players[i]!)); });
+  if (graded(sc.region) && leg.region) grades.push(gradeCell(gold.id, "region", sc.region!, leg.region));
+  if (graded(sc.competition) && leg.competition) grades.push(gradeCell(gold.id, "competition", sc.competition!, leg.competition));
+  sc.teams.forEach((t, i) => { if (graded(t) && leg.teams[i]) grades.push(gradeCell(gold.id, "team", t, leg.teams[i]!)); });
+  sc.players.forEach((p, i) => { if (graded(p.name) && leg.players[i]) grades.push(gradeCell(gold.id, "player", p.name, leg.players[i]!)); });
   return grades;
 }
 

@@ -74,12 +74,18 @@ type TimeVal = {
   fixture_pick?: { order: "earliest" | "latest"; count: number } | null;
 };
 
+// A line RANGE cell on either side ({min?,max?}), told apart from a gold `Grounded` cell by having no accept[].
+const isLineRange = (v: unknown): v is { min?: number; max?: number } =>
+  !!v && typeof v === "object" && !("accept" in v) && ("min" in v || "max" in v);
+
 function lineEqual(p: PredLine | undefined, g: GoldLine | undefined): boolean {
   if (p === undefined && g === undefined) return true;
   if (p === undefined || g === undefined) return false;
+  // RANGE ("line above 8.5") -> exact bounds on both sides; a range vs a rung is a real mismatch, not a near-miss.
+  if (isLineRange(p) || isLineRange(g)) return isLineRange(p) && isLineRange(g) && p.min === g.min && p.max === g.max;
   // NUMBER rung -> exact value; STRING named pick -> loose accept-list match (gold holds a Grounded cell).
   if (typeof p === "number") return typeof g === "number" && p === g;
-  return typeof g !== "number" && looseMatch(p, g.accept);
+  return typeof g !== "number" && !isLineRange(g) && looseMatch(p, g.accept);
 }
 
 function oddsEqual(a: OddsVal | undefined, b: OddsVal | undefined): boolean {
@@ -100,11 +106,16 @@ export function idsContainGold(pred: number[] | null, gold: number | number[]): 
   return want.every((id) => have.has(id));
 }
 
+// Gold `sport` is one name or a list of acceptable ones (see gold-record). Loose either way: "basketball"
+// also accepts the narrower "esports-basketball" by containment.
+const sportOk = (p: ResolvedPlan, g: ResolvedGold): boolean =>
+  looseMatch(p.sport, Array.isArray(g.sport) ? g.sport : [g.sport]);
+
 function bindingFailure(g: GoldSelector, p: PredSelector): string | null {
   if (g.subject.kind !== p.subject.kind) {
     return `binding kind: expected "${g.subject.kind}", got "${p.subject.kind}"`;
   }
-  if (g.subject.kind === "player" || g.subject.kind === "team") {
+  if ((g.subject.kind === "player" || g.subject.kind === "team") && g.subject.name) {
     const want = g.subject.name.accept;
     if (p.subject.kind === "player" || p.subject.kind === "team") {
       if (!looseMatch(p.subject.name ?? "", want)) {
@@ -148,8 +159,20 @@ function timeNote(g: TimeVal | null, p: TimeVal | null): string | null {
 // market id is the costly facet); on a marketless `main`-sentinel plan the event_scope IS the answer,
 // so the fixture-selecting facets are promoted to hard failures (decision 24 / Option A).
 type ScopeFacet = "level" | "teams" | "competition" | "players" | "stage" | "time" | "play_state";
-// play_state stays OUT of the hard set: even a marketless "live markets" query keeps it soft (like level).
-const HARD_FIXTURE_FACETS = new Set<ScopeFacet>(["teams", "stage", "time"]);
+
+// The facets this gold row ASSERTS — the query really named them, so losing one is a real miss and fails hard.
+// Facets the gold leaves empty stay soft (over-extraction is cheaper than a drop), and level/play_state stay
+// soft everywhere (still uncalibrated across sports). `stage` is hard only on a MARKETLESS row, where the
+// scope IS the deliverable ("Cincinnati quarterfinal matches tomorrow") — elsewhere it stays a soft note.
+const assertedFacets = (gs: GoldSelector["scope"], hardStage = false): Set<ScopeFacet> => {
+  const s = new Set<ScopeFacet>();
+  if (gs.competition !== null) s.add("competition");
+  if (gs.teams.length) s.add("teams");
+  if (gs.players.length) s.add("players");
+  if (gs.time !== null) s.add("time");
+  if (hardStage && gs.stage !== null) s.add("stage");
+  return s;
+};
 
 // A marketless plan/gold is the lone `main` sentinel selector (decision 24): exactly one selector,
 // concept "main" (gold encodes it as {main:true}). Detecting it on both sides lets the scorer grade
@@ -224,19 +247,26 @@ export function scoreRun(
   // (teams/stage/time) are HARD; sport stays costly; the plan must itself be the lone `main` selector
   // (a fabricated market or extra selector here is the Option-A failure nothing downstream catches).
   if (isGoldMarketless(expect)) {
-    if (!looseMatch(plan.sport, [expect.sport])) failures.push(`sport: expected ~"${expect.sport}", got "${plan.sport}"`);
+    if (!sportOk(plan, expect)) failures.push(`sport: expected ~${JSON.stringify(expect.sport)}, got "${plan.sport}"`);
     if (!isPlanMarketless(plan)) {
       failures.push(`marketless: expected a single "main" selector, got ${JSON.stringify(plan.selectors.map((s) => s.market_concept))}`);
     }
+    const hard = assertedFacets(expect.selectors[0]!.scope, true);
     for (const d of scopeDiffs(expect.selectors[0]!.scope, plan.selectors[0]!.scope)) {
-      (HARD_FIXTURE_FACETS.has(d.facet) ? failures : soft).push(d.msg);
+      (hard.has(d.facet) ? failures : soft).push(d.msg);
     }
     return { pass: failures.length === 0, failures, soft };
   }
 
   // 2. sport (costly) — loose text match (free-text sport, any sport; case/synonym-tolerant)
-  if (!looseMatch(plan.sport, [expect.sport])) {
-    failures.push(`sport: expected ~"${expect.sport}", got "${plan.sport}"`);
+  if (!sportOk(plan, expect)) {
+    failures.push(`sport: expected ~${JSON.stringify(expect.sport)}, got "${plan.sport}"`);
+  }
+
+  // 2b. combined_odds — QUERY-level, so it is graded here rather than per pair. A combined bound landing on a
+  // selector instead deletes that leg, so both "missing" and "on the wrong level" have to fail.
+  if (!oddsEqual(plan.combined_odds, expect.combined_odds)) {
+    failures.push(`combined_odds: expected ${JSON.stringify(expect.combined_odds)}, got ${JSON.stringify(plan.combined_odds)}`);
   }
 
   // 3. selector pairing + "market found". In ID mode (grounded supplied) a pair requires the gold
@@ -261,6 +291,14 @@ export function scoreRun(
     for (const [pi, p] of plan.selectors.entries()) {
       if (usedPred.has(pi)) continue;
       if (idMode) {
+        // TEXT-only cell (accept[], no id): there is nothing to ground against, so pair by wording even in
+        // ID mode — otherwise every accept-only row would silently report "market not grounded".
+        if (!wantIds && !offer && !isNone) {
+          if (!looseMatch(p.market_concept, mc.accept)) continue;
+          matched = p;
+          matchedIdx = pi;
+          break;
+        }
         const gr = grounded[pi];
         if (isNone) {
           // NONE outcome: pair by text, pass iff this leg ABSTAINED — id-less (groundPlan's perSelector nulls
@@ -343,11 +381,30 @@ export function scoreRun(
     if (p.odds_sort !== g.odds_sort) {
       failures.push(`odds_sort: "${p.market_concept}" expected ${JSON.stringify(g.odds_sort)}, got ${JSON.stringify(p.odds_sort)}`);
     }
+    // direction: the SIDE of a two-sided market. Hard — a flipped side is the opposite bet. Same
+    // both-undefined no-op as odds_sort, so rows that state no side are unaffected.
+    if (p.direction !== g.direction) {
+      failures.push(`direction: "${p.market_concept}" expected ${JSON.stringify(g.direction)}, got ${JSON.stringify(p.direction)}`);
+    }
+    // line_sort: the LINE-size ranking axis (distinct from odds_sort's price ranking). Same hard/no-op rule.
+    if (p.line_sort !== g.line_sort) {
+      failures.push(`line_sort: "${p.market_concept}" expected ${JSON.stringify(g.line_sort)}, got ${JSON.stringify(p.line_sort)}`);
+    }
   }
 
-  // 5. scope (soft, tracked only — on a market query the market id is the costly facet). Migrated golds repeat
-  // scope per leg, so leg 0's scope is the representative diff (per-leg-pair diffs are a later refinement).
-  soft.push(...scopeDiffs(expect.selectors[0]!.scope, plan.selectors[0]!.scope).map((d) => d.msg));
+  // 5. scope — graded PER PAIR, not on leg 0 alone, hard on the facets the gold asserts (see assertedFacets).
+  // This is what the old leg-0 soft note could not catch — a dropped league leaves the plan with no anchor at
+  // all and check-complete stops the query before any fetch, yet the gate stayed green. Golds repeat scope per
+  // leg, so messages are de-duped.
+  const seenScope = new Set<string>();
+  for (const { g, p } of pairs) {
+    const hard = assertedFacets(g.scope);
+    for (const d of scopeDiffs(g.scope, p.scope)) {
+      if (seenScope.has(d.msg)) continue;
+      seenScope.add(d.msg);
+      (hard.has(d.facet) ? failures : soft).push(d.msg);
+    }
+  }
 
   return { pass: failures.length === 0, failures, soft };
 }

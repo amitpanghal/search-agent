@@ -22,7 +22,7 @@ import { pickCombinations, buildBetslip } from "./combinations";
 import { fold } from "./lexical";
 import { isMain, onDemandPricing, type BetOffer, type KEvent } from "./offering-client";
 import { usageStore, summarizeCost, type RawCall } from "./cost";
-import type { Subject, Line } from "./schema";
+import type { Subject, Line, LineRange } from "./schema";
 import { getSport } from "./sports";
 import { recoverSport } from "./recover-sport";
 import type { ResolvedLeg, MarketPick, EnvelopeLeg } from "./live-menu-types";
@@ -83,7 +83,15 @@ function subjectName(leg: ResolvedLegScope, s: Subject): string | undefined {
 // betOfferType (a numeric rung for handicaps/over-unders, a combo token for correct-score/HT-FT) — never guessed
 // from the value's JSON type. The side (over/under, yes/no) rides in SEPARATELY as `dir` from the selector's
 // `direction` (set at the call site, not here) — omitted when the query names no side, so every side rides along.
-function selSpec(line: Line | undefined, odds: { min?: number; max?: number } | undefined, subject?: string, subjectId?: number, sort?: "low" | "high", count?: number): SelectSpec {
+function selSpec(
+  line: Line | LineRange | undefined,
+  odds: { min?: number; max?: number } | undefined,
+  subject?: string,
+  subjectId?: number,
+  sort?: "low" | "high",
+  count?: number,
+  lineSort?: "low" | "high",
+): SelectSpec {
   const base: SelectSpec = {
     ...(subjectId != null ? { subjectId } : {}),
     ...(subject ? { subject } : {}),
@@ -91,8 +99,15 @@ function selSpec(line: Line | undefined, odds: { min?: number; max?: number } | 
     ...(odds?.max != null ? { oddsMax: odds.max } : {}),
     ...(sort ? { sort } : {}),
     ...(count != null ? { count } : {}),
+    ...(lineSort ? { lineSort } : {}),
   };
-  return line === undefined ? base : { ...base, lineValue: line };
+  if (line === undefined) return base;
+  // A RANGE bounds which fixtures qualify (by headline line); a scalar/token is the rung to select. The two
+  // never co-occur — the extractor emits one shape or the other.
+  if (typeof line === "object") {
+    return { ...base, ...(line.min != null ? { lineMin: line.min } : {}), ...(line.max != null ? { lineMax: line.max } : {}) };
+  }
+  return { ...base, lineValue: line };
 }
 
 // The picked market's betoffers, keyed by the menu LABEL (the identity — criterion englishLabel + variant).
@@ -293,9 +308,15 @@ export async function* runPipeline(query: string, opts: { until?: string } = {})
     // Shared echo fields for this selector; `matched` + `market` are branch-specific (set at each push below).
     // ponytail: `matched` is the resolve-side "found market + a non-fallback outcome"; execute's data-level prune
     // can still drop a leg whose ids don't land — rare (execute is fed exactly what select resolved against).
-    const under = { ...(subj ? { subject: subj } : {}), phrase: sel.market_concept, ...(sel.line != null ? { line: sel.line } : {}) };
+    // "We understood" echo. A line RANGE is rendered for the human ("line above 8.5"); a scalar/token rides as-is.
+    const lineEcho =
+      sel.line == null ? undefined
+        : typeof sel.line === "object"
+          ? [sel.line.min != null ? `above ${sel.line.min}` : "", sel.line.max != null ? `below ${sel.line.max}` : ""].filter(Boolean).join(" and ")
+          : sel.line;
+    const under = { ...(subj ? { subject: subj } : {}), phrase: sel.market_concept, ...(lineEcho != null ? { line: lineEcho } : {}) };
     const spec: SelectSpec = {
-      ...selSpec(sel.line, sel.odds, subj, subjectParticipantId(leg, sel.subject), sel.odds_sort, sel.count),
+      ...selSpec(sel.line, sel.odds, subj, subjectParticipantId(leg, sel.subject), sel.odds_sort, sel.count, sel.line_sort),
       ...(sel.direction ? { dir: sel.direction } : {}),
       ...(pickByIdx[i]?.outcomeLabel ? { outcomeLabel: pickByIdx[i]!.outcomeLabel } : {}),
     };
@@ -371,6 +392,19 @@ export async function* runPipeline(query: string, opts: { until?: string } = {})
   // Bet-builder Phase 2: price the user's OWN resolved legs together as one EXACT betslip (same-event legs via the
   // correlated priceCombo endpoint, cross-event legs multiply). Same inputs pickCombinations used; omitted when <2 legs combine.
   const betslip = await buildBetslip(legsOut, [...execOffers], [...execEvents.values()], onDemandPricing, recallInput.lang);
+
+  // Query-level combined-odds bound ("only if the combined odds clear 2.0"). Checked ONCE against the priced
+  // betslip, here rather than per leg — a per-selector bound deletes whichever leg it lands on (the Arsenal-at-1.2
+  // case). A miss is REPORTED with the real price and the legs are kept: the user asked for a parlay, so the
+  // useful answer is "here it is, it prices at 1.84" — not an empty screen.
+  const cOdds = plan.combined_odds;
+  if (cOdds && betslip) {
+    const price = betslip.odds / 1000;
+    if ((cOdds.min != null && price < cOdds.min) || (cOdds.max != null && price > cOdds.max)) {
+      const want = [cOdds.min != null ? `above ${cOdds.min}` : "", cOdds.max != null ? `below ${cOdds.max}` : ""].filter(Boolean).join(" and ");
+      extraNotes.add(`These selections combine to ${price.toFixed(2)}, not ${want}. Swap a leg or adjust the price you're after.`);
+    }
+  }
 
   const envelope = execute({
     legs: legsOut,

@@ -1,27 +1,32 @@
 // groundScope: the scope-grounding stage. Maps the extractor's free-text scope (sport · region ·
 // competition · teams · players) to real Kambi ids, returning recall-first CANDIDATES + a TIER per entity
-// (never a forced guess) — the same precision bias as the market grounder. A downstream LLM disambiguator
-// (deferred) settles ambiguity; planFetch then emits the concrete fetch plan.
+// (never a forced guess). A downstream LLM entity gate settles what's left ambiguous.
 //
 // Lexical-first, NO embeddings (short proper nouns; embeddings blur the "2026"-vs-"2022" tokens we need).
 // Each entity type resolves against its OWN, non-overlapping index (built in scope-catalog from the slim
-// scope-index.json join): region -> branch whitelist, competition -> the 303-node group whitelist,
-// teams/players -> the participant index. The extractor owns the region-vs-team routing ("Italy to win" ->
-// teams; "Italian Serie A" -> region); the grounder never re-disambiguates that.
+// scope-index.json join): region -> branch whitelist, competition -> the group whitelist, teams/players ->
+// the participant index. The extractor owns the region-vs-team routing ("Italy to win" -> teams; "Italian
+// Serie A" -> region); the grounder never re-disambiguates that.
 //
-// Adaptive cascade — resolving one entity SCOPES the next:
-//   region (confident) ──hard-scope──▶ competition candidates restricted to the branch subtree
-//   confident teams in scope ─────────▶ player pool also accepts that club/country's players (the homonym
-//                                         cut: "Bruno Fernandes" + Portugal in scope -> the Portugal one)
-//   players/teams on the leg ─────────▶ competition resolved LAST within the anchor's OWN leagues, so a
-//                                         gendered/variant node ("Wimbledon Women", "Champions League (W)") is
-//                                         chosen over the bare men's node (Option B: the player drives the comp)
-// Anything not confidently scoped stays recall-first (top-k, tier `ambiguous`/`shortlist`) for the LLM.
+// JOINT RESOLUTION (replaces the old fixed region→teams→players→competition cascade, where information could
+// only ever flow forward — so a named player could never disambiguate a team). Three order-free phases:
 //
-// Per-leg-scope redesign: each selector carries its OWN scope, so groundScope runs the cascade PER leg and
-// returns one ResolvedLegScope per selector (index-aligned with plan.selectors). A memo cache keyed by entity
-// text + scope context means a value repeated across legs (the same competition on every leg) is grounded once
-// — and identical legs share the SAME EntityResolution reference, the substrate the Phase 4 entity gate dedups on.
+//   1. SEED      every mention grounds by NAME ALONE -> a candidate set. No cross-talk, no ordering.
+//   2. CONSTRAIN per leg, iterate to fixpoint: prune each mention's candidates to those structurally LINKED
+//                to at least one candidate of every other mention (shared league/group/club/branch ids).
+//   3. MERGE     one query names one entity: across legs, the smallest surviving set for a mention wins
+//                (a leg that pinned "Toronto" via its player pins it for the bare leg too).
+//
+// The EDGE LADDER is what makes pruning safe: a STRONG link (direct membership — the player's clubId IS this
+// team) is tried first, then a WEAK one (shared league). A constraint that would empty a set is SKIPPED, never
+// applied — so stale roster data degrades to the weaker signal instead of deleting the right answer.
+//
+// This one loop subsumes three former special cases: the head-to-head twin lock (team↔team), the competition
+// anchor allow-set (player↔competition), and the team→player homonym cut — all now just edges.
+//
+// Each selector carries its OWN scope, so this returns one ResolvedLegScope per selector (index-aligned with
+// plan.selectors). Mentions are seeded once per (slot, text), so a value repeated across legs is grounded once
+// and identical legs share the SAME EntityResolution reference — the substrate the entity gate dedups on.
 
 import type { QueryPlan, Scope } from "./schema";
 import { loadScopeCatalog, type ScopeCatalog } from "./scope-catalog";
@@ -149,10 +154,10 @@ export function groundRegion(text: string, cat: ScopeCatalog): EntityResolution 
   return { text, tier: "shortlist", candidates: scored.slice(0, TOP_K).map((x) => ({ id: x.id, name: branchName(x.id), score: x.cover, branch: x.id })) };
 }
 
-// ---- competition: lexical-first over the whitelist, region-hard-scoped, anchor-hard-scoped, major-ness tie-break ----
-// `allow` (when set) is the anchor allow-set: the union of the leg's player/team leagues. The competition MUST be one
-// of those leagues, so a gendered/variant node is chosen over the bare men's node. Null = today's global behaviour.
-export function groundCompetition(text: string, regionBranch: number | null, cat: ScopeCatalog, allow: Set<number> | null = null): EntityResolution {
+// ---- competition: lexical-first over the whitelist, major-ness tie-break ----
+// Name only. Region scoping and the player/team anchor allow-set are gone: both are now `branch` / league LINKS
+// applied by the constraint pass, which (unlike the old hard pool cuts) can never prune the pool to nothing.
+export function groundCompetition(text: string, cat: ScopeCatalog): EntityResolution {
   const folded0 = fold(text);
   const text2 = cat.competitionAliases.get(folded0) ?? text; // short-form -> a real competition name
   const folded = fold(text2);
@@ -163,19 +168,7 @@ export function groundCompetition(text: string, regionBranch: number | null, cat
     return { id, name: g?.name ?? "", score, branch: g?.branch ?? null };
   };
 
-  // pool: the 303 whitelist, region-hard-scoped to the branch subtree when region is confident. If the cut
-  // empties the pool (the named comp isn't under the region — a conflict), ignore the cut and fall back to
-  // the full pool (the disambiguator owns the conflict); never silently return nothing.
-  let pool = cat.groups;
-  if (regionBranch != null) {
-    const cut = cat.groups.filter((g) => g.branch === regionBranch);
-    if (cut.length) pool = cut;
-  }
-  // anchor cut — HARD (runs after the soft region cut, so the two AND together): the competition must be one of
-  // the anchor's leagues. Unlike the region cut there is NO fallback — if it empties the pool, the `if
-  // (!scored.length) return none` below yields tier none, and a none competition leaves compId null downstream
-  // (the player's own events are kept; the none cell routes to the LLM clarify/reexpress path).
-  if (allow) pool = pool.filter((g) => allow.has(g.id));
+  const pool = cat.groups;
 
   const decide = (want: Set<string>): EntityResolution => {
     const scored = pool.map((g) => ({ g, cover: lex.idfCover(contentTokens(g.name), want) })).filter((x) => x.cover > 0);
@@ -255,7 +248,11 @@ export function groundTeam(text: string, cat: ScopeCatalog): EntityResolution {
       // and keep the senior side — resolves at grounding, so the twin never reaches the entity LLM (pass or clarify).
       if (!hasVariantMarker(text)) {
         const seniors = hits.filter((t) => !hasVariantMarker(t.name));
-        if (seniors.length === 1) return { text, tier: "confident", candidates: [cand(seniors[0]!.id, 0.8)] };
+        // Only a TRUE twin (same base name, differs only by a variant marker) collapses to the senior; a mere
+        // city-mate ("Toronto Tempo (W)" vs "Toronto Raptors") is a different club → stays ambiguous.
+        const base = (s: string) => fold(s).split(" ").filter((w) => !VARIANT_MARKERS.has(w)).join(" ");
+        if (seniors.length === 1 && hits.every((t) => base(t.name) === base(seniors[0]!.name)))
+          return { text, tier: "confident", candidates: [cand(seniors[0]!.id, 0.8)] };
       }
       return { text, tier: "shortlist", candidates: hits.map((t) => cand(t.id, 0.8)) };
     }
@@ -263,37 +260,19 @@ export function groundTeam(text: string, cat: ScopeCatalog): EntityResolution {
   return { text, tier: "none", candidates: [] };
 }
 
-// ---- player: full-name exact -> last-name fallback; hard-scoped under a confident competition/team ----
-export function groundPlayer(
-  text: string,
-  scope: { compId: number | null; teamIds: number[] },
-  cat: ScopeCatalog,
-): EntityResolution {
+// ---- player: full-name exact -> last-name -> first-name fallback ----
+// Name only. The old team/competition hard-scoping is gone — those are now club/league LINKS applied by the
+// constraint pass, which narrows in BOTH directions (a player can now disambiguate a team, not just the reverse).
+export function groundPlayer(text: string, cat: ScopeCatalog): EntityResolution {
   const folded = fold(text);
   const cand = (id: number, score: number): Candidate => {
     const p = cat.playerById.get(id)!;
     return { id, name: p.name, score, clubId: p.clubId, countryTeamId: p.countryTeamId, competitionIds: p.competitionIds };
   };
-  const hasScope = scope.compId != null || scope.teamIds.length > 0;
-  const inScope = (id: number): boolean => {
-    const p = cat.playerById.get(id);
-    if (!p) return false;
-    if (scope.compId != null && p.competitionIds.includes(scope.compId)) return true;
-    if (scope.teamIds.length && ((p.clubId != null && scope.teamIds.includes(p.clubId)) || (p.countryTeamId != null && scope.teamIds.includes(p.countryTeamId)))) return true;
-    return false;
-  };
 
-  // Resolve an id set to a tier. When a scope is active, HARD-filter to it: a clean single survivor is
-  // confident; >1 survivor is ambiguous. If NOTHING survives the scope (the player isn't in scope — a
-  // conflict), fall through to the unscoped set as a clarify (the disambiguator owns it). `weak` downgrades
-  // an unscoped multi-hit from a loose match (last-name fallback) to a shortlist rather than ambiguous.
+  // `weak` downgrades a multi-hit from a loose match (last/first-name fallback) to a shortlist, not ambiguous.
   const resolveSet = (ids: number[], weak: boolean): EntityResolution => {
     if (!ids.length) return { text, tier: "none", candidates: [] };
-    if (hasScope) {
-      const scoped = ids.filter(inScope);
-      if (scoped.length === 1) return { text, tier: "confident", candidates: [cand(scoped[0]!, 1)] };
-      if (scoped.length > 1) return { text, tier: "ambiguous", candidates: scoped.slice(0, TOP_K).map((id) => cand(id, 1)) };
-    }
     if (ids.length === 1) return { text, tier: weak ? "shortlist" : "confident", candidates: [cand(ids[0]!, weak ? 0.7 : 1)] };
     return { text, tier: weak ? "shortlist" : "ambiguous", candidates: ids.slice(0, TOP_K).map((id) => cand(id, weak ? 0.7 : 1)) };
   };
@@ -316,38 +295,67 @@ export function groundPlayer(
   return { text, tier: "none", candidates: [] };
 }
 
-// Union of competitionIds across grounded entities' candidates — the anchor allow-set fed to groundCompetition.
-// Built from CANDIDATES (any tier), so an ambiguous player contributes the union of all its homonyms' leagues.
-export const compUnion = (rs: (EntityResolution | null)[]): Set<number> => {
-  const s = new Set<number>();
-  for (const r of rs) if (r) for (const c of r.candidates) for (const id of c.competitionIds ?? []) s.add(id);
-  return s;
-};
+// ---- the constraint engine (the one rule that replaced the cascade's special cases) ----
 
-// Head-to-head twin lock. Esports (and other multi-game orgs) list the SAME club once per game — "Team Liquid" in
-// Dota 2, in Valorant, in LoL — so a bare name grounds `ambiguous` across games and the entity LLM sees N identical
-// "Team Liquid" candidates it can't tell apart. When a leg names >=2 teams the real match is the game they BOTH
-// play: keep only each team's candidates that share a competition with another named team; if that leaves one it's
-// confident (recall's confident-only fetch + co-occurrence then resolve it). competitionIds, not groupIds — every
-// esports team shares the sport-root group, only the specific league distinguishes the twins. No shared competition
-// (nothing pruned) -> left untouched for the LLM. ponytail: O(teams^2) comp-set scan, fine at a handful of teams.
-function lockHeadToHead(teams: EntityResolution[]): EntityResolution[] {
-  if (teams.length < 2) return teams;
-  const compsOf = (t: EntityResolution): Set<number> => new Set(t.candidates.flatMap((c) => c.competitionIds ?? []));
-  const others = teams.map((_, i) => {
-    const u = new Set<number>();
-    teams.forEach((o, j) => { if (j !== i) for (const id of compsOf(o)) u.add(id); });
-    return u;
-  });
-  return teams.map((t, i) => {
-    if (t.candidates.length <= 1) return t;
-    const kept = t.candidates.filter((c) => (c.competitionIds ?? []).some((id) => others[i]!.has(id)));
-    if (!kept.length || kept.length === t.candidates.length) return t;
-    return { ...t, tier: kept.length === 1 ? "confident" : t.tier, candidates: kept };
-  });
+// The structural ids a candidate belongs to: its leagues, its groups, its club/country, its region branch.
+// The SPORT-ROOT group is excluded on purpose — every team in a sport carries it, so keeping it would link
+// everything to everything (and silently un-fix the esports head-to-head case this rule subsumes).
+function links(c: Candidate, rootId: number): Set<number> {
+  const s = new Set<number>();
+  for (const id of c.competitionIds ?? []) s.add(id);
+  for (const id of c.groupIds ?? []) if (id !== rootId) s.add(id);
+  if (c.clubId != null && c.clubId !== c.id) s.add(c.clubId);
+  if (c.countryTeamId != null) s.add(c.countryTeamId);
+  if (c.branch != null) s.add(c.branch);
+  return s;
 }
 
-// ---- the cascade, run PER leg with a memo cache ----
+// Arc-consistency to fixpoint over one leg's mentions. Prunes each candidate set to those linked to at least
+// one candidate of every other set, STRONG links first (direct membership: this player's club IS this team),
+// falling back to WEAK (shared league). A filter that would empty a set is skipped — that skip is what lets a
+// stale/incomplete roster fall through to the weaker signal instead of deleting the correct answer.
+// ponytail: O(passes · mentions² · candidates²) with mentions ≤ ~6 and candidates ≤ TOP_K — microseconds.
+export function propagate(sets: Candidate[][], rootId: number): Candidate[][] {
+  const cur = sets.map((s) => s.slice());
+  const memo = new Map<Candidate, Set<number>>();
+  const L = (c: Candidate): Set<number> => {
+    let s = memo.get(c);
+    if (!s) memo.set(c, (s = links(c, rootId)));
+    return s;
+  };
+  const strong = (a: Candidate, b: Candidate): boolean => L(a).has(b.id) || L(b).has(a.id);
+  const weak = (a: Candidate, b: Candidate): boolean => { const la = L(a); for (const x of L(b)) if (la.has(x)) return true; return false; };
+
+  for (let pass = 0; pass <= cur.length; pass++) {
+    let changed = false;
+    for (let i = 0; i < cur.length; i++) {
+      if (cur[i]!.length <= 1) continue;
+      for (let j = 0; j < cur.length; j++) {
+        if (i === j || !cur[j]!.length) continue;
+        const s = cur[i]!.filter((a) => cur[j]!.some((b) => strong(a, b)));
+        const next = s.length ? s : cur[i]!.filter((a) => cur[j]!.some((b) => weak(a, b)));
+        if (next.length && next.length < cur[i]!.length) { cur[i] = next; changed = true; }
+      }
+    }
+    if (!changed) break;
+  }
+  return cur;
+}
+
+// Re-tier a mention after pruning: a set narrowed to exactly one is settled.
+const retier = (r: EntityResolution, kept: Candidate[]): EntityResolution =>
+  kept.length === r.candidates.length ? r
+    : { text: r.text, tier: kept.length === 1 ? "confident" : r.tier, candidates: kept };
+
+// Constrain ONE freshly-ground mention against already-settled ones (the entity gate's re-express path, so a
+// re-grounded phrase gets the same relational narrowing the seed pass got).
+export function constrainTo(res: EntityResolution, others: EntityResolution[], cat: ScopeCatalog): EntityResolution {
+  if (res.candidates.length <= 1 || !others.length) return res;
+  const kept = propagate([res.candidates, ...others.map((o) => o.candidates)], cat.sportRootId)[0]!;
+  return retier(res, kept);
+}
+
+// ---- seed → constrain → merge ----
 // `opts.region` lets a caller (the eval gate) feed region as GIVEN, exactly as the market grounder is fed a
 // clean market_concept — so a flaky extractor LLM can't redden a grounder test. Applied to every leg; falls
 // back to each leg's own scope.region otherwise.
@@ -365,72 +373,90 @@ export function groundScope(plan: QueryPlan, opts: { region?: string | null } = 
     ? { text: plan.sport, tier: "confident", candidates: [{ id: cat.sportRootId, name: plan.sport, score: 1 }] }
     : null;
 
-  // Memo by entity text + scope context: a value repeated across legs (the same competition on every leg, a
-  // shared team) is grounded once, and identical references are reused. Player/subject keys fold in teamIds,
-  // and the competition key folds in the anchor allow-set, because those change the result. `\u0000` joins
-  // parts (never present in folded text).
-  const memo = new Map<string, EntityResolution>();
-  const once = (key: string, fn: () => EntityResolution): EntityResolution => {
-    let r = memo.get(key);
-    if (r === undefined) memo.set(key, (r = fn()));
+
+  // ---- 1. SEED: every distinct (slot, text) grounds ONCE, by name alone. Legs sharing a mention share the
+  // same EntityResolution reference — the identity the entity gate dedups its cells on.
+  const seeded = new Map<string, EntityResolution>();
+  const seed = (slot: string, text: string, fn: () => EntityResolution): EntityResolution => {
+    const key = `${slot}:${fold(text)}`;
+    let r = seeded.get(key);
+    if (r === undefined) seeded.set(key, (r = fn()));
     return r;
   };
 
-  const legs: ResolvedLegScope[] = plan.selectors.map((sel) => {
+  type Mentions = {
+    region: EntityResolution | null;
+    competition: EntityResolution | null;
+    teams: EntityResolution[];
+    players: EntityResolution[];
+    subjectPlayer: EntityResolution | null;
+  };
+
+  const mentions: Mentions[] = plan.selectors.map((sel) => {
     const sc = sel.scope;
 
     const regionText = opts.region !== undefined ? opts.region : sc.region;
-    const region = regionText ? once(`region\u0000${fold(regionText)}`, () => groundRegion(regionText, cat)) : null;
-    const regionBranch = region && region.tier === "confident" ? region.candidates[0]!.id : null;
+    const region = regionText ? seed("region", regionText, () => groundRegion(regionText, cat)) : null;
 
-    // teams first (a confident team scopes the player pool — the team→player homonym cut), then players. The
-    // comp→player cut is GONE (Option B): players ground by name + teamIds only, so the competition resolves
-    // LAST against the player's OWN leagues (picking the gendered/variant node).
-    let teams = sc.teams.map((t) => once(`team\u0000${fold(t)}`, () => groundTeam(t, cat)));
+    const comp = sc.competition;
+    const competition = eventCentricComp ?? (comp ? seed("comp", comp, () => groundCompetition(comp, cat)) : null);
+
+    const teams = sc.teams.map((t) => seed("team", t, () => groundTeam(t, cat)));
     // A TEAM named only as the market OWNER (subject), with scope.teams left empty, is still a scope anchor — ground
     // it and fold it into `teams` so recall/scopeMenu/filter/grouping treat it like any scope team (mirrors
     // subjectPlayer for players; same asymmetry check-complete handles for the gate). Skip if already in scope.teams.
     const subjTeam = sel.subject.kind === "team" ? sel.subject.name : undefined;
     if (subjTeam && !sc.teams.some((t) => fold(t) === fold(subjTeam))) {
       const name = subjTeam;
-      teams.push(once(`team-subj:${fold(name)}`, () => groundTeam(name, cat)));
+      teams.push(seed("team", name, () => groundTeam(name, cat)));
     }
-    teams = lockHeadToHead(teams); // esports twins: keep only the shared-competition pair when a leg names >=2 teams
-    const teamIds = teams.filter((r) => r.tier === "confident").flatMap((r) => r.candidates.map((c) => c.id));
-    const pKey = (name: string) => `player\u0000${fold(name)}\u0000${[...teamIds].sort((a, b) => a - b).join(",")}`;
-    const players = sc.players.map((p) => once(pKey(p.name), () => groundPlayer(p.name, { compId: null, teamIds }, cat)));
 
+    const players = sc.players.map((p) => seed("player", p.name, () => groundPlayer(p.name, cat)));
     // the market-OWNER player named on this leg's subject (recall: same player pool as scope.players).
-    // Capture the name in a local const so the memo closure keeps the narrowing (TS drops property-narrowing
-    // inside a closure).
     const subjName = sel.subject.kind === "player" ? sel.subject.name : undefined;
-    const subjectPlayer = subjName
-      ? once(pKey(subjName), () => groundPlayer(subjName, { compId: null, teamIds }, cat))
-      : null;
+    const subjectPlayer = subjName ? seed("player", subjName, () => groundPlayer(subjName, cat)) : null;
 
-    // anchor allow-set drives competition resolution: the union of this leg's player leagues (else team
-    // leagues, else null = today's global behaviour). Built from candidates BEFORE LLM disambiguation.
-    const playerComps = compUnion([...players, subjectPlayer]);
-    const teamComps = compUnion(teams);
-    const allow = playerComps.size ? playerComps : (teamComps.size ? teamComps : null);
-    const allowSig = allow ? [...allow].sort((a, b) => a - b).join(",") : "*";
+    return { region, competition, teams, players, subjectPlayer };
+  });
 
-    const competition = eventCentricComp
-      ?? (sc.competition
-      ? once(`comp\u0000${fold(sc.competition)}\u0000${regionBranch}\u0000${allowSig}`, () => groundCompetition(sc.competition!, regionBranch, cat, allow))
-      : null);
+  // ---- 2. CONSTRAIN, per leg. The LEG is the unit of co-occurrence: two teams named on ONE leg play each
+  // other, so they may narrow each other; two teams on DIFFERENT legs are unrelated and must not.
+  // ---- 3. MERGE across legs. One query names one entity, so the smallest surviving set for a mention wins:
+  // a leg that pinned "Toronto" via its player pins it for the bare "Toronto to win" leg too.
+  const best = new Map<EntityResolution, Candidate[]>();
+  for (const m of mentions) {
+    const list = [m.region, m.competition, ...m.teams, ...m.players, m.subjectPlayer]
+      .filter((x): x is EntityResolution => x !== null);
+    const kept = propagate(list.map((r) => r.candidates), cat.sportRootId);
+    list.forEach((r, i) => {
+      const prev = best.get(r);
+      if (!prev || kept[i]!.length < prev.length) best.set(r, kept[i]!);
+    });
+  }
 
+  // One final resolution per distinct mention, so shared references STAY shared after pruning.
+  const final = new Map<EntityResolution, EntityResolution>();
+  const fin = <T extends EntityResolution | null>(r: T): T => {
+    if (!r) return r;
+    let f = final.get(r);
+    if (f === undefined) final.set(r, (f = retier(r, best.get(r) ?? r.candidates)));
+    return f as T;
+  };
+
+  const legs: ResolvedLegScope[] = plan.selectors.map((sel, i) => {
+    const m = mentions[i]!;
+    const sc = sel.scope;
     return {
-      region,
-      competition,
+      region: fin(m.region),
+      competition: fin(m.competition),
       level: eventCentricComp ? "competition" : sc.level,
       stage: sc.stage,
       time: sc.time,
       playState: sc.play_state,
-      teams,
-      players,
+      teams: m.teams.map((t) => fin(t)),
+      players: m.players.map((p) => fin(p)),
       playerRoles: sc.players.map((p) => p.role),
-      subjectPlayer,
+      subjectPlayer: fin(m.subjectPlayer),
     };
   });
 

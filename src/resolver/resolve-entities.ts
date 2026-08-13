@@ -20,7 +20,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { z } from "zod";
 import {
-  groundRegion, groundCompetition, groundTeam, groundPlayer, compUnion,
+  groundRegion, groundCompetition, groundTeam, groundPlayer, constrainTo,
   type ResolvedScope, type EntityResolution, type ScopeTier, type Candidate,
 } from "./ground-scope";
 import { loadScopeCatalog, type ScopeCatalog } from "./scope-catalog";
@@ -117,21 +117,19 @@ function buildEntityCells(scope: ResolvedScope): { cells: Cell[]; places: Map<Ce
     places.get(ref)!.push({ legIdx, slot, idx });
   };
 
-  // Per-leg confident scoping for the reground closures (the leg this entity belongs to; deduped legs share it).
+  // A re-expressed phrase re-grounds by NAME, then gets the same relational narrowing the seed pass applied in
+  // groundScope — constrained against this leg's already-settled entities (the doubtful cell being regrounded is
+  // not confident, so it never constrains itself).
   scope.legs.forEach((leg, legIdx) => {
-    const regionBranch = leg.region?.tier === "confident" ? leg.region.candidates[0]!.id : null;
-    const teamIds = leg.teams.filter((t) => t.tier === "confident").flatMap((t) => t.candidates.map((c) => c.id));
-    // anchor allow-set for a re-expressed competition — mirrors groundScope: the leg's player leagues (else
-    // team leagues, else null). compId is gone — players no longer narrow by competition (comp→player cut dropped).
-    const playerComps = compUnion([...leg.players, leg.subjectPlayer]);
-    const teamComps = compUnion(leg.teams);
-    const allow = playerComps.size ? playerComps : (teamComps.size ? teamComps : null);
-    add("region", leg.region, legIdx, 0, (p) => groundRegion(p, scat));
-    add("competition", leg.competition, legIdx, 0, (p) => groundCompetition(p, regionBranch, scat, allow));
-    leg.teams.forEach((t, i) => add("team", t, legIdx, i, (p) => groundTeam(p, scat)));
-    leg.players.forEach((pl, i) => add("player", pl, legIdx, i, (p) => groundPlayer(p, { compId: null, teamIds }, scat)));
+    const settled = [leg.region, leg.competition, ...leg.teams, ...leg.players, leg.subjectPlayer]
+      .filter((x): x is EntityResolution => x !== null && x.tier === "confident");
+    const rg = (fn: (p: string) => EntityResolution) => (p: string) => constrainTo(fn(p), settled, scat);
+    add("region", leg.region, legIdx, 0, rg((p) => groundRegion(p, scat)));
+    add("competition", leg.competition, legIdx, 0, rg((p) => groundCompetition(p, scat)));
+    leg.teams.forEach((t, i) => add("team", t, legIdx, i, rg((p) => groundTeam(p, scat))));
+    leg.players.forEach((pl, i) => add("player", pl, legIdx, i, rg((p) => groundPlayer(p, scat))));
     // Market-owner player (the leg's subject) settles in the SAME batch — gated and re-grounded like a player.
-    add("subject", leg.subjectPlayer, legIdx, 0, (p) => groundPlayer(p, { compId: null, teamIds }, scat));
+    add("subject", leg.subjectPlayer, legIdx, 0, rg((p) => groundPlayer(p, scat)));
   });
   return { cells, places };
 }

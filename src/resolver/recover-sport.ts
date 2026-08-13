@@ -26,7 +26,7 @@ const STRONG = new Set<ScopeTier>(["confident", "variants"]);                   
 // Does `sport` ground `name` at all (team OR player index)? A single empty catalog (`other`) yields false.
 function seenIn(name: string, sport: string): boolean {
   const cat = loadScopeCatalog(sport);
-  return SEEN.has(groundTeam(name, cat).tier) || SEEN.has(groundPlayer(name, { compId: null, teamIds: [] }, cat).tier);
+  return SEEN.has(groundTeam(name, cat).tier) || SEEN.has(groundPlayer(name, cat).tier);
 }
 
 // The built sports that ground `name` confident (team OR player). ponytail: O(all-catalogs) lexical scan, only
@@ -34,7 +34,7 @@ function seenIn(name: string, sport: string): boolean {
 function strongSports(name: string): string[] {
   return builtSports().filter((s) => {
     const cat = loadScopeCatalog(s);
-    return STRONG.has(groundTeam(name, cat).tier) || STRONG.has(groundPlayer(name, { compId: null, teamIds: [] }, cat).tier);
+    return STRONG.has(groundTeam(name, cat).tier) || STRONG.has(groundPlayer(name, cat).tier);
   });
 }
 

@@ -20,20 +20,28 @@ function isBlank(v: unknown): boolean {
   return v === null || (typeof v === "object" && v !== null && Object.keys(v).length === 0);
 }
 function isUsableLine(v: unknown): boolean {
-  // A line is now a bare value: a number (rung/handicap, 0 included) or a non-empty string (named pick).
+  // A line is a bare value — a number (rung/handicap, 0 included) or a non-empty string (named pick) — OR a
+  // RANGE object bounding which fixtures qualify. The range is sanitized like `odds`: non-numeric bounds are
+  // stripped, and one left with no bound at all is unusable.
   if (typeof v === "number") return Number.isFinite(v);
-  return typeof v === "string" && v.length > 0;
+  if (typeof v === "string") return v.length > 0;
+  if (v && typeof v === "object") {
+    const o = v as Record<string, unknown>;
+    for (const k of ["min", "max"] as const) if (!(typeof o[k] === "number" && Number.isFinite(o[k]))) delete o[k];
+    return o.min !== undefined || o.max !== undefined;
+  }
+  return false;
 }
 // Sanitize `odds`: drop any min/max that isn't a positive number; an odds object left with no valid bound is
 // removed (the schema needs >=1 positive bound). Repairs the `{ min: 0 }` placeholder a superlative like
 // "shortest odds" produces — the model invents a 0 bound when "odds" is named with no real number.
-function sanitizeOdds(rec: Record<string, unknown>): void {
-  const o = rec.odds as Record<string, unknown> | undefined;
+function sanitizeOdds(rec: Record<string, unknown>, key = "odds"): void {
+  const o = rec[key] as Record<string, unknown> | undefined;
   if (!o || typeof o !== "object") return;
   for (const k of ["min", "max"] as const) {
     if (!(typeof o[k] === "number" && (o[k] as number) > 0)) delete o[k];
   }
-  if (o.min === undefined && o.max === undefined) delete rec.odds;
+  if (o.min === undefined && o.max === undefined) delete rec[key];
 }
 
 // Per-leg scope: a blank `stage` or an all-null `time` skeleton -> coerce to null (omit the facet); default
@@ -63,6 +71,8 @@ function normalizeScope(sc: Record<string, unknown>): void {
 export function normalizePlan(plan: unknown): void {
   if (!plan || typeof plan !== "object") return;
   const p = plan as Record<string, unknown>;
+  // query-level bound (same shape as a selector's `odds`, so the same sanitizer)
+  sanitizeOdds(p, "combined_odds");
   const selectors = p.selectors;
   if (!Array.isArray(selectors)) return;
   for (const sel of selectors) {
@@ -77,8 +87,11 @@ export function normalizePlan(plan: unknown): void {
     }
     if (rec.line !== undefined && !isUsableLine(rec.line)) delete rec.line;
     sanitizeOdds(rec);
-    // `odds_sort` is an optional enum: drop anything that isn't "low"/"high" (incl. null/{}) so the schema parses.
-    if ("odds_sort" in rec && rec.odds_sort !== "low" && rec.odds_sort !== "high") delete rec.odds_sort;
+    // `odds_sort` / `line_sort` are optional enums: drop anything that isn't "low"/"high" (incl. null/{}) so the
+    // schema parses. Same rule for both — one ranks by price, the other by line size.
+    for (const k of ["odds_sort", "line_sort"] as const) {
+      if (k in rec && rec[k] !== "low" && rec[k] !== "high") delete rec[k];
+    }
     // `count` is an optional positive integer (the field-outright limit); drop anything else so the schema parses.
     if ("count" in rec && !(Number.isInteger(rec.count) && (rec.count as number) >= 1)) delete rec.count;
     const subj = rec.subject as Record<string, unknown> | undefined;

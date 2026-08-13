@@ -32,7 +32,7 @@ const INPUT_SCHEMA: Record<string, unknown> = {
           ref: { type: ["integer", "null"], description: "the chosen menu item's ref, or null for none" },
           match: { type: "string", enum: ["exact", "close", "none"] },
           outcome: { type: ["string", "null"], description: "verbatim outcome label from the picked item's [outcomes: …], when the bet names one; else null" },
-          related: { type: "array", items: { type: "integer" }, description: "the (up to 3) menu refs for other markets on the same fixture, most related first; [] only if the fixture has no other market" },
+          related: { type: "array", items: { type: "integer" }, maxItems: 3, description: "the (up to 3) menu refs for other markets on the same fixture, most related first; [] only if the fixture has no other market" },
         },
         required: ["leg", "ref", "match"],
       },

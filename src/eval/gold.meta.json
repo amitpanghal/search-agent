@@ -1,12 +1,18 @@
 {
-  "schemaVersion": "gold-record/v1",
-  "schemaNote": "Mirrors decision-18 QueryPlan; Grounded.id widened to number | number[] (see scorer.spec.md, finding 1).",
-  "catalogVersion": "football@unversioned-2026-05-28",
+  "schemaVersion": "gold-record/v2",
+  "schemaNote": "v2 (extractor rebuild, Phase 5): Grounded.id is OPTIONAL (an id-less cell is text-graded and skipped by the entity gate); GoldPlan.sport may be a list of acceptable sports; GoldPlan.combined_odds added and graded hard; player subjects may omit `name` (generic per-player market), mirroring schema.ts decision 21.",
+  "decks": {
+    "gold.seed.jsonl": "14 hand-authored, catalog-GROUNDED rows (real criterion + entity ids). Drives the entity and market-resolution gates.",
+    "gold.corpus.jsonl": "289 generated rows across 37 sports, expanded from planning/corpus/gold-expect.jsonl by `npm run gold`. Text-graded, no ids. Regenerate freely — it never touches the seed."
+  },
+  "catalogVersion": "37 sports, built 2026-08-11 (see catalogData/*-scope-index.json .version)",
   "catalogCounts": { "criterions": 600, "clubs": 1784, "players": 32587 },
-  "sports": ["FOOTBALL"],
+  "sports": ["FOOTBALL", "+36 more via planning/corpus"],
   "generatedFrom": [
+    "planning/corpus/corpus.jsonl",
+    "planning/corpus/gold-expect.jsonl",
     "football/football_criterions.json",
     "football/football_participants.json"
   ],
-  "validationNote": "E11: at eval start every Grounded.id is checked against the loaded catalog. A missing id => 'stale gold -- re-author'; that cell is skipped, never counted as an AI failure. catalogVersion is a placeholder until the build pipeline (plan step 2) emits a real version string."
+  "validationNote": "E11: at eval start every Grounded.id is checked against the loaded catalog. A missing id => 'stale gold -- re-author'; that cell is skipped, never counted as an AI failure. Corpus rows carry no ids and are exempt by construction."
 }

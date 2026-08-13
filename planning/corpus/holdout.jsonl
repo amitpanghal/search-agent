@@ -1,0 +1,126 @@
+{"id":"t003","sport":"tennis","query":"Show me the Cincinnati matches today","tags":["fixture-lookup","league-modifier","time"]}
+{"id":"t006","sport":"tennis","query":"Mark Lajal vs Dalibor Svrcina, over 21.5 games","tags":["line-vs-price","scope-player"]}
+{"id":"t009","sport":"tennis","query":"Which Cincinnati match has the biggest game handicap?","tags":["line-sort","league-modifier"]}
+{"id":"t013","sport":"tennis","query":"Any tie break in set 2 of Vukic vs Blanch?","tags":["yes/no-line"]}
+{"id":"t016","sport":"tennis","query":"Who wins the Cincinnati title?","tags":["outright","level","scope-competition"]}
+{"id":"t019","sport":"tennis","query":"Cincinnati matches tomorrow morning","tags":["time","fixture-lookup","league-modifier"]}
+{"id":"t022","sport":"tennis","query":"Vukic to win 2-0 and over 20.5 games","tags":["multi-leg","score-combo"]}
+{"id":"t025","sport":"tennis","query":"Cincinnati matches in the next 3 hours where the favourite is under 1.3","tags":["time","odds-only-bounds","league-modifier"]}
+{"id":"t029","sport":"tennis","query":"Cincinnati games with the longest odds on the underdog","tags":["odds-sort","league-modifier"]}
+{"id":"f003","sport":"football","query":"Arsenal vs Coventry City — Gyökeres anytime and Arsenal to win, but only if the combined odds clear 2.0","tags":["multi-leg","combined-odds","binding","player-prop"]}
+{"id":"f006","sport":"football","query":"Ødegaard shots on target over 1.5","tags":["player-prop","line-vs-price"]}
+{"id":"f009","sport":"football","query":"MLS matches tonight with a total under 2.5","tags":["line-range","league-modifier","time"]}
+{"id":"f012","sport":"football","query":"Show me all the corner markets for Arsenal vs Coventry","tags":["family-ask","line-no-number"]}
+{"id":"f015","sport":"football","query":"Premier League top scorer, the 3 favourites","tags":["outright","odds-sort","level"]}
+{"id":"f018","sport":"football","query":"Gyökeres to score and Arsenal to keep a clean sheet","tags":["multi-leg","binding","player-prop"]}
+{"id":"f021","sport":"football","query":"Who scores first in Arsenal vs Coventry?","tags":["player-prop","odds-sort"]}
+{"id":"f024","sport":"football","query":"Goal in both halves for the Arsenal match, over 2.0","tags":["yes/no-line","odds-only-bounds"]}
+{"id":"f028","sport":"football","query":"Coventry with a +1 handicap, only if it's above 2.0","tags":["odds-only-bounds","scope-team"]}
+{"id":"cc10","sport":"football","query":"Premier League quarterfinal — sorry, the semi-final — winner","tags":["stage","self-correction","outright"]}
+{"id":"a003","sport":"american-football","query":"Green Bay Packers vs Pittsburgh Steelers, the over — only if the total is under 41","tags":["over-under-side","line-range"]}
+{"id":"a006","sport":"american-football","query":"Which team wins the Super Bowl?","tags":["outright","level"]}
+{"id":"a009","sport":"american-football","query":"Passing yards over 220.5 in the Packers game, priced above 1.9","tags":["player-prop","line-vs-price","odds-only-bounds"]}
+{"id":"a012","sport":"american-football","query":"Chargers @ Texans point spread, best price","tags":["odds-sort","line-no-number"]}
+{"id":"a015","sport":"american-football","query":"Raiders +6.5 and Cardinals to score first, only if the lot is above 4.0","tags":["multi-leg","combined-odds"]}
+{"id":"a018","sport":"american-football","query":"NCAAF games on Saturday with a spread bigger than 14","tags":["line-range","time","league-modifier"]}
+{"id":"a021","sport":"american-football","query":"Lions to score first and win, priced over 2.0","tags":["yes/no-line","odds-only-bounds"]}
+{"id":"a024","sport":"american-football","query":"Total points in Chargers @ Texans, under 44.5","tags":["over-under-side","line-vs-price"]}
+{"id":"a027","sport":"american-football","query":"Any preseason game going to overtime, over 5/1","tags":["yes/no-line","price-fractional"]}
+{"id":"a030","sport":"american-football","query":"Division finishing position for the Lions","tags":["outright","level","scope-team"]}
+{"id":"b003","sport":"basketball","query":"Toronto Tempo @ Dallas Wings — Paige Bueckers 20+ points, only if it's above 2.5","tags":["player-prop","odds-only-bounds","scope-player"]}
+{"id":"b006","sport":"basketball","query":"Any WNBA game tipping off in the next couple of hours where the favourite is under 1.4","tags":["time","odds-only-bounds","league-modifier"]}
+{"id":"b009","sport":"basketball","query":"Giannis Antetokounmpo rebounds over 11.5, priced above 1.9","tags":["player-prop","line-vs-price","odds-only-bounds"]}
+{"id":"b012","sport":"basketball","query":"Winning margin for Sky @ Valkyries","tags":["margin-market","line-no-number"]}
+{"id":"b015","sport":"basketball","query":"Show me the NBA Cup fixtures","tags":["fixture-lookup","league-modifier"]}
+{"id":"b019","sport":"basketball","query":"Sky to cover +6.5 and over 158.5 points, only if the combined price beats 3.0","tags":["multi-leg","combined-odds"]}
+{"id":"b022","sport":"basketball","query":"WNBA games tomorrow night","tags":["time","fixture-lookup","league-modifier"]}
+{"id":"b025","sport":"basketball","query":"Alanna Smith — no wait, Nyara Sabally — rebounds over 7.5","tags":["self-correction","player-prop"]}
+{"id":"b028","sport":"basketball","query":"Tempo to win and Bueckers over 18.5 points","tags":["multi-leg","player-prop","binding"]}
+{"id":"cc14","sport":"basketball","query":"Bueckers 20+ points at odds over 2.0","tags":["price-not-a-leg","player-prop","odds-only-bounds"]}
+{"id":"m003","sport":"baseball","query":"Pittsburgh Pirates @ Miami Marlins — a home run anytime, only if it's paying over 4/1","tags":["player-prop","price-fractional"]}
+{"id":"m006","sport":"baseball","query":"William Contreras 2+ RBIs, priced above 3.0","tags":["player-prop","odds-only-bounds","scope-player"]}
+{"id":"m009","sport":"baseball","query":"MLB games with a runs line below 7.5","tags":["line-range","league-modifier"]}
+{"id":"m012","sport":"baseball","query":"Marlins on the run line and Schwarber to homer, only if the combined odds clear 5.0","tags":["multi-leg","combined-odds","player-prop"]}
+{"id":"m015","sport":"baseball","query":"Minor League Baseball games tonight","tags":["fixture-lookup","league-modifier","time"]}
+{"id":"m018","sport":"baseball","query":"NPB games tomorrow","tags":["fixture-lookup","league-modifier","time"]}
+{"id":"m021","sport":"baseball","query":"MLB games on now","tags":["play-state","fixture-lookup","league-modifier"]}
+{"id":"m024","sport":"baseball","query":"Strikeout recorded by the away team in inning 1","tags":["yes/no-line","either-team"]}
+{"id":"m027","sport":"baseball","query":"Pirates to win by 3+, only if it's above 3.5","tags":["margin-market","odds-only-bounds"]}
+{"id":"m030","sport":"baseball","query":"Guardians to win and Contreras to drive in a run","tags":["multi-leg","player-prop","binding"]}
+{"id":"r003","sport":"rugby-league","query":"Super League games tonight with a total above 42","tags":["line-range","league-modifier","time"]}
+{"id":"r006","sport":"rugby-league","query":"Nathan Cleary to score first, priced over 8/1","tags":["player-prop","price-fractional","scope-player"]}
+{"id":"r009","sport":"rugby-league","query":"Leeds Rhinos to win to nil, best price","tags":["odds-sort","scope-team"]}
+{"id":"r012","sport":"rugby-league","query":"Brian To'o anytime try scorer, over 2.0","tags":["player-prop","odds-only-bounds"]}
+{"id":"r015","sport":"rugby-league","query":"Show me all the try scorer markets for Penrith vs Roosters","tags":["family-ask","player-prop"]}
+{"id":"r018","sport":"rugby-league","query":"Super League matches tomorrow evening","tags":["time","fixture-lookup","league-modifier"]}
+{"id":"r021","sport":"rugby-league","query":"Exact total tries in Leeds vs Leigh","tags":["line-no-number"]}
+{"id":"r024","sport":"rugby-league","query":"Moses Leota — actually Izack Tago — to score a try","tags":["self-correction","player-prop"]}
+{"id":"r027","sport":"rugby-league","query":"Catalans to cover and over 38.5, only if the combined price clears 3.5","tags":["multi-leg","combined-odds"]}
+{"id":"r030","sport":"rugby-league","query":"Jack Cogger to score and Penrith to win by 13+","tags":["multi-leg","margin-market","player-prop"]}
+{"id":"u003","sport":"ufc-mma","query":"Chidi Njokuani by KO, priced above 3.0","tags":["scope-player","odds-only-bounds"]}
+{"id":"u006","sport":"ufc-mma","query":"Jeremiah Wells vs Myktybek Orolbai, total rounds over 1.5","tags":["over-under-side","line-vs-price"]}
+{"id":"u009","sport":"ufc-mma","query":"In the UFC, who's shortest on Saturday's main card?","tags":["scope-competition","odds-sort","time"]}
+{"id":"u012","sport":"ufc-mma","query":"Rafael Tobias vs Lucas Fernando — Fernando by KO or TKO, above 4.0","tags":["named-over-side","odds-only-bounds"]}
+{"id":"u015","sport":"ufc-mma","query":"UFC fights on now","tags":["play-state","fixture-lookup","league-modifier"]}
+{"id":"u018","sport":"ufc-mma","query":"Tresean Gore — sorry, Vicente Luque — to win by submission","tags":["self-correction","scope-player"]}
+{"id":"u021","sport":"ufc-mma","query":"Brahimaj as the underdog, longest price on the card","tags":["odds-sort","scope-player"]}
+{"id":"u024","sport":"ufc-mma","query":"Any fighter to win in round 1, over 3.0","tags":["yes/no-line","odds-only-bounds"]}
+{"id":"g003","sport":"golf","query":"Rory McIlroy to beat Collin Morikawa, priced over 2.0","tags":["scope-player","odds-only-bounds"]}
+{"id":"g006","sport":"golf","query":"Scottie Scheffler top 20 including ties, only if above 1.8","tags":["outright","odds-only-bounds","scope-player"]}
+{"id":"g009","sport":"golf","query":"Eagle in round 2 at the Boise Open, over 1.5","tags":["yes/no-line","odds-only-bounds"]}
+{"id":"g012","sport":"golf","query":"Xander Schauffele to win and finish top 10","tags":["multi-leg","outright","binding"]}
+{"id":"g015","sport":"golf","query":"Irish Challenge winner, longest price in the field","tags":["outright","odds-sort"]}
+{"id":"o003","sport":"australian-rules","query":"Show me the AFL fixtures this weekend","tags":["fixture-lookup","league-modifier","time"]}
+{"id":"o006","sport":"australian-rules","query":"Margin 1-24 & 25+ for the Richmond game","tags":["margin-market","line-no-number"]}
+{"id":"o009","sport":"australian-rules","query":"Luke Jackson to score a goal, best price","tags":["player-prop","odds-sort"]}
+{"id":"o012","sport":"australian-rules","query":"Josh Treacy 15+ disposals and Fremantle to win","tags":["multi-leg","player-prop","binding"]}
+{"id":"o015","sport":"australian-rules","query":"Adelaide to win and Neil Erasmus 20+ disposals, above 5.0 combined","tags":["multi-leg","combined-odds","player-prop"]}
+{"id":"n003","sport":"rugby-union","query":"Wellington vs North Harbour early tomorrow — the over, line above 45","tags":["over-under-side","line-range","time"]}
+{"id":"n006","sport":"rugby-union","query":"Winning margin for Canterbury","tags":["margin-market","scope-team"]}
+{"id":"n009","sport":"rugby-union","query":"First team to 10 points in Wellington vs North Harbour","tags":["line-no-number"]}
+{"id":"n012","sport":"rugby-union","query":"Who wins the Nations Championship?","tags":["outright","level","scope-competition"]}
+{"id":"n015","sport":"rugby-union","query":"Canterbury — sorry, Northland — to win by 15+","tags":["self-correction","margin-market"]}
+{"id":"c003","sport":"cricket","query":"Scotland vs Canada tomorrow morning — winner, favourite under 1.6","tags":["time","odds-only-bounds","odds-sort"]}
+{"id":"c006","sport":"cricket","query":"Andries Gous to score a half-century, over 3.0","tags":["player-prop","odds-only-bounds","scope-player"]}
+{"id":"c009","sport":"cricket","query":"Most sixes in St Lucia Kings vs the Patriots, best price","tags":["odds-sort"]}
+{"id":"c012","sport":"cricket","query":"Guyana Amazon Warriors to win and Johnson Charles top run-scorer","tags":["multi-leg","outright","binding"]}
+{"id":"c015","sport":"cricket","query":"Australia to beat Bangladesh by a big margin, only if above 2.0","tags":["margin-market","odds-only-bounds"]}
+{"id":"e003","sport":"esports","query":"Show me tonight's CS2 matches","tags":["fixture-lookup","league-modifier","time"]}
+{"id":"e006","sport":"esports","query":"Who wins The International?","tags":["outright","level","scope-competition"]}
+{"id":"e009","sport":"esports","query":"Map 1 team kills handicap for The Spiders, over 1.9","tags":["scope-team","odds-only-bounds"]}
+{"id":"e012","sport":"esports","query":"SumaiL — actually GH — most kills","tags":["self-correction","player-prop"]}
+{"id":"e015","sport":"esports","query":"Cloud9 to win map 1 and the match, above 2.5 combined","tags":["multi-leg","combined-odds"]}
+{"id":"p003","sport":"table-tennis","query":"Jiri Zuzanek to win 3-0, only if above 2.5","tags":["score-combo","odds-only-bounds"]}
+{"id":"p006","sport":"table-tennis","query":"Martin Sopko to win, priced over 2.0","tags":["scope-player","odds-only-bounds"]}
+{"id":"p009","sport":"table-tennis","query":"Czech Liga Pro games where the favourite is under 1.3","tags":["odds-only-bounds","league-modifier"]}
+{"id":"i003","sport":"ice-hockey","query":"Show me Saturday's AIHL games where the favourite is under 1.5","tags":["time","odds-only-bounds","league-modifier"]}
+{"id":"i006","sport":"ice-hockey","query":"Toronto Maple Leafs to reach the playoffs, over 1.8","tags":["outright","odds-only-bounds","scope-team"]}
+{"id":"i009","sport":"ice-hockey","query":"Adelaide Adrenaline +1.5 and over 6.5 goals","tags":["multi-leg","binding"]}
+{"id":"i012","sport":"ice-hockey","query":"Perth Thunder to win in regulation, over 5/2","tags":["scope-team","price-fractional"]}
+{"id":"d003","sport":"darts","query":"Lee Evans to win 3-0, only if above 3.0","tags":["score-combo","odds-only-bounds"]}
+{"id":"d006","sport":"darts","query":"Checkout total points in leg 2, over 80.5","tags":["over-under-side","line-vs-price"]}
+{"id":"d009","sport":"darts","query":"New Zealand Darts Masters outright, best price","tags":["outright","odds-sort","level"]}
+{"id":"s003","sport":"snooker","query":"Stuart Bingham to win 6-3, only if above 6/1","tags":["score-combo","price-fractional"]}
+{"id":"s006","sport":"snooker","query":"Which China Open match has the biggest frame handicap?","tags":["line-sort","league-modifier"]}
+{"id":"s009","sport":"snooker","query":"Total century breaks over 2.5 in the Robertson match","tags":["over-under-side","line-vs-price"]}
+{"id":"x003","sport":"boxing","query":"Lozada on the draw no bet, priced above 1.5","tags":["scope-player","odds-only-bounds"]}
+{"id":"h003","sport":"horse-racing","query":"Ante-post flat winner, longest price","tags":["outright","odds-sort","level"]}
+{"id":"y003","sport":"greyhounds","query":"Warrnambool races tonight","tags":["fixture-lookup","time","league-modifier"]}
+{"id":"v003","sport":"volleyball","query":"Total points in set 2, over 45.5","tags":["over-under-side","line-vs-price"]}
+{"id":"z003","sport":"motorsports","query":"Cup Series race winner, longest odds in the field","tags":["outright","odds-sort"]}
+{"id":"q003","sport":"formula-1","query":"Constructors championship, longest price","tags":["outright","odds-sort","level"]}
+{"id":"w003","sport":"athletics","query":"Men's 800 metres winner, best price","tags":["outright","odds-sort"]}
+{"id":"k003","sport":"handball","query":"Bundesliga handball winner including play-offs","tags":["outright","level","league-modifier"]}
+{"id":"j003","sport":"field-hockey","query":"Show me the hockey World Cup markets","tags":["family-ask","level"]}
+{"id":"l003","sport":"lacrosse","query":"Atlas on the handicap, priced over 2.0","tags":["scope-team","odds-only-bounds"]}
+{"id":"ch03","sport":"chess","query":"Show me the chess tournament bets","tags":["family-ask","level"]}
+{"id":"cy03","sport":"cycling","query":"Show me the cycling classification markets","tags":["family-ask","level"]}
+{"id":"tr03","sport":"trotting","query":"Show me the trotting markets this weekend","tags":["family-ask","time"]}
+{"id":"ga03","sport":"gaelic-sports","query":"Show me the GAA markets","tags":["family-ask"]}
+{"id":"ws03","sport":"winter-sports","query":"Show me the biathlon markets","tags":["family-ask"]}
+{"id":"ww03","sport":"wwe-pro-wrestling","query":"Show me the WWE markets","tags":["family-ask"]}
+{"id":"tv03","sport":"tv-novelty","query":"Emmy Awards markets","tags":["family-ask","level"]}
+{"id":"po03","sport":"politics","query":"USA Elections markets","tags":["family-ask","level"]}
+{"id":"eb03","sport":"esports-basketball","query":"Total points odd or even in the Bayern game","tags":["line-no-number"]}
+{"id":"vs03","sport":"virtual-sports","query":"Total goals over 2.5 in the virtual match","tags":["over-under-side","line-vs-price"]}
+{"id":"zs03","sport":"z-sports","query":"Which game has the widest spread tonight?","tags":["line-sort","time"]}

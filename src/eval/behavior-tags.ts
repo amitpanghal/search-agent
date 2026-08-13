@@ -33,6 +33,22 @@ export const BEHAVIOR_TAG_IDS = [
   "scope-nt-variant",
   "odds-sort",
   "play-state",
+  // ---- added by the extractor-rebuild sweep (planning/extractor-rebuild-plan.md): one tag per failure
+  // class measured across 58 live probes. See BEHAVIOR_TAGS below for the evidence behind each. ----
+  "league-modifier",
+  "over-under-side",
+  "margin-market",
+  "price-fractional",
+  "price-not-a-leg",
+  "named-over-side",
+  "outright",
+  "player-prop",
+  "score-combo",
+  "multi-leg",
+  "line-range",
+  "line-sort",
+  "combined-odds",
+  "family-ask",
 ] as const;
 
 export type BehaviorTag = (typeof BEHAVIOR_TAG_IDS)[number];
@@ -164,6 +180,79 @@ export const BEHAVIOR_TAGS: Record<
     tier: "soft",
     desc: "Live (in-play) vs pre-match; a bare clock phrase stays a time window.",
     example: "\"live corner markets\" -> play_state live; \"games next 48h\" -> time window, play_state null.",
+  },
+
+  // ---- extractor-rebuild classes. Every example below is a real failure from the 58-probe sweep, not a
+  // hypothetical: the wording is what the user typed and the "got" is what the extractor actually emitted. ----
+  "league-modifier": {
+    tier: "critical",
+    desc: "A competition used as a MODIFIER on the event noun is still the competition, never a category word. Dropping it leaves the plan with no anchor at all, so check-complete stops the query before any fetch.",
+    example: "\"which MLB game tonight\" -> competition MLB (got null, because MLB also told it sport=baseball); \"in the MLB, which game tonight\" already keeps it.",
+  },
+  "over-under-side": {
+    tier: "critical",
+    desc: "The over/under side comes from the BET clause; a condition clause about the line must never set or flip it (getting it wrong is the opposite bet).",
+    example: "\"the over, only if the total is under 41\" -> direction over (got under, taken from the condition).",
+  },
+  "margin-market": {
+    tier: "critical",
+    desc: "A winning-margin ask names a margin/handicap market, not the plain winner — picking the winner then applying the margin as a line empties the leg.",
+    example: "\"Penrith by 13+\" -> a margin market (got \"Regular Time (3-way)\" + line 13 -> line-absent, no result).",
+  },
+  "price-fractional": {
+    tier: "critical",
+    desc: "Fractional and idiomatic prices normalise to DECIMAL odds; reading the numerator as a decimal silently loosens the bound.",
+    example: "\"paying over 4/1\" -> odds {min: 5.0} (got {min: 4}, which let a 4.30 shot through); \"over even money\" -> {min: 2.0}.",
+  },
+  "price-not-a-leg": {
+    tier: "critical",
+    desc: "A price condition is `odds` on the bet it qualifies — never a second selector, and never a line on a market of its own.",
+    example: "\"a player to kick 3+ goals, over 4.0\" -> ONE selector + odds {min 4.0} (got a second selector: event \"goals\" line 4 over).",
+  },
+  "named-over-side": {
+    tier: "critical",
+    desc: "A named team or player owns the market; never replace it with a positional home/away guess, which inverts whenever the feed orders the fixture the other way.",
+    example: "\"Golden State vs Chicago Sky - Valkyries to cover\" -> subject team Golden State (got either_match_team away; the feed lists it Chicago Sky @ Golden State, so every price returned was Chicago Sky's).",
+  },
+  "outright": {
+    tier: "critical",
+    desc: "A competition-grain market (outright winner, top scorer, award, tournament progress) settles over the whole competition, not one fixture.",
+    example: "\"top scorer across the Premier League season\" -> level competition; a single-match stat at a tournament stays fixture.",
+  },
+  "player-prop": {
+    tier: "critical",
+    desc: "A per-player line market, distinguished from the team/match total twin of the same stat.",
+    example: "\"Bueckers 20+ points\" -> the per-player points market, not the game total.",
+  },
+  "score-combo": {
+    tier: "critical",
+    desc: "Correct score / set betting / map score name one outcome of a multi-outcome market — and the token is stated from the SUBJECT's side, so the subject must be captured or the side inverts.",
+    example: "\"Learner Tien vs Shelton - Shelton in straight sets\" -> subject Shelton, so 0-2 @ 2.12 (got subject event and 2-0 @ 4.40, which is Tien winning).",
+  },
+  "multi-leg": {
+    tier: "critical",
+    desc: "Two independently-settling bets in one query split into two selectors, each bound to its own subject.",
+    example: "\"Gyokeres anytime and Arsenal to win\" -> two selectors (player scorer, team winner), never merged or swapped.",
+  },
+  "line-range": {
+    tier: "soft",
+    desc: "A comparative on the LINE bounds which lines qualify — it does not pick one rung. Needs the schema's line range.",
+    example: "\"only games with a runs line above 8.5\" -> line {min: 8.5} (got line 8.5, which returned the whole 6.5-12.5 ladder).",
+  },
+  "line-sort": {
+    tier: "soft",
+    desc: "A superlative on the LINE ranks fixtures by line size — distinct from odds_sort, which ranks by price. Needs the schema's line_sort.",
+    example: "\"which game has the biggest handicap\" -> line_sort high (got odds_sort high, a price ranking).",
+  },
+  "combined-odds": {
+    tier: "soft",
+    desc: "A price bound on the COMBINED return of several legs is query-level, not per-selector; applying it to one leg deletes that leg.",
+    example: "\"Gyokeres anytime and Arsenal to win, only if the combined odds clear 2.0\" -> combined_odds {min 2.0} (got odds {min 2.0} on the Arsenal leg, priced 1.2, so it was dropped).",
+  },
+  "family-ask": {
+    tier: "soft",
+    desc: "A request to see a whole market family rather than one bet.",
+    example: "\"show me all the corner markets\" -> one selector naming the family, resolved with siblings as related.",
   },
 };
 

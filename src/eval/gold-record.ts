@@ -9,7 +9,7 @@
 // Assumes `zod` (the project's package.json arrives in plan step 2). This file is
 // the schema source; the seed data lives in gold.seed.jsonl, the stamp in gold.meta.json.
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { z } from "zod";
@@ -21,7 +21,12 @@ import { BEHAVIOR_TAG_IDS } from "./behavior-tags";
 // (This `number | number[]` widening is the one change from E9's single-id cell,
 // forced by authoring g001's "team total goals" selector -- see scorer.spec.md.)
 export const Grounded = z.object({
-  id: z.union([z.number(), z.array(z.number()).min(1)]),
+  // OPTIONAL since the multi-sport corpus (Phase 5). A cell WITH an id is graded by the deterministic entity
+  // gate (scope-scorer) as before. A cell WITHOUT one says "grade my WORDING, not my grounding": the corpus
+  // rows exist to measure extraction across 37 sports, and pinning a catalog id per team/player/competition
+  // would both cost a lookup per cell and redden the entity gate with catalog gaps that are not extractor bugs.
+  // Text grading (structural-scorer's scopeDiffs) only ever reads accept[], so it is unaffected either way.
+  id: z.union([z.number(), z.array(z.number()).min(1)]).optional(),
   accept: z.array(z.string()).default([]),
   // Entity-grounding ONLY: the tier the scope grounder is expected to return for this cell. Default
   // "confident" (a clean, single resolution that must CONTAIN the gold id — confident-precision). A clarify
@@ -35,7 +40,9 @@ export type Grounded = z.infer<typeof Grounded>;
 // ---- gold mirror of the decision-18 QueryPlan ----
 
 const GoldSubject = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("player"), name: Grounded }),
+  // `name` optional, mirroring schema.ts decision 21: named, a specific player owns the line ("Mbappé shots");
+  // omitted, it's a generic per-player market ("best-priced anytime goalscorers") with no one player named.
+  z.object({ kind: z.literal("player"), name: Grounded.optional() }),
   z.object({ kind: z.literal("team"), name: Grounded }),
   z.object({ kind: z.literal("either_match_team") }), // bare -- teams come from the leg's scope
   z.object({ kind: z.literal("event") }), // bare -- whole-match / no named owner
@@ -49,7 +56,13 @@ const GoldSubject = z.discriminatedUnion("kind", [
 // A line is a bare value (no kind/direction): a NUMBER rung (over/under threshold, handicap) graded by exact
 // value (E2), or a named multi-outcome pick (HT/FT cell, correct score) as a `Grounded` string graded loosely
 // against its accept list. A yes/no side or a bare superlative carries no value -> the leg omits `line`.
-const Line = z.union([z.number(), Grounded]);
+// Third member: a line RANGE ("only games with a runs line above 8.5") — bounds which fixtures qualify rather
+// than naming a rung. Distinguishable from `Grounded` by having no `accept`/`id`.
+const Line = z.union([
+  z.number(),
+  z.object({ min: z.number().optional(), max: z.number().optional() }).refine((o) => o.min !== undefined || o.max !== undefined, "need >=1 bound"),
+  Grounded,
+]);
 
 const Odds = z
   .object({ min: z.number().positive().optional(), max: z.number().positive().optional() })
@@ -69,6 +82,10 @@ const Odds = z
 // than guessing (e.g. a player asked for a team-only stat, like "Bruno Fernandes corners" under WC26 —
 // no player-corners market exists and there is nothing to offer). Exactly one of id|offer|main|none;
 // accept[] stays diagnostic (and pairs a `none` cell to its plan selector by text).
+// TEXT (`accept` alone, no id): the row grades the extractor's WORDING only — the market axis is text-graded
+// (looseMatch vs accept[]) in the default mode anyway, so an id would be unused ceremony. This is what makes a
+// large multi-sport corpus authorable: write the wording, don't look up a criterion id per row. Rows that must
+// also exercise the post-fetch resolver keep an `id` cell and are picked up by market-resolve-gate.ts.
 const MarketConcept = z.union([
   z.object({
     id: z.union([z.number(), z.array(z.number()).min(1)]),
@@ -80,6 +97,7 @@ const MarketConcept = z.union([
   }),
   z.object({ main: z.literal(true), accept: z.array(z.string()).default([]) }),
   z.object({ none: z.literal(true), accept: z.array(z.string()).default([]) }),
+  z.object({ accept: z.array(z.string()).min(1) }), // TEXT-only (last: the members above are strictly narrower)
 ]);
 
 const Stage = z.string().min(1); // the tournament round as text -- resolved by the live layer (E2)
@@ -117,8 +135,13 @@ const GoldSelector = z.object({
   subject: GoldSubject,
   market_concept: MarketConcept, // exact criterion id(s) OR an offer-of-alternatives (see MarketConcept)
   line: Line.optional(),
+  // Which SIDE of a two-sided market the query named (mirrors Selector.direction in schema.ts). Graded HARD
+  // alongside line/odds: a flipped side is the opposite bet, and it was previously ungraded — "the over, only
+  // if the total is under 41" silently extracted direction "under" with nothing to catch it.
+  direction: z.enum(["over", "under", "yes", "no"]).optional(),
   odds: Odds.optional(),
   odds_sort: z.enum(["low", "high"]).optional(), // mirrors Selector (schema.ts); plain enum, not grounded
+  line_sort: z.enum(["low", "high"]).optional(), // ranks by LINE size, not price — the other half of the sort axis
   scope: GoldScope, // per-leg scope (mirrors schema.ts Selector.scope)
 });
 
@@ -127,7 +150,14 @@ const GoldSelector = z.object({
 // is the lone `main` sentinel selector (market_concept {main:true}), graded like the former fixture_lookup
 // (fixture-selecting facets HARD, Option A).
 const GoldPlan = z.object({
-  sport: z.string().min(1),
+  // Usually one sport. A LIST when the query genuinely admits more than one and the extractor has no cue to
+  // choose ("Which team has the longest odds to reach the playoffs?" — four leagues say that; "Lakers vs
+  // Celtics" is both `basketball` and the shadow `z-sports` root). Pinning one there would grade a coin flip.
+  sport: z.union([z.string().min(1), z.array(z.string().min(1)).min(1)]),
+  // A price bound on the COMBINED return of every leg (mirrors QueryPlan.combined_odds). QUERY-level, and
+  // graded hard: put per-selector instead it deletes the leg it lands on, which is exactly the failure the
+  // field was added for ("...combined over 2.0" applied {min:2} to the 1.2 winner leg and dropped it).
+  combined_odds: Odds.optional(),
   selectors: z.array(GoldSelector).min(1),
 });
 
@@ -144,11 +174,22 @@ export const GoldRecord = z.object({
 });
 export type GoldRecord = z.infer<typeof GoldRecord>;
 
-// Load + validate the gold seed (one JSON object per line). Shared by the eval runner and the gates so the
-// parse lives in one place; throws with the offending line number on bad JSON / schema.
+// Load + validate the gold set (one JSON object per line). Shared by the eval runner and the gates so the
+// parse lives in one place; throws with the offending file+line on bad JSON / schema.
+//
+// Two files, concatenated: `gold.seed.jsonl` is the hand-authored, catalog-GROUNDED deck (real criterion and
+// entity ids — it drives the entity + market-resolve gates), and `gold.corpus.jsonl` is the generated
+// multi-sport extraction deck (text-graded, no ids), expanded from planning/corpus by `npm run gold`.
+// Keeping them apart means regenerating the corpus can never clobber the grounded rows.
 export function loadGold(): GoldRecord[] {
   const here = dirname(fileURLToPath(import.meta.url));
-  const text = readFileSync(join(here, "gold.seed.jsonl"), "utf8");
+  return [...parseGold(join(here, "gold.seed.jsonl")), ...parseGold(join(here, "gold.corpus.jsonl"), true)];
+}
+
+function parseGold(path: string, optional = false): GoldRecord[] {
+  if (optional && !existsSync(path)) return [];
+  const text = readFileSync(path, "utf8");
+  const name = path.split("/").pop();
   const out: GoldRecord[] = [];
   for (const [i, raw] of text.split("\n").entries()) {
     const line = raw.trim();
@@ -157,11 +198,11 @@ export function loadGold(): GoldRecord[] {
     try {
       obj = JSON.parse(line);
     } catch (e) {
-      throw new Error(`gold.seed.jsonl line ${i + 1}: invalid JSON — ${(e as Error).message}`);
+      throw new Error(`${name} line ${i + 1}: invalid JSON — ${(e as Error).message}`);
     }
     const parsed = GoldRecord.safeParse(obj);
     if (!parsed.success) {
-      throw new Error(`gold.seed.jsonl line ${i + 1}: schema error — ${parsed.error.message}`);
+      throw new Error(`${name} line ${i + 1}: schema error — ${parsed.error.message}`);
     }
     out.push(parsed.data);
   }

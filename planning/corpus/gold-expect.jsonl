@@ -1,0 +1,344 @@
+// Gold expectations for planning/corpus/gold.jsonl — the compact form documented in scripts/expand-gold.ts.
+// `npm run gold` expands these into src/eval/gold.corpus.jsonl. Authored from the QUERY, not from what the
+// extractor currently returns; see README.md "Authoring conventions" for the rules every row follows.
+//
+// ---- tennis ----
+{"id":"t001","comp":"Cincinnati","time":"w:tonight","legs":[{"m":["@FAV"],"osort":"low"}]}
+{"id":"t002","comp":"Cincinnati","time":"w:tonight","legs":[{"m":["@FAV"],"osort":"low"}]}
+{"id":"t004","legs":[{"subj":"team:Marcos Giron","m":["straight sets","@CORRECT"]}],"teams":["Marcos Giron","Henrique Rocha"]}
+{"id":"t005","legs":[{"subj":"team:Darwin Blanch","m":["@CORRECT"],"line":"2-0"}],"teams":["Aleksandar Vukic","Darwin Blanch"]}
+{"id":"t007","legs":[{"m":["total games"],"dir":"over","odds":{"min":2}}],"teams":["Nicolas Mejia","Jacob Fearnley"]}
+{"id":"t008","comp":"Cincinnati","legs":[{"m":["total games"],"line":{"min":22.5}}]}
+{"id":"t010","combined_odds":{"min":2.5},"legs":[{"subj":"team:Giron","m":["@WIN"]},{"m":["total games"],"line":20.5,"dir":"over"}]}
+{"id":"t011","legs":[{"subj":"team:Liam Broady","m":["@WIN"],"odds":{"min":5}}]}
+{"id":"t012","legs":[{"subj":"team:Fearnley","m":["@WIN"],"odds":{"min":2}}]}
+{"id":"t014","legs":[{"m":["total games"]}],"teams":["Giron","Rocha"]}
+{"id":"t015","comp":"Cincinnati","play":"live","main":true}
+{"id":"t017","comp":"Cincinnati","level":"competition","legs":[{"m":["@OUTRIGHT"],"osort":"low"}]}
+{"id":"t018","legs":[{"subj":"team:Svrcina","m":["to win a set"],"odds":{"min":1.5}}]}
+{"id":"t020","stage":"set 2","legs":[{"m":["@CORRECT"]}],"teams":["Broady","Suresh"]}
+{"id":"t021","legs":[{"m":["@CORRECT"],"osort":"low"}],"teams":["Giron","Rocha"]}
+{"id":"t023","legs":[{"m":["@WIN"]}],"teams":["Giron","Rocha"]}
+{"id":"t024","legs":[{"subj":"team:Mejia","m":["straight sets","@CORRECT"]}]}
+{"id":"t026","legs":[{"m":["total sets"],"line":2.5,"dir":"over"}],"teams":["Lajal","Svrcina"]}
+{"id":"t027","legs":[{"subj":"team:Blanch","m":["first service game"]}]}
+{"id":"t028","legs":[{"subj":"team:Giron","m":["set handicap"],"odds":{"min":1.8}}]}
+{"id":"t030","legs":[{"m":["tiebreaks","number of tiebreaks"]}],"teams":["Vukic","Blanch"]}
+{"id":"cc12","comp":"Cincinnati","stage":"quarterfinal","time":"w:tomorrow","main":true}
+//
+// ---- football ----
+{"id":"f001","comp":"Premier League","time":"w:this weekend","legs":[{"m":["total goals"],"lsort":"high"}]}
+{"id":"f002","comp":"Premier League","time":"w:this weekend","legs":[{"subj":"either:home","m":["@WIN"],"odds":{"max":1.8}}]}
+{"id":"f004","comp":"Premier League","time":"w:this weekend","legs":[{"subj":"player","m":["anytime goalscorer","to score anytime"],"osort":"low"}]}
+{"id":"f005","teams":["Coventry"],"legs":[{"subj":"player:Saka","m":["to score or assist"],"odds":{"min":2}}]}
+{"id":"f007","teams":["Arsenal","Coventry"],"legs":[{"m":["both teams to score"],"odds":{"min":2.5}}]}
+{"id":"f008","comp":"Premier League","legs":[{"m":["total goals"],"line":{"min":3.5}}]}
+{"id":"f010","legs":[{"subj":"team:Arsenal","m":["@CORRECT"],"line":"2-1"}]}
+{"id":"f011","teams":["Coventry"],"legs":[{"subj":"team:Arsenal","m":["@CORRECT"],"line":"2-0","odds":{"min":7}}]}
+{"id":"f013","teams":["Arsenal"],"legs":[{"m":["total corners"],"line":10.5,"dir":"over"}]}
+{"id":"f014","comp":"Premier League","level":"competition","legs":[{"m":["@OUTRIGHT","to win the league"]}]}
+{"id":"f016","comp":"Brasileirao","time":"w:tonight","legs":[{"m":["@HCP"],"lsort":"high"}]}
+{"id":"f017","comp":["MLS","Major League Soccer"],"time":"w:tonight","main":true}
+{"id":"f019","legs":[{"subj":"team:Arsenal","m":["win to nil","to nil"],"odds":{"min":3}}]}
+{"id":"f020","legs":[{"subj":"player:Gabriel Magalhães","m":["to score anytime","anytime goalscorer"]}]}
+{"id":"f022","comp":"Liga Profesional Argentina","play":"live","main":true}
+{"id":"f023","comp":"Premier League","time":"w:saturday,k:after 5pm","main":true}
+{"id":"f025","legs":[{"subj":"player:Ødegaard","m":["to score","anytime goalscorer"]},{"subj":"either","m":["@WIN"],"players":["Ødegaard"]}]}
+{"id":"f026","teams":["Arsenal","Coventry"],"legs":[{"m":["both teams to score"]}]}
+{"id":"f027","legs":[{"subj":"team:Arsenal","m":["@HTFT"],"line":["Arsenal/Arsenal","lead and win","home/home"]}]}
+{"id":"f029","teams":["Arsenal"],"legs":[{"m":["first half total goals"],"line":1.5,"dir":"over"}]}
+{"id":"f030","comp":["Conference League Qualification","Conference League"],"time":"w:tomorrow","main":true}
+{"id":"cc01","region":"England","comp":"Premier League","level":"competition","legs":[{"subj":"player","m":["top assists","most assists"]}]}
+{"id":"cc02","region":"Italy","comp":"Serie A","time":"w:this weekend","legs":[{"m":["total goals"],"line":{"min":3.5}}]}
+{"id":"cc03","players":[["Ødegaard","starts"]],"main":true}
+{"id":"cc04","players":["Gyökeres"],"time":"w:this weekend","main":true}
+{"id":"cc05","time":"p:earliest:1","legs":[{"subj":"team:Brazil U21","m":["@WIN"]}]}
+{"id":"cc06","comp":"World Cup","level":"competition","legs":[{"subj":"team:Brazil","m":["@OUTRIGHT"]}]}
+{"id":"cc07","legs":[{"subj":"player:Juninho","m":["to score anytime","anytime goalscorer"]}]}
+{"id":"cc08","legs":[{"subj":"player:Rodri","m":["shots on target"],"line":0.5,"dir":"over"}]}
+{"id":"cc09","teams":["Arsenal"],"legs":[{"subj":"player","m":["to score","anytime goalscorer"]}]}
+{"id":"cc13","legs":[{"subj":"team:Arsenal","m":["@WIN"],"odds":{"min":1.5}},{"m":["total corners","corners"],"line":10.5,"dir":"over"}]}
+//
+// ---- american-football ----
+{"id":"a001","comp":["NFL","NFL preseason"],"time":"w:tonight","legs":[{"m":["@HCP"],"lsort":"high"}]}
+{"id":"a002","teams":["Detroit Lions","Cincinnati Bengals"],"legs":[{"subj":"team:Detroit Lions","m":["@HCP"],"odds":{"min":2}}]}
+{"id":"a004","comp":["NFL","NFL preseason"],"time":"w:tonight","main":true}
+{"id":"a005","comp":["NFL","NFL preseason"],"legs":[{"m":["total points","total"],"line":{"max":40}}]}
+{"id":"a007","level":"competition","legs":[{"subj":"team:Kansas City","m":["to reach the playoffs","make the playoffs"],"odds":{"min":1.5}}]}
+{"id":"a008","teams":[["Lions","Detroit Lions"]],"legs":[{"subj":"player","m":["receiving yards"],"line":60.5,"dir":"over"}]}
+{"id":"a010","teams":["Colts","Patriots"],"legs":[{"m":["@MARGIN"]}]}
+{"id":"a011","legs":[{"subj":"team:Patriots","m":["@MARGIN"],"line":7,"odds":{"min":2.5}}]}
+{"id":"a013","comp":"NFL","time":"w:this week","legs":[{"m":["@FAV"],"odds":{"max":1.4}}]}
+{"id":"a014","legs":[{"subj":"team:Cardinals","m":["@HCP"]},{"m":["total points","total"],"dir":"over"}]}
+{"id":"a016","level":"competition","legs":[{"subj":"team:Seahawks","m":["regular season wins","games won"]}]}
+{"id":"a017","level":"competition","legs":[{"m":["regular season wins","games won"],"line":12,"osort":"high"}]}
+{"id":"a019","comp":"NFL","legs":[{"m":["total points","total"],"lsort":"high"}]}
+{"id":"a020","teams":["Steelers"],"legs":[{"subj":"player","m":["passing yards"]}]}
+{"id":"a022","comp":"CFL","time":"w:tonight","main":true}
+{"id":"a023","legs":[{"subj":"team:Bengals","m":["first half handicap","@HCP"],"line":-3.5}]}
+{"id":"a025","comp":"NFL","level":"competition","legs":[{"m":["to reach the playoffs","make the playoffs"],"osort":"low"}]}
+{"id":"a026","teams":["Colts"],"legs":[{"m":["total points","points"],"line":40.5,"dir":"over"}]}
+{"id":"a028","comp":["NFL draft","NFL"],"level":"competition","legs":[{"m":["outright","draft"]}]}
+{"id":"a029","time":"w:tomorrow,k:night","legs":[{"subj":"team:Patriots","m":["@HCP"]}]}
+//
+// ---- basketball ----
+{"id":"b001","comp":"WNBA","time":"w:tonight","legs":[{"m":["@HCP"],"lsort":"high"}]}
+{"id":"b002","teams":["Chicago Sky","Golden State Valkyries"],"legs":[{"subj":"team:Golden State Valkyries","m":["@HCP"],"line":{"min":6}}]}
+{"id":"b004","comp":"WNBA","time":"w:tonight","legs":[{"m":["total points","total"],"dir":"under","line":{"max":158}}]}
+{"id":"b005","legs":[{"subj":"player:Arike Ogunbowale","m":["points and rebounds"],"line":25.5,"dir":"over"}]}
+{"id":"b007","comp":"NBA","level":"competition","legs":[{"m":["@OUTRIGHT","to win the title"]}]}
+{"id":"b008","level":"competition","legs":[{"m":["regular season wins","games won"],"line":50,"osort":"low"}]}
+{"id":"b010","legs":[{"subj":"player:Bueckers","m":["points","to score 20+"],"line":20},{"subj":"team:Wings","m":["@WIN"]}]}
+{"id":"b011","legs":[{"subj":"team:Valkyries","m":["@MARGIN"],"line":10,"odds":{"min":3}}]}
+{"id":"b013","comp":"CEBL","play":"live","main":true}
+{"id":"b014","comp":"WNBA","time":"w:tonight","legs":[{"m":["@FAV"],"osort":"low"}]}
+{"id":"b016","teams":["Tempo","Wings"],"legs":[{"m":["total points"],"line":162.5,"dir":"over"}]}
+{"id":"b017","legs":[{"subj":"team:Wings","m":["first quarter handicap","@HCP"],"odds":{"min":1.8}}]}
+{"id":"b018","legs":[{"subj":"player:LeBron James","m":["points"],"line":24.5,"dir":"over"},{"subj":"either","m":["@WIN"],"players":["LeBron James"]}]}
+{"id":"b020","legs":[{"subj":"player:Victor Wembanyama","m":["blocks"]}]}
+{"id":"b021","sport":["basketball","american-football","ice-hockey","baseball"],"level":"competition","legs":[{"m":["to reach the playoffs","make the playoffs"],"osort":"high"}]}
+{"id":"b023","comp":"WNBA","legs":[{"m":["overtime","to go to overtime"],"odds":{"min":9}}]}
+{"id":"b024","legs":[{"subj":"player:Marina Mabrey","m":["threes","three pointers"],"line":2.5,"dir":"over","osort":"low"}]}
+{"id":"b026","comp":"NBA","legs":[{"m":["@HCP"],"line":{"min":12}}]}
+{"id":"b027","teams":["Sky","Valkyries"],"legs":[{"m":["@WIN"]}]}
+{"id":"b029","comp":"NCAAW","time":"w:this weekend","main":true}
+{"id":"b030","teams":["Valkyries"],"legs":[{"m":["@HTFT"]}]}
+//
+// ---- baseball ----
+{"id":"m001","comp":"MLB","time":"w:tonight","legs":[{"m":["total runs"],"lsort":"high"}]}
+{"id":"m002","teams":["Chicago Cubs","Washington Nationals"],"legs":[{"m":["total runs","runs"],"dir":"over","line":{"min":8.5}}]}
+{"id":"m004","comp":"MLB","time":"w:tonight","main":true}
+{"id":"m005","time":"w:tonight","legs":[{"subj":"either:away","m":["run line"],"odds":{"min":2}}]}
+{"id":"m007","legs":[{"subj":"player:Spencer Horwitz","m":["hits","total hits"],"line":1}]}
+{"id":"m008","teams":["Guardians","Tigers"],"legs":[{"m":["total runs"],"line":8.5,"dir":"under"}]}
+{"id":"m010","comp":"World Series","level":"competition","legs":[{"m":["@OUTRIGHT"]}]}
+{"id":"m011","comp":"MLB","time":"w:tonight","legs":[{"m":["@FAV"],"osort":"low"}]}
+{"id":"m013","legs":[{"m":["first 5 innings total runs","total runs"],"line":4.5,"dir":"over"}]}
+{"id":"m014","legs":[{"subj":"team:Cubs","m":["to score a run in inning 1","score a run"],"odds":{"min":2}}]}
+{"id":"m016","teams":["Cubs","Nationals"],"legs":[{"m":["total runs"]}]}
+{"id":"m017","legs":[{"subj":"team:Tigers","m":["@WIN"]},{"m":["total runs","runs"],"line":9.5,"dir":"over"}]}
+{"id":"m019","legs":[{"subj":"player:Gabriel Moreno","m":["to hit a home run","home run"],"osort":"low"}]}
+{"id":"m020","legs":[{"subj":"team:Nationals","m":["first 5 innings handicap","@HCP"],"odds":{"min":2}}]}
+{"id":"m022","legs":[{"subj":"player:Gabriel Moreno","m":["hits","total hits"],"line":2}]}
+{"id":"m023","comp":"MLB","level":"competition","legs":[{"m":["to win their division","division winner"],"osort":"high"}]}
+{"id":"m025","comp":"Mexican League","time":"w:this weekend","main":true}
+{"id":"m026","combined_odds":{"min":5},"legs":[{"subj":"team:Cubs","m":["run line","@HCP"],"line":-1.5},{"m":["total runs","runs"],"line":8.5,"dir":"over"}]}
+{"id":"m028","teams":["Tigers"],"legs":[{"m":["odd or even","odd/even"]}]}
+{"id":"m029","comp":"KBO League","time":"w:tonight","main":true}
+//
+// ---- rugby-league ----
+{"id":"r001","teams":["Penrith Panthers","Sydney Roosters"],"legs":[{"subj":"team:Penrith Panthers","m":["@MARGIN"],"line":13,"odds":{"min":2.5}}]}
+{"id":"r002","comp":"NRL","time":"w:this weekend","legs":[{"m":["@HCP"],"lsort":"high"}]}
+{"id":"r004","comp":"NRL","time":"w:this weekend","main":true}
+{"id":"r005","teams":["Penrith","Roosters"],"combined_odds":{"min":4},"legs":[{"subj":"team:Penrith","m":["@HCP"],"line":-12},{"subj":"team:Penrith","m":["first try scorer","first try"]}]}
+{"id":"r007","teams":["Hull Kingston Rovers","Catalans Dragons"],"legs":[{"m":["total points"],"line":40.5,"dir":"over"}]}
+{"id":"r008","legs":[{"subj":"team:Penrith","m":["@MARGIN"],"line":9}]}
+{"id":"r010","comp":"NRL","level":"competition","legs":[{"m":["@OUTRIGHT","to win the title"],"osort":"low"}]}
+{"id":"r011","teams":["Warrington","York"],"legs":[{"m":["total tries"],"line":7.5,"dir":"over"}]}
+{"id":"r013","teams":["Penrith"],"legs":[{"m":["highest scoring half"]}]}
+{"id":"r014","teams":["Manly Sea Eagles","The Dolphins"],"legs":[{"subj":"team:The Dolphins","m":["@HCP"],"line":6.5,"odds":{"min":1.9}}]}
+{"id":"r016","comp":"NRL","play":"live","main":true}
+{"id":"r017","legs":[{"subj":"player","m":["to score a try","try scorer"],"odds":{"min":6}}]}
+{"id":"r019","legs":[{"subj":"team:Roosters","m":["@WIN"]},{"m":["total points","points"],"line":44.5,"dir":"under"}]}
+{"id":"r020","legs":[{"subj":"team:Roosters","m":["@MARGIN"],"line":10}]}
+{"id":"r022","legs":[{"subj":"team:Penrith","m":["first half handicap","@HCP"],"line":-6.5}]}
+{"id":"r023","comp":"Super League","legs":[{"m":["total points","total"],"lsort":"high"}]}
+{"id":"r025","teams":["Penrith"],"legs":[{"m":["first try converted","conversion"],"odds":{"min":1.5}}]}
+{"id":"r026","comp":["NRL (W)","NRLW"],"time":"w:this weekend","main":true}
+{"id":"r028","legs":[{"subj":"team:Penrith","m":["@HTFT"],"line":["Penrith/Penrith","lead and win","home/home"]}]}
+{"id":"r029","comp":"NRL","legs":[{"m":["@FAV"],"odds":{"max":1.3}}]}
+{"id":"cc11","comp":"NRL","stage":"grand final","level":"competition","legs":[{"m":["@OUTRIGHT"],"osort":"low"}]}
+//
+// ---- ufc-mma ----
+{"id":"u001","legs":[{"m":["@DISTANCE"],"odds":{"min":2.2}}],"teams":["Neil Magny","Ramiz Brahimaj"]}
+{"id":"u002","time":"w:saturday","legs":[{"m":["@FAV"],"osort":"high"}]}
+{"id":"u004","legs":[{"subj":"team:Magny","m":["@METHOD","to win by decision"],"odds":{"min":3}}]}
+{"id":"u005","comp":"UFC","time":"w:saturday","main":true}
+{"id":"u007","legs":[{"m":["@METHOD","to win by submission"],"osort":"low"}]}
+{"id":"u008","stage":"round 3","legs":[{"subj":"team:Joel Álvarez","m":["round betting","winning round"],"odds":{"min":7}}]}
+{"id":"u010","legs":[{"m":["@METHOD"]}],"teams":["Magny","Brahimaj"]}
+{"id":"u011","legs":[{"subj":"team:Njokuani","m":["@WIN"]},{"m":["@DISTANCE"],"dir":"no"}]}
+{"id":"u013","legs":[{"subj":"team:Vicente Luque","m":["winning round","round betting"]}]}
+{"id":"u014","stage":"round 2","legs":[{"subj":"team:Magny","m":["round betting","winning round"],"odds":{"min":11}}]}
+{"id":"u016","legs":[{"m":["total rounds","rounds"],"line":2.5,"dir":"under"}],"teams":["Donte Johnson","Eric McConico"]}
+{"id":"u017","combined_odds":{"min":4},"legs":[{"subj":"team:Magny","m":["@WIN"]},{"subj":"team:Njokuani","m":["@WIN"]}]}
+{"id":"u019","time":"w:saturday","legs":[{"m":["@DISTANCE"],"odds":{"min":2.5}}]}
+{"id":"u020","legs":[{"m":["@WIN"]}],"teams":["Wells","Orolbai"]}
+{"id":"u022","legs":[{"m":["@METHOD"]}],"teams":["Njokuani","Álvarez"]}
+{"id":"u023","comp":"UFC","time":"w:tomorrow,k:night","main":true}
+{"id":"u025","combined_odds":{"min":3.5},"legs":[{"subj":"team:Magny","m":["@WIN"]},{"m":["@DISTANCE"]}]}
+//
+// ---- golf ----
+{"id":"g001","comp":"FedEx St. Jude Championship","level":"competition","legs":[{"m":["@OUTRIGHT"]}]}
+{"id":"g002","comp":"FedEx St. Jude Championship","level":"competition","legs":[{"m":["top 10 finish","top 10"],"osort":"low"}]}
+{"id":"g004","comp":"Danish Golf Championship","level":"competition","main":true}
+{"id":"g005","comp":"Portland Classic","stage":"round 1","level":"competition","legs":[{"m":["best score","lowest round score"]}]}
+{"id":"g007","level":"competition","time":"w:this week","legs":[{"m":["@OUTRIGHT"],"osort":"high"}]}
+{"id":"g008","legs":[{"m":["@WIN"],"osort":"low"}],"teams":["Wenyi Ding","Freddy Schott"]}
+{"id":"g010","legs":[{"subj":"team:Hideki Matsuyama","m":["@WIN"],"odds":{"min":2.5}}],"teams":["Hideki Matsuyama","Tommy Fleetwood"]}
+{"id":"g011","level":"competition","time":"w:tomorrow","main":true}
+{"id":"g013","comp":"Swiss Ladies Open","level":"competition","legs":[{"m":["outright","@OUTRIGHT"],"osort":"low"}]}
+{"id":"g014","level":"competition","legs":[{"subj":"team:Scheffler","m":["@OUTRIGHT"]}]}
+//
+// ---- australian-rules ----
+{"id":"o001","teams":["Fremantle","Adelaide"],"legs":[{"subj":"player","m":["goals","to kick 2+ goals"],"line":2,"odds":{"min":3}}]}
+{"id":"o002","comp":"AFL","time":"w:this weekend","legs":[{"m":["@HCP"],"lsort":"high"}]}
+{"id":"o004","legs":[{"subj":"player:Murphy Reid","m":["disposals"],"line":25,"odds":{"min":2.5}}]}
+{"id":"o005","legs":[{"subj":"team:Fremantle","m":["@MARGIN"],"line":"1-39","odds":{"min":2}}]}
+{"id":"o007","comp":"Coleman Medal","level":"competition","legs":[{"m":["@OUTRIGHT"]}]}
+{"id":"o008","comp":["AFL Rising Star","Rising Star"],"level":"competition","legs":[{"m":["@OUTRIGHT","favourite"],"osort":"low"}]}
+{"id":"o010","comp":"AFLW","teams":["Hawthorn","Melbourne"],"legs":[{"m":["total points"],"line":120.5,"dir":"over"}]}
+{"id":"o011","comp":"AFL","legs":[{"m":["@HCP"],"line":{"min":25}}]}
+{"id":"o013","legs":[{"subj":"team:St Kilda","m":["@HCP"],"line":18.5,"odds":{"min":2}}]}
+{"id":"o014","legs":[{"subj":"player:Patrick Voss","m":["behinds","to score a behind"],"line":1}]}
+//
+// ---- rugby-union ----
+{"id":"n001","comp":"NPC","time":"w:tomorrow,k:morning","legs":[{"m":["@HCP"],"line":{"min":10}}]}
+{"id":"n002","teams":["Canterbury","Bay of Plenty"],"legs":[{"subj":"team:Canterbury","m":["@MARGIN"],"line":10,"odds":{"min":2}}]}
+{"id":"n004","comp":["NPC","National Provincial Championship"],"main":true}
+{"id":"n005","teams":["Northland","Taranaki"],"legs":[{"m":["3-way handicap","@HCP"]}]}
+{"id":"n007","comp":"NPC","legs":[{"m":["total points"],"lsort":"high"}]}
+{"id":"n008","legs":[{"subj":"team:Taranaki","m":["half time result","at half time"],"odds":{"min":2.5}}]}
+{"id":"n010","comp":"Currie Cup","time":"w:this weekend","main":true}
+{"id":"n011","legs":[{"subj":"team:Bay of Plenty","m":["@HCP"],"line":12.5},{"m":["total points","points"],"line":45.5,"dir":"over"}]}
+{"id":"n013","legs":[{"subj":"team:Wellington","m":["win to nil","to nil"],"odds":{"min":11}}]}
+{"id":"n014","comp":"NPC","play":"live","main":true}
+//
+// ---- cricket ----
+{"id":"c001","teams":["St Lucia Kings","St Kitts & Nevis Patriots"],"legs":[{"subj":"player","m":["top run-scorer","most runs"],"odds":{"min":7}}]}
+{"id":"c002","teams":["Bangladesh"],"legs":[{"subj":"team:Australia","m":["@WIN"],"odds":{"min":1.5}}]}
+{"id":"c004","comp":["The Hundred","Hundred"],"time":"w:this evening","legs":[{"subj":"player","m":["top batter","top run-scorer"],"odds":{"min":6}}]}
+{"id":"c005","comp":"Caribbean Premier League","main":true}
+{"id":"c007","legs":[{"subj":"player:Kamil Pooran","m":["total runs","runs"],"line":24.5,"dir":"over"}]}
+{"id":"c008","teams":["Australia","Bangladesh"],"legs":[{"m":["toss winner"]}]}
+{"id":"c010","comp":"The Hundred","time":"w:tonight","legs":[{"m":["@FAV"],"osort":"low"}]}
+{"id":"c011","legs":[{"subj":"player:Andre Fletcher","m":["to score a century","century"],"odds":{"min":21}}]}
+{"id":"c013","comp":["CPL","Caribbean Premier League"],"play":"live","main":true}
+{"id":"c014","teams":["Kings"],"legs":[{"m":["highest opening partnership","opening partnership"]}]}
+//
+// ---- esports ----
+{"id":"e001","comp":"CS2","time":"w:next couple of hours","legs":[{"m":["@FAV"],"odds":{"max":1.4}}]}
+{"id":"e002","teams":["Cloud9 GC","Los Chudeles"],"legs":[{"subj":"team:Cloud9 GC","m":["@CORRECT","map score","series score"],"line":"2-0","odds":{"min":1.8}}]}
+{"id":"e004","teams":["EMPIRE :3","ORA Temper"],"stage":"map 1","legs":[{"m":["total kills"],"line":21.5,"dir":"over"}]}
+{"id":"e005","stage":"map 1","legs":[{"subj":"player:bzm","m":["total kills"],"line":18.5,"dir":"over"}]}
+{"id":"e007","comp":"LEC","time":"w:this weekend","main":true}
+{"id":"e008","legs":[{"m":["@CORRECT","map score"],"line":"2-1","osort":"low"}]}
+{"id":"e010","legs":[{"subj":"team:MVSK Secret","m":["@WIN"]},{"m":["total maps","maps"],"line":2.5,"dir":"over"}]}
+{"id":"e011","comp":"CS2","legs":[{"m":["map handicap","@HCP"],"line":{"min":4.5}}]}
+{"id":"e013","comp":"KPL","play":"live","main":true}
+{"id":"e014","time":"w:tonight","legs":[{"subj":"team:Los Chudeles","m":["@WIN"],"osort":"high"}]}
+//
+// ---- table-tennis ----
+{"id":"p001","legs":[{"m":["total games"],"line":4.5,"dir":"over"}],"teams":["Slawomir Janus","Kamil Delikatny"]}
+{"id":"p002","comp":"Czech Liga Pro","time":"w:tonight","main":true}
+{"id":"p004","comp":"TT Elite Series","legs":[{"m":["game handicap","@HCP"],"lsort":"high"}]}
+{"id":"p005","stage":"game 2","legs":[{"m":["total points"],"line":18.5,"dir":"over"}]}
+{"id":"p007","play":"live","main":true}
+{"id":"p008","legs":[{"m":["@CORRECT"]}],"teams":["Ondrej Kucirek","Jan Jr Varcl"]}
+{"id":"p010","legs":[{"subj":"team:Adam Staniczek","m":["@WIN"]},{"m":["total games","games"],"line":4.5,"dir":"over"}]}
+//
+// ---- ice-hockey ----
+{"id":"i001","teams":["Sydney Bears","Perth Thunder"],"legs":[{"m":["total goals","goals"],"dir":"over","line":{"min":6.5}}]}
+{"id":"i002","legs":[{"subj":"team:Melbourne Mustangs","m":["puck line","@HCP"],"odds":{"min":2}}]}
+{"id":"i004","comp":["Stanley Cup","NHL"],"level":"competition","legs":[{"m":["@OUTRIGHT","to win the Stanley Cup"],"osort":"low"}]}
+{"id":"i005","teams":["Canberra Brave","Newcastle North Stars"],"legs":[{"m":["total goals"],"line":7.5,"dir":"over"}]}
+{"id":"i007","comp":"AIHL","time":"w:this weekend","main":true}
+{"id":"i008","teams":["Mustangs"],"legs":[{"m":["@CORRECT"]}]}
+{"id":"i010","comp":"Champions Hockey League","time":"w:tomorrow","main":true}
+{"id":"i011","level":"competition","legs":[{"subj":"team:Edmonton Oilers","m":["team total points","total points"]}]}
+//
+// ---- darts ----
+{"id":"d001","legs":[{"m":["most 180s","180s"]}],"teams":["Neil Wild","Ryan Branley"]}
+{"id":"d002","comp":["Modus Darts Super Series","Modus Super Series"],"time":"w:tonight","main":true}
+{"id":"d004","stage":"leg 1","legs":[{"m":["180 in leg 1","180"],"odds":{"min":2}}],"teams":["Hopkins","Huntley"]}
+{"id":"d005","comp":"PDC World Championship","level":"competition","legs":[{"m":["@OUTRIGHT"]}]}
+{"id":"d007","legs":[{"m":["leg handicap","@HCP","legs"],"lsort":"high"}]}
+{"id":"d008","legs":[{"subj":"team:Michael Huntley","m":["leg handicap","@HCP","legs"],"line":2.5,"odds":{"min":1.8}}]}
+{"id":"d010","combined_odds":{"min":4},"legs":[{"subj":"team:Lesic Zvonimir","m":["@WIN"]},{"subj":"team:Lesic Zvonimir","m":["most 180s","180s"]}]}
+//
+// ---- snooker ----
+{"id":"s001","legs":[{"m":["total frames"],"line":8.5,"dir":"over"}],"teams":["Neil Robertson","Si Jiahui"]}
+{"id":"s002","comp":"China Open","time":"w:today","main":true}
+{"id":"s004","stage":"frame 1","legs":[{"m":["100+ break","century break"],"odds":{"min":2.5}}]}
+{"id":"s005","comp":"World Championship","level":"competition","legs":[{"m":["@OUTRIGHT"]}]}
+{"id":"s007","comp":"UK Championship","level":"competition","legs":[{"subj":"team:Mark Selby","m":["@OUTRIGHT"],"osort":"high"}]}
+{"id":"s008","legs":[{"m":["result after 4 frames","score after 4 frames","frames won"]}],"teams":["Wakelin","Zhang Anda"]}
+{"id":"s010","legs":[{"subj":"team:Hossein Vafaei","m":["frame handicap","@HCP","frames"],"line":2.5},{"m":["total frames","frames"],"line":9.5,"dir":"over"}]}
+//
+// ---- boxing ----
+{"id":"x001","legs":[{"m":["@DISTANCE"],"odds":{"min":2.5}}],"teams":["Ashleyann Lozada","Paulette Valenzuela"]}
+{"id":"x002","sport":["boxing","ufc-mma"],"time":"p:earliest:1","main":true}
+{"id":"x004","sport":["boxing","ufc-mma"],"time":"w:this weekend","legs":[{"m":["@FAV"],"osort":"low"}]}
+{"id":"x005","legs":[{"subj":"team:Valenzuela","m":["@WIN"],"odds":{"min":5}}]}
+//
+// ---- horse-racing ----
+{"id":"h001","comp":"Tramore","main":true}
+{"id":"h002","comp":"Tramore","time":"k:3:30","legs":[{"m":["@FAV"],"osort":"low"}]}
+{"id":"h004","comp":"Mombetsu","legs":[{"m":["each way","to place"],"odds":{"min":3}}]}
+{"id":"h005","comp":"Oi","time":"w:tomorrow","main":true}
+//
+// ---- greyhounds ----
+{"id":"y001","comp":"Shepparton","main":true}
+{"id":"y002","comp":"Hove","time":"p:earliest:1","legs":[{"m":["@FAV"],"osort":"low"}]}
+{"id":"y004","comp":"Angle Park","legs":[{"m":["@WIN"],"odds":{"min":6}}]}
+//
+// ---- volleyball ----
+{"id":"v001","teams":["Dominican Republic","Curacao"],"legs":[{"m":["match odds","@WIN"]}]}
+{"id":"v002","comp":"Pan American Cup","time":"w:this week","main":true}
+{"id":"v004","comp":"European Championship","level":"competition","legs":[{"m":["@OUTRIGHT"]}]}
+{"id":"v005","legs":[{"subj":"team:Curacao","m":["to win set 1","set 1 winner"],"odds":{"min":2}}]}
+//
+// ---- motorsports ----
+{"id":"z001","comp":"Cook Out 400","level":"competition","legs":[{"m":["@OUTRIGHT","race winner"]}]}
+{"id":"z002","comp":["IndyCar","IndyCar championship"],"level":"competition","legs":[{"m":["finishing position"],"osort":"low"}]}
+{"id":"z004","comp":"Truck Series","level":"competition","time":"w:this weekend","main":true}
+{"id":"z005","comp":"Cook Out 400","legs":[{"m":["car number"]}]}
+//
+// ---- formula-1 ----
+{"id":"q001","comp":["Netherlands GP","Dutch Grand Prix","Netherlands Grand Prix"],"level":"competition","legs":[{"m":["@OUTRIGHT","race winner"]}]}
+{"id":"q002","comp":["drivers championship","Drivers Championship"],"level":"competition","legs":[{"m":["@OUTRIGHT"],"osort":"low"}]}
+{"id":"q004","comp":["F1","Formula 1"],"level":"competition","main":true}
+{"id":"q005","comp":["Netherlands GP","Dutch Grand Prix"],"level":"competition","legs":[{"m":["@OUTRIGHT","race winner"],"odds":{"min":9}}]}
+//
+// ---- athletics ----
+{"id":"w001","comp":["women's triple jump","triple jump"],"region":"Birmingham","level":"competition","legs":[{"m":["@OUTRIGHT"]}]}
+{"id":"w002","comp":["200 metres women","200 metres"],"level":"competition","legs":[{"m":["finishing position","best finishing position"]}]}
+{"id":"w004","time":"w:this weekend","main":true}
+//
+// ---- handball ----
+{"id":"k001","comp":"Handball Champions League","level":"competition","legs":[{"m":["@OUTRIGHT"]}]}
+{"id":"k002","comp":"Handball World Championship","level":"competition","legs":[{"m":["@OUTRIGHT"],"osort":"high"}]}
+{"id":"k004","time":"w:this week","main":true}
+//
+// ---- lacrosse ----
+{"id":"l001","teams":["Philadelphia Waterdogs","New York Atlas"],"legs":[{"m":["total goals"],"line":22.5,"dir":"over"}]}
+{"id":"l002","comp":"Premier Lacrosse League","time":"w:this weekend","main":true}
+{"id":"l004","comp":"Women's Lacrosse League","level":"competition","legs":[{"m":["@OUTRIGHT"]}]}
+//
+// ---- the long tail: one outright + one odds-sorted outright per sport ----
+{"id":"j001","comp":"FIH Hockey Women's World Cup","level":"competition","legs":[{"m":["@OUTRIGHT"]}]}
+{"id":"j002","comp":["Hockey World Cup","FIH Hockey World Cup"],"level":"competition","legs":[{"m":["group winner"],"osort":"low"}]}
+{"id":"ch01","comp":"World Chess Championship","level":"competition","legs":[{"m":["@OUTRIGHT"]}]}
+{"id":"ch02","comp":"World Chess Championship","level":"competition","legs":[{"m":["finishing position"],"osort":"low"}]}
+{"id":"cy01","comp":["Vuelta","Vuelta a España"],"level":"competition","legs":[{"m":["@OUTRIGHT","general classification"]}]}
+{"id":"cy02","comp":"Vuelta a España","level":"competition","legs":[{"m":["@OUTRIGHT"],"osort":"low"}]}
+{"id":"tr01","comp":"Swedish Trotting Derby","level":"competition","legs":[{"m":["@OUTRIGHT"]}]}
+{"id":"tr02","comp":"Prix d'Amerique","level":"competition","legs":[{"m":["@OUTRIGHT"],"osort":"high"}]}
+{"id":"ga01","comp":"All-Ireland Hurling Championship","level":"competition","legs":[{"m":["@OUTRIGHT"]}]}
+{"id":"ga02","comp":"All-Ireland Senior Championship","level":"competition","legs":[{"m":["@OUTRIGHT"],"osort":"low"}]}
+{"id":"ws01","comp":"IBU World Cup","level":"competition","legs":[{"m":["@OUTRIGHT","overall standings"]}]}
+{"id":"ws02","comp":["FIS World Cup","FIS World Cup men's"],"level":"competition","legs":[{"m":["@OUTRIGHT"],"osort":"high"}]}
+{"id":"ww01","comp":"Royal Rumble","level":"competition","legs":[{"m":["@OUTRIGHT"]}]}
+{"id":"ww02","comp":["Money in the Bank","Men's Money in the Bank"],"level":"competition","legs":[{"m":["@OUTRIGHT","match winner"],"osort":"low"}]}
+{"id":"tv01","comp":"Rose of Tralee","level":"competition","legs":[{"m":["@OUTRIGHT"]}]}
+{"id":"tv02","comp":"Strictly Come Dancing","level":"competition","legs":[{"m":["@OUTRIGHT"],"osort":"high"}]}
+{"id":"po01","comp":"Clacton by-election","level":"competition","legs":[{"m":["@OUTRIGHT","winning party"]}]}
+{"id":"po02","comp":["general election","next general election"],"level":"competition","legs":[{"m":["winning party","most seats"],"osort":"low"}]}
+{"id":"po04","comp":["next permanent party leader","party leader"],"level":"competition","legs":[{"m":["next party leader","next permanent party leader"],"odds":{"min":6}}]}
+{"id":"eb01","sport":["esports-basketball","basketball"],"teams":["Crvena Zvezda","Bayern Munich"],"legs":[{"m":["total points"],"line":160.5,"dir":"over"}]}
+{"id":"eb02","comp":["Esports Battle","Esports Battle (4x5min)"],"play":"live","main":true}
+{"id":"vs01","sport":["virtual-sports","basketball"],"teams":["Dallas","Milwaukee"],"legs":[{"m":["3-way handicap","@HCP"]}]}
+{"id":"vs02","comp":["Sprints","Virtual Sprints"],"time":"w:next 10 minutes","main":true}
+{"id":"vs04","sport":["virtual-sports","greyhounds"],"comp":"Jennison Stadium","time":"p:earliest:1","legs":[{"m":["@FAV"],"osort":"low"}]}
+{"id":"zs01","sport":["z-sports","basketball"],"teams":["Los Angeles Lakers","Boston Celtics"],"legs":[{"m":["@HCP"]}]}
+{"id":"zs02","sport":["z-sports","basketball"],"teams":["Lakers"],"legs":[{"m":["total points"],"line":210.5,"dir":"over"}]}
