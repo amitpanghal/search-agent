@@ -19,6 +19,7 @@ import { dirname, join } from "node:path";
 import { GoldRecord, loadGold } from "./gold-record";
 import { BEHAVIOR_TAGS, CRITICAL_TAGS, SOFT_TAGS, BEHAVIOR_TAG_IDS, type BehaviorTag } from "./behavior-tags";
 import { extract, EXTRACTION_MODEL } from "../resolver/extract";
+import { recoverSport } from "../resolver/recover-sport";
 import { scoreRun, type RunResult } from "./structural-scorer";
 import { gradeAll, printEntityReport } from "./scope-scorer";
 import { runMarketResolveGate, resolveEyeball } from "./market-resolve-gate";
@@ -79,7 +80,7 @@ const THROTTLE = /too many requests|throttl|rate ?limit/i;
 async function extractRetrying(query: string, tries = 5): Promise<QueryPlan> {
   for (let i = 0; ; i++) {
     try {
-      return await extract(query);
+      return withRecoveredSport(await extract(query));
     } catch (e) {
       if (i >= tries - 1 || !THROTTLE.test((e as Error).message)) throw e;
       await new Promise((r) => setTimeout(r, 1000 * 2 ** i + Math.random() * 500));
@@ -87,11 +88,22 @@ async function extractRetrying(query: string, tries = 5): Promise<QueryPlan> {
   }
 }
 
+// Grade what PRODUCTION produces. resolve.ts runs recoverSport() immediately after extract() — a deterministic,
+// zero-LLM correction that re-homes a sport the extractor guessed wrong ("Wells vs Orolbai" -> tennis, when the
+// names only ground in ufc-mma). Scoring raw extract() output marked those as sport failures even though no user
+// would ever see one, which would have sent the prompt rewrite chasing entity knowledge no rule can teach.
+export function withRecoveredSport(plan: QueryPlan): QueryPlan {
+  const fix = recoverSport(plan);
+  return fix.kind === "switch" ? { ...plan, sport: fix.sport } : plan;
+}
+
 async function runQuery(rec: GoldRecord, n: number): Promise<QueryReport> {
   const outcomes: RunOutcome[] = [];
   for (let r = 0; r < n; r++) {
     try {
-      const plan = replay?.get(rec.query) ?? (await extractRetrying(rec.query));
+      // A replayed capture is raw extract() output, so it needs the same production correction applied.
+      const cached = replay?.get(rec.query);
+      const plan = cached ? withRecoveredSport(cached) : await extractRetrying(rec.query);
       // TEXT mode (no `grounded`): the extractor gate grades the concept WORDING; criterion-id resolution is
       // graded post-fetch by the separate live market gate below.
       outcomes.push({ result: scoreRun(rec, plan), plan });
