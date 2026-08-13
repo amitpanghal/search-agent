@@ -202,11 +202,21 @@ it short and faithful.
 Text only — never an id or catalog name.
 
 
-### line (optional)
+### line (optional) — a rung to pick, or a bound on which fixtures qualify
 
-Add a `line` only when the query states a value that picks the market's outcome: a **number** for a
-threshold/rung (an over/under line, a handicap start), or **text** for one named outcome of a
-multi-outcome market (a result combination, a score, an enumerated instance).
+Add a `line` when the query states a value about the market's number. Decide which of the two readings by
+**what the number is compared against**:
+
+- **A rung** — the comparison sits on the **counted thing**, so it picks one outcome inside one market: a
+  **number** for a threshold or a handicap start ("over 2.5 `<stat>`" → `2.5`), or **text** for one named
+  outcome of a multi-outcome market (a result combination, a score, an enumerated instance).
+- **A bound** — `{ min?, max? }`. The comparison sits on **the market's own posted number**, which the query
+  treats as something a fixture *has*: "matches where the `<stat>` line is above 8.5", "only the ones with a
+  line under 40", "where it sits below 158". This picks no outcome — it filters **which fixtures qualify**,
+  because every fixture offers the whole ladder of rungs. It therefore takes **no `direction`**: a bound is
+  not a side.
+
+The tell is grammatical, not vocabulary: *"over N `<stat>`"* names a rung; *"the line is over N"* bounds it.
 
 ### direction (optional) — which side of a two-sided market
 
@@ -231,6 +241,18 @@ placeholder bound like `{ min: 0 }`; an `odds` object must carry a real `min` or
 word carrying a **superlative/comparative** ("shortest odds", "highest price") is a *ranking* of
 outcomes, not a bound → use `odds_sort` (below), never `odds`.
 
+**Normalize every price to a decimal** — the field carries decimals only, so a price written any other
+way must be converted, never copied. Fractional odds add one: `4/1` → `5.0`, `6/4` → `2.5`, `10/11` →
+`1.91`. "Even money" / "evens" → `2.0`. American odds convert too: `+150` → `2.5`, `-200` → `1.5`.
+
+### combined_odds (optional) — a price bound on the WHOLE bet, not on a leg
+
+When the bound is on the legs **combined** ("only if the combined odds clear 2.0", "above 4/1 for the lot",
+"the accumulator pays over 5.0"), it belongs at the **top level of the plan** as `combined_odds` — never on a
+selector, and never as a selector of its own (a price is not a market). Putting it on a leg deletes that leg:
+a short-priced leg combined with a long one fails a bound the *pair* clears comfortably. Same `{ min?, max? }`
+shape and the same decimal normalization as `odds`.
+
 ### odds_sort (optional) — rank by **price**, not bound it
 
 A **superlative or comparative on the price itself** asks to *rank* outcomes by their odds, not to
@@ -238,6 +260,17 @@ bound them. Emit `odds_sort` and **no** `odds`:
   - shortest / lowest / best / favourite price → `odds_sort: "low"` (bare "best odds" = the favourite = `low`).
   - longest / highest / biggest / outsider price → `odds_sort: "high"`.
 A price word with **no number** is a sort; a **number** (bare or "priced/odds/at") is still an `odds` bound.
+
+### line_sort (optional) — rank by **line size**, not by price
+
+A superlative or comparative describing **how big the fixture's posted line is** ranks fixtures by that
+size. Emit `line_sort` — `"high"` for biggest / highest / widest / longest, `"low"` for smallest / lowest /
+tightest — and **no `odds_sort`**.
+
+`odds_sort` and `line_sort` are different axes and the easiest pair to confuse. Ask what the superlative
+describes:
+  - **what the bet PAYS** (odds, price, favourite, outsider) → `odds_sort`.
+  - **how big the fixture's posted line is** → `line_sort`.
 
 ### count (optional) — how many of a field to show
 

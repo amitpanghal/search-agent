@@ -185,6 +185,49 @@ function printTagSummary(stats: Map<BehaviorTag, TagStat>): void {
   console.log("");
 }
 
+// Which FACET each failure message is about. The per-tag view answers "does this row pass end to end", which
+// is the ship question — but it hides a fix: teaching `combined_odds` took its facet from 6 failures to 0 while
+// the tag stayed at a flat 0/6, because every one of those rows also carries `multi-leg` and fails on that.
+// Tuning one rule at a time needs the narrower question: did the facet I aimed at move, and did another break?
+const FACETS: [string, RegExp][] = [
+  ["sport", /^sport:/],
+  ["market", /^market not found|^unexpected market|^market (ambiguous|shortlist|not grounded)|^offer not surfaced|^expected-none|^marketless:/],
+  ["binding", /^binding /],
+  ["line", /^line:/],
+  ["line_sort", /^line_sort:/],
+  ["direction", /^direction:/],
+  ["odds", /^odds:/],
+  ["odds_sort", /^odds_sort:/],
+  ["combined_odds", /^combined_odds:/],
+  ["competition", /^competition:|^unexpected competition/],
+  ["teams", /^team missing|^unexpected team/],
+  ["players", /^player missing|^player role/],
+  ["time", /^time:/],
+  ["level", /^level:/],
+  ["stage", /^stage:/],
+  ["play_state", /^play_state:/],
+  ["error", /^extraction error/],
+];
+
+function printFacetSummary(reports: QueryReport[]): void {
+  const counts = new Map<string, number>();
+  for (const rep of reports) {
+    const seen = new Set<string>(); // one row counts once per facet, however many legs repeat the message
+    for (const o of rep.outcomes) {
+      for (const f of o.result.failures) {
+        const facet = FACETS.find(([, re]) => re.test(f))?.[0] ?? "other";
+        if (seen.has(facet)) continue;
+        seen.add(facet);
+        counts.set(facet, (counts.get(facet) ?? 0) + 1);
+      }
+    }
+  }
+  const rows = [...counts].sort((a, b) => b[1] - a[1]);
+  console.log(`Rows failing, by facet (of ${reports.length}):`);
+  console.log(rows.length ? rows.map(([f, n]) => `  ${f.padEnd(14)} ${n}`).join("\n") : "  (none)");
+  console.log("");
+}
+
 function printShipGate(reports: QueryReport[], stats: Map<BehaviorTag, TagStat>): boolean {
   const criticalMisses: string[] = [];
   for (const t of CRITICAL_TAGS) {
@@ -285,6 +328,7 @@ async function main(): Promise<void> {
 
   const stats = computeTagStats(reports);
   printTagSummary(stats);
+  printFacetSummary(reports);
   const gatePass = printShipGate(reports, stats);
 
   // Separate deterministic grounder gate (no LLM): entity grounding graded on the gold's own scope text,
