@@ -119,11 +119,11 @@ function timeOf(spec: string | null | undefined): Record<string, unknown> | null
 const FAMILIES: Record<string, string[]> = {
   "@WIN": ["to win", "match winner", "who wins", "moneyline", "to beat", "for the win"],
   "@FAV": ["favourite", "match winner", "who wins", "to win", "shortest price", "longest price"],
-  "@OUTRIGHT": ["outright winner", "who wins", "to win", "tournament winner", "winner"],
+  "@OUTRIGHT": ["outright winner", "who wins", "to win", "tournament winner", "winner", "for the win"],
   "@MARGIN": ["winning margin", "margin of victory", "winning margin bands"],
   "@HCP": ["handicap", "spread", "point spread", "to cover", "line"],
   "@TOTAL": ["total", "total points", "over/under"],
-  "@METHOD": ["winning method", "method of victory", "to win by"],
+  "@METHOD": ["winning method", "method of victory", "to win by", "by submission", "by knockout", "by decision"],
   "@DISTANCE": ["goes the distance", "to go the distance", "going the distance"],
   "@HTFT": ["half time full time", "half-time/full-time", "ht/ft"],
   "@CORRECT": ["correct score", "score betting", "set betting", "correct set score", "correct map score"],

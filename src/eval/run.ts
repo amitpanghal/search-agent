@@ -77,7 +77,10 @@ function loadReplay(path: string): Map<string, QueryPlan> {
 // as a failure and quietly poisons the baseline. Retry the throttle with backoff so a rate limit costs time,
 // never a data point. Only this runner retries — the shared bedrock-call boundary is untouched.
 const THROTTLE = /too many requests|throttl|rate ?limit/i;
-async function extractRetrying(query: string, tries = 5): Promise<QueryPlan> {
+// 8 tries ≈ 2 min of backoff. 5 was tuned against the incumbent model's quota; a model with a tighter
+// per-account limit (Claude on a fresh account) blew straight through it — a first Haiku run lost 133 of 298
+// rows and scored 94/298, which says nothing about the model and everything about the quota.
+async function extractRetrying(query: string, tries = 8): Promise<QueryPlan> {
   for (let i = 0; ; i++) {
     try {
       return withRecoveredSport(await extract(query));

@@ -3,7 +3,7 @@
 // extractor currently returns; see README.md "Authoring conventions" for the rules every row follows.
 //
 // ---- tennis ----
-{"id":"t001","comp":"Cincinnati","time":"w:tonight","legs":[{"m":["@FAV"],"osort":"low"}]}
+{"id":"t001","comp":"Cincinnati","time":"w:tonight","legs":[{"m":["@FAV"],"osort":"low"}],"sport":["tennis","baseball","american-football","football"]}
 {"id":"t002","comp":"Cincinnati","time":"w:tonight","legs":[{"m":["@FAV"],"osort":"low"}]}
 {"id":"t004","legs":[{"subj":"team:Marcos Giron","m":["straight sets","@CORRECT"]}],"teams":["Marcos Giron","Henrique Rocha"]}
 {"id":"t005","legs":[{"subj":"team:Darwin Blanch","m":["@CORRECT"],"line":"2-0"}],"teams":["Aleksandar Vukic","Darwin Blanch"]}
@@ -13,8 +13,8 @@
 {"id":"t011","legs":[{"subj":"team:Liam Broady","m":["@WIN"],"odds":{"min":5}}]}
 {"id":"t012","legs":[{"subj":"team:Fearnley","m":["@WIN"],"odds":{"min":2}}]}
 {"id":"t014","legs":[{"m":["total games"]}],"teams":["Giron","Rocha"]}
-{"id":"t015","comp":"Cincinnati","play":"live","main":true}
-{"id":"t017","comp":"Cincinnati","level":"competition","legs":[{"m":["@OUTRIGHT"],"osort":"low"}]}
+{"id":"t015","comp":"Cincinnati","play":"live","main":true,"sport":["tennis","baseball","american-football","football"]}
+{"id":"t017","comp":"Cincinnati","level":"competition","legs":[{"m":["@OUTRIGHT"],"osort":"low"}],"sport":["tennis","baseball","american-football","football"]}
 {"id":"t018","legs":[{"subj":"team:Svrcina","m":["to win a set"],"odds":{"min":1.5}}]}
 {"id":"t020","stage":"set 2","legs":[{"m":["@CORRECT"]}],"teams":["Broady","Suresh"]}
 {"id":"t021","legs":[{"m":["@CORRECT"],"osort":"low"}],"teams":["Giron","Rocha"]}
@@ -24,7 +24,7 @@
 {"id":"t027","legs":[{"subj":"team:Blanch","m":["first service game"]}]}
 {"id":"t028","legs":[{"subj":"team:Giron","m":["set handicap"],"odds":{"min":1.8}}]}
 {"id":"t030","legs":[{"m":["tiebreaks","number of tiebreaks"]}],"teams":["Vukic","Blanch"]}
-{"id":"cc12","comp":"Cincinnati","stage":"quarterfinal","time":"w:tomorrow","main":true}
+{"id":"cc12","comp":"Cincinnati","stage":"quarterfinal","time":"w:tomorrow","main":true,"sport":["tennis","baseball","american-football","football"]}
 //
 // ---- football ----
 {"id":"f001","comp":"Premier League","time":"w:this weekend","legs":[{"m":["total goals"],"lsort":"high"}]}
@@ -138,11 +138,11 @@
 {"id":"r013","teams":["Penrith"],"legs":[{"m":["highest scoring half"]}]}
 {"id":"r014","teams":["Manly Sea Eagles","The Dolphins"],"legs":[{"subj":"team:The Dolphins","m":["@HCP"],"line":6.5,"odds":{"min":1.9}}]}
 {"id":"r016","comp":"NRL","play":"live","main":true}
-{"id":"r017","legs":[{"subj":"player","m":["to score a try","try scorer"],"odds":{"min":6}}]}
+{"id":"r017","legs":[{"subj":"player","m":["to score a try","try scorer"],"odds":{"min":6}}],"sport":["rugby-league","rugby-union"]}
 {"id":"r019","legs":[{"subj":"team:Roosters","m":["@WIN"]},{"m":["total points","points"],"line":44.5,"dir":"under"}]}
 {"id":"r020","legs":[{"subj":"team:Roosters","m":["@MARGIN"],"line":10}]}
 {"id":"r022","legs":[{"subj":"team:Penrith","m":["first half handicap","@HCP"],"line":-6.5}]}
-{"id":"r023","comp":"Super League","legs":[{"m":["total points","total"],"lsort":"high"}]}
+{"id":"r023","comp":"Super League","legs":[{"m":["total points","total"],"lsort":"high"}],"sport":["rugby-league","football","basketball"]}
 {"id":"r025","teams":["Penrith"],"legs":[{"m":["first try converted","conversion"],"odds":{"min":1.5}}]}
 {"id":"r026","comp":["NRL (W)","NRLW"],"time":"w:this weekend","main":true}
 {"id":"r028","legs":[{"subj":"team:Penrith","m":["@HTFT"],"line":["Penrith/Penrith","lead and win","home/home"]}]}
@@ -159,14 +159,14 @@
 {"id":"u010","legs":[{"m":["@METHOD"]}],"teams":["Magny","Brahimaj"]}
 {"id":"u011","legs":[{"subj":"team:Njokuani","m":["@WIN"]},{"m":["@DISTANCE"],"dir":"no"}]}
 {"id":"u013","legs":[{"subj":"team:Vicente Luque","m":["winning round","round betting"]}]}
-{"id":"u014","stage":"round 2","legs":[{"subj":"team:Magny","m":["round betting","winning round"],"odds":{"min":11}}]}
-{"id":"u016","legs":[{"m":["total rounds","rounds"],"line":2.5,"dir":"under"}],"teams":["Donte Johnson","Eric McConico"]}
+{"id":"u014","stage":"round 2","legs":[{"subj":"team:Magny","m":["round betting","winning round"],"odds":{"min":11}}],"sport":["ufc-mma","boxing"]}
+{"id":"u016","legs":[{"m":["total rounds","rounds"],"line":2.5,"dir":"under"}],"teams":["Donte Johnson","Eric McConico"],"sport":["ufc-mma","boxing"]}
 {"id":"u017","combined_odds":{"min":4},"legs":[{"subj":"team:Magny","m":["@WIN"]},{"subj":"team:Njokuani","m":["@WIN"]}]}
 {"id":"u019","time":"w:saturday","legs":[{"m":["@DISTANCE"],"odds":{"min":2.5}}]}
 {"id":"u020","legs":[{"m":["@WIN"]}],"teams":["Wells","Orolbai"]}
 {"id":"u022","legs":[{"m":["@METHOD"]}],"teams":["Njokuani","Álvarez"]}
 {"id":"u023","comp":"UFC","time":"w:tomorrow,k:night","main":true}
-{"id":"u025","combined_odds":{"min":3.5},"legs":[{"subj":"team:Magny","m":["@WIN"]},{"m":["@DISTANCE"]}]}
+{"id":"u025","combined_odds":{"min":3.5},"legs":[{"subj":"team:Magny","m":["@WIN"]},{"m":["@DISTANCE"]}],"sport":["ufc-mma","boxing"]}
 //
 // ---- golf ----
 {"id":"g001","comp":"FedEx St. Jude Championship","level":"competition","legs":[{"m":["@OUTRIGHT"]}]}
@@ -232,7 +232,7 @@
 {"id":"p001","legs":[{"m":["total games"],"line":4.5,"dir":"over"}],"teams":["Slawomir Janus","Kamil Delikatny"]}
 {"id":"p002","comp":"Czech Liga Pro","time":"w:tonight","main":true}
 {"id":"p004","comp":"TT Elite Series","legs":[{"m":["game handicap","@HCP"],"lsort":"high"}]}
-{"id":"p005","stage":"game 2","legs":[{"m":["total points"],"line":18.5,"dir":"over"}]}
+{"id":"p005","stage":"game 2","legs":[{"m":["total points"],"line":18.5,"dir":"over"}],"sport":["table-tennis","basketball","volleyball","esports"]}
 {"id":"p007","play":"live","main":true}
 {"id":"p008","legs":[{"m":["@CORRECT"]}],"teams":["Ondrej Kucirek","Jan Jr Varcl"]}
 {"id":"p010","legs":[{"subj":"team:Adam Staniczek","m":["@WIN"]},{"m":["total games","games"],"line":4.5,"dir":"over"}]}
@@ -243,7 +243,7 @@
 {"id":"i004","comp":["Stanley Cup","NHL"],"level":"competition","legs":[{"m":["@OUTRIGHT","to win the Stanley Cup"],"osort":"low"}]}
 {"id":"i005","teams":["Canberra Brave","Newcastle North Stars"],"legs":[{"m":["total goals"],"line":7.5,"dir":"over"}]}
 {"id":"i007","comp":"AIHL","time":"w:this weekend","main":true}
-{"id":"i008","teams":["Mustangs"],"legs":[{"m":["@CORRECT"]}]}
+{"id":"i008","teams":["Mustangs"],"legs":[{"m":["@CORRECT"]}],"sport":["ice-hockey","american-football","australian-rules"]}
 {"id":"i010","comp":"Champions Hockey League","time":"w:tomorrow","main":true}
 {"id":"i011","level":"competition","legs":[{"subj":"team:Edmonton Oilers","m":["team total points","total points"]}]}
 //
@@ -258,9 +258,9 @@
 //
 // ---- snooker ----
 {"id":"s001","legs":[{"m":["total frames"],"line":8.5,"dir":"over"}],"teams":["Neil Robertson","Si Jiahui"]}
-{"id":"s002","comp":"China Open","time":"w:today","main":true}
+{"id":"s002","comp":"China Open","time":"w:today","main":true,"sport":["snooker","tennis","golf"]}
 {"id":"s004","stage":"frame 1","legs":[{"m":["100+ break","century break"],"odds":{"min":2.5}}]}
-{"id":"s005","comp":"World Championship","level":"competition","legs":[{"m":["@OUTRIGHT"]}]}
+{"id":"s005","comp":"World Championship","level":"competition","legs":[{"m":["@OUTRIGHT"]}],"sport":["snooker","darts","football","athletics","motorsports","cycling"]}
 {"id":"s007","comp":"UK Championship","level":"competition","legs":[{"subj":"team:Mark Selby","m":["@OUTRIGHT"],"osort":"high"}]}
 {"id":"s008","legs":[{"m":["result after 4 frames","score after 4 frames","frames won"]}],"teams":["Wakelin","Zhang Anda"]}
 {"id":"s010","legs":[{"subj":"team:Hossein Vafaei","m":["frame handicap","@HCP","frames"],"line":2.5},{"m":["total frames","frames"],"line":9.5,"dir":"over"}]}
@@ -269,7 +269,7 @@
 {"id":"x001","legs":[{"m":["@DISTANCE"],"odds":{"min":2.5}}],"teams":["Ashleyann Lozada","Paulette Valenzuela"]}
 {"id":"x002","sport":["boxing","ufc-mma"],"time":"p:earliest:1","main":true}
 {"id":"x004","sport":["boxing","ufc-mma"],"time":"w:this weekend","legs":[{"m":["@FAV"],"osort":"low"}]}
-{"id":"x005","legs":[{"subj":"team:Valenzuela","m":["@WIN"],"odds":{"min":5}}]}
+{"id":"x005","legs":[{"subj":"team:Valenzuela","m":["@WIN"],"odds":{"min":5}}],"sport":["boxing","ufc-mma"]}
 //
 // ---- horse-racing ----
 {"id":"h001","comp":"Tramore","main":true}
@@ -283,14 +283,14 @@
 {"id":"y004","comp":"Angle Park","legs":[{"m":["@WIN"],"odds":{"min":6}}]}
 //
 // ---- volleyball ----
-{"id":"v001","teams":["Dominican Republic","Curacao"],"legs":[{"m":["match odds","@WIN"]}]}
+{"id":"v001","teams":["Dominican Republic","Curacao"],"legs":[{"m":["match odds","@WIN"]}],"sport":["volleyball","football","baseball"]}
 {"id":"v002","comp":"Pan American Cup","time":"w:this week","main":true}
-{"id":"v004","comp":"European Championship","level":"competition","legs":[{"m":["@OUTRIGHT"]}]}
-{"id":"v005","legs":[{"subj":"team:Curacao","m":["to win set 1","set 1 winner"],"odds":{"min":2}}]}
+{"id":"v004","comp":"European Championship","level":"competition","legs":[{"m":["@OUTRIGHT"]}],"sport":["volleyball","football","handball","basketball"]}
+{"id":"v005","legs":[{"subj":"team:Curacao","m":["to win set 1","set 1 winner"],"odds":{"min":2}}],"sport":["volleyball","tennis","table-tennis"]}
 //
 // ---- motorsports ----
 {"id":"z001","comp":"Cook Out 400","level":"competition","legs":[{"m":["@OUTRIGHT","race winner"]}]}
-{"id":"z002","comp":["IndyCar","IndyCar championship"],"level":"competition","legs":[{"m":["finishing position"],"osort":"low"}]}
+{"id":"z002","comp":["IndyCar","IndyCar championship"],"level":"competition","legs":[{"m":["finishing position"],"osort":"low"}],"sport":["motorsports","formula-1"]}
 {"id":"z004","comp":"Truck Series","level":"competition","time":"w:this weekend","main":true}
 {"id":"z005","comp":"Cook Out 400","legs":[{"m":["car number"]}]}
 //
@@ -330,7 +330,7 @@
 {"id":"ws02","comp":["FIS World Cup","FIS World Cup men's"],"level":"competition","legs":[{"m":["@OUTRIGHT"],"osort":"high"}]}
 {"id":"ww01","comp":"Royal Rumble","level":"competition","legs":[{"m":["@OUTRIGHT"]}]}
 {"id":"ww02","comp":["Money in the Bank","Men's Money in the Bank"],"level":"competition","legs":[{"m":["@OUTRIGHT","match winner"],"osort":"low"}]}
-{"id":"tv01","comp":"Rose of Tralee","level":"competition","legs":[{"m":["@OUTRIGHT"]}]}
+{"id":"tv01","comp":"Rose of Tralee","level":"competition","legs":[{"m":["@OUTRIGHT"]}],"sport":["tv-novelty","other"]}
 {"id":"tv02","comp":"Strictly Come Dancing","level":"competition","legs":[{"m":["@OUTRIGHT"],"osort":"high"}]}
 {"id":"po01","comp":"Clacton by-election","level":"competition","legs":[{"m":["@OUTRIGHT","winning party"]}]}
 {"id":"po02","comp":["general election","next general election"],"level":"competition","legs":[{"m":["winning party","most seats"],"osort":"low"}]}
