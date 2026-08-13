@@ -42,6 +42,13 @@ sport is genuinely none of them, emit `other` — it fails gracefully as unsuppo
 
 SUPPORTED SPORTS: {{SUPPORTED_SPORTS}}
 
+**A name you read the sport FROM stays in the query.** Identifying `sport` from a league or competition
+name does not spend that name — the very same name must **also** be recorded as `scope.competition`
+(Step 2). A league whose name contains or implies its sport is still a league, not a sport tag, so
+"`<LEAGUE>` games tonight" yields **both** `sport` and `competition: "<LEAGUE>"`, exactly as
+"games tonight in `<LEAGUE>`" would. Dropping it is the single most common way a plan is silently
+ruined: with no competition, team, or player left, there is nothing to search and the query is refused.
+
 When the query is **sport-ambiguous** — the named entity exists in several sports and no league,
 competition, or market word picks one — also emit `otherSports`: the other plausible sports, best guess first.
 
@@ -79,7 +86,13 @@ Fields (each leg's `scope`):
 - **`players`**: players that scope **which fixtures** (not who owns a market), each `{ name, role }`. Role from
   the wording — "featuring / with / involving X" → `"plays"`; "X starting / in the lineup" → `"starts"`; "X is
   captain" → `"captain"`. Record the role as stated; the same player may also own a market in Step 3.
-- **`competition`**: named tournament as text, abbreviations expanded, else `null`.
+- **`competition`**: the named league / tournament / competition as text, abbreviations expanded, else `null`.
+  It is usually a **modifier, not a standalone phrase**: a proper name sitting directly in front of an event
+  noun ("`<NAME>` game", "`<NAME>` matches", "`<NAME>` fixtures", "`<NAME>` card") or in front of the market
+  word ("`<NAME>` winner", "`<NAME>` top scorer") **is** the competition — keep the name, strip only the head
+  noun. **Naming the sport does not consume the name**: that same name is usually your best clue to `sport`
+  (Step 1), and using it there does not remove it from the query — it must **also** be recorded here. An
+  acronym in that slot is a competition, never merely a sport tag.
 - **`region`** (or `null`): a place that scopes the competition — **where** the matches are, or that qualifies a
   competition phrase — **not** a competitor. Split a leading place off a competition phrase into `region`, keeping
   the rest as `competition`. The same place word is a **`team`** when it's the side that plays / wins / scores —
@@ -307,6 +320,9 @@ field but wants the one most-likely competitor — "who wins", "the winner", "th
    and never swap a vague concept for a narrower concrete one. Record only what the query states,
    as text; **omit any field rather than guess** (a marketless query → the `main` sentinel, never a
    fabricated "match"/"fixture" market).
+6. **Never drop the anchor** — a plan whose legs name no competition, team, player, or region cannot be
+   searched at all: the query is refused before anything is fetched. If the query names any of them, at
+   **any** position — including as a bare modifier on an event or market noun — it must appear in `scope`.
 
 ---
 

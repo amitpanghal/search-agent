@@ -80,7 +80,23 @@ const Time = z
 const Scope = z.object({
   teams: z.array(z.string().min(1)),
   players: z.array(z.object({ name: z.string().min(1), role: z.enum(["plays", "starts", "captain"]) })),
-  competition: z.string().min(1).nullable(),
+  // The ONE field carrying a `.describe()`. Guidance in the system prompt is 340 lines from the point of
+  // generation and loses to the model's own instinct here: a league whose name states its own sport (MLB, UFC,
+  // WNBA) gets spent on `sport` and never reaches this field, leaving `null` — and a plan with no competition,
+  // team or player is refused before any fetch. Five successive prompt rewrites moved nothing; leagues that
+  // name no sport (Bundesliga, Copa Libertadores) were never affected. The description rides in the tool schema,
+  // beside the field, at the moment the model fills it in.
+  competition: z
+    .string()
+    .min(1)
+    .nullable()
+    .describe(
+      "The league, tournament or competition this leg settles in, as text. Fill this in whenever the query " +
+        "names one — INCLUDING a league whose name states its own sport (MLB, UFC, NRL, WNBA) and one used " +
+        "only as a modifier on another noun (\"<LEAGUE> games tonight\"). Having used that same name to " +
+        "identify `sport` does NOT exempt it: it belongs in both places. Use null only when the query names " +
+        "no competition at all.",
+    ),
   // A place/territory that SCOPES the competition (a country like "Italy", or a cross-country comp branch
   // like "Champions League") — distinct from a country named as a TEAM, which stays in `teams`. The scope
   // grounder resolves it to a top-level branch and hard-scopes competition candidates to that branch's

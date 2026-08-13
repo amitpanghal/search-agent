@@ -298,10 +298,10 @@
 {"id":"q001","comp":["Netherlands GP","Dutch Grand Prix","Netherlands Grand Prix"],"level":"competition","legs":[{"m":["@OUTRIGHT","race winner"]}]}
 {"id":"q002","comp":["drivers championship","Drivers Championship"],"level":"competition","legs":[{"m":["@OUTRIGHT"],"osort":"low"}]}
 {"id":"q004","comp":["F1","Formula 1"],"level":"competition","main":true}
-{"id":"q005","comp":["Netherlands GP","Dutch Grand Prix"],"level":"competition","legs":[{"m":["@OUTRIGHT","race winner"],"odds":{"min":9}}]}
+{"id":"q005","comp":["Netherlands GP","Netherlands Grand Prix","Dutch Grand Prix"],"level":"competition","legs":[{"m":["@OUTRIGHT","race winner"],"odds":{"min":9}}]}
 //
 // ---- athletics ----
-{"id":"w001","comp":["women's triple jump","triple jump"],"region":"Birmingham","level":"competition","legs":[{"m":["@OUTRIGHT"]}]}
+{"id":"w001","comp":["women's triple jump","triple jump","Birmingham"],"region":"Birmingham","level":"competition","legs":[{"m":["@OUTRIGHT"]}]}
 {"id":"w002","comp":["200 metres women","200 metres"],"level":"competition","legs":[{"m":["finishing position","best finishing position"]}]}
 {"id":"w004","time":"w:this weekend","main":true}
 //
