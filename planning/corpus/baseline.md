@@ -2,19 +2,42 @@
 
 What the **current** extractor scores against the Phase 5 gold, so Phase 6 has something to beat.
 
-Captured from `.sweep/gold-extract.jsonl` (the Phase 4 sweep) and re-scored offline — no model call:
-
-```bash
-npm run eval -- --from .sweep/gold-extract.jsonl
-```
-
-288 of the 289 gold rows (`z001` crashed in the sweep on an off-enum `sport`, so it has no captured plan).
+**Live run** (`npm run eval`, 298 graded rows = 289 corpus + 9 seed, 1x, ~2m45s):
 
 ```
-Queries passed: 127/288  (44%)
-Soft aggregate: 150/335  (45%)   bar ~90%
+Queries passed: 133/298  (45%)
+Soft aggregate: 156/344  (45%)   bar ~90%
 SHIP GATE: FAIL
 ```
+
+The tables below are the **replay** of the Phase 4 sweep (`npm run eval -- --from .sweep/gold-extract.jsonl`,
+288 rows — `z001` crashed on an off-enum `sport` so it has no captured plan): 127/288, 44%. Free to re-run,
+and the two agree closely enough to use replay while only the gold is changing.
+
+### Live vs replay — read the stable signals, not the small-n ones
+
+| tag | replay | live | |
+|---|---|---|---|
+| line-range / line-sort / combined-odds | 0/12, 0/12, 0/6 | 0/12, 0/12, 0/6 | identical — nothing taught these |
+| league-modifier | 24/69 (35%) | 23/69 (33%) | stable |
+| price-fractional | 0/20 (0%) | 1/20 (5%) | stable |
+| over-under-side | 16/23 | 16/23 | identical |
+| margin-market | 2/8 | 2/8 | identical |
+| named-over-side | 1/11 | 3/11 | **noise** (n=11) |
+| binding | 3/9 | 1/9 | **noise** (n=9) |
+| multi-leg | 6/18 | 4/18 | **noise** |
+
+The extractor is genuinely noisy run-to-run at temp 0. Tags with n≥20 are trustworthy at 1x; below that, use
+`--runs 3` before believing a delta. This is exactly why `--runs 3` is the measuring default for Phase 6.
+
+### Throttling — a trap worth knowing about
+
+The first live attempt ran 8-way concurrent and lost **55 of 298 rows (18%)** to Bedrock's "Too many requests",
+each scoring as a plain failure. A throttled row is not a wrong answer, and a baseline that counts it as one is
+worthless. `run.ts` now retries throttles with backoff and defaults to 4 jobs; the re-run had **zero**.
+
+The shared boundary (`bedrock-call.ts`) still relies on the AWS SDK's default 3 attempts, which a burst can
+exhaust. Prod issues one query at a time so it is far less exposed — but it is the same gap.
 
 ## Critical tags (bar: 100%)
 

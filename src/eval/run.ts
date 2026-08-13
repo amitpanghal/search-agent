@@ -72,11 +72,26 @@ function loadReplay(path: string): Map<string, QueryPlan> {
   return m;
 }
 
+// Bedrock throttles a ~300-row deck: a first 8-way run lost 55 rows (18%) to "Too many requests", which scores
+// as a failure and quietly poisons the baseline. Retry the throttle with backoff so a rate limit costs time,
+// never a data point. Only this runner retries — the shared bedrock-call boundary is untouched.
+const THROTTLE = /too many requests|throttl|rate ?limit/i;
+async function extractRetrying(query: string, tries = 5): Promise<QueryPlan> {
+  for (let i = 0; ; i++) {
+    try {
+      return await extract(query);
+    } catch (e) {
+      if (i >= tries - 1 || !THROTTLE.test((e as Error).message)) throw e;
+      await new Promise((r) => setTimeout(r, 1000 * 2 ** i + Math.random() * 500));
+    }
+  }
+}
+
 async function runQuery(rec: GoldRecord, n: number): Promise<QueryReport> {
   const outcomes: RunOutcome[] = [];
   for (let r = 0; r < n; r++) {
     try {
-      const plan = replay?.get(rec.query) ?? (await extract(rec.query));
+      const plan = replay?.get(rec.query) ?? (await extractRetrying(rec.query));
       // TEXT mode (no `grounded`): the extractor gate grades the concept WORDING; criterion-id resolution is
       // graded post-fetch by the separate live market gate below.
       outcomes.push({ result: scoreRun(rec, plan), plan });
@@ -259,7 +274,7 @@ async function main(): Promise<void> {
   // Replay grades exactly the rows the capture covers — a gold row the sweep never ran is out of scope for it,
   // not a failure of the extractor.
   const marketGold = gold.filter((g) => g.gradeMarket !== false && (!replay || replay.has(g.query)));
-  const limit = limiter(Number(flagValue(args, "--jobs")) || 8);
+  const limit = limiter(Number(flagValue(args, "--jobs")) || 4);
   const pending = marketGold.map((rec) => limit(() => runQuery(rec, n)));
   const reports: QueryReport[] = [];
   for (const p of pending) {
