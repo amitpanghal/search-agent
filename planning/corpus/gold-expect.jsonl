@@ -5,24 +5,24 @@
 // ---- tennis ----
 {"id":"t001","comp":"Cincinnati","time":"w:tonight","legs":[{"m":["@FAV"],"osort":"low"}],"sport":["tennis","baseball","american-football","football"]}
 {"id":"t002","comp":"Cincinnati","time":"w:tonight","legs":[{"m":["@FAV"],"osort":"low"}]}
-{"id":"t004","legs":[{"subj":"team:Marcos Giron","m":["straight sets","@CORRECT"]}],"teams":["Marcos Giron","Henrique Rocha"]}
-{"id":"t005","legs":[{"subj":"team:Darwin Blanch","m":["@CORRECT"],"line":"2-0"}],"teams":["Aleksandar Vukic","Darwin Blanch"]}
+{"id":"t004","legs":[{"subj":"player:Marcos Giron","m":["straight sets","@CORRECT"]}],"teams":["Marcos Giron","Henrique Rocha"]}
+{"id":"t005","legs":[{"subj":"player:Darwin Blanch","m":["@CORRECT"],"line":"2-0"}],"teams":["Aleksandar Vukic","Darwin Blanch"]}
 {"id":"t007","legs":[{"m":["total games"],"dir":"over","odds":{"min":2}}],"teams":["Nicolas Mejia","Jacob Fearnley"]}
 {"id":"t008","comp":"Cincinnati","legs":[{"m":["total games"],"line":{"min":22.5}}]}
-{"id":"t010","combined_odds":{"min":2.5},"legs":[{"subj":"team:Giron","m":["@WIN"]},{"m":["total games"],"line":20.5,"dir":"over"}]}
-{"id":"t011","legs":[{"subj":"team:Liam Broady","m":["@WIN"],"odds":{"min":5}}]}
-{"id":"t012","legs":[{"subj":"team:Fearnley","m":["@WIN"],"odds":{"min":2}}]}
+{"id":"t010","combined_odds":{"min":2.5},"legs":[{"subj":"player:Giron","m":["@WIN"]},{"m":["total games"],"line":20.5,"dir":"over"}]}
+{"id":"t011","legs":[{"subj":"player:Liam Broady","m":["@WIN"],"odds":{"min":5}}]}
+{"id":"t012","legs":[{"subj":"player:Fearnley","m":["@WIN"],"odds":{"min":2}}]}
 {"id":"t014","legs":[{"m":["total games"]}],"teams":["Giron","Rocha"]}
 {"id":"t015","comp":"Cincinnati","play":"live","main":true,"sport":["tennis","baseball","american-football","football"]}
 {"id":"t017","comp":"Cincinnati","level":"competition","legs":[{"m":["@OUTRIGHT"],"osort":"low"}],"sport":["tennis","baseball","american-football","football"]}
-{"id":"t018","legs":[{"subj":"team:Svrcina","m":["to win a set"],"odds":{"min":1.5}}]}
+{"id":"t018","legs":[{"subj":"player:Svrcina","m":["to win a set"],"odds":{"min":1.5}}]}
 {"id":"t020","stage":"set 2","legs":[{"m":["@CORRECT"]}],"teams":["Broady","Suresh"]}
 {"id":"t021","legs":[{"m":["@CORRECT"],"osort":"low"}],"teams":["Giron","Rocha"]}
 {"id":"t023","legs":[{"m":["@WIN"]}],"teams":["Giron","Rocha"]}
-{"id":"t024","legs":[{"subj":"team:Mejia","m":["straight sets","@CORRECT"]}]}
+{"id":"t024","legs":[{"subj":"player:Mejia","m":["straight sets","@CORRECT"]}]}
 {"id":"t026","legs":[{"m":["total sets"],"line":2.5,"dir":"over"}],"teams":["Lajal","Svrcina"]}
-{"id":"t027","legs":[{"subj":"team:Blanch","m":["first service game"]}]}
-{"id":"t028","legs":[{"subj":"team:Giron","m":["set handicap"],"odds":{"min":1.8}}]}
+{"id":"t027","legs":[{"subj":"player:Blanch","m":["first service game"]}]}
+{"id":"t028","legs":[{"subj":"player:Giron","m":["set handicap"],"odds":{"min":1.8}}]}
 {"id":"t030","legs":[{"m":["tiebreaks","number of tiebreaks"]}],"teams":["Vukic","Blanch"]}
 {"id":"cc12","comp":"Cincinnati","stage":"quarterfinal","time":"w:tomorrow","main":true,"sport":["tennis","baseball","american-football","football"]}
 //
@@ -152,21 +152,21 @@
 // ---- ufc-mma ----
 {"id":"u001","legs":[{"m":["@DISTANCE"],"odds":{"min":2.2}}],"teams":["Neil Magny","Ramiz Brahimaj"]}
 {"id":"u002","time":"w:saturday","legs":[{"m":["@FAV"],"osort":"high"}]}
-{"id":"u004","legs":[{"subj":"team:Magny","m":["@METHOD","to win by decision"],"odds":{"min":3}}]}
+{"id":"u004","legs":[{"subj":"player:Magny","m":["@METHOD","to win by decision"],"odds":{"min":3}}]}
 {"id":"u005","comp":"UFC","time":"w:saturday","main":true}
 {"id":"u007","legs":[{"m":["@METHOD","to win by submission"],"osort":"low"}]}
-{"id":"u008","stage":"round 3","legs":[{"subj":"team:Joel Álvarez","m":["round betting","winning round"],"odds":{"min":7}}]}
+{"id":"u008","stage":"round 3","legs":[{"subj":"player:Joel Álvarez","m":["round betting","winning round"],"odds":{"min":7}}]}
 {"id":"u010","legs":[{"m":["@METHOD"]}],"teams":["Magny","Brahimaj"]}
-{"id":"u011","legs":[{"subj":"team:Njokuani","m":["@WIN"]},{"m":["@DISTANCE"],"dir":"no"}]}
-{"id":"u013","legs":[{"subj":"team:Vicente Luque","m":["winning round","round betting"]}]}
-{"id":"u014","stage":"round 2","legs":[{"subj":"team:Magny","m":["round betting","winning round"],"odds":{"min":11}}],"sport":["ufc-mma","boxing"]}
-{"id":"u016","legs":[{"m":["total rounds","rounds"],"line":2.5,"dir":"under"}],"teams":["Donte Johnson","Eric McConico"],"sport":["ufc-mma","boxing"]}
-{"id":"u017","combined_odds":{"min":4},"legs":[{"subj":"team:Magny","m":["@WIN"]},{"subj":"team:Njokuani","m":["@WIN"]}]}
+{"id":"u011","legs":[{"subj":"player:Njokuani","m":["@WIN"]},{"m":["@DISTANCE"],"dir":"no"}]}
+{"id":"u013","legs":[{"subj":"player:Vicente Luque","m":["winning round","round betting"]}]}
+{"id":"u014","stage":"round 2","legs":[{"subj":"player:Magny","m":["round betting","winning round"],"odds":{"min":11}}],"sport":["ufc-mma","boxing"]}
+{"id":"u016","legs":[{"m":["total rounds","rounds"],"line":2.5,"dir":"under"}],"sport":["ufc-mma","boxing"],"teams":["Donte Johnson","Eric McConico"]}
+{"id":"u017","combined_odds":{"min":4},"legs":[{"subj":"player:Magny","m":["@WIN"]},{"subj":"player:Njokuani","m":["@WIN"]}]}
 {"id":"u019","time":"w:saturday","legs":[{"m":["@DISTANCE"],"odds":{"min":2.5}}]}
 {"id":"u020","legs":[{"m":["@WIN"]}],"teams":["Wells","Orolbai"]}
 {"id":"u022","legs":[{"m":["@METHOD"]}],"teams":["Njokuani","Álvarez"]}
 {"id":"u023","comp":"UFC","time":"w:tomorrow,k:night","main":true}
-{"id":"u025","combined_odds":{"min":3.5},"legs":[{"subj":"team:Magny","m":["@WIN"]},{"m":["@DISTANCE"]}],"sport":["ufc-mma","boxing"]}
+{"id":"u025","combined_odds":{"min":3.5},"legs":[{"subj":"player:Magny","m":["@WIN"]},{"m":["@DISTANCE"]}],"sport":["ufc-mma","boxing"]}
 //
 // ---- golf ----
 {"id":"g001","comp":"FedEx St. Jude Championship","level":"competition","legs":[{"m":["@OUTRIGHT"]}]}
@@ -175,10 +175,10 @@
 {"id":"g005","comp":"Portland Classic","stage":"round 1","level":"competition","legs":[{"m":["best score","lowest round score"]}]}
 {"id":"g007","level":"competition","time":"w:this week","legs":[{"m":["@OUTRIGHT"],"osort":"high"}]}
 {"id":"g008","legs":[{"m":["@WIN"],"osort":"low"}],"teams":["Wenyi Ding","Freddy Schott"]}
-{"id":"g010","legs":[{"subj":"team:Hideki Matsuyama","m":["@WIN"],"odds":{"min":2.5}}],"teams":["Hideki Matsuyama","Tommy Fleetwood"]}
+{"id":"g010","legs":[{"subj":"player:Hideki Matsuyama","m":["@WIN"],"odds":{"min":2.5}}],"teams":["Hideki Matsuyama","Tommy Fleetwood"]}
 {"id":"g011","level":"competition","time":"w:tomorrow","main":true}
 {"id":"g013","comp":"Swiss Ladies Open","level":"competition","legs":[{"m":["outright","@OUTRIGHT"],"osort":"low"}]}
-{"id":"g014","level":"competition","legs":[{"subj":"team:Scheffler","m":["@OUTRIGHT"]}]}
+{"id":"g014","level":"competition","legs":[{"subj":"player:Scheffler","m":["@OUTRIGHT"]}]}
 //
 // ---- australian-rules ----
 {"id":"o001","teams":["Fremantle","Adelaide"],"legs":[{"subj":"player","m":["goals","to kick 2+ goals"],"line":2,"odds":{"min":3}}]}
@@ -235,7 +235,7 @@
 {"id":"p005","stage":"game 2","legs":[{"m":["total points"],"line":18.5,"dir":"over"}],"sport":["table-tennis","basketball","volleyball","esports"]}
 {"id":"p007","play":"live","main":true}
 {"id":"p008","legs":[{"m":["@CORRECT"]}],"teams":["Ondrej Kucirek","Jan Jr Varcl"]}
-{"id":"p010","legs":[{"subj":"team:Adam Staniczek","m":["@WIN"]},{"m":["total games","games"],"line":4.5,"dir":"over"}]}
+{"id":"p010","legs":[{"subj":"player:Adam Staniczek","m":["@WIN"]},{"m":["total games","games"],"line":4.5,"dir":"over"}]}
 //
 // ---- ice-hockey ----
 {"id":"i001","teams":["Sydney Bears","Perth Thunder"],"legs":[{"m":["total goals","goals"],"dir":"over","line":{"min":6.5}}]}
@@ -253,23 +253,23 @@
 {"id":"d004","stage":"leg 1","legs":[{"m":["180 in leg 1","180"],"odds":{"min":2}}],"teams":["Hopkins","Huntley"]}
 {"id":"d005","comp":"PDC World Championship","level":"competition","legs":[{"m":["@OUTRIGHT"]}]}
 {"id":"d007","legs":[{"m":["leg handicap","@HCP","legs"],"lsort":"high"}]}
-{"id":"d008","legs":[{"subj":"team:Michael Huntley","m":["leg handicap","@HCP","legs"],"line":2.5,"odds":{"min":1.8}}]}
-{"id":"d010","combined_odds":{"min":4},"legs":[{"subj":"team:Lesic Zvonimir","m":["@WIN"]},{"subj":"team:Lesic Zvonimir","m":["most 180s","180s"]}]}
+{"id":"d008","legs":[{"subj":"player:Michael Huntley","m":["leg handicap","@HCP","legs"],"line":2.5,"odds":{"min":1.8}}]}
+{"id":"d010","combined_odds":{"min":4},"legs":[{"subj":"player:Lesic Zvonimir","m":["@WIN"]},{"subj":"player:Lesic Zvonimir","m":["most 180s","180s"]}]}
 //
 // ---- snooker ----
 {"id":"s001","legs":[{"m":["total frames"],"line":8.5,"dir":"over"}],"teams":["Neil Robertson","Si Jiahui"]}
 {"id":"s002","comp":"China Open","time":"w:today","main":true,"sport":["snooker","tennis","golf"]}
 {"id":"s004","stage":"frame 1","legs":[{"m":["100+ break","century break"],"odds":{"min":2.5}}]}
 {"id":"s005","comp":"World Championship","level":"competition","legs":[{"m":["@OUTRIGHT"]}],"sport":["snooker","darts","football","athletics","motorsports","cycling"]}
-{"id":"s007","comp":"UK Championship","level":"competition","legs":[{"subj":"team:Mark Selby","m":["@OUTRIGHT"],"osort":"high"}]}
+{"id":"s007","comp":"UK Championship","level":"competition","legs":[{"subj":"player:Mark Selby","m":["@OUTRIGHT"],"osort":"high"}]}
 {"id":"s008","legs":[{"m":["result after 4 frames","score after 4 frames","frames won"]}],"teams":["Wakelin","Zhang Anda"]}
-{"id":"s010","legs":[{"subj":"team:Hossein Vafaei","m":["frame handicap","@HCP","frames"],"line":2.5},{"m":["total frames","frames"],"line":9.5,"dir":"over"}]}
+{"id":"s010","legs":[{"subj":"player:Hossein Vafaei","m":["frame handicap","@HCP","frames"],"line":2.5},{"m":["total frames","frames"],"line":9.5,"dir":"over"}]}
 //
 // ---- boxing ----
 {"id":"x001","legs":[{"m":["@DISTANCE"],"odds":{"min":2.5}}],"teams":["Ashleyann Lozada","Paulette Valenzuela"]}
 {"id":"x002","sport":["boxing","ufc-mma"],"time":"p:earliest:1","main":true}
 {"id":"x004","sport":["boxing","ufc-mma"],"time":"w:this weekend","legs":[{"m":["@FAV"],"osort":"low"}]}
-{"id":"x005","legs":[{"subj":"team:Valenzuela","m":["@WIN"],"odds":{"min":5}}],"sport":["boxing","ufc-mma"]}
+{"id":"x005","legs":[{"subj":"player:Valenzuela","m":["@WIN"],"odds":{"min":5}}],"sport":["boxing","ufc-mma"]}
 //
 // ---- horse-racing ----
 {"id":"h001","comp":"Tramore","main":true}

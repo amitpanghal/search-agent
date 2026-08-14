@@ -111,8 +111,24 @@ export function idsContainGold(pred: number[] | null, gold: number | number[]): 
 const sportOk = (p: ResolvedPlan, g: ResolvedGold): boolean =>
   looseMatch(p.sport, Array.isArray(g.sport) ? g.sport : [g.sport]);
 
+// `team` and `player` naming the SAME entity is one answer in two slots, not two answers. In a sport contested
+// by individuals the competitor is both a person and the side, and the pipeline treats them alike: plan-recall
+// unions leg.teams, leg.players and subjectPlayer into the same participantIds, and both slots ground (measured:
+// 7/10 confident as team vs 6/10 as player — near parity, the gap being bare surnames). The one thing that did
+// differ, head-to-head narrowing, turned out to be a recall bug rather than an extraction one: fixtureHasAllTeams
+// matches participantType "TEAM", but an individual-sport fixture lists its two competitors as "PARTICIPANT", so
+// that narrowing is a no-op there whichever slot is used. Grading the slot would be grading a coin flip.
+const SIDE_KINDS = new Set(["team", "player"]);
+
 function bindingFailure(g: GoldSelector, p: PredSelector): string | null {
-  if (g.subject.kind !== p.subject.kind) {
+  const sameEntityOtherSlot =
+    g.subject.kind !== p.subject.kind &&
+    SIDE_KINDS.has(g.subject.kind) &&
+    SIDE_KINDS.has(p.subject.kind) &&
+    "name" in g.subject &&
+    !!g.subject.name &&
+    looseMatch((p.subject as { name?: string }).name ?? "", g.subject.name.accept);
+  if (g.subject.kind !== p.subject.kind && !sameEntityOtherSlot) {
     return `binding kind: expected "${g.subject.kind}", got "${p.subject.kind}"`;
   }
   if ((g.subject.kind === "player" || g.subject.kind === "team") && g.subject.name) {
