@@ -120,7 +120,9 @@ const FAMILIES: Record<string, string[]> = {
   "@WIN": ["to win", "match winner", "who wins", "moneyline", "to beat", "for the win"],
   "@FAV": ["favourite", "match winner", "who wins", "to win", "shortest price", "longest price"],
   "@OUTRIGHT": ["outright winner", "who wins", "to win", "tournament winner", "winner", "for the win"],
-  "@MARGIN": ["winning margin", "margin of victory", "winning margin bands"],
+  // "to win by" (not bare "to win") is the discriminator: containment lets "to win by 13+" through while a
+  // plain "to win" — the failure this family exists to catch — still fails.
+  "@MARGIN": ["winning margin", "margin of victory", "winning margin bands", "to win by", "win by", "to beat by"],
   "@HCP": ["handicap", "spread", "point spread", "to cover", "line"],
   "@TOTAL": ["total", "total points", "over/under"],
   "@METHOD": ["winning method", "method of victory", "to win by", "by submission", "by knockout", "by decision"],
@@ -128,7 +130,16 @@ const FAMILIES: Record<string, string[]> = {
   "@HTFT": ["half time full time", "half-time/full-time", "ht/ft"],
   "@CORRECT": ["correct score", "score betting", "set betting", "correct set score", "correct map score"],
 };
-const expandFamilies = (m: string[]): string[] => [...new Set(m.flatMap((x) => FAMILIES[x] ?? [x]))];
+// Optional leading decoration. The prompt tells the extractor to emit the BARE stat with the number and
+// direction stripped ("over 2.5 <stat>" -> "<stat>"), so a gold cell written as the canonical market name
+// ("total goals") was failing the very answer the prompt asks for ("goals"). Same for the infinitive: "to score
+// anytime" vs "score anytime" is not a difference worth failing a row over. Only strips a LEADING occurrence,
+// so "first half total goals" keeps its qualifier and still fails a bare "total goals".
+const undecorate = (p: string): string[] =>
+  [p, p.replace(/^to /, ""), p.replace(/^total /, "")].filter((x, i, a) => x && a.indexOf(x) === i);
+const expandFamilies = (m: string[]): string[] => [
+  ...new Set(m.flatMap((x) => FAMILIES[x] ?? [x]).flatMap(undecorate)),
+];
 
 const cell = (n: Names): { accept: string[] } => ({ accept: Array.isArray(n) ? n : [n] });
 const isRole = (p: Player): p is [Names, Role] => Array.isArray(p) && p.length === 2 && typeof p[1] === "string" && ["plays", "starts", "captain"].includes(p[1]);

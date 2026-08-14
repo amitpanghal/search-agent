@@ -45,7 +45,11 @@ export function looseMatch(text: string, accept: string[]): boolean {
   return accept.some((a) => {
     const n = normalize(a);
     if (!n) return false;
-    return t === n || t.includes(n) || n.includes(t);
+    // Containment one way only: the extraction must CONTAIN a full accept phrase, or equal it. The reverse
+    // (accept contains extraction) passed anything vague or truncated — "by" cleared "to win by", "over"
+    // cleared "over/under", and "to win" cleared "to win by 13+", which is the exact failure @MARGIN exists to
+    // catch. Gold now controls what is acceptable by listing it: a terser form passes only if it is listed.
+    return t === n || t.includes(n);
   });
 }
 
