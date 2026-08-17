@@ -24,6 +24,7 @@ import {
   type ResolvedScope, type EntityResolution, type ScopeTier, type Candidate,
 } from "./ground-scope";
 import { loadScopeCatalog, type ScopeCatalog } from "./scope-catalog";
+import { builtSports } from "./sports";
 import { fold } from "./lexical";
 import { bedrockToolCall } from "./bedrock-call";
 import type { CellRef, SettledEntities } from "./live-menu-types";
@@ -78,15 +79,74 @@ function labelCandidates(cands: Candidate[], cat: ScopeCatalog): { id: number; n
   });
 }
 
-function buildEntityCell(ref: CellRef, res: EntityResolution, ground: (phrase: string) => EntityResolution, cat: ScopeCatalog): Cell {
+// CROSS-SPORT WIDENING. The extractor's `sport` is a guess, and when it is wrong the whole candidate list is
+// drawn from the wrong catalog: "Giron" under sport=football offers only Girona, so the model settled a tennis
+// player onto a Spanish club. Whenever this sport cannot PLACE the name (tier `none`/`shortlist`), add the rows
+// every OTHER catalog holds for it. The model then picks from rows that EXIST instead of the best of a wrong
+// list — asked to expand these names from memory it answered "FC Girona" for Giron and invented a "New York
+// Valkyries", 1 of 6 right. The pick IS the entity and its sport rides along, so `resolveEntities` corrects
+// `sport` for free, in the LLM call it was already making. Measured on the 14 sport-failing gold rows: 11
+// corrected, 0 wrong switches, including "Arizona Cardinals" over "St. Louis Cardinals" — a pair no tier rule
+// can separate, since the catalog evidence is identical for the right answer and the wrong one.
+//
+// DON'T re-add a "· <sport>" suffix to these rows (tried, measured, reverted). It makes the widened rows the
+// only annotated entries in the list and the model reads that as odd-one-out: with the tag, an exact-match
+// "Czech Liga Pro · table-tennis" sitting at rank 1 was passed over for football's "Liga Pro"; without it, the
+// same row is picked. It also cost the "X gegen Y" pair, which resolves both sides correctly untagged. Twins
+// stay separable by their full names ("Arizona" vs "St. Louis" Cardinals) — the tag was never carrying that.
+//
+// Known ceiling: a surname-only anchor now commits where it used to clarify — "Rocha" settles on Francisco
+// Rocha when the fixture is Henrique Rocha. Right sport, wrong person. Constrain the pick to the OTHER anchor's
+// fixtures if that starts to matter.
+const PLACED = new Set<ScopeTier>(["confident", "variants", "ambiguous"]);
+const TIER_ORDER: ScopeTier[] = ["confident", "variants", "ambiguous", "shortlist"];
+const XS_PER_SPORT = 2; // per-sport quota: a flat top-N lets one sport crowd out the rest (33 "Tigers" rows push
+const XS_CAP = 8;       // the baseball one to rank 8). Quota'd, the right row never fell past 5.
+
+// id -> the sport whose catalog holds it, for ids that came from a catalog OTHER than the plan's.
+export type ForeignIds = Map<number, { sport: string; cand: Candidate }>;
+
+function crossSportRows(name: string, skip: string, out: ForeignIds, competitor: boolean): { id: number; name: string; rank: number }[] {
+  const bySport: { rank: number; rows: { id: number; name: string; rank: number }[] }[] = [];
+  for (const sport of builtSports()) {
+    if (sport === skip) continue;
+    const cat = loadScopeCatalog(sport);
+    const rows: { id: number; name: string; rank: number }[] = [];
+    let rank = Infinity;
+    // Match like against like: a COMPETITION cell must search the other catalogs' competition index, not their
+    // team index — widening "NPC" against teams matched an esports side called "NPC Team" and settled on it.
+    const grounders = competitor ? [groundTeam, groundPlayer] : [groundCompetition];
+    for (const res of grounders.map((g) => g(name, cat))) {
+      // ANY match counts: a real team named by nickname often reaches only `shortlist` in its own sport
+      // ("Valkyries" is shortlist in basketball and nothing anywhere else) — require more and it never shows.
+      if (res.tier === "none") continue;
+      rank = Math.min(rank, TIER_ORDER.indexOf(res.tier));
+      for (const c of res.candidates.slice(0, XS_PER_SPORT)) {
+        out.set(c.id, { sport, cand: c });
+        rows.push({ id: c.id, name: c.name, rank: 0 }); // per-sport rank is stamped on the way out
+      }
+    }
+    if (rows.length) bySport.push({ rank, rows });
+  }
+  return bySport.sort((a, b) => a.rank - b.rank).flatMap((s) => s.rows.slice(0, XS_PER_SPORT).map((r) => ({ ...r, rank: s.rank })));
+}
+
+function buildEntityCell(ref: CellRef, res: EntityResolution, ground: (phrase: string) => EntityResolution, cat: ScopeCatalog, foreign: ForeignIds, competitor: boolean, widen: boolean): Cell {
+  const own = labelCandidates(res.candidates.slice(0, ENTITY_CAP), cat);
+  // Region cells are excluded: a place name is a competitor in half the catalogs ("Italy" is a team) and
+  // widening it would offer a national side for a scope word.
+  const wide = widen && !PLACED.has(res.tier) ? crossSportRows(res.text, cat.sport, foreign, competitor) : [];
   return {
     ref,
     text: res.text,
     tier: res.tier,
     ids: res.candidates.map((c) => c.id),
-    candidates: labelCandidates(res.candidates.slice(0, ENTITY_CAP), cat),
+    candidates: [...own.map((c) => ({ ...c, rank: TIER_ORDER.indexOf(res.tier) })), ...wide]
+      .sort((a, b) => a.rank - b.rank)
+      .slice(0, own.length + XS_CAP)
+      .map(({ id, name }) => ({ id, name })),
     entity: res,
-    reground: (phrase) => buildEntityCell(ref, ground(phrase), ground, cat),
+    reground: (phrase) => buildEntityCell(ref, ground(phrase), ground, cat, foreign, competitor, widen),
   };
 }
 
@@ -98,7 +158,7 @@ type Placement = { legIdx: number; slot: Slot; idx: number };
 // entity repeated across legs the SAME EntityResolution reference, so identity dedup == "one cell per distinct
 // entity": gate it once, record every placement, then fan the pick back per leg in applyOutcomes (never re-ask
 // the same clarification per leg). Returns the cells (for the single decide batch) + ref->placements (writeback).
-function buildEntityCells(scope: ResolvedScope): { cells: Cell[]; places: Map<CellRef, Placement[]> } {
+function buildEntityCells(scope: ResolvedScope, foreign: ForeignIds): { cells: Cell[]; places: Map<CellRef, Placement[]> } {
   const scat = loadScopeCatalog(scope.sport);
   const cells: Cell[] = [];
   const places = new Map<CellRef, Placement[]>();
@@ -112,7 +172,8 @@ function buildEntityCells(scope: ResolvedScope): { cells: Cell[]; places: Map<Ce
       ref = `${slot}:${count[slot]++}` as CellRef;
       refByEntity.set(res, ref);
       places.set(ref, []);
-      cells.push(buildEntityCell(ref, res, ground, scat));
+      const competitor = slot === "team" || slot === "player" || slot === "subject";
+      cells.push(buildEntityCell(ref, res, ground, scat, foreign, competitor, competitor || slot === "competition"));
     }
     places.get(ref)!.push({ legIdx, slot, idx });
   };
@@ -199,8 +260,10 @@ const validPick = (cell: Cell, id: number): boolean => cell.candidates.some((c) 
 
 // A settled pick collapses an entity cell to a confident cell carrying the picked candidate(s) with full
 // relation meta (so recall and select read clubId/countryTeamId/groupIds intact).
-function settleOutcome(cell: Cell, ids: number[]): Outcome {
-  const picked = cell.entity.candidates.filter((c) => ids.includes(c.id));
+function settleOutcome(cell: Cell, ids: number[], foreign?: ForeignIds): Outcome {
+  const own = cell.entity.candidates.filter((c) => ids.includes(c.id));
+  // A cross-sport pick lives in no local candidate list — take the row from the catalog it actually came from.
+  const picked = own.length ? own : ids.map((id) => foreign?.get(id)?.cand).filter((c): c is Candidate => !!c);
   return { kind: "settle-entity", ref: cell.ref, resolution: { text: cell.text, tier: "confident", candidates: picked } };
 }
 
@@ -221,7 +284,7 @@ const appendNamesIfMissing = (q: string, cell: Cell): string => {
   return anyPresent ? q : `${q} (${names.join(", ")})`;
 };
 
-async function runPasses(query: string, cells: Cell[], decideFn: DecideFn): Promise<Outcome[]> {
+async function runPasses(query: string, cells: Cell[], decideFn: DecideFn, foreign: ForeignIds): Promise<Outcome[]> {
   const outcomes: Outcome[] = [];
   const open: Cell[] = []; // cells that ride into Pass 2 (re-grounded-but-unresolved, or undecided/invalid)
 
@@ -229,11 +292,11 @@ async function runPasses(query: string, cells: Cell[], decideFn: DecideFn): Prom
   for (const cell of cells) {
     const d = d1.get(cell.ref);
     if (d?.action === "pick" && validPick(cell, d.id)) {
-      outcomes.push(settleOutcome(cell, [d.id]));
+      outcomes.push(settleOutcome(cell, [d.id], foreign));
     } else if (d?.action === "reexpress" && d.phrase.trim()) {
       const fresh = cell.reground(d.phrase);
       // A re-ground that lands confident/variants is settled directly; only ambiguous/shortlist/none goes to Pass 2.
-      if (fresh.tier === "confident" || fresh.tier === "variants") outcomes.push(settleOutcome(fresh, fresh.ids));
+      if (fresh.tier === "confident" || fresh.tier === "variants") outcomes.push(settleOutcome(fresh, fresh.ids, foreign));
       else open.push(fresh);
     } else {
       open.push(cell); // undecided/invalid Pass-1 cell → ride into Pass 2 unchanged
@@ -245,7 +308,7 @@ async function runPasses(query: string, cells: Cell[], decideFn: DecideFn): Prom
     for (const cell of open) {
       const d = d2.get(cell.ref);
       if (d?.action === "pick" && validPick(cell, d.id)) {
-        outcomes.push(settleOutcome(cell, [d.id]));
+        outcomes.push(settleOutcome(cell, [d.id], foreign));
       } else if (d?.action === "clarify" && d.question.trim()) {
         outcomes.push({ kind: "clarify", ref: cell.ref, question: appendNamesIfMissing(d.question, cell), suggest: (d.suggest ?? []).filter((id) => validPick(cell, id)).slice(0, SUGGEST_CAP) });
       } else {
@@ -280,7 +343,15 @@ function applyOutcomes(s: SettledEntities, outcomes: Outcome[], places: Map<Cell
 export async function resolveEntities(query: string, scope: ResolvedScope, decideFn: DecideFn = decide): Promise<SettledEntities> {
   const settled = structuredClone(scope) as SettledEntities;
   settled.clarifications = [];
-  const { cells, places } = buildEntityCells(scope);
-  if (cells.length) applyOutcomes(settled, await runPasses(query, cells, decideFn), places);
+  const foreign: ForeignIds = new Map();
+  const { cells, places } = buildEntityCells(scope, foreign);
+  if (!cells.length) return settled;
+  const outcomes = await runPasses(query, cells, decideFn, foreign);
+  applyOutcomes(settled, outcomes, places);
+  // A pick from another catalog means the extractor's sport was wrong. Adopt it only when EVERY cross-sport
+  // pick agrees — disagreeing anchors mean we misread the query, and guessing there is how a correct plan dies.
+  const picks = new Set(outcomes.flatMap((o) =>
+    o.kind === "settle-entity" ? o.resolution.candidates.map((c) => foreign.get(c.id)?.sport).filter((x): x is string => !!x) : []));
+  if (picks.size === 1) settled.sport = [...picks][0]!;
   return settled;
 }

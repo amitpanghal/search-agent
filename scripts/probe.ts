@@ -77,7 +77,7 @@ const scopeLine = (out: any): string => (out.legs ?? []).map((lg: any, i: number
 // A crisp one-liner for stages whose shape we know; the rest fall back to capped JSON.
 const stageLine = (stage: string, out: any): string => {
   switch (stage) {
-    case "extract": return `${out.selectors?.length ?? 0} selector(s) · sport=${out.sport}${out.otherSports?.length ? ` (also ${out.otherSports.join("/")})` : ""}`;
+    case "extract": return `${out.selectors?.length ?? 0} selector(s) · sport=${out.sport}`;
     case "ground": return scopeLine(out);
     case "entities": return `${scopeLine(out)}${out.clarifications?.length ? ` · ⚠${out.clarifications.length} clarify` : ""}`;
     case "recall": return `endpoint=${out.endpoint} · ${out.data?.betOffers?.length ?? 0} offers · ${out.data?.events?.length ?? 0} events · truncated=${out.truncated} · failed=${out.failed}`;

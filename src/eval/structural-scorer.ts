@@ -207,6 +207,7 @@ function isPlanMarketless(p: ResolvedPlan): boolean {
 function scopeDiffs(
   ge: ResolvedGold["selectors"][number]["scope"],
   pe: ResolvedPlan["selectors"][number]["scope"],
+  subjectName?: string,
 ): { facet: ScopeFacet; msg: string }[] {
   const out: { facet: ScopeFacet; msg: string }[] = [];
 
@@ -218,6 +219,10 @@ function scopeDiffs(
     }
   }
   for (const pt of pe.teams) {
+    // Mirroring THIS selector's own named subject into its scope is redundant, not wrong: recall unions
+    // subject and scope into the same participant ids, so "Saka to score … against Coventry" scoping
+    // teams=[Saka, Coventry] fetches exactly what teams=[Coventry] does. Don't score it as an error.
+    if (subjectName && looseMatch(pt, [subjectName])) continue;
     if (!ge.teams.some((gt) => looseMatch(pt, gt.accept))) out.push({ facet: "teams", msg: `unexpected team: "${pt}"` });
   }
 
@@ -346,12 +351,25 @@ export function scoreRun(
           if (clarifyIdx < 0) clarifyIdx = pi; // ambiguous|shortlist: remember, keep looking for a clean-tier hit
           continue;
         }
-      } else if (!(mc.accept.length > 0 && looseMatch(p.market_concept, mc.accept))) {
+      } else if (p.subject.kind !== g.subject.kind) {
+        // TEXT mode pairs on STRUCTURE, not wording. Pairing by looseMatch(concept, accept[]) made a wording
+        // miss swallow the leg whole — its line/direction/odds went UNGRADED, which is how m014's price-read-as-
+        // a-line and s004's lost price hid behind a "market not found". Same subject kind first; anything left
+        // over is paired after the loop so the real facets are still graded (and the kind mismatch reported).
         continue;
       }
       matched = p;
       matchedIdx = pi;
       break;
+    }
+    if (!matched && !idMode) {
+      // No same-kind leg left: pair with any leftover so line/odds/direction are still graded, and let
+      // bindingFailure report the wrong kind. Only a genuine leg SHORTAGE falls through to "market not found".
+      const fallback = plan.selectors.findIndex((_, pi) => !usedPred.has(pi));
+      if (fallback >= 0) {
+        matched = plan.selectors[fallback];
+        matchedIdx = fallback;
+      }
     }
     if (matched) {
       usedPred.add(matchedIdx);
@@ -369,9 +387,7 @@ export function scoreRun(
     } else if (idMode) {
       failures.push(`market not grounded: gold[${gi}] (${g.subject.kind}) expected id ${JSON.stringify(wantIds)}`);
     } else {
-      const acc = mc.accept;
-      const why = acc.length === 0 ? " (empty accept[] — cannot text-grade; author it)" : "";
-      failures.push(`market not found: gold[${gi}] (${g.subject.kind}) accept=${JSON.stringify(acc)}${why}`);
+      failures.push(`market not found: gold[${gi}] (${g.subject.kind}) — no selector left to pair (leg dropped)`);
     }
   }
 
@@ -389,6 +405,10 @@ export function scoreRun(
 
   // 4. per aligned pair: binding (b) + line/odds (c). market-found (a) is true by pairing.
   for (const { g, p } of pairs) {
+    // Wording: survival only (see gold-record's must[]). Length, synonym choice and word order are the
+    // resolver's business — it reads the phrase against the live menu with the raw query.
+    const missing = (g.market_concept.must ?? []).filter((t) => !looseMatch(p.market_concept, [t]));
+    if (missing.length) failures.push(`market dropped: gold[${expect.selectors.indexOf(g)}] lost ${JSON.stringify(missing)} from "${p.market_concept}"`);
     const bind = bindingFailure(g, p);
     if (bind) failures.push(`${bind} [market "${p.market_concept}"]`);
     if (!lineEqual(p.line, g.line)) {
@@ -419,7 +439,7 @@ export function scoreRun(
   const seenScope = new Set<string>();
   for (const { g, p } of pairs) {
     const hard = assertedFacets(g.scope);
-    for (const d of scopeDiffs(g.scope, p.scope)) {
+    for (const d of scopeDiffs(g.scope, p.scope, "name" in p.subject ? p.subject.name : undefined)) {
       if (seenScope.has(d.msg)) continue;
       seenScope.add(d.msg);
       (hard.has(d.facet) ? failures : soft).push(d.msg);

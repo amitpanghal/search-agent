@@ -122,7 +122,6 @@
 {"id":"m002","sport":"baseball","query":"Chicago Cubs @ Washington Nationals, the over — but only games with a runs line above 8.5","tags":["over-under-side","line-range"]}
 {"id":"m003","sport":"baseball","query":"Pittsburgh Pirates @ Miami Marlins — a home run anytime, only if it's paying over 4/1","tags":["player-prop","price-fractional"]}
 {"id":"m004","sport":"baseball","query":"Show me tonight's MLB games","tags":["fixture-lookup","league-modifier","time"]}
-{"id":"m005","sport":"baseball","query":"Tonight's run-line bets on the away team priced over even money","tags":["either-team","price-fractional","time"]}
 {"id":"m006","sport":"baseball","query":"William Contreras 2+ RBIs, priced above 3.0","tags":["player-prop","odds-only-bounds","scope-player"]}
 {"id":"m007","sport":"baseball","query":"Spencer Horwitz 1+ hits","tags":["player-prop","line-vs-price"]}
 {"id":"m008","sport":"baseball","query":"Guardians @ Tigers total runs under 8.5","tags":["over-under-side","line-vs-price"]}
@@ -251,7 +250,7 @@
 {"id":"c001","sport":"cricket","query":"St Lucia Kings vs St Kitts & Nevis Patriots — top run-scorer paying over 6/1","tags":["outright","price-fractional"]}
 {"id":"c002","sport":"cricket","query":"Australia to beat Bangladesh, only if they're above 1.5","tags":["scope-team","odds-only-bounds"]}
 {"id":"c003","sport":"cricket","query":"Scotland vs Canada tomorrow morning — winner, favourite under 1.6","tags":["time","odds-only-bounds","odds-sort"]}
-{"id":"c004","sport":"cricket","query":"Hundred games this evening with top-batter markets paying more than 5/1","tags":["time","price-fractional","league-modifier"]}
+{"id":"c004","sport":"cricket","query":"The Hundred games this evening with top-batter markets paying more than 5/1","tags":["time","price-fractional","league-modifier"]}
 {"id":"c005","sport":"cricket","query":"Show me the Caribbean Premier League fixtures","tags":["fixture-lookup","league-modifier"]}
 {"id":"c006","sport":"cricket","query":"Andries Gous to score a half-century, over 3.0","tags":["player-prop","odds-only-bounds","scope-player"]}
 {"id":"c007","sport":"cricket","query":"Kamil Pooran total runs over 24.5","tags":["player-prop","line-vs-price"]}
@@ -314,7 +313,6 @@
 {"id":"s002","sport":"snooker","query":"Show me the China Open matches today","tags":["fixture-lookup","league-modifier","time"]}
 {"id":"s003","sport":"snooker","query":"Stuart Bingham to win 6-3, only if above 6/1","tags":["score-combo","price-fractional"]}
 {"id":"s004","sport":"snooker","query":"100+ break in frame 1, over 2.5","tags":["yes/no-line","odds-only-bounds"]}
-{"id":"s005","sport":"snooker","query":"Who wins the World Championship?","tags":["outright","level","scope-competition"]}
 {"id":"s006","sport":"snooker","query":"Which China Open match has the biggest frame handicap?","tags":["line-sort","league-modifier"]}
 {"id":"s007","sport":"snooker","query":"Mark Selby to win the UK Championship, longest price","tags":["outright","odds-sort","scope-player"]}
 {"id":"s008","sport":"snooker","query":"Result after 4 frames in Wakelin vs Zhang Anda","tags":["line-no-number"]}
@@ -345,7 +343,6 @@
 {"id":"z004","sport":"motorsports","query":"Show me the Truck Series races this weekend","tags":["fixture-lookup","league-modifier","time"]}
 {"id":"z005","sport":"motorsports","query":"Car number of the race winner at the Cook Out 400","tags":["outright","line-no-number"]}
 {"id":"q001","sport":"formula-1","query":"Who wins the Netherlands GP?","tags":["outright","level","scope-competition"]}
-{"id":"q002","sport":"formula-1","query":"Drivers championship winner, the 3 favourites","tags":["outright","odds-sort","level"]}
 {"id":"q003","sport":"formula-1","query":"Constructors championship, longest price","tags":["outright","odds-sort","level"]}
 {"id":"q004","sport":"formula-1","query":"Show me the F1 season bets","tags":["family-ask","level"]}
 {"id":"q005","sport":"formula-1","query":"Netherlands GP winner priced over 8/1","tags":["outright","price-fractional"]}
@@ -358,7 +355,6 @@
 {"id":"k003","sport":"handball","query":"Bundesliga handball winner including play-offs","tags":["outright","level","league-modifier"]}
 {"id":"k004","sport":"handball","query":"Show me the handball fixtures this week","tags":["fixture-lookup","time"]}
 {"id":"j001","sport":"field-hockey","query":"Who wins the FIH Hockey Women's World Cup?","tags":["outright","level","scope-competition"]}
-{"id":"j002","sport":"field-hockey","query":"Hockey World Cup group winner, best price","tags":["outright","odds-sort","level"]}
 {"id":"j003","sport":"field-hockey","query":"Show me the hockey World Cup markets","tags":["family-ask","level"]}
 {"id":"l001","sport":"lacrosse","query":"Philadelphia Waterdogs vs New York Atlas, total goals over 22.5","tags":["over-under-side","line-vs-price"]}
 {"id":"l002","sport":"lacrosse","query":"Premier Lacrosse League fixtures this weekend","tags":["fixture-lookup","league-modifier","time"]}

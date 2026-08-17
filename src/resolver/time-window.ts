@@ -3,7 +3,13 @@
 // so time is 100% client-side. Phrases use FIXED conventions (weekend = Fri 18:00 → end of Sun, so late-Friday kickoffs count;
 // a named weekday = the next occurrence of that day; "after 8pm" = kickoff >= 20:00;
 // late/early = the last/first kickoff that day); a phrase we can't parse is left UNRESOLVED for the clarify
-// gate (Phase 5). Dates are handled in UTC to match `event.start` (e.g. "2026-06-18T16:00:00Z").
+// gate (Phase 5).
+//
+// TIMEZONE: the CALENDAR (day boundaries, weekday, hour bands) is read in the USER's zone; the INSTANTS stay
+// UTC throughout, matching `event.start` (e.g. "2026-06-18T16:00:00Z"). Same split the client already uses —
+// app-lib's DateUtil formats via `Intl` in the customer's zone, and queryBuilders puts `toISOString()` on the
+// wire. Without it, "tonight after 8pm" for a UTC+2 user drops the 20:00-local game (18:00Z, hour 18 < 20) and
+// keeps a 22:00Z one that is already tomorrow for them. `tz` absent -> UTC, i.e. the pre-tz behaviour.
 
 import type { Scope } from "./schema";
 import type { KEvent } from "./offering-client";
@@ -11,22 +17,58 @@ import type { KEvent } from "./offering-client";
 type TimeField = NonNullable<Scope["time"]>;
 type Kickoff = { afterHour?: number; beforeHour?: number; relative?: "late" | "early" };
 export type FixturePick = { order: "earliest" | "latest"; count: number };
-export type TimeWindow = { from?: Date; to?: Date; kickoff?: Kickoff; pick?: FixturePick; unresolved?: boolean; unresolvedPhrase?: string; liveOk?: boolean };
+export type TimeWindow = { from?: Date; to?: Date; kickoff?: Kickoff; pick?: FixturePick; unresolved?: boolean; unresolvedPhrase?: string; liveOk?: boolean; tz?: string };
 
-const startOfUTCDay = (d: Date) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0));
-const endOfUTCDay = (d: Date) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59, 59, 999));
+export const UTC = "UTC"; // fallback when a caller sends no tz — the pre-tz behaviour, unchanged
+
+type Parts = { year: number; month: number; day: number; hour: number; minute: number; second: number };
+// Wall-clock parts of an instant READ IN `tz`. Intl is the only DST-correct source (it carries the zone's
+// history of rules); `hourCycle: "h23"` keeps midnight at hour 0 rather than 24.
+const partsOf = (d: Date, tz: string): Parts => {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: tz, hourCycle: "h23",
+    year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit",
+  }).formatToParts(d);
+  const g = (t: string) => Number(parts.find((p) => p.type === t)!.value);
+  return { year: g("year"), month: g("month"), day: g("day"), hour: g("hour"), minute: g("minute"), second: g("second") };
+};
+// The zone's UTC offset (ms) at instant `t`. Floor to the second: partsOf has no ms field, so the fraction
+// would otherwise leak into the offset.
+const offsetAt = (t: number, tz: string): number => {
+  const p = partsOf(new Date(t), tz);
+  return Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second) - Math.floor(t / 1000) * 1000;
+};
+// A wall-clock time in `tz` -> the UTC instant. Two passes: on a DST-change day the first offset is read at the
+// wrong instant (it is the pre- or post-shift one), and the second reads it at the corrected instant.
+const fromWall = (y: number, mo: number, d: number, h: number, mi: number, s: number, ms: number, tz: string): Date => {
+  const guess = Date.UTC(y, mo - 1, d, h, mi, s, ms);
+  return new Date(guess - offsetAt(guess - offsetAt(guess, tz), tz));
+};
+// `d`'s calendar day IN `tz`, at wall-clock h:mi:s.ms.
+const atWall = (d: Date, tz: string, h: number, mi = 0, s = 0, ms = 0): Date => {
+  const p = partsOf(d, tz);
+  return fromWall(p.year, p.month, p.day, h, mi, s, ms, tz);
+};
+const startOfDay = (d: Date, tz: string) => atWall(d, tz, 0);
+const endOfDay = (d: Date, tz: string) => atWall(d, tz, 23, 59, 59, 999);
+// Day arithmetic anchors on local NOON: ±24h from midnight can slip to the previous/next date when a DST shift
+// falls in between, ±24h from noon never can.
+const noon = (d: Date, tz: string) => atWall(d, tz, 12);
+const dayOfWeek = (d: Date, tz: string): number => {
+  const p = partsOf(d, tz);
+  return new Date(Date.UTC(p.year, p.month - 1, p.day)).getUTCDay();
+};
 const addDays = (d: Date, n: number) => new Date(d.getTime() + n * 86400000);
 const addHours = (d: Date, n: number) => new Date(d.getTime() + n * 3600000);
-const WEEKDAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]; // index = getUTCDay()
+const WEEKDAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]; // index = day-of-week
 
 // The weekend window containing `base` (when base is Fri-eve/Sat/Sun) else the upcoming one. Starts FRIDAY
-// EVENING (18:00 UTC) so late-Friday tournament kickoffs fold into "the weekend", and runs to end of Sunday.
-const WEEKEND_FRI_HOUR = 18; // Friday 18:00 UTC — evening/late Friday kickoffs onward count as weekend
-function weekendOf(base: Date): [Date, Date] {
-  const dow = base.getUTCDay(); // 0=Sun .. 6=Sat
-  const sat = dow === 6 ? startOfUTCDay(base) : dow === 0 ? startOfUTCDay(addDays(base, -1)) : startOfUTCDay(addDays(base, 6 - dow));
-  const friEve = addHours(startOfUTCDay(addDays(sat, -1)), WEEKEND_FRI_HOUR);
-  return [friEve, endOfUTCDay(addDays(sat, 1))];
+// EVENING (18:00 local) so late-Friday tournament kickoffs fold into "the weekend", and runs to end of Sunday.
+const WEEKEND_FRI_HOUR = 18; // Friday 18:00 in the user's zone — evening/late Friday kickoffs onward count as weekend
+function weekendOf(base: Date, tz: string): [Date, Date] {
+  const dow = dayOfWeek(base, tz); // 0=Sun .. 6=Sat
+  const sat = addDays(noon(base, tz), dow === 6 ? 0 : dow === 0 ? -1 : 6 - dow);
+  return [atWall(addDays(sat, -1), tz, WEEKEND_FRI_HOUR), endOfDay(addDays(sat, 1), tz)];
 }
 
 // `base` = the anchor instant ("now" or tournament start). `now` is always current time (relative phrases like
@@ -34,22 +76,24 @@ function weekendOf(base: Date): [Date, Date] {
 // CANONICAL TOKEN (today/tonight/tomorrow/weekend/next_<N>_hours|days|weeks) — the LLM owns the synonym mapping
 // ("this evening" → today), so this is an exact token match, not a fuzzy free-text parse. An unknown token →
 // null → the clarify gate (the safety net).
-function parseDateWindow(value: string, base: Date, now: Date): [Date, Date] | null {
+function parseDateWindow(value: string, base: Date, now: Date, tz: string): [Date, Date] | null {
   const v = value.toLowerCase().trim();
   let m: RegExpMatchArray | null;
+  // A DURATION from now ("next 3 hours/days"), not a calendar span — pure instant arithmetic, zone-independent.
   if ((m = v.match(/^next_(\d+)_(hour|day|week)s?$/))) {
     const n = Number(m[1]);
     return [now, m[2] === "hour" ? addHours(now, n) : m[2] === "week" ? addDays(now, n * 7) : addDays(now, n)];
   }
-  if (v === "tomorrow") { const t = addDays(now, 1); return [startOfUTCDay(t), endOfUTCDay(t)]; }
-  if (v === "today" || v === "tonight") return [now, endOfUTCDay(now)];
-  if (v === "weekend") return weekendOf(base); // "opening weekend" (base=tournament start) / "this weekend" (base=now)
+  if (v === "tomorrow") { const t = addDays(noon(now, tz), 1); return [startOfDay(t, tz), endOfDay(t, tz)]; }
+  if (v === "today" || v === "tonight") return [now, endOfDay(now, tz)];
+  if (v === "weekend") return weekendOf(base, tz); // "opening weekend" (base=tournament start) / "this weekend" (base=now)
   // a named weekday -> its NEXT occurrence (today counts if today is that day); floor a same-day window to `now`
   // so already-kicked-off games drop, matching the `today` token. The extractor owns "Sun"/"on Saturday" -> token.
   const wd = WEEKDAYS.indexOf(v);
   if (wd >= 0) {
-    const d = addDays(now, (wd - now.getUTCDay() + 7) % 7);
-    return [(wd - now.getUTCDay() + 7) % 7 === 0 ? now : startOfUTCDay(d), endOfUTCDay(d)];
+    const delta = (wd - dayOfWeek(now, tz) + 7) % 7;
+    const d = addDays(noon(now, tz), delta);
+    return [delta === 0 ? now : startOfDay(d, tz), endOfDay(d, tz)];
   }
   return null; // unknown token
 }
@@ -73,12 +117,14 @@ function parseKickoff(value: string): Kickoff | null {
 
 // Resolve to a concrete window. `tournamentStart` is required for a `tournament`-anchored phrase; absent (the
 // participant path has no full event list) -> the date window is IGNORED (kickoff still applies) [Decided].
-export function resolveTimeWindow(time: TimeField, ctx: { now: Date; tournamentStart?: Date }): TimeWindow {
-  const w: TimeWindow = {};
+// `tz` is the USER's zone (IANA name) — it decides where a day starts and what hour a kickoff reads as.
+export function resolveTimeWindow(time: TimeField, ctx: { now: Date; tz?: string; tournamentStart?: Date }): TimeWindow {
+  const tz = ctx.tz ?? UTC;
+  const w: TimeWindow = { tz };
   if (time.date_window) {
     const base = time.date_window.anchor === "tournament" ? ctx.tournamentStart : ctx.now;
     if (base) {
-      const r = parseDateWindow(time.date_window.value, base, ctx.now);
+      const r = parseDateWindow(time.date_window.value, base, ctx.now, tz);
       if (r) [w.from, w.to] = r;
       else { w.unresolved = true; w.unresolvedPhrase = time.date_window.value; } // a phrase we don't understand -> clarify (Phase 5)
     }
@@ -100,10 +146,11 @@ export function resolveTimeWindow(time: TimeField, ctx: { now: Date; tournamentS
 }
 
 const startOf = (e: KEvent): Date | null => (e.start ? new Date(e.start) : e.originalStartDate ? new Date(e.originalStartDate) : null);
-const dateKey = (d: Date) => `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
+const dateKey = (d: Date, tz: string) => { const p = partsOf(d, tz); return `${p.year}-${p.month}-${p.day}`; };
 
 // Does an event fall in the window + kickoff band? Lenient: an event with no start is kept (never dropped on
 // missing data). `late`/`early` are relative to the day's other events (the last/first kickoff that date).
+// from/to are compared as plain UTC instants; only the HOUR band and the same-day grouping read `w.tz`.
 export function eventMatchesTime(e: KEvent, w: TimeWindow, all: KEvent[]): boolean {
   const s = startOf(e);
   if (!s) return true;
@@ -111,11 +158,13 @@ export function eventMatchesTime(e: KEvent, w: TimeWindow, all: KEvent[]): boole
   if (w.to && s > w.to) return false;
   const k = w.kickoff;
   if (k) {
-    const h = s.getUTCHours();
+    const tz = w.tz ?? UTC;
+    const hourIn = (d: Date) => partsOf(d, tz).hour;
+    const h = hourIn(s);
     if (k.afterHour != null && h < k.afterHour) return false;
     if (k.beforeHour != null && h >= k.beforeHour) return false;
     if (k.relative) {
-      const sameDay = all.map(startOf).filter((x): x is Date => x != null && dateKey(x) === dateKey(s)).map((x) => x.getUTCHours());
+      const sameDay = all.map(startOf).filter((x): x is Date => x != null && dateKey(x, tz) === dateKey(s, tz)).map(hourIn);
       if (sameDay.length && h !== (k.relative === "late" ? Math.max(...sameDay) : Math.min(...sameDay))) return false;
     }
   }

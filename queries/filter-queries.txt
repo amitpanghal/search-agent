@@ -1,0 +1,76 @@
+# Filter-coverage corpus — STAGE 1 of the staged filter test (extraction only).
+#
+#   npm run probe -- --file queries/filter-queries.txt --until=extract --out extract.jsonl
+#
+# --until=extract stops before Kambi and before the market LLM, so this is one cheap call per query.
+# Asserts PLAN FIELDS ONLY (the canonical token, the band text, the line/odds/sort shape) — never final
+# cards, which change with the live feed. Whether `weekend` becomes the right Friday-18:00-LOCAL instant
+# is stage 2 (offline, frozen clock, see time-window.ts).
+#
+# Contract under test: Time/Line/LineRange/Odds in src/resolver/schema.ts:21-73, token rules in
+# extractor-prompt.md:102-126.
+#
+# KNOWN RED, not new bugs: the mixed-grain row in section G (per-leg-scope structural gap; the prompt fix
+# was tried and reverted) and long compound queries generally (the extractor flattens qualifiers).
+
+# ── A. date_window — every canonical token ───────────────────────────────────
+Arsenal game today
+what's on tonight in the Premier League
+Liverpool tomorrow
+what's on this weekend
+NBA games on Sunday
+Celtics on Tuesday
+Premier League games this week
+anything in the next 48 hours
+NFL over the next 2 weeks
+World Cup games in the opening weekend
+first week of the World Cup
+
+# ── B. kickoff_time_of_day — with inverses ───────────────────────────────────
+Premier League games after 8pm
+Premier League games before 6pm
+morning kick-offs in the Championship
+afternoon games on Saturday
+evening games in La Liga
+the late kick-off tomorrow
+earliest NBA game today
+Monday night football
+
+# ── C. fixture_pick ──────────────────────────────────────────────────────────
+Arsenal's next game
+Man City next 3 matches
+Liverpool's last match
+
+# ── D. play_state, and its disjointness from time ────────────────────────────
+live football now
+upcoming NBA games
+live markets right now
+Premier League this week
+
+# ── E. line (a rung) vs LineRange (a fixture bound) ──────────────────────────
+over 2.5 goals in the Arsenal game
+under 2.5 goals Arsenal
+MLB games with a runs line above 8.5
+NBA games where the total sits below 220
+Haaland 2+ shots on target
+Kane 1 or fewer goals
+Arsenal won't concede
+both teams to score yes
+
+# ── F. odds, sorting, count ──────────────────────────────────────────────────
+Premier League odds over 3.0
+anything under 1.5 in La Liga
+Arsenal odds between 1.8 and 2.5
+who's the favourite for the World Cup
+longest odds to win the Masters
+top 3 for the Golden Boot
+which NFL game has the biggest handicap
+smallest spread in the NBA tonight
+Gyökeres anytime and Arsenal to win, combined over 2.0
+
+# ── G. traps and negatives ───────────────────────────────────────────────────
+Champions League
+games during the international break
+NBA games tonight
+Arsenal to win and over 2.5 goals tomorrow
+top scorer in the World Cup and Arsenal's next game

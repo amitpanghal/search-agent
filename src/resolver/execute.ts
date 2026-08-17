@@ -16,6 +16,7 @@ import type { Combination } from "./combinations";
 import type { QueryCost } from "./cost";
 import { marketLabelOf } from "./recall";
 import { isNamedOutcome, subjectOutcomes } from "./select";
+import { fold } from "./lexical";
 
 export type CoarseLiveState = "PREMATCH" | "LIVE" | "FINISHED";
 
@@ -257,10 +258,20 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
         if (relBudget <= 0) break outer;
         const relLabel = related[rank];
         if (relLabel == null) continue;
-        let pushed = false;
-        for (const b of data.betOffers) {
-          if (marketLabelOf(b) !== relLabel || b.eventId == null || !eventIds.has(b.eventId)) continue;
-          const g = byEvent.get(b.eventId);
+        // The betoffers this label matches. Combo markets ("A || B") leave `participant` null and carry the
+        // competitor names in the LABEL, so trimRelatedOutcomes's subject gate is blind to them. Prefer within
+        // the matched family: if any row names the subject, drop the rows that don't, so a Haaland query never
+        // shows "Marmoush || Semenyo". When no row names anyone (Over/Under, Yes/No) nothing is dropped, and a
+        // subject we only know by id (no name text) leaves the family untouched.
+        const fam = data.betOffers.filter((b) => marketLabelOf(b) === relLabel && b.eventId != null && eventIds.has(b.eventId));
+        const s = subj.subject ? fold(subj.subject) : "";
+        const named = s ? fam.filter((b) => (b.outcomes ?? []).some((o) => fold(o.englishLabel ?? o.label ?? "").includes(s))) : [];
+        for (const b of named.length ? named : fam) {
+          // Spend the budget per ROW, not per label: one label ("Either Player To Score") matches a betoffer
+          // per player pairing per event, so decrementing once per label let a single label ship dozens of rows
+          // under a documented cap of 3.
+          if (relBudget <= 0) break;
+          const g = b.eventId != null ? byEvent.get(b.eventId) : undefined;
           if (!g) continue;
           const boId = b.id ?? 0;
           if (g.byBo.has(boId) || g.addBos.has(boId)) continue;
@@ -268,9 +279,8 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
           if (outs == null) continue; // participant-keyed market that doesn't price the subject -> off-topic, drop
           g.addBos.add(boId);
           g.additional.push({ eventId: g.event.id, betOffer: toBetOffer(b), outcomes: outs.map(toOutcome) });
-          pushed = true;
+          relBudget--;
         }
-        if (pushed) relBudget--;
       }
     }
   }

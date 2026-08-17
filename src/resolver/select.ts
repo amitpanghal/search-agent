@@ -25,7 +25,7 @@ export type SelectSpec = {
   // combo token (correct score "2-1", HT/FT "1/1"). SELECT reads it per the picked market's betOfferType, not by
   // its JS type — a numeric line for most markets, a combo token for correct-score/HT-FT.
   lineValue?: number | string;
-  dir?: "over" | "under" | "yes" | "no";
+  dir?: "over" | "under" | "at_least" | "at_most" | "yes" | "no";
   oddsMin?: number; // price floor (decimal, 5.0): keep only outcomes priced >= min ("first scorer over 5.0")
   oddsMax?: number; // price ceiling (decimal): keep only outcomes priced <= max
   // FIXTURE-level line bounds/ranking ("games with a runs line above 8.5", "the biggest handicap"). These read
@@ -229,11 +229,13 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
   const hasNamed = cands.some(({ o }) => isNamedOutcome(o));
 
   // ---- OUTRIGHT FIELD (a "who wins / MVP / top scorer" list of named competitors — no side, no line, no
-  // combo, no directional axis) — RENDER THE WHOLE FIELD ranked by odds (favourite first, or `high` for
-  // underdog-first). The list IS the answer, so we never narrow to the subject and never slice to `count`.
-  // `selectedIds` carries only the id(s) to HIGHLIGHT (the frontend flags them): the named subject if the query
-  // has one, else the favourite / top-`count` on a "who's the favourite / top N" ask (odds_sort/count set), else
-  // nothing. A "no" is a genuine negation -> falls through to the normal gates below.
+  // combo, no directional axis) — ranked by odds (favourite first, or `high` for underdog-first) and never
+  // sliced to `count`. When the query NAMES a competitor the field is not the answer — that one price is — so
+  // we narrow to the subject's rows ("Haaland first scorer" returns Haaland, not 34 players). A field ask with
+  // no named subject ("who wins") still renders WHOLE: the list IS the answer there. Named-but-unpriced falls
+  // back to the whole field, so an absent player still shows the market. `selectedIds` carries the id(s) to
+  // HIGHLIGHT: the named subject, else the favourite / top-`count` on a "who's the favourite / top N" ask
+  // (odds_sort/count set), else nothing. A "no" is a genuine negation -> falls through to the gates below.
   const isField =
     cands.some(({ o }) => isOutrightOutcome(o)) && !isComboMarket && numLine == null && spec.dir !== "no" && !cands.some(({ o }) => dirOf(o) != null);
   if (isField) {
@@ -248,7 +250,7 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
     const asked = spec.subjectId != null || (spec.subject != null && spec.subject !== "home" && spec.subject !== "away");
     const subj = asked ? subjectOutcomes(field.map(({ o }) => o), spec).map((o) => o.id).filter((id): id is number => id != null) : [];
     const sel = subj.length ? subj : !asked && (spec.sort != null || spec.count != null) ? ids.slice(0, spec.count ?? 1) : [];
-    return { ...withSubj, ...(sel.length ? { outcomeId: sel[0], selectedIds: sel } : {}), outcomeIds: ids };
+    return { ...withSubj, ...(sel.length ? { outcomeId: sel[0], selectedIds: sel } : {}), outcomeIds: subj.length ? subj : ids };
   }
 
   // ---- (1) SUBJECT -> the candidate pool ----
@@ -305,6 +307,11 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
 
   // ---- (2) DIRECTION + (3) LINE -> the SELECTED outcome (the rest of `pool` rides along for display) ----
   if (spec.dir || numLine != null) {
+    // A BAND is inclusive of N ("2+ hits" = >= 2) and no feed outcome type says that: a ladder prices it as the
+    // OVER at the largest line BELOW N ("over 1.5" IS "2+"), a band market labels an outcome at N itself. Only
+    // here are the offered rungs visible, so the band is read as its SIDE and the line branch prefers the exact
+    // N, then that side's inclusive rungs. over/under/yes/no pass through unchanged.
+    const dir = spec.dir === "at_least" ? "over" : spec.dir === "at_most" ? "under" : spec.dir;
     if (numLine != null) {
       // Handicap sign: a SAME-line betoffer (type-11 3-way) stores the line from the HOME perspective, so
       // negate it for the away side. Opposite-sign betoffers (type 1/7) store each team's own line -> as-is.
@@ -322,8 +329,15 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
       // along in the returned pool for display.
       const nearest = (set: Cand[]) =>
         set.filter((c) => effLine(c) != null).sort((a, b) => Math.abs(effLine(a)! - numLine) - Math.abs(effLine(b)! - numLine))[0];
-      const sidePool = spec.dir && pool.some(({ o }) => dirOf(o) === spec.dir) ? pool.filter(({ o }) => dirOf(o) === spec.dir) : pool;
-      const chosen = sidePool.find((c) => effLine(c) === numLine) ?? nearest(sidePool);
+      const sidePool = dir && pool.some(({ o }) => dirOf(o) === dir) ? pool.filter(({ o }) => dirOf(o) === dir) : pool;
+      // A band takes the rungs on its inclusive side only ("2+" -> over 1.5, never over 2.5); null for a plain
+      // side/handicap, which leaves the exact-then-nearest pick byte-identical to before.
+      const inBand =
+        spec.dir === "at_least" ? (l: number) => l < numLine : spec.dir === "at_most" ? (l: number) => l > numLine : null;
+      const chosen =
+        sidePool.find((c) => effLine(c) === numLine) ??
+        (inBand ? nearest(sidePool.filter((c) => effLine(c) != null && inBand(effLine(c)!))) : undefined) ??
+        nearest(sidePool);
       return chosen ? withPool(chosen.o, effLine(chosen)!) : absent("line-absent");
     }
     // direction only. The asked side is a PREFERENCE over the live market, never a drop (same decision as the
@@ -331,7 +345,7 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
     // direction. If the market has NO direction axis (a FIELD outright of named outcomes — who wins / top
     // scorer / an award), `dir` is inapplicable, so the live field wins: rank by price (odds_sort) and keep the
     // top `count` (favourite when sort="low"), leader selected. Only a real binary lacking the asked SIDE absents.
-    const flt = spec.dir ? pool.filter(({ o }) => dirOf(o) === spec.dir) : pool;
+    const flt = dir ? pool.filter(({ o }) => dirOf(o) === dir) : pool;
     if (flt[0]) return withPool(flt[0].o);
     const directional = pool.some(({ o }) => dirOf(o) != null);
     if (!directional && spec.dir !== "no" && pool[0]) {
@@ -347,7 +361,13 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
   const yes = !hasNamed ? pool.find(({ o }) => dirOf(o) === "yes") : undefined;
   const chosen = (yes ?? pool[0])?.o;
   if (!chosen) return absent("subject-absent");
-  // RELATIONAL multi-fixture ("home teams to win"): the pool holds ONE side-outcome per fixture, each its OWN
-  // answer -> flag them ALL selected, not just the first. A named/owner subject keeps single-pick semantics.
-  return withPool(chosen, undefined, ids, relational ? ids : undefined);
+  // MULTI-FIXTURE: the pool holds one answer PER FIXTURE, each its own -> flag one per event, not just the
+  // first. Not only the relational case ("home teams to win"): a NAMED subject spans fixtures too ("City to
+  // win", several upcoming games), and flagging only the first leaves every later card rendered with nothing
+  // selected. Dedupe over the answers `chosen` came from, so the flagged id per event matches the pick rule.
+  // A single-fixture pool keeps single-pick semantics, unchanged.
+  const answers = yes ? pool.filter(({ o }) => dirOf(o) === "yes") : pool;
+  const perEvent = new Map<number, number>();
+  for (const { o, bo } of answers) if (bo.eventId != null && o.id != null && !perEvent.has(bo.eventId)) perEvent.set(bo.eventId, o.id);
+  return withPool(chosen, undefined, ids, perEvent.size > 1 ? [...perEvent.values()] : undefined);
 }

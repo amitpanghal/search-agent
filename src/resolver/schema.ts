@@ -118,10 +118,17 @@ const Selector = z.object({
   // A rung to SELECT (number / combo token), or a RANGE that bounds which fixtures qualify (see LineRange).
   line: z.union([Line, LineRange]).optional(),
   // Which SIDE of a two-sided market the query named — carried alongside `line`, never inside it. Add it when
-  // the query states an over/under side ("over"/"more than" -> "over"; "under"/"fewer than" -> "under") or a
-  // yes/no side (a negation "won't"/"no" -> "no"; an explicit affirmative -> "yes"). A handicap names a team,
+  // the query states an over/under side ("over"/"more than" -> "over"; "under"/"fewer than" -> "under"), an
+  // inclusive BAND ("N+"/"at least N" -> "at_least"; "N or fewer"/"up to N" -> "at_most"), or a yes/no side
+  // (a negation "won't"/"no" -> "no"; an explicit affirmative -> "yes"). A handicap names a team,
   // not a side, so leave it off there (the team is the subject). SELECT reads it as its `dir`.
-  direction: z.enum(["over", "under", "yes", "no"]).optional(),
+  // A band is NOT an over/under: "2+ hits" means >= 2, which on a ladder is "over 1.5". Only SELECT can make
+  // that conversion (it sees the offered rungs), so the extractor states the band and select maps it.
+  // MEASURED, don't re-try: giving this field a `.describe()` (the wording that fixed `competition`) moved
+  // nothing — 13 failing rows before, 13 after, 4 fixed / 4 broken. A 45-line prompt carrying the SAME rule
+  // fixes 8 of 9, so what suppresses `direction` lives in the prompt's own text, not in this field's distance
+  // from it. See the arm-3/arm-4 probe in planning/extractor-role-split-findings.md.
+  direction: z.enum(["over", "under", "at_least", "at_most", "yes", "no"]).optional(),
   odds: Odds.optional(),
   // Rank the market's outcomes by price instead of bounding it (sport-agnostic). `low` = shortest/lowest/
   // best price first (favourite); `high` = longest/highest/biggest first (underdog). Optional
@@ -155,7 +162,6 @@ export const QueryPlan = z.object({
   // unmapped or absent language degrades to English labels downstream). Omitted when the query is English or the
   // language is unclear. Used only to localize the feed's market/outcome LABELS; all resolution stays in English.
   language: z.string().min(1).optional(),
-  otherSports: z.array(z.string()).optional(), // present only when sport-ambiguous (best guess first)
   // A price bound on the COMBINED return of every leg ("only if the combined odds clear 2.0") — QUERY-level,
   // because it constrains the parlay, not any single bet. Put per-selector instead it deletes the leg it lands
   // on: "Gyökeres anytime AND Arsenal to win, combined over 2.0" applied {min:2} to Arsenal at 1.2, so the

@@ -11,7 +11,7 @@
 
 import { writeFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
-import { curlJson } from "./curl-fetch";
+import { curlJson, closeBrowser } from "./curl-fetch";
 import { GROUPS_PATH } from "../src/resolver/sports";
 
 const GROUPS_URL = "https://eu.offering-api.kambicdn.com/offering/v2018/kambi/group.json?channel_id=1&client_id=200&lang=en_GB&market=GB";
@@ -25,4 +25,4 @@ async function main(): Promise<void> {
   console.log(`wrote ${out} (${blob.length} bytes)`);
 }
 
-main();
+main().finally(closeBrowser);

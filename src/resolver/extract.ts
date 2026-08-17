@@ -22,7 +22,12 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 // hockey"). Injected so the extractor emits a sport getSport will actually match; slugify() on the read side
 // turns the model's answer back into the file slug. Built once at load (catalogData/ ships with the app).
 const SUPPORTED_SPORTS = [...builtSports(), "other"].join(", ");
-const SYSTEM_PROMPT = readFileSync(join(HERE, "extractor-prompt.md"), "utf8")
+// EXTRACTOR_PROMPT points the extractor at a VARIANT prompt file, for offline A/B of prompt edits
+// (scripts/ arm runs) without touching the shipped one. Unset in prod — the default is the real prompt.
+// -v2 is the rewrite (224 lines vs 374): shorter, competition rule restated as "a name that MODIFIES an
+// event/market noun", `sport`+`competition` declared independent. extractor-prompt.md is kept as the
+// comparison baseline — point EXTRACTOR_PROMPT at it to A/B.
+const SYSTEM_PROMPT = readFileSync(process.env.EXTRACTOR_PROMPT || join(HERE, "extractor-prompt-v2.md"), "utf8")
   .replace("{{SUPPORTED_SPORTS}}", SUPPORTED_SPORTS);
 const TOOL_NAME = "emit_query_plan";
 

@@ -128,7 +128,7 @@ export type StageEvent =
 // expensive phase (extract LLM, recall fetch, market-resolve LLM) and a final `done` carrying the envelope.
 // The SSE server forwards each yield; resolveQuery (below) drains it to the single envelope for non-streaming
 // callers (eval, probes).
-export async function* runPipeline(query: string, opts: { until?: string } = {}): AsyncGenerator<StageEvent> {
+export async function* runPipeline(query: string, opts: { until?: string; tz?: string } = {}): AsyncGenerator<StageEvent> {
   // Per-query LLM usage: each stage runs inside usageStore so bedrock-call records its tokens here (cost.ts).
   // Stamp every `done` envelope with the running total so the frontend can show per-query token/cost.
   const calls: RawCall[] = [];
@@ -176,6 +176,11 @@ export async function* runPipeline(query: string, opts: { until?: string } = {})
   if (opts.until === "ground") return;
   const settled = await usageStore.run(calls, () => resolveEntities(query, scope));
   emit({ kind: "stage", stage: "entities", out: settled });
+  // The entity gate may have settled a name in ANOTHER sport's catalog (cross-sport widening), which means the
+  // extractor's sport was wrong. The entity already carries the right ids; only planRecall's squad lookup still
+  // reads plan.sport, so bring it along. AFTER the emit — `plan` is the same object the extract stage captured,
+  // so assigning before it rewrites that trace row and hides what the extractor actually said.
+  plan.sport = settled.sport;
   if (opts.until === "entities") return;
 
   // Guard: if the entity gate couldn't resolve any ids (e.g. ambiguous player with no competition anchor)
@@ -229,9 +234,6 @@ export async function* runPipeline(query: string, opts: { until?: string } = {})
   const keyByIdx: string[] = new Array(plan.selectors.length);
   const pickByIdx: MarketPick[] = new Array(plan.selectors.length);
   const extraNotes = new Set<string>(); // pipeline-level notes resolve alone can build (needs per-leg scope)
-  if (plan.otherSports?.length) {
-    extraNotes.add(`Showing ${plan.sport} — did you mean ${plan.otherSports.join(" or ")}?`);
-  }
 
   // Fixture inheritance. A FLOATING leg names no subject, team, competition or time: alone it fans across the whole
   // broad fetch (e.g. "total goals over 2.5" in a single-match combo landing on every club game a fetched player's
@@ -258,7 +260,7 @@ export async function* runPipeline(query: string, opts: { until?: string } = {})
     const data = floating && anchorEventIds.size
       ? { events: r.data.events.filter((e) => e.id != null && anchorEventIds.has(e.id)), betOffers: r.data.betOffers }
       : r.data;
-    const scoped = scopeMenu(data, leg); // narrow the (possibly fixture-restricted) data to this group's leg scope
+    const scoped = scopeMenu(data, leg, { tz: opts.tz }); // narrow the (possibly fixture-restricted) data to this group's leg scope
     if (scoped.timeUnresolved) {
       const bad = scoped.unresolvedPhrase ?? "you gave";
       extraNotes.add(scoped.timeApplied
@@ -424,9 +426,9 @@ export async function* runPipeline(query: string, opts: { until?: string } = {})
 
 // resolveQuery — the non-streaming entry: drain runPipeline and return the final envelope. Existing callers
 // (eval, probes) keep their `Promise<ResponseEnvelope>` contract; the generator always emits exactly one `done`.
-export async function resolveQuery(query: string): Promise<ResponseEnvelope> {
+export async function resolveQuery(query: string, opts: { tz?: string } = {}): Promise<ResponseEnvelope> {
   let envelope: ResponseEnvelope | undefined;
-  for await (const evt of runPipeline(query)) {
+  for await (const evt of runPipeline(query, opts)) {
     if (evt.stage === "done") envelope = evt.envelope;
   }
   return envelope!;

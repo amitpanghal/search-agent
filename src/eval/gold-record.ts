@@ -86,18 +86,19 @@ const Odds = z
 // (looseMatch vs accept[]) in the default mode anyway, so an id would be unused ceremony. This is what makes a
 // large multi-sport corpus authorable: write the wording, don't look up a criterion id per row. Rows that must
 // also exercise the post-fetch resolver keep an `id` cell and are picked up by market-resolve-gate.ts.
+// `must[]` — the tokens that have to SURVIVE in the extractor's phrase, and the only way the extractor gate
+// grades wording now. The resolver reads the phrase against the live menu WITH the raw query, so a terser or
+// wordier synonym ("win margin" for "winning margin") is its problem to settle, not a text gate's: what the
+// extractor owes is that a qualifier which changes WHICH bet this is ("first half", "straight sets", "100+")
+// is still there. All tokens must appear (normalized containment); an empty must[] leaves wording ungraded.
+// accept[] keeps its own job: canonical phrasing for the live market-resolve gate.
+const text = { accept: z.array(z.string()).default([]), must: z.array(z.string()).default([]) };
 const MarketConcept = z.union([
-  z.object({
-    id: z.union([z.number(), z.array(z.number()).min(1)]),
-    accept: z.array(z.string()).default([]),
-  }),
-  z.object({
-    offer: z.array(z.number()).min(1),
-    accept: z.array(z.string()).default([]),
-  }),
-  z.object({ main: z.literal(true), accept: z.array(z.string()).default([]) }),
-  z.object({ none: z.literal(true), accept: z.array(z.string()).default([]) }),
-  z.object({ accept: z.array(z.string()).min(1) }), // TEXT-only (last: the members above are strictly narrower)
+  z.object({ id: z.union([z.number(), z.array(z.number()).min(1)]), ...text }),
+  z.object({ offer: z.array(z.number()).min(1), ...text }),
+  z.object({ main: z.literal(true), ...text }),
+  z.object({ none: z.literal(true), ...text }),
+  z.object({ ...text, accept: z.array(z.string()).min(1) }), // TEXT-only (last: the members above are strictly narrower)
 ]);
 
 const Stage = z.string().min(1); // the tournament round as text -- resolved by the live layer (E2)
@@ -138,7 +139,7 @@ const GoldSelector = z.object({
   // Which SIDE of a two-sided market the query named (mirrors Selector.direction in schema.ts). Graded HARD
   // alongside line/odds: a flipped side is the opposite bet, and it was previously ungraded — "the over, only
   // if the total is under 41" silently extracted direction "under" with nothing to catch it.
-  direction: z.enum(["over", "under", "yes", "no"]).optional(),
+  direction: z.enum(["over", "under", "at_least", "at_most", "yes", "no"]).optional(),
   odds: Odds.optional(),
   odds_sort: z.enum(["low", "high"]).optional(), // mirrors Selector (schema.ts); plain enum, not grounded
   line_sort: z.enum(["low", "high"]).optional(), // ranks by LINE size, not price — the other half of the sort axis

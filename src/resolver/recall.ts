@@ -326,11 +326,11 @@ export type ScopedMenu = { menu: Menu; offers: BetOffer[]; events: KEvent[]; eve
 export function scopeMenu(
   data: { betOffers: BetOffer[]; events: KEvent[] },
   leg: ResolvedLegScope,
-  opts: { now?: Date } = {},
+  opts: { now?: Date; tz?: string } = {},
 ): ScopedMenu {
   const compId = leg.competition?.tier === "confident" ? leg.competition.candidates[0]!.id : null;
   const teamIds = leg.teams.filter((t) => t.tier === "confident").flatMap((t) => t.candidates.map((c) => c.id));
-  const window = leg.time ? resolveTimeWindow(leg.time, { now: opts.now ?? new Date() }) : undefined;
+  const window = leg.time ? resolveTimeWindow(leg.time, { now: opts.now ?? new Date(), tz: opts.tz }) : undefined;
   // Named round/stage narrowing. Cycling stages & jersey classifications are COMPETITION-tagged SUB-events whose
   // NAME carries the round ("Stage 3", "General Classification") — pin to them, and let them through the grain
   // filter (they're COMPETITION-tagged even when the leg reads as a fixture). But a team-sport round name

@@ -49,9 +49,6 @@ name does not spend that name — the very same name must **also** be recorded a
 "games tonight in `<LEAGUE>`" would. Dropping it is the single most common way a plan is silently
 ruined: with no competition, team, or player left, there is nothing to search and the query is refused.
 
-When the query is **sport-ambiguous** — the named entity exists in several sports and no league,
-competition, or market word picks one — also emit `otherSports`: the other plausible sports, best guess first.
-
 Also emit `language` — the language of the query's **wording**, named in English ("Swedish", "German") —
 **when that wording is not English**. Judge it by the **betting-intent words** (verbs, market and time
 phrasing), never by team / player / competition names: proper nouns don't change the language

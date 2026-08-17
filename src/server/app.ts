@@ -11,7 +11,21 @@ import { streamSSE } from "hono/streaming";
 import { z } from "zod";
 import { runPipeline } from "../resolver/resolve";
 
-const QueryBody = z.object({ query: z.string().min(1).max(500) });
+// An IANA zone NAME the runtime actually knows ("Europe/Stockholm"), never a numeric offset — an offset is only
+// correct at one instant and silently breaks across a DST switch. Constructing the formatter is the check:
+// Intl throws RangeError on an unknown zone.
+const isKnownZone = (tz: string): boolean => {
+  try { new Intl.DateTimeFormat("en", { timeZone: tz }); return true; } catch { return false; }
+};
+
+// `tz` is the USER's zone; the resolver reads day boundaries and kickoff hours in it (see time-window.ts). The
+// CLIENT owns it — it is the only side with the customer setting and the device — so we never guess one here:
+// a bad value is a 400 (loud, a client bug) and an absent one falls back to UTC (the pre-tz behaviour) with a
+// warn. Guessing from the server's own zone would silently change the answer whenever the box moves region.
+const QueryBody = z.object({
+  query: z.string().min(1).max(500),
+  tz: z.string().refine(isKnownZone, "unknown IANA timezone").optional(),
+});
 
 export function buildApp() {
   const app = new Hono();
@@ -22,15 +36,17 @@ export function buildApp() {
 
   app.post("/query", async (c) => {
     let query: string;
+    let tz: string | undefined;
     try {
-      ({ query } = QueryBody.parse(await c.req.json()));
+      ({ query, tz } = QueryBody.parse(await c.req.json()));
     } catch (err) {
       return c.json({ error: err instanceof Error ? err.message : "Invalid request body" }, 400);
     }
+    if (!tz) console.warn("[query] no tz sent — time filters fall back to UTC; the client should send an IANA zone name");
 
     return streamSSE(c, async (stream) => {
       try {
-        for await (const evt of runPipeline(query)) {
+        for await (const evt of runPipeline(query, { tz })) {
           // Stage markers carry only their name; `done` carries the whole envelope.
           await stream.writeSSE({
             event: evt.stage,

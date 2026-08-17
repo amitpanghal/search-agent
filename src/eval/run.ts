@@ -17,6 +17,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { GoldRecord, loadGold } from "./gold-record";
+import { catalogSupport } from "./catalog-support";
 import { BEHAVIOR_TAGS, CRITICAL_TAGS, SOFT_TAGS, BEHAVIOR_TAG_IDS, type BehaviorTag } from "./behavior-tags";
 import { extract, EXTRACTION_MODEL } from "../resolver/extract";
 import { recoverSport } from "../resolver/recover-sport";
@@ -206,7 +207,7 @@ function printTagSummary(stats: Map<BehaviorTag, TagStat>): void {
 // Tuning one rule at a time needs the narrower question: did the facet I aimed at move, and did another break?
 const FACETS: [string, RegExp][] = [
   ["sport", /^sport:/],
-  ["market", /^market not found|^unexpected market|^market (ambiguous|shortlist|not grounded)|^offer not surfaced|^expected-none|^marketless:/],
+  ["market", /^market not found|^market dropped|^unexpected market|^market (ambiguous|shortlist|not grounded)|^offer not surfaced|^expected-none|^marketless:/],
   ["binding", /^binding /],
   ["line", /^line:/],
   ["line_sort", /^line_sort:/],
@@ -331,7 +332,15 @@ async function main(): Promise<void> {
   // are graded only by the deterministic entity gate below.
   // Replay grades exactly the rows the capture covers — a gold row the sweep never ran is out of scope for it,
   // not a failure of the extractor.
-  const marketGold = gold.filter((g) => g.gradeMarket !== false && (!replay || replay.has(g.query)));
+  // Catalog coverage is not extraction. A row naming no anchor any catalog carries cannot be served however
+  // perfectly it is extracted, so grading it measures the catalog and permanently caps a score no prompt can
+  // move (catalog-support.ts). Reported, then excluded. `--unservable` grades them anyway.
+  const unservable = new Set(
+    args.includes("--unservable") ? [] : gold.filter((g) => !catalogSupport(g).servable).map((g) => g.id),
+  );
+  const marketGold = gold.filter(
+    (g) => g.gradeMarket !== false && !unservable.has(g.id) && (!replay || replay.has(g.query)),
+  );
   const limit = limiter(Number(flagValue(args, "--jobs")) || 4);
   const pending = marketGold.map((rec) => limit(() => runQuery(rec, n)));
   const reports: QueryReport[] = [];
@@ -340,6 +349,8 @@ async function main(): Promise<void> {
     reports.push(rep);
     printReport(rep, n);
   }
+
+  if (unservable.size) console.log(`\n${unservable.size} row(s) excluded: no anchor our catalogs carry (catalog coverage, not extraction). --unservable to grade them.`);
 
   const stats = computeTagStats(reports);
   printTagSummary(stats);

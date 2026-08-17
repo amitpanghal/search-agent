@@ -13,7 +13,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { getSport, BUILD_DIR, GROUPS_PATH } from "../src/resolver/sports";
-import { curlJsonOrNull } from "./curl-fetch";
+import { curlJsonOrNull, closeBrowser } from "./curl-fetch";
 
 const FEED = (id: number) => `https://feeds-eu.offering-api.kambicdn.com/feeds/api/kambi/participant/group/${id}.json`;
 // Live betoffer-group menu with participants — the clean player source for `participantsFrom:"betoffer"` sports.
@@ -44,7 +44,7 @@ const CONCURRENCY = 4;      // ponytail: pool the sport's direct children; kept 
 type Node = { id: number; name?: string; groups?: Node[] };
 type Participant = { id: number; [k: string]: unknown };
 
-// GET a feed via curl (Node fetch is fingerprint-blocked — see curl-fetch.ts), retried `attempts` times.
+// GET a feed via a headless browser (every non-browser fingerprint is 410'd — see curl-fetch.ts), retried `attempts` times.
 // participants[] on 200 (even if empty), or null after all attempts fail → the caller splits into children
 // (or skips a leaf). Containers pass attempts=1 (a fail just means "too big" → split); leaves retry, since a
 // slow-but-valid leaf (NCAAB is ~31s and can't be split) must not be dropped on one unlucky timeout.
@@ -152,4 +152,4 @@ async function main(): Promise<void> {
   console.log(`wrote ${out}`);
 }
 
-main();
+main().finally(closeBrowser);
