@@ -178,12 +178,17 @@ on every leg**.
   is `competition`.
   - `date_window` `{ value, anchor }` — `value` is a CANONICAL TOKEN, never free text: `today` (also "this
     evening", "right now"), `tonight`, `tomorrow`, `weekend`, a weekday `monday`…`sunday`, or
-    `next_<N>_hours` / `next_<N>_days` / `next_<N>_weeks` ("this week" → `next_7_days`). `anchor` is
+    `next_<N>_hours` / `next_<N>_days` / `next_<N>_weeks` ("this week" → `next_7_days`) — these only
+    when `<N>` counts a unit of TIME. When `<N>` counts fixtures ("next 2 games"), that is
+    `fixture_pick`, never a window. `anchor` is
     `"tournament"` for tournament-relative phrases ("opening weekend"), else `"now"`. "Monday night"
     splits into `date_window` `monday` **and** `kickoff_time_of_day` "night".
   - `kickoff_time_of_day` — a time-of-day band as stated ("morning", "late kick-offs"), else null.
-  - `fixture_pick` `{ order, count }` — matches picked by clock order: "next game" → `earliest`/1,
-    "their last match" → `latest`/1. Whoever the matches belong to — named ("`<NAME>`'s next game") or a
+  - `fixture_pick` `{ order, count }` — fixtures picked by clock order. Set it ONLY when the query
+    bounds HOW MANY fixtures: a stated number ("next 2 games" → `count` 2) or a singular ("next game"
+    → 1). A plural with no number ("upcoming games") bounds nothing — leave it null. `order` =
+    `earliest` for the soonest ones (next, upcoming, first), `latest` for the most recent past ones
+    (last, previous). Whoever the matches belong to — named ("`<NAME>`'s next game") or a
     pronoun standing for one ("his next game") — goes to `teams`/`players` **and** `fixture_pick` is still
     set; an owner never absorbs the clock word.
 - **`play_state`** — `"live"` only for in-progress wording ("live", "in-play", "playing now", "on now");

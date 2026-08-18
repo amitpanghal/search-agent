@@ -121,8 +121,15 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
     const team = side === "home" ? eventOfBo(c.bo)?.homeName : eventOfBo(c.bo)?.awayName;
     return !!team && isNamedOutcome(c.o) && fold(c.o.participant ?? "").includes(fold(team));
   };
-  const pick = (o: KOutcome): Selection => ({ ...withSubj, outcomeId: o.id, ...(lineOf(o) != null ? { line: lineOf(o)! } : {}) });
   const absent = (fb: NonNullable<Selection["fallback"]>): Selection => ({ ...withSubj, fallback: fb });
+  // The combo + outcome-label branches below RETURN through here, above the (1.5) odds gate — so the price
+  // bound is enforced here too, or "in straights above 1.7" would hand back a 1.38 correct-score. Checked on
+  // the already-chosen outcome (never a pool prune): the gate must not outlive the subject narrowing, or the
+  // OPPONENT's row survives the bound and becomes the answer.
+  const pick = (o: KOutcome): Selection =>
+    withinOdds(o, spec.oddsMin, spec.oddsMax)
+      ? { ...withSubj, outcomeId: o.id, ...(lineOf(o) != null ? { line: lineOf(o)! } : {}) }
+      : absent("odds-absent");
 
   // ---- (0) FIXTURE LINE — bound or rank fixtures by their HEADLINE line, before anything picks an outcome.
   // "games with a runs line above 8.5" is about the fixture's headline, not a rung of its ladder: every game
@@ -168,7 +175,14 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
   // a numeric line for a non-combo market; an unparseable value (e.g. the extractor put the side-word "over" in a
   // number field) reads as NO line stated -> fall through to show every side, never drop the leg.
   const rawLine = !isComboMarket && spec.lineValue != null ? Number(String(spec.lineValue).trim()) : undefined;
-  const numLine = Number.isNaN(rawLine) ? undefined : rawLine;
+  // Same call, one case further: a ladder constraint the picked market CANNOT EXPRESS also reads as NOT
+  // STATED. "to win at least one set" arrives as line 1 + at_least, but the market is a Yes/No with no line
+  // axis at all — the count is part of its NAME, not a rung to match. over/under/at_least/at_most only mean
+  // something against a ladder, so the direction goes with the line; yes/no are real here and pass through.
+  // Combo markets are lineless BY DESIGN (they carry homeScore/awayScore) -> excluded, their token is read above.
+  const lineless = !isComboMarket && !cands.some(({ o }) => o.line != null);
+  const numLine = Number.isNaN(rawLine) || lineless ? undefined : rawLine;
+  if (lineless && ["over", "under", "at_least", "at_most"].includes(spec.dir ?? "")) spec = { ...spec, dir: undefined };
 
   // The subject's SIDE in this fixture (for translating positional combo tokens, below). Prefer the event
   // participant whose id == the grounded subjectId and read its `home` flag — id-keyed, immune to name/diacritic
@@ -239,7 +253,11 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
   const isField =
     cands.some(({ o }) => isOutrightOutcome(o)) && !isComboMarket && numLine == null && spec.dir !== "no" && !cands.some(({ o }) => dirOf(o) != null);
   if (isField) {
-    const field = cands.filter(({ o }) => withinOdds(o, spec.oddsMin, spec.oddsMax));
+    const asked = spec.subjectId != null || (spec.subject != null && spec.subject !== "home" && spec.subject !== "away");
+    // The price bound applies to WHAT WAS ASKED FOR: a named subject's own rows, else the field itself.
+    // Filtering the whole field up front drops a priced-out subject and then hands back the REST of the
+    // field as if it were the answer — "De Minaur to win, only if priced above 1.5" rendered Fery @4.3.
+    const field = asked ? [...cands] : cands.filter(({ o }) => withinOdds(o, spec.oddsMin, spec.oddsMax));
     if (!field.length) return absent("odds-absent");
     const desc = spec.sort === "high";
     field.sort((a, b) => {
@@ -247,8 +265,10 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
       return desc ? kb - ka : ka - kb; // default favourite-first
     });
     const ids = field.map(({ o }) => o.id).filter((id): id is number => id != null);
-    const asked = spec.subjectId != null || (spec.subject != null && spec.subject !== "home" && spec.subject !== "away");
-    const subj = asked ? subjectOutcomes(field.map(({ o }) => o), spec).map((o) => o.id).filter((id): id is number => id != null) : [];
+    const subjOut = asked ? subjectOutcomes(field.map(({ o }) => o), spec) : [];
+    // A subject that IS in the field but fails the bound is an honest miss, not a reason to show the field.
+    if (subjOut.length && !subjOut.some((o) => withinOdds(o, spec.oddsMin, spec.oddsMax))) return absent("odds-absent");
+    const subj = subjOut.map((o) => o.id).filter((id): id is number => id != null);
     const sel = subj.length ? subj : !asked && (spec.sort != null || spec.count != null) ? ids.slice(0, spec.count ?? 1) : [];
     return { ...withSubj, ...(sel.length ? { outcomeId: sel[0], selectedIds: sel } : {}), outcomeIds: subj.length ? subj : ids };
   }
