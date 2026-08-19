@@ -73,11 +73,14 @@ export function normalizePlan(plan: unknown): void {
   const p = plan as Record<string, unknown>;
   // query-level bound (same shape as a selector's `odds`, so the same sanitizer)
   sanitizeOdds(p, "combined_odds");
-  const selectors = p.selectors;
-  if (!Array.isArray(selectors)) return;
-  for (const sel of selectors) {
-    if (!sel || typeof sel !== "object") continue;
-    const rec = sel as Record<string, unknown>;
+  if (!Array.isArray(p.selectors)) return;
+  // Model slop: a half-emitted selector arrives as a bare string in the array — drop it rather than sink
+  // the whole plan (schema still refuses an emptied plan).
+  const selectors = (p.selectors as unknown[]).filter(
+    (s): s is Record<string, unknown> => !!s && typeof s === "object",
+  );
+  if (selectors.length) p.selectors = selectors;
+  for (const rec of selectors) {
     // (1) per-leg scope cleanups
     const sc = rec.scope as Record<string, unknown> | undefined;
     if (sc && typeof sc === "object") normalizeScope(sc);
@@ -92,11 +95,28 @@ export function normalizePlan(plan: unknown): void {
     for (const k of ["odds_sort", "line_sort"] as const) {
       if (k in rec && rec[k] !== "low" && rec[k] !== "high") delete rec[k];
     }
+    // `direction` is an optional enum too: drop an off-enum value so one bad side-word degrades to
+    // show-all-sides instead of sinking the whole plan at parse.
+    if ("direction" in rec && !["over", "under", "at_least", "at_most", "yes", "no"].includes(rec.direction as string))
+      delete rec.direction;
     // `count` is an optional positive integer (the field-outright limit); drop anything else so the schema parses.
     if ("count" in rec && !(Number.isInteger(rec.count) && (rec.count as number) >= 1)) delete rec.count;
     const subj = rec.subject as Record<string, unknown> | undefined;
     if (subj && subj.kind === "team" && (typeof subj.name !== "string" || subj.name.length === 0)) {
       rec.subject = { kind: "event" };
     }
+  }
+  // The same bet re-described is one bet: drop selectors identical after repair.
+  // ponytail: JSON key-order dedup; canonicalize keys if a model ever reorders them between twin legs
+  const seen = new Set<string>();
+  p.selectors = selectors.filter((s) => {
+    const k = JSON.stringify(s);
+    return seen.has(k) ? false : (seen.add(k), true);
+  });
+  // A 1-selector plan can never carry combined_odds (schema rule): one bet's combined price IS its price.
+  const legs = p.selectors as Record<string, unknown>[];
+  if (legs.length === 1 && p.combined_odds) {
+    if (!legs[0]!.odds) legs[0]!.odds = p.combined_odds;
+    delete p.combined_odds;
   }
 }

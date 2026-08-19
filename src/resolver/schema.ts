@@ -95,7 +95,7 @@ const Scope = z.object({
         "names one — INCLUDING a league whose name states its own sport (MLB, UFC, NRL, WNBA) and one used " +
         "only as a modifier on another noun (\"<LEAGUE> games tonight\"). Having used that same name to " +
         "identify `sport` does NOT exempt it: it belongs in both places. Use null only when the query names " +
-        "no competition at all.",
+        "no competition at all. A fixture pairing (\"A vs B\") is teams, never a competition.",
     ),
   // A place/territory that SCOPES the competition (a country like "Italy", or a cross-country comp branch
   // like "Champions League") — distinct from a country named as a TEAM, which stays in `teams`. The scope

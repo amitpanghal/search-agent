@@ -42,26 +42,31 @@ const INPUT_SCHEMA: Record<string, unknown> = (() => {
 })();
 
 export async function extract(query: string): Promise<QueryPlan> {
-  const envelope = await bedrockToolCall(SYSTEM_PROMPT, query, TOOL_NAME, INPUT_SCHEMA) as { plan?: unknown };
+  let hint = "";
+  for (let attempt = 0; ; attempt++) {
+    const envelope = await bedrockToolCall(SYSTEM_PROMPT, query + hint, TOOL_NAME, INPUT_SCHEMA) as { plan?: unknown };
 
-  // Some models serialize the plan field as a JSON string rather than a nested object; the payload is
-  // well-formed JSON either way — decode it before validating. Weaker models also drop the { plan }
-  // wrapper (the `envelope?.plan ?? envelope` fallback recovers that).
-  let planValue: unknown = envelope?.plan ?? envelope;
-  if (typeof planValue === "string") {
-    try {
-      planValue = JSON.parse(planValue);
-    } catch {
-      // leave as the raw string; QueryPlan validation below will surface it.
+    // Some models serialize the plan field as a JSON string rather than a nested object; the payload is
+    // well-formed JSON either way — decode it before validating. Weaker models also drop the { plan }
+    // wrapper (the `envelope?.plan ?? envelope` fallback recovers that).
+    let planValue: unknown = envelope?.plan ?? envelope;
+    if (typeof planValue === "string") {
+      try {
+        planValue = JSON.parse(planValue);
+      } catch {
+        // leave as the raw string; QueryPlan validation below will surface it.
+      }
     }
+    normalizePlan(planValue);
+    const parsed = QueryPlan.safeParse(planValue);
+    if (parsed.success) return parsed.data;
+    if (attempt >= 1) {
+      throw new Error(
+        `Extractor output failed QueryPlan validation: ${parsed.error.message}\n` +
+          `Raw: ${JSON.stringify(planValue)}`,
+      );
+    }
+    // One retry: same query, the zod error appended — a fresh input, so temp-0 can emit a different plan.
+    hint = `\n\n(Your previous plan failed validation: ${parsed.error.message}. Emit a corrected plan.)`;
   }
-  normalizePlan(planValue);
-  const parsed = QueryPlan.safeParse(planValue);
-  if (!parsed.success) {
-    throw new Error(
-      `Extractor output failed QueryPlan validation: ${parsed.error.message}\n` +
-        `Raw: ${JSON.stringify(planValue)}`,
-    );
-  }
-  return parsed.data;
 }

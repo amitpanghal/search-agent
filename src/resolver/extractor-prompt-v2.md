@@ -49,14 +49,21 @@ the handicap settle separately.
 Dropping a bet, or merging two into one (including hiding a second market inside `line`), is the most
 serious error you can make.
 
-If the query names **no bettable outcome at all** — including a query naming only an entity — emit exactly
-one selector `{ subject: { kind: "event" }, market_concept: "main" }` and put the named entity in its
-`scope`. A noun naming the event ("match", "game", "fixture", "card") and a verb that only asks to see
-events ("show me", "what's on") are **not** markets. Never invent a "match"/"fixture" market.
+A selector exists **only for a bettable outcome**. A part of the query that merely locates or asks to see
+events — a schedule question ("is X playing today?"), a browse verb ("show me", "what's on") — or that
+only states a price ("something paying 10x") contributes its entities, time and price to `scope`/`odds`;
+it is never a leg of its own. If after that **no** leg names a market, emit exactly one selector
+`{ subject: { kind: "event" }, market_concept: "main" }` carrying that scope and any odds bound.
+A noun naming the event ("match", "game", "fixture", "card") is **not** a market — but a noun coordinated
+with another market noun, or modifying "bets"/"markets"/"odds" ("card and corner bets"), **always names a
+market**. `main` is the only concept a market-less leg may carry — never coin one ("match", "event",
+"odds" are not markets).
 
 ## 2. `subject` — who owns each market
 
 The nearest preceding **named** team or player owns the market. Never bind to a neighbouring subject.
+The kind follows **what the name is**, never the market's shape: a person is always `player` — even on
+a handicap, total or head-to-head in an individual sport — and a club, nation or side is always `team`.
 
 - **`team`** — a named team owns it → `{ kind: "team", name: "Wings" }`. A named team in front of the
   market **is** the owner: "Wings first quarter handicap", "Bay of Plenty +12.5", "St Kilda +18.5".
@@ -76,7 +83,9 @@ The nearest preceding **named** team or player owns the market. Never bind to a 
 
 **Coreference:** resolve "his"/"their"/"its" to the concrete name — never emit the pronoun. "his/their
 team" is the side that player represents in context (national side in a tournament, club in a league
-query), and that player also belongs in that leg's `scope.players`.
+query), and that player also belongs in that leg's `scope.players`. When the team's name is not stated
+and you do not know it, do not guess and never use the player's name as a team: emit
+`{ "kind": "either_match_team" }` and keep the player in `scope.players`.
 
 ## 3. `market_concept` — the user's words for the outcome
 
@@ -85,13 +94,13 @@ follow both:
 
 - **Move the number and the side word; never delete them.** An over/under puts its number in `line` and
   its side word in `direction`. **Both fields get filled**: "over 2.5 `<stat>`" → concept "`<stat>`",
-  `line 2.5`, `direction "over"`. A price goes to `odds`, a price ranking to `odds_sort`.
+  `line 2.5`, `direction "over"`; "`<stat>` 100+" / "at least 1 `<stat>`" → concept "`<stat>`", the
+  number in `line`, `direction "at_least"`. A price goes to `odds`, a price ranking to `odds_sort`.
 - **Keep every word that names a DIFFERENT market.** Strip only the number, the side word, the filler
   "market(s)", and the scope words (teams / competition / stage / time / players). A qualifier that
   changes *which* market this is **stays**:
   - a segment — "first half", "in round 2", "first 5 innings", "at half time", "on map 1"
   - a margin — "to win **by** 7+", "**by** 13+", "win 9+ **margin**"
-  - a threshold band — "**100+** break", "at least 1 **behind**"
   - a parity or enumeration — "odd or even", "correct score", "half time full time"
   - a unit — "**set** handicap", "**leg** handicap", "**frame** handicap", "run line"
 
@@ -120,8 +129,10 @@ is a bound.
 
 Fill `direction` **whenever the query names a side**, alongside `line`:
 
-- "over" / "more than" / "at least" / "N+" → `"over"`
-- "under" / "fewer than" / "less than" → `"under"`
+- "over" / "more than" → `"over"`; "under" / "fewer than" / "less than" → `"under"`
+- an inclusive band — "N+" / "at least N" → `"at_least"`; "N or fewer" / "up to N" → `"at_most"`.
+  A band is not an over/under: "2+" means >= 2, and only a later stage that sees the offered rungs
+  can place it. State the band; never translate it to `"over"`.
 - a negation — "won't score", "no goal", "**not** to go the distance" → `"no"`
 - an explicit affirmative → `"yes"`
 
@@ -132,24 +143,29 @@ subject), and a **bound** on the fixture's posted line (§4).
 
 - **`odds`** `{ min?, max? }` — a price bound: a bare number, or one with "priced / odds / at / pays".
   "priced above 1.80" → `{ min: 1.80 }`; "between 5.0 and 15.0" → `{ min: 5.0, max: 15.0 }`.
-  **Normalize every price to a decimal**: `4/1` → `5.0`, `6/4` → `2.5`, `10/11` → `1.91`, "evens" → `2.0`,
-  `+150` → `2.5`, `-200` → `1.5`.
+  **A price can wear any surface form — normalize every one to a decimal**: a fraction in any notation
+  (`4/1` → `5.0`, `6/4` → `2.5`, `10/11` → `1.91`, spoken "10 to 1" → `11.0`), American (`+150` → `2.5`,
+  `-200` → `1.5`), a word ("evens" → `2.0`), or a stake multiplier ("10x return", "3 times my stake" →
+  `10.0`, `3.0` — always a price, never a line). An approximate price ("around 10 to 1") is the same
+  bound as the exact one.
   A price word with **no number** ("team to score first odds") means *any* price — omit `odds` entirely.
   Never emit an empty `odds: {}`.
-- **`combined_odds`** — top level of the plan, **never** on a selector. Use it ONLY when **both** hold:
-  the plan has **two or more selectors**, AND the query prices them **together** — "combined", "for the
-  lot", "the accumulator", "all together", "for the pair". A price on a single bet is always that
+- **`combined_odds`** — top level of the plan, **never** on a selector. Use it ONLY when **all three**
+  hold: the plan has **two or more selectors**, the query prices them **together** ("combined", "for the
+  lot", "the accumulator", "all together", "for the pair"), AND the query **states a number** for that
+  combined price. A combining word alone ("parlay it") or a priceless question ("combined price?")
+  states no bound — omit the field entirely, exactly as a numberless "odds" omits `odds`. A price on a single bet is always that
   selector's `odds`, however the sentence is phrased: "only if it pays more than 2.5", "only if above
   6/1", "priced over 8/1" on one bet → `odds`, not `combined_odds`. A one-selector plan can never carry
   `combined_odds`. It is always a **price** — a bound on the fixture's posted number is `line` (§4).
 - **`odds_sort`** — a superlative on the **price**: shortest / lowest / best / favourite → `"low"`;
   longest / highest / biggest / outsider → `"high"`. Emit this instead of `odds`, never a market named
-  "shortest odds".
+  "shortest odds". A singular ask — "the favourite", "the winner", "who wins" — always emits **both**
+  `odds_sort: "low"` and `count: 1`, whatever the market.
 - **`line_sort`** — a superlative on **how big the fixture's posted line is**: biggest / widest / highest
   → `"high"`, smallest / tightest → `"low"`. Ask what the superlative describes: what the bet **pays** →
   `odds_sort`; how big the **line** is → `line_sort`.
-- **`count`** — only for a field market with many named competitors (an outright, an award, a top-stat
-  leader). A singular ask ("who wins", "the winner", "the favourite") → `1` with `odds_sort: "low"`;
+- **`count`** — how many outcomes of a field to surface: a singular ask → `1` (see `odds_sort`);
   "top 3" / "the 3 favourites" → that number; omit to show the whole field.
 
 ## 7. `scope` — which fixtures this leg settles over
@@ -161,7 +177,9 @@ on every leg**.
   MODIFIES an event or market noun **is** the competition — keep the name, drop the noun. It stays the
   competition however far the noun's own phrases push them apart: "`<NAME>` games on Sunday",
   "tonight's `<NAME>` unders", "`<NAME>` Sunday matches", "`<NAME>` card", "`<NAME>` winner" all yield
-  competition `<NAME>`. Reading the sport off that name never consumes it.
+  competition `<NAME>`. Reading the sport off that name never consumes it. The sides that play are
+  **never** the competition: a pairing ("A vs B", "A @ B") goes to `teams`, and `competition` stays null
+  unless a league or tournament is separately named.
 - **`teams`** — named teams that scope the match(es) ("A vs B" → `["A","B"]`). May be empty.
 - **`players`** — players that scope **which fixtures** (not who owns a market), each `{ name, role }`:
   "featuring / with / involving X" → `"plays"`; "X starting / in the lineup" → `"starts"`; "X is captain"
@@ -201,7 +219,9 @@ on every leg**.
 1. **Self-correction** — on a retraction ("Packers @ Steelers — actually the Colts game"), emit **only**
    the corrected intent and drop the retracted entity completely.
 2. **Never fabricate** — never invent a market, time, player, price or entity, and never swap a vague
-   concept for a narrower one. Omit a field rather than guess.
+   concept for a narrower one. Omit a field rather than guess. Every stated number is spent **exactly
+   once**: once placed in a field (`line`, `odds`, `count`, a window), never copy it into a second one —
+   a vague quantity ("a lot of points") states no value at all.
 3. **Emit only fields that carry a value** — omit any key whose value would be null or an empty
    array/object. Four things are never omitted: `sport`, and every selector's `subject`,
    `market_concept` and `scope`. **`scope` is always present even when nearly empty** — a leg naming no
