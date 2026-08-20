@@ -6,7 +6,7 @@ description: >-
   and the load-bearing invariants. Use when working anywhere in src/resolver: tracing how a query becomes a
   ResponseEnvelope, deciding which stage owns a bug or behaviour, adding/changing a stage, or reasoning about
   per-leg scope, the market-deferred fetch, grounding tiers, or the entity/market LLM steps. Read this BEFORE
-  editing pipeline code; pair it with the harness-loop skill to actually run/triage queries offline.
+  editing pipeline code; pair it with the probe skill to actually run a query through it and read the trace.
 ---
 
 # resolver-pipeline
@@ -28,12 +28,13 @@ consequences that explain most of the design:
   an honest `fallback`, never a blind pick.
 
 ## Stages (in pipeline order)
-Order and chaining live in `runPipeline` (`resolve.ts`). LLM = one Haiku call (temp 0, forced tool use);
-everything else is deterministic and zero-LLM.
+Order and chaining live in `runPipeline` (`resolve.ts`). LLM = one call to `BEDROCK_MODEL` via the Bedrock
+Converse API (temp 0, forced tool use — see `bedrock-call.ts`); everything else is deterministic and zero-LLM.
+The shipped model is Qwen3-Next-80B-A3B-Instruct; the id is env-driven, so never hard-code a model name.
 
 | # | Stage | File | LLM? | In → Out |
 |---|-------|------|------|----------|
-| 1 | extract | `extract.ts` + `extractor-prompt.md` | LLM | `query` → `QueryPlan` (text-valued, ≥1 selector, each with its own scope) |
+| 1 | extract | `extract.ts` + `extractor-prompt-v2.md` | LLM | `query` → `QueryPlan` (text-valued, ≥1 selector, each with its own scope) |
 | 2 | checkComplete | `check-complete.ts` | no | gate: no team/player/competition/region anchor → clarify and STOP (no fetch) |
 | 3 | groundScope | `ground-scope.ts` | no | `QueryPlan` → `ResolvedScope` (per-leg entity candidates + tier; lexical, no embeddings) |
 | 4 | resolveEntities | `resolve-entities.ts` + `disambiguator-prompt.md` | LLM | `ResolvedScope` → `SettledEntities` (ONE call: pick / reexpress per cell; clarify is deterministic) |
@@ -73,9 +74,12 @@ is grounded once and shares one `EntityResolution` reference — that identity i
 
 ## Injectable boundaries (why the harness can run offline)
 `PipelineDeps = { extract, recall, resolveEntities, resolveMarkets }`. Production passes nothing (gets
-`REAL_DEPS`); the harness-loop rig injects cached/subagent doubles for the three LLM steps and a live-cached
-recall, running the WHOLE real pipeline with no LLM API. To run or triage queries, use the **harness-loop**
-skill — do not call the LLM API directly.
+`REAL_DEPS`); a caller can inject doubles for the three LLM steps and for recall, running the WHOLE real
+pipeline against fixtures. Nothing in the repo does that today — the offline harness-loop rig was removed.
+
+**What you can run for free:** `npm test` (the deterministic invariants) and `npm run gate:live-menu` (replays
+filter → select → execute against a captured menu snapshot). Both are zero-cost and zero-network. Anything
+that exercises a real LLM decision costs money — use the **probe** skill, and get an OK first.
 
 ## Invariants you must not break
 - **Never drop on missing data.** Time / co-occurrence / level / groupId filters KEEP rows with absent data
@@ -93,10 +97,12 @@ skill — do not call the LLM API directly.
 Shipped resolver code (grounder, prompts, schema, calibration, any stage) is **human-gated**: plan the change in
 plain English with a worked example, then stop and ask before editing. When you do touch a stage, keep its
 contract (the In→Out above) and the market-identity string stable across menu/pick/slice. After edits, run a
-batch through the harness-loop skill to confirm nothing regressed.
+the free gates (`npm test`, `npm run gate:live-menu`, `npm run typecheck`); only then consider a paid
+`npm run eval` / `npm run probe` run, with permission.
 
 ## Files
 - `resolve.ts` — orchestrator (`runPipeline`, grouping, "main" fan-out, `PipelineDeps`).
 - per-stage files as listed in the table above.
-- prompts: `extractor-prompt.md`, `disambiguator-prompt.md`, `resolve-market-prompt.md`.
+- prompts: `extractor-prompt-v2.md` (live; `extractor-prompt.md` was the dead v1 and is deleted),
+  `disambiguator-prompt.md`, `resolve-market-prompt.md`.
 - `live-menu-types.ts`, `schema.ts`, `ground-scope.ts`, `offering-client.ts` — the shared types.

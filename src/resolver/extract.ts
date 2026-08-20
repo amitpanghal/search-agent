@@ -25,8 +25,8 @@ const SUPPORTED_SPORTS = [...builtSports(), "other"].join(", ");
 // EXTRACTOR_PROMPT points the extractor at a VARIANT prompt file, for offline A/B of prompt edits
 // (scripts/ arm runs) without touching the shipped one. Unset in prod — the default is the real prompt.
 // -v2 is the rewrite (224 lines vs 374): shorter, competition rule restated as "a name that MODIFIES an
-// event/market noun", `sport`+`competition` declared independent. extractor-prompt.md is kept as the
-// comparison baseline — point EXTRACTOR_PROMPT at it to A/B.
+// event/market noun", `sport`+`competition` declared independent. The v1 baseline (extractor-prompt.md) is
+// deleted — recover it from git history if you need to A/B against it.
 const SYSTEM_PROMPT = readFileSync(process.env.EXTRACTOR_PROMPT || join(HERE, "extractor-prompt-v2.md"), "utf8")
   .replace("{{SUPPORTED_SPORTS}}", SUPPORTED_SPORTS);
 const TOOL_NAME = "emit_query_plan";
