@@ -36,7 +36,7 @@ everything else is deterministic and zero-LLM.
 | 1 | extract | `extract.ts` + `extractor-prompt.md` | LLM | `query` → `QueryPlan` (text-valued, ≥1 selector, each with its own scope) |
 | 2 | checkComplete | `check-complete.ts` | no | gate: no team/player/competition/region anchor → clarify and STOP (no fetch) |
 | 3 | groundScope | `ground-scope.ts` | no | `QueryPlan` → `ResolvedScope` (per-leg entity candidates + tier; lexical, no embeddings) |
-| 4 | resolveEntities | `resolve-entities.ts` + `disambiguator-prompt.md` | LLM | `ResolvedScope` → `SettledEntities` (pick / reexpress / clarify per cell; 2 passes) |
+| 4 | resolveEntities | `resolve-entities.ts` + `disambiguator-prompt.md` | LLM | `ResolvedScope` → `SettledEntities` (ONE call: pick / reexpress per cell; clarify is deterministic) |
 | 5 | planRecall | `plan-recall.ts` | no | `SettledEntities` + plan → `RecallInput` (BROAD union across legs; no market) |
 | 6 | recall | `recall.ts` | network | `RecallInput` → `RecallResult` (broad live data + menu; the only network in the rig) |
 | 7 | scopeMenu | `recall.ts` (`scopeMenu`) | no | broad data + one leg → that leg's narrowed offers/events/menu (grain, comp, teams, time, state) |

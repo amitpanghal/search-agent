@@ -9,10 +9,13 @@
 // keeps only its entity work: deterministic grounder first → LLM only on doubtful tiers → clarify on genuine
 // collision → recall fetches only confident ids. Output is SettledEntities (no marketIds, no combos).
 //
-//   - `decide(query, cells, pass)` — the ONLY LLM call. Stateless: one action per cell. Per-pass tool schema
-//     (Pass 1 = pick|reexpress, Pass 2 = pick|clarify) so the model can't emit an illegal action.
-//   - `resolveEntities(query, scope)` — the DETERMINISTIC orchestrator: build entity cells, call `decide` per
-//     pass, re-ground any reexpress, collapse picks to confident cells, raise clarifications.
+//   - `decide(query, cells)` — the ONLY LLM call, made ONCE. Stateless: one action per cell, `pick` or
+//     `reexpress`. The model has no clarify action: a cell it cannot settle (and whose re-ground stays
+//     doubtful) is asked back to the user by this file, deterministically. A second model call used to sit
+//     here to re-read the re-grounded candidates; it only ever converted a clarify into a silent rescue pick,
+//     so it was dropped — the cost of a round trip on every doubtful tail for an occasional saved user turn.
+//   - `resolveEntities(query, scope)` — the DETERMINISTIC orchestrator: build entity cells, call `decide`,
+//     re-ground any reexpress, collapse picks to confident cells, raise clarifications.
 // Replayable: eval injects a captured `decide()` through the deterministic orchestrator with no model call.
 
 import { readFileSync } from "node:fs";
@@ -25,7 +28,6 @@ import {
 } from "./ground-scope";
 import { loadScopeCatalog, type ScopeCatalog } from "./scope-catalog";
 import { builtSports } from "./sports";
-import { fold } from "./lexical";
 import { bedrockToolCall } from "./bedrock-call";
 import type { CellRef, SettledEntities } from "./live-menu-types";
 
@@ -41,8 +43,7 @@ const SENT_TIERS = new Set<ScopeTier>(["ambiguous", "shortlist", "none"]);
 
 export type Decision =
   | { ref: CellRef; action: "pick"; id: number }
-  | { ref: CellRef; action: "reexpress"; phrase: string } // Pass 1 only
-  | { ref: CellRef; action: "clarify"; question: string; suggest?: number[] }; // Pass 2 only
+  | { ref: CellRef; action: "reexpress"; phrase: string };
 
 // `candidates` is the capped id+name list shown to the model AND the pick-validation set (a pick id must be one
 // of these — guards hallucinated ids). `entity` is the full grounding (so a pick collapses back to a confident
@@ -58,7 +59,7 @@ export type Cell = {
 };
 
 // The (only) non-deterministic step, injectable so eval can REPLAY captured decisions with no model call.
-export type DecideFn = (query: string, cells: Cell[], pass: 1 | 2) => Promise<Decision[]> | Decision[];
+export type DecideFn = (query: string, cells: Cell[]) => Promise<Decision[]> | Decision[];
 
 // ---- builder: gate + caps + reground closures (entity-only) ----
 
@@ -199,23 +200,19 @@ function buildEntityCells(scope: ResolvedScope, foreign: ForeignIds): { cells: C
   return { cells, places };
 }
 
-// ---- decide(): the one LLM call, forced tool use, per-pass schema ----
+// ---- decide(): the one LLM call, forced tool use ----
 
 const zPick = z.object({ ref: z.string(), action: z.literal("pick"), id: z.number() });
 const zReexpress = z.object({ ref: z.string(), action: z.literal("reexpress"), phrase: z.string().min(1) });
-const zClarify = z.object({ ref: z.string(), action: z.literal("clarify"), question: z.string().min(1), suggest: z.array(z.number()).optional() });
-const Pass1Item = z.discriminatedUnion("action", [zPick, zReexpress]);
-const Pass2Item = z.discriminatedUnion("action", [zPick, zClarify]);
-const Pass1Out = z.object({ decisions: z.array(Pass1Item) });
-const Pass2Out = z.object({ decisions: z.array(Pass2Item) });
+const DecisionItem = z.discriminatedUnion("action", [zPick, zReexpress]);
+const DecideOut = z.object({ decisions: z.array(DecisionItem) });
 
 function toInputSchema(s: z.ZodType): Record<string, unknown> {
   const j = z.toJSONSchema(s) as Record<string, unknown>;
   delete j.$schema;
   return j;
 }
-const PASS1_SCHEMA = toInputSchema(Pass1Out);
-const PASS2_SCHEMA = toInputSchema(Pass2Out);
+const DECIDE_SCHEMA = toInputSchema(DecideOut);
 const TOOL_NAME = "settle_cells";
 
 let cachedPrompt: string | undefined;
@@ -226,30 +223,26 @@ function systemPrompt(): string {
 // The model sees the raw query (so confident entities appear as words) and each cell's candidates as id+name.
 // Candidate ORDER matters: the first is the grounder's top pick and the resolver anchors on it; tier/score stay
 // hidden so it doesn't over-trust the rank.
-function userMessage(query: string, cells: Cell[], pass: 1 | 2): string {
-  const head = pass === 2
-    ? "SECOND PASS. Each cell below was re-expressed and re-grounded but is still unresolved. For each cell either pick a candidate or clarify with the user.\n\n"
-    : "";
+function userMessage(query: string, cells: Cell[]): string {
   const payload = { query, cells: cells.map((c) => ({ ref: c.ref, text: c.text, candidates: c.candidates })) };
-  return head + JSON.stringify(payload, null, 2);
+  return JSON.stringify(payload, null, 2);
 }
 
-export async function decide(query: string, cells: Cell[], pass: 1 | 2): Promise<Decision[]> {
+export async function decide(query: string, cells: Cell[]): Promise<Decision[]> {
   const raw = await bedrockToolCall(
     systemPrompt(),
-    userMessage(query, cells, pass),
+    userMessage(query, cells),
     TOOL_NAME,
-    pass === 1 ? PASS1_SCHEMA : PASS2_SCHEMA,
+    DECIDE_SCHEMA,
     1024,
   ) as { decisions?: unknown };
   const items = Array.isArray(raw.decisions) ? (raw.decisions as Array<Record<string, unknown>>) : [];
   // Per-decision parse, NOT all-or-nothing: keep every well-formed action, drop only the malformed ones (a
-  // dropped cell rides to Pass 2 / clarify as before).
-  const item = pass === 1 ? Pass1Item : Pass2Item;
-  return items.flatMap((d) => { const p = item.safeParse(d); return p.success ? [p.data as Decision] : []; });
+  // dropped cell clarifies, same as an undecided one).
+  return items.flatMap((d) => { const p = DecisionItem.safeParse(d); return p.success ? [p.data as Decision] : []; });
 }
 
-// ---- orchestrator: two-pass loop + validation + SettledEntities assembly ----
+// ---- orchestrator: single-call loop + validation + SettledEntities assembly ----
 
 type Outcome =
   | { kind: "settle-entity"; ref: CellRef; resolution: EntityResolution }
@@ -271,54 +264,40 @@ function settleOutcome(cell: Cell, ids: number[], foreign?: ForeignIds): Outcome
   return { kind: "settle-entity", ref: cell.ref, resolution: { text: cell.text, tier: "confident", candidates: picked } };
 }
 
-// Fail-safe ONLY — fires when the model returns bad/empty Pass-2 output. A canned two-part string (what's
-// wrong + what to do); the "pick one of the suggestions" half is dropped when there are no candidates.
-export const defaultQuestion = (cell: Cell): string =>
-  cell.candidates.length
-    ? `We couldn't identify "${cell.text}". Try rewording it, or choose one of these suggestions.`
+// The ONLY clarify author (the model has no clarify action). A canned two-part string — what's wrong + what to
+// do — with the capped candidate names appended as the choices; the "pick one of the suggestions" half and the
+// name list are both dropped when the cell has no candidates.
+export function clarifyFor(cell: Cell): Outcome {
+  const cands = cell.candidates.slice(0, SUGGEST_CAP);
+  const question = cands.length
+    ? `We couldn't identify "${cell.text}". Try rewording it, or choose one of these suggestions. (${cands.map((c) => c.name).join(", ")})`
     : `We couldn't identify "${cell.text}". Try rewording it with a team, player, league, or market name.`;
+  return { kind: "clarify", ref: cell.ref, question, suggest: cands.map((c) => c.id) };
+}
 
-// Append candidate names only when the LLM didn't already embed them. Check by first-name token (folded):
-// if any candidate's first name appears in the question, the LLM included names — skip; otherwise append.
-const appendNamesIfMissing = (q: string, cell: Cell): string => {
-  const names = cell.candidates.slice(0, SUGGEST_CAP).map((c) => c.name);
-  if (!names.length) return q;
-  const qFolded = fold(q);
-  const anyPresent = names.some((n) => qFolded.includes(fold(n.split(" ")[0]!)));
-  return anyPresent ? q : `${q} (${names.join(", ")})`;
-};
-
-async function runPasses(query: string, cells: Cell[], decideFn: DecideFn, foreign: ForeignIds): Promise<Outcome[]> {
+// ONE call, then deterministic settlement. A cell settles three ways: a valid pick; a re-express whose
+// re-ground lands confident/variants; otherwise clarify. A re-express that lands doubtful-but-non-empty
+// clarifies with the FRESH candidates — the rewrite found a better list, so those are the better choices to
+// offer the user, even though nothing here commits to one of them.
+async function runPass(query: string, cells: Cell[], decideFn: DecideFn, foreign: ForeignIds): Promise<Outcome[]> {
+  const decisions = firstByRef(await decideFn(query, cells));
   const outcomes: Outcome[] = [];
-  const open: Cell[] = []; // cells that ride into Pass 2 (re-grounded-but-unresolved, or undecided/invalid)
-
-  const d1 = firstByRef(await decideFn(query, cells, 1));
   for (const cell of cells) {
-    const d = d1.get(cell.ref);
+    const d = decisions.get(cell.ref);
     if (d?.action === "pick" && validPick(cell, d.id)) {
       outcomes.push(settleOutcome(cell, [d.id], foreign));
-    } else if (d?.action === "reexpress" && d.phrase.trim()) {
+      continue;
+    }
+    let open = cell; // undecided/invalid decisions clarify on the ORIGINAL cell
+    if (d?.action === "reexpress" && d.phrase.trim()) {
       const fresh = cell.reground(d.phrase);
-      // A re-ground that lands confident/variants is settled directly; only ambiguous/shortlist/none goes to Pass 2.
-      if (fresh.tier === "confident" || fresh.tier === "variants") outcomes.push(settleOutcome(fresh, fresh.ids, foreign));
-      else open.push(fresh);
-    } else {
-      open.push(cell); // undecided/invalid Pass-1 cell → ride into Pass 2 unchanged
-    }
-  }
-
-  if (open.length) {
-    const d2 = firstByRef(await decideFn(query, open, 2));
-    for (const cell of open) {
-      const d = d2.get(cell.ref);
-      if (d?.action === "pick" && validPick(cell, d.id)) {
-        outcomes.push(settleOutcome(cell, [d.id], foreign));
-      } else if (d?.action === "clarify" && d.question.trim()) {
-        outcomes.push({ kind: "clarify", ref: cell.ref, question: appendNamesIfMissing(d.question, cell), suggest: (d.suggest ?? []).filter((id) => validPick(cell, id)).slice(0, SUGGEST_CAP) });
-      } else {
-        outcomes.push({ kind: "clarify", ref: cell.ref, question: appendNamesIfMissing(defaultQuestion(cell), cell), suggest: cell.candidates.slice(0, SUGGEST_CAP).map((c) => c.id) });
+      if (fresh.tier === "confident" || fresh.tier === "variants") {
+        outcomes.push(settleOutcome(fresh, fresh.ids, foreign));
+        continue;
       }
+      if (fresh.candidates.length) open = fresh;
     }
+    outcomes.push(clarifyFor(open));
   }
   return outcomes;
 }
@@ -350,7 +329,7 @@ export async function resolveEntities(query: string, scope: ResolvedScope, decid
   const foreign: ForeignIds = new Map();
   const { cells, places } = buildEntityCells(scope, foreign);
   if (!cells.length) return settled;
-  const outcomes = await runPasses(query, cells, decideFn, foreign);
+  const outcomes = await runPass(query, cells, decideFn, foreign);
   applyOutcomes(settled, outcomes, places);
   // A pick from another catalog means the extractor's sport was wrong. Adopt it only when EVERY cross-sport
   // pick agrees — disagreeing anchors mean we misread the query, and guessing there is how a correct plan dies.
