@@ -15,6 +15,9 @@ against the menu that actually came back.
   types, and the invariants. Read it **before** editing anything in `src/resolver`.
 - **`.claude/skills/probe`** — how to run one query through the live pipeline and read the per-stage trace.
   This is the debugging tool.
+- **`.claude/skills/eval`** — the ship gate: running/reading `npm run eval`, editing the gold set, and the
+  free `--from` replay.
+- **`.claude/skills/catalog`** — building the per-sport entity catalogs, `sports.ts` overrides, aliases.
 - **`planning/limitations.md`** — what the resolver deliberately does not handle yet. Check here before
   calling something a bug.
 - **`docs/OFFERING_API.md`**, **`docs/BetOffer.md`** — the Kambi feed: endpoints, and what a bet offer looks
@@ -30,6 +33,7 @@ against the menu that actually came back.
 | `npm run serve` | per request | the real server on `POST /query` |
 | `npm run probe -- "query"` | **money** | one query through the live pipeline + full trace (see the probe skill) |
 | `npm run eval` | **money** | the extractor gold set, 1× each. This is the ship gate |
+| `npm run eval -- --from cap.jsonl` | free | re-score extractions already captured by probe — no model calls |
 | `npm run eval -- --release` | **money ×5** | 5× each, for reproducibility. Ask first — rarely needed |
 | `npm run catalogs` | free (feed only) | rebuilds every sport's entity catalog into `catalogData/` |
 | `npm run sweep` | free (feed only) | per-sport offering fact sheets into `.sweep/` (gitignored) |
