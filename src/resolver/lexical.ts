@@ -19,11 +19,18 @@ export { normalize } from "../eval/structural-scorer";
 // diacritics ("Müller" vs "Muller"), so NFD + stripping the combining marks folds both to the same ASCII.
 // Deliberately distinct from the runtime `normalize` (which maps non-ascii to spaces): fold is right for
 // matching proper names, normalize is right for the query path.
+// Non-decomposable Latin letters have no NFD decomposition, so without this map the non-alnum strip
+// DELETES them ("Ødegaard" -> "degaard", "Łukasz" -> "ukasz"). Runs after toLowerCase so only lowercase
+// forms are needed (Ø/Ł/Đ/Þ/ẞ lowercase first); NFD runs first so composed forms (ǿ) still decompose.
+const TRANSLIT: Record<string, string> = {
+  "ø": "o", "ł": "l", "đ": "d", "æ": "ae", "ß": "ss", "ð": "d", "þ": "th", "ı": "i", "œ": "oe",
+};
 export function fold(s: string): string {
   return s
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
     .toLowerCase()
+    .replace(/[øłđæßðþıœ]/g, (c) => TRANSLIT[c]!)
     .replace(/[^a-z0-9]+/g, " ")
     .trim()
     .replace(/\s+/g, " ");

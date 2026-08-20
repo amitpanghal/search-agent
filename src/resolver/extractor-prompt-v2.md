@@ -81,7 +81,7 @@ a handicap, total or head-to-head in an individual sport — and a club, nation 
   `{ kind: "soft", kinds: [...] }` with the ≥2 plausible kinds. **Rare** — never a substitute for a
   missing name.
 
-**Coreference:** resolve "his"/"their"/"its" to the concrete name — never emit the pronoun. "his/their
+**Coreference:** resolve "his"/"her"/"their"/"its" to the concrete name — never emit the pronoun. "his/her/their
 team" is the side that player represents in context (national side in a tournament, club in a league
 query), and that player also belongs in that leg's `scope.players`. When the team's name is not stated
 and you do not know it, do not guess and never use the player's name as a team: emit

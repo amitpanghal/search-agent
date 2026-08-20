@@ -305,7 +305,10 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
 
   // carried entity clarifications + any leg whose market wasn't offered (each already a full sentence), folded
   // into one string (null = clean).
-  const reasons = [...clarifications.map((c) => c.question), ...new Set(noPick)];
+  // Entity doubt is moot when EVERY leg placed a real outcome without it; clarification refs are
+  // entity-cells, not legs, so all-legs-resolved is the finest drop expressible here.
+  const allLegsResolved = input.legs.length > 0 && resolvedLegs === input.legs.length;
+  const reasons = [...(allLegsResolved ? [] : clarifications.map((c) => c.question)), ...new Set(noPick)];
   const clarificationNeeded = reasons.length ? reasons.join(" ") : null;
 
   return {

@@ -72,7 +72,9 @@ function labelCandidates(cands: Candidate[], cat: ScopeCatalog): { id: number; n
   const count = new Map<string, number>();
   for (const c of cands) count.set(c.name, (count.get(c.name) ?? 0) + 1);
   const gameOf = (c: Candidate): string => (c.groupIds ?? [])
-    .filter((id) => id !== cat.sportRootId).map((id) => cat.groupById.get(id)?.name).filter(Boolean).join(", ");
+    .filter((id) => id !== cat.sportRootId).map((id) => cat.groupById.get(id)?.name).filter(Boolean).join(", ")
+    // competitions carry no groupIds; their branch name separates same-named twins ("Cincinnati (ATP)" vs "(WTA)")
+    || (c.branch != null && c.branch !== c.id ? (cat.branchById.get(c.branch)?.name ?? "") : "");
   return cands.map((c) => {
     const g = (count.get(c.name) ?? 0) > 1 ? gameOf(c) : "";
     return { id: c.id, name: g ? `${c.name} (${g})` : c.name };
@@ -146,7 +148,9 @@ function buildEntityCell(ref: CellRef, res: EntityResolution, ground: (phrase: s
       .slice(0, own.length + XS_CAP)
       .map(({ id, name }) => ({ id, name })),
     entity: res,
-    reground: (phrase) => buildEntityCell(ref, ground(phrase), ground, cat, foreign, competitor, widen),
+    // grounding uses the reexpressed phrase, but the cell keeps the USER: clarify quotes their words, and
+    // resolve.ts subject-matching folds e.text — a model rewrite must not replace either.
+    reground: (phrase) => ({ ...buildEntityCell(ref, ground(phrase), ground, cat, foreign, competitor, widen), text: res.text }),
   };
 }
 

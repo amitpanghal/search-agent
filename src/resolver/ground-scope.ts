@@ -200,6 +200,13 @@ export function groundCompetition(text: string, cat: ScopeCatalog): EntityResolu
 
   const want = contentTokens(text2);
   const res = decide(want);
+  if (res.tier === "confident") return res;
+  // "ATP Cincinnati" spans a parent name + child name: a UNIQUE exact fold-match of "<parent> <name>"
+  // against the query phrase is a perfect structural hit -> confident, no LLM tie-break needed.
+  const parentName = (g: { parent: number | null }): string =>
+    g.parent != null && g.parent !== cat.sportRootId ? (cat.groupById.get(g.parent)?.name ?? "") : "";
+  const hits = pool.filter((g) => { const p = parentName(g); return p && fold(`${p} ${g.name}`) === folded; });
+  if (hits.length === 1) return { text, tier: "confident", candidates: [cand(hits[0]!.id, 1)] };
   if (res.tier !== "none") return res;
 
   // Fallback on `none`: a single-sport catalog stores events WITHOUT the sport word ("World Championship",
