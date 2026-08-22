@@ -50,7 +50,7 @@ function normalizeScope(sc: Record<string, unknown>): void {
   // required-nullable fields: an ABSENT or blank value means "no value" -> null. Models may omit nulls to save
   // output tokens (some models emit them, others omit them), so backfill deterministically here rather than force the
   // model to spend tokens emitting nulls.
-  for (const k of ["competition", "region", "stage", "time"] as const) {
+  for (const k of ["competition", "region", "stage", "squad", "time"] as const) {
     if (!(k in sc) || (typeof sc[k] === "string" && !(sc[k] as string).trim())) sc[k] = null;
   }
   const tm = sc.time as Record<string, unknown> | null;

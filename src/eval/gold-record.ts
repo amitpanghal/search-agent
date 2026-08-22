@@ -130,6 +130,7 @@ const GoldScope = z.object({
   stage: Stage.nullable(),
   time: Time.nullable(),
   play_state: z.enum(["live", "prematch"]).nullable().default(null), // mirrors Selector-side play_state (schema.ts); .default(null) so pre-existing gold rows still parse
+  squad: z.string().min(1).nullable().default(null), // mirrors schema.ts squad; .default(null) so pre-squad gold rows still parse
 });
 
 const GoldSelector = z.object({

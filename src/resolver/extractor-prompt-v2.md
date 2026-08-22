@@ -178,9 +178,12 @@ on every leg**.
   competition however far the noun's own phrases push them apart: "`<NAME>` games on Sunday",
   "tonight's `<NAME>` unders", "`<NAME>` Sunday matches", "`<NAME>` card", "`<NAME>` winner" all yield
   competition `<NAME>`. Reading the sport off that name never consumes it. The sides that play are
-  **never** the competition: a pairing ("A vs B", "A @ B") goes to `teams`, and `competition` stays null
+  **never** the competition: a pairing — "A vs B", "A @ B", or two adjacent team names with no joiner at
+  all ("A B totals") — goes to `teams`, and `competition` stays null
   unless a league or tournament is separately named.
-- **`teams`** — named teams that scope the match(es) ("A vs B" → `["A","B"]`). May be empty.
+- **`teams`** — named teams that scope the match(es) ("A vs B" → `["A","B"]`). May be empty. A fixture
+  is often named by bare juxtaposition — "A B totals", "A B who wins": two adjacent competitor names ARE
+  the pairing. Split them into two entries — never one fused string, never a competition.
 - **`players`** — players that scope **which fixtures** (not who owns a market), each `{ name, role }`:
   "featuring / with / involving X" → `"plays"`; "X starting / in the lineup" → `"starts"`; "X is captain"
   → `"captain"`.
@@ -191,12 +194,16 @@ on every leg**.
   tournament-long stat leader, a team's progression); else `"fixture"`, even when a competition is named.
   Two legs may differ.
 - **`stage`** — the round as the query words it ("quarterfinal", "final"), else null.
+- **`squad`** — a squad qualifier stated anywhere in the leg — "women", "ladies", "U21", "reserves" — as
+  the query words it, else null. One value covers the whole leg: "france croatia women volleyball" →
+  `teams: ["France", "Croatia"]`, `squad: "women"`. Keep the team names bare.
 - **`time`** — `{ date_window, kickoff_time_of_day, fixture_pick }`; omit the whole object when the leg
   states no timing, never an all-null object. A fixture leg **keeps its own time** even when a sibling leg
   is `competition`.
   - `date_window` `{ value, anchor }` — `value` is a CANONICAL TOKEN, never free text: `today` (also "this
-    evening", "right now"), `tonight`, `tomorrow`, `weekend`, a weekday `monday`…`sunday`, or
-    `next_<N>_hours` / `next_<N>_days` / `next_<N>_weeks` ("this week" → `next_7_days`) — these only
+    evening", "right now"), `tonight`, `tomorrow`, `weekend`, `next_weekend` (the weekend after the
+    coming one), `this_week`, `next_week`, `this_month`, a weekday `monday`…`sunday`, or
+    `next_<N>_hours` / `next_<N>_days` / `next_<N>_weeks` — these only
     when `<N>` counts a unit of TIME. When `<N>` counts fixtures ("next 2 games"), that is
     `fixture_pick`, never a window. `anchor` is
     `"tournament"` for tournament-relative phrases ("opening weekend"), else `"now"`. "Monday night"

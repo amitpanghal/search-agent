@@ -7,7 +7,7 @@
 // leaf wrapped in a `Grounded` cell that carries the real id; keep the two in sync.
 //
 import { z } from "zod";
-import { builtSports } from "./sports";
+import { userSports } from "./sports";
 
 // Who owns a market. The four concrete kinds are the BOUND readings (recall-resolve Role 1): an owner
 // named it OR the phrase reads at a single level, so the kind is certain and the hard subject-filter
@@ -95,15 +95,20 @@ const Scope = z.object({
         "names one — INCLUDING a league whose name states its own sport (MLB, UFC, NRL, WNBA) and one used " +
         "only as a modifier on another noun (\"<LEAGUE> games tonight\"). Having used that same name to " +
         "identify `sport` does NOT exempt it: it belongs in both places. Use null only when the query names " +
-        "no competition at all. A fixture pairing (\"A vs B\") is teams, never a competition.",
+        "no competition at all. A fixture pairing (\"A vs B\", or two adjacent team names with no " +
+        "joiner) is teams, never a competition.",
     ),
   // A place/territory that SCOPES the competition (a country like "Italy", or a cross-country comp branch
   // like "Champions League") — distinct from a country named as a TEAM, which stays in `teams`. The scope
   // grounder resolves it to a top-level branch and hard-scopes competition candidates to that branch's
-  // subtree. Nullable; populated by the extractor (see extractor-prompt.md region/team routing rule).
+  // subtree. Nullable; populated by the extractor (see extractor-prompt-v2.md region/team routing rule).
   region: z.string().min(1).nullable(),
   level: z.enum(["fixture", "competition"]),
   stage: z.string().min(1).nullable(), // the tournament round as text, else null
+  // A squad qualifier stated in the leg ("women", "ladies", "U21"), else null. ONE word for the whole leg —
+  // a fixture can't mix squads, so grounding applies it to EVERY team named (the (W)/youth twin), and null
+  // keeps the men's-senior default. Kept as text like `stage`; the grounder's marker machinery normalizes it.
+  squad: z.string().min(1).nullable(),
   time: Time.nullable(),
   // In-play vs pre-match restriction (sport-agnostic). `live` = matches in progress; `prematch` = not yet
   // started; `null` = no preference. Required-nullable like `region` (always present, value-or-null), so the
@@ -156,7 +161,7 @@ const Selector = z.object({
 export const QueryPlan = z.object({
   // ponytail: the enum makes extract stricter — an off-enum value fails validation instead of failing
   // downstream. Forced tool use + `other` make that near-impossible; widen to z.string() if a model can't hold it.
-  sport: z.enum(["other", ...builtSports()] as [string, ...string[]]),
+  sport: z.enum(["other", ...userSports()] as [string, ...string[]]),
   // The query's LANGUAGE, named in English ("Swedish", "German") — free text like `sport`, never a locale code
   // and never an enum: the extractor just detects, and code maps the name to a supported Kambi locale (an
   // unmapped or absent language degrades to English labels downstream). Omitted when the query is English or the

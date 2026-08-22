@@ -54,6 +54,7 @@ function syntheticPlan(sc: GoldScope): QueryPlan {
           region: null, // fed via opts.region below (region-as-given)
           level: sc.level,
           stage: sc.stage,
+          squad: null, // gold rows predate squad; grounding treats null as men's-senior default
           time: sc.time ? { ...sc.time, fixture_pick: sc.time.fixture_pick ?? null } : null,
           play_state: null, // scope rows don't exercise play_state; fixed null
         },
