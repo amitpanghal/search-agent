@@ -271,17 +271,32 @@ export function groundTeam(text: string, cat: ScopeCatalog): EntityResolution {
   // Catalog-fact guarded, not phrasing-guarded: fires only when no team matched at all AND the player
   // match is confident. Club + national side both known -> ambiguous, so the entity LLM picks from the
   // query's context; exactly one known -> confident, fully deterministic.
+  // A CLUBLESS competitor (every tennis/padel entry, incl. doubles pairs) IS its own side — return the
+  // player entry itself; clubless shortlists pass through so the entity gate settles them with the query.
   const asPlayer = groundPlayer(text, cat);
   if (asPlayer.tier === "confident") {
     const pl = asPlayer.candidates[0]!;
     const ids = [pl.clubId, pl.countryTeamId].filter((id): id is number => id != null && cat.teamById.has(id));
     if (ids.length === 1) return { text, tier: "confident", candidates: [cand(ids[0]!, 0.9)] };
     if (ids.length > 1) return { text, tier: "ambiguous", candidates: ids.map((id) => cand(id, 0.9)) };
+    return { text, tier: "confident", candidates: asPlayer.candidates };
   }
+  if (asPlayer.candidates.length && asPlayer.candidates.every((c) => c.clubId == null && c.countryTeamId == null))
+    return { text, tier: asPlayer.tier, candidates: asPlayer.candidates };
   return { text, tier: "none", candidates: [] };
 }
 
-// ---- player: full-name exact -> last-name -> first-name fallback ----
+// Lazily-built name-token index for the pair-subset stage, one per catalog (tennis: ~56k entries).
+// ponytail: linear scan per subset lookup — runs only after full-name exact missed on a 2+ token query;
+// invert to a postings index if it ever shows in a profile.
+const playerToksCache = new WeakMap<ScopeCatalog, { id: number; toks: Set<string> }[]>();
+function playerTokens(cat: ScopeCatalog): { id: number; toks: Set<string> }[] {
+  let v = playerToksCache.get(cat);
+  if (!v) playerToksCache.set(cat, (v = cat.players.map((p) => ({ id: p.id, toks: contentTokens(p.name) }))));
+  return v;
+}
+
+// ---- player: full-name exact -> pair/partner subset -> last-name -> first-name fallback ----
 // Name only. The old team/competition hard-scoping is gone — those are now club/league LINKS applied by the
 // constraint pass, which narrows in BOTH directions (a player can now disambiguate a team, not just the reverse).
 export function groundPlayer(text: string, cat: ScopeCatalog): EntityResolution {
@@ -300,6 +315,30 @@ export function groundPlayer(text: string, cat: ScopeCatalog): EntityResolution 
 
   const full = cat.playerByFull.get(folded);
   if (full?.length) return resolveSet(full, false);
+
+  // Pair/partner subset ("Granollers/Zeballos", "Marcel Granollers and Horacio Zeballos"): doubles pairs are
+  // single catalog entries ("M. Granollers/H. Zeballos"), so no full/last name ever matches them. Match on
+  // token subset — every multi-letter query token present in ONE entry's name. Runs BEFORE the single-name
+  // fallbacks (those always intercept a pair string with a junk surname shortlist) and only for 2+ token
+  // queries, so single names and "R. Matos"-style initials fall through to the ladder below unchanged.
+  // Single-letter tokens (initials, the Spanish "y") carry no signal and are dropped from the query side.
+  const subset = (q: string[], score: number): EntityResolution | null => {
+    if (q.length < 2) return null;
+    const hits = playerTokens(cat).filter((p) => q.every((t) => p.toks.has(t))).slice(0, TOP_K + 1);
+    if (!hits.length) return null;
+    if (hits.length === 1) return { text, tier: "confident", candidates: [cand(hits[0]!.id, score)] };
+    return { text, tier: "shortlist", candidates: hits.slice(0, TOP_K).map((h) => cand(h.id, score)) };
+  };
+  const multi = (s: string): string[] => [...contentTokens(s)].filter((t) => t.length > 1);
+  const bySubset = subset(multi(text), 0.8);
+  if (bySubset) return bySubset;
+  // Surname retry: the catalog stores initials, the user typed full first names ("Marcel Granollers and
+  // Horacio Zeballos"). Keep each partner-segment's LAST word only and re-match.
+  const segs = text.split(/\/|,|&|\+| and /i).map((s) => s.trim()).filter(Boolean);
+  if (segs.length >= 2) {
+    const bySurname = subset([...new Set(segs.flatMap((s) => multi(s.split(/\s+/).pop()!)))], 0.7);
+    if (bySurname) return bySurname;
+  }
 
   // last-name / surname fallback (also catches a mononym typed with extra words).
   const last = folded.split(" ").filter(Boolean).pop() ?? "";
@@ -419,14 +458,22 @@ export function groundScope(plan: QueryPlan, opts: { region?: string | null } = 
     const regionText = opts.region !== undefined ? opts.region : sc.region;
     const region = regionText ? seed("region", regionText, () => groundRegion(regionText, cat)) : null;
 
-    const comp = sc.competition;
-    const competition = eventCentricComp ?? (comp ? seed("comp", comp, () => groundCompetition(comp, cat)) : null);
-
-    // `squad` applies to EVERY team on the leg (a fixture can't mix squads): ground each name WITH the
+    // `squad` applies to EVERY entity on the leg (a fixture can't mix squads): ground each name WITH the
     // marker appended — the existing marker/twin machinery resolves "Latvia women" -> Latvia (W) — and fall
     // back to the bare name when no such twin exists (lenient, never drop). A name already carrying its own
     // marker ("Turkey women", "Italy (W)") is left alone.
     const squadded = (t: string): string => (sc.squad && !hasVariantMarker(t) ? `${t} ${sc.squad}` : t);
+
+    const comp = sc.competition;
+    // Gendered competitions are separate catalog groups ("US Open" vs "US Open Women"), so the squad marker
+    // applies to the competition too. Only a CONFIDENT squadded hit wins (a real "<name> Women" twin);
+    // anything weaker falls back to the bare name so the appended token never degrades a working query.
+    const groundCompSq = (c: string): EntityResolution => {
+      const marked = groundCompetition(squadded(c), cat);
+      return marked.tier === "confident" ? marked : groundCompetition(c, cat);
+    };
+    const competition = eventCentricComp ?? (comp ? seed("comp", squadded(comp), () => groundCompSq(comp)) : null);
+
     const groundTeamSq = (t: string): EntityResolution => {
       const marked = groundTeam(squadded(t), cat);
       return marked.tier !== "none" ? marked : groundTeam(t, cat);
@@ -448,6 +495,29 @@ export function groundScope(plan: QueryPlan, opts: { region?: string | null } = 
 
     return { region, competition, teams, players, subjectPlayer };
   });
+
+  // ---- 1b. PAIR JOIN. Doubles partners often arrive as SEPARATE weak mentions ("Nys" + "Roger-Vasselin");
+  // each alone shortlists stale pairs and TOP_K cuts the real one. If the catalog holds EXACTLY ONE entry
+  // containing every multi-letter token of two non-confident mentions on a leg, inject it as a front
+  // candidate into both (a `none` becomes a shortlist). Tiers stay weak and the entity gate still decides,
+  // so opponents ("Federer vs Nadal": no joint entry -> no-op) and confident mentions are never disturbed.
+  const multi = (s: string): string[] => [...contentTokens(s)].filter((t) => t.length > 1);
+  for (const m of mentions) {
+    const weak = [...m.teams, ...m.players, m.subjectPlayer]
+      .filter((r): r is EntityResolution => r != null && r.tier !== "confident");
+    for (let i = 0; i < weak.length; i++) for (let j = i + 1; j < weak.length; j++) {
+      const q = [...new Set([...multi(weak[i]!.text), ...multi(weak[j]!.text)])];
+      if (q.length < 2) continue;
+      const hits = playerTokens(cat).filter((p) => q.every((t) => p.toks.has(t)));
+      if (hits.length !== 1) continue;
+      const p = cat.playerById.get(hits[0]!.id)!;
+      const c: Candidate = { id: p.id, name: p.name, score: 0.85, clubId: p.clubId, countryTeamId: p.countryTeamId, competitionIds: p.competitionIds };
+      for (const r of [weak[i]!, weak[j]!]) {
+        if (!r.candidates.some((x) => x.id === c.id)) r.candidates.unshift(c);
+        if (r.tier === "none") r.tier = "shortlist";
+      }
+    }
+  }
 
   // ---- 2. CONSTRAIN, per leg. The LEG is the unit of co-occurrence: two teams named on ONE leg play each
   // other, so they may narrow each other; two teams on DIFFERENT legs are unrelated and must not.

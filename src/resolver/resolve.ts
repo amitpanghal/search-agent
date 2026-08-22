@@ -78,6 +78,14 @@ function subjectName(leg: ResolvedLegScope, s: Subject): string | undefined {
   return e && e.tier === "confident" ? e.candidates[0]?.name : undefined;
 }
 
+// A NAMED subject the grounder could not identify AT ALL (tier none, zero candidates). Such a leg must
+// abstain rather than answer from its other anchors — a resolved competition would otherwise substitute ITS
+// events for the unidentified subject's ("Granollers/Zeballos to win in Cincinnati" must clarify, not serve
+// the other Cincinnati matches). The entity clarification (with suggestions) already sits in clarifications;
+// execute surfaces it once this leg stops counting as resolved.
+const subjectUnidentified = (leg: ResolvedLegScope, s: Subject): boolean =>
+  (s.kind === "team" || s.kind === "player") && subjectEntity(leg, s)?.tier === "none";
+
 // A selector's Line + subject -> the deterministic SELECT spec (value, never a market binding). The line VALUE is
 // carried RAW (number or string) as `lineValue`; SELECT decides how to read it from the picked market's
 // betOfferType (a numeric rung for handicaps/over-unders, a combo token for correct-score/HT-FT) — never guessed
@@ -276,7 +284,9 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
     idxs.forEach((i) => { keyByIdx[i] = key; });
     // "main" legs name no market — they skip the LLM pick entirely and fan out into every main market below.
     // Only the named legs go to resolveMarkets (keep the pick-index alignment to THOSE legs).
-    const llmIdxs = idxs.filter((i) => plan.selectors[i]!.market_concept !== "main");
+    // An unidentified-subject leg abstains (see subjectUnidentified): none-pick now, no market call spent.
+    idxs.forEach((i) => { if (subjectUnidentified(settled.legs[i]!, plan.selectors[i]!.subject)) pickByIdx[i] = { match: "none" }; });
+    const llmIdxs = idxs.filter((i) => plan.selectors[i]!.market_concept !== "main" && pickByIdx[i] == null);
     // Kick the pick off WITHOUT awaiting — each group resolves against its own menu with no cross-group
     // dependency, so all groups' picks run concurrently; awaited together after the loop.
     // ponytail: unbounded fan-out (one call per group). If a query splits into enough groups to hit Bedrock's
@@ -317,6 +327,13 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
           ? [sel.line.min != null ? `above ${sel.line.min}` : "", sel.line.max != null ? `below ${sel.line.max}` : ""].filter(Boolean).join(" and ")
           : sel.line;
     const under = { ...(subj ? { subject: subj } : {}), phrase: sel.market_concept, ...(lineEcho != null ? { line: lineEcho } : {}) };
+    // Unidentified named subject -> abstain (covers "main" browses too): a no-fixture leg naming the subject,
+    // no selection. execute renders the sentence and, with the leg unresolved, surfaces the entity clarification.
+    if (subjectUnidentified(leg, sel.subject)) {
+      legsOut.push({ phrase: sel.market_concept, pick: { match: "none" }, unavailable: { kind: "no-fixture", ...(subj ? { scope: subj } : {}) } });
+      legsUnderstood.push({ ...under, matched: false });
+      continue;
+    }
     const spec: SelectSpec = {
       ...selSpec(sel.line, sel.odds, subj, subjectParticipantId(leg, sel.subject), sel.odds_sort, sel.count, sel.line_sort),
       ...(sel.direction ? { dir: sel.direction } : {}),

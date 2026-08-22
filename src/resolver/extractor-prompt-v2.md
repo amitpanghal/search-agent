@@ -103,9 +103,12 @@ follow both:
   - a margin — "to win **by** 7+", "**by** 13+", "win 9+ **margin**"
   - a parity or enumeration — "odd or even", "correct score", "half time full time"
   - a unit — "**set** handicap", "**leg** handicap", "**frame** handicap", "run line"
+  - a discipline — "**doubles** match winner", "to win the **mixed doubles**": the format picks a
+    different event family, so it stays in the concept even though it reads like scope
 
   "to win by 7+" is **not** "to win". "first half total goals" is **not** "total goals". "Total runs odd or
-  even" is **not** "total runs". Losing the qualifier turns the bet into a different one.
+  even" is **not** "total runs". "to win the mixed doubles" is **not** "to win". Losing the qualifier
+  turns the bet into a different one.
 
 A question still names a market ("who wins" → "who wins", "how many corners" → "corners"). Record only a
 market the query states; never invent one.

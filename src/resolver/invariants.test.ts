@@ -136,3 +136,67 @@ test("a stated sport word locks widening; a guessed sport doesn't", () => {
   assert.equal(queryNamesSport("steelers to cover the spread", "american-football"), false);
   assert.equal(queryNamesSport("ice hockey scores tonight", "ice-hockey"), true);
 });
+
+// ---- squad-aware competition grounding: "<name> Women" twin groups -------------------------------------
+// Uses the committed tennis catalog (disk read, zero network). Kambi keeps gendered editions as separate
+// groups ("US Open" vs "US Open Women"); the squad marker must pick the twin, and must NEVER degrade the
+// bare name when no twin matches (squad "men" has no twin -> falls back to the men's group).
+import { groundScope } from "./ground-scope";
+import type { QueryPlan } from "./schema";
+
+const planFor = (squad: string | null): QueryPlan => ({
+  sport: "tennis",
+  selectors: [{
+    subject: { kind: "event" },
+    market_concept: "who wins",
+    scope: { teams: [], players: [], competition: "US Open", region: null, level: "competition", stage: null, squad, time: null, play_state: null },
+  }],
+} as QueryPlan);
+
+test("squad 'women' grounds the competition to its Women twin; null and 'men' keep the men's group", () => {
+  const women = groundScope(planFor("women")).legs[0]!.competition!;
+  assert.equal(women.tier, "confident");
+  assert.equal(women.candidates[0]!.name, "US Open Women");
+
+  for (const squad of [null, "men"]) {
+    const comp = groundScope(planFor(squad)).legs[0]!.competition!;
+    assert.equal(comp.tier, "confident", `squad=${squad} must stay confident`);
+    assert.equal(comp.candidates[0]!.name, "US Open", `squad=${squad} must keep the men's group`);
+  }
+});
+
+// ---- pair grounding: doubles pairs are players-table entries; multi-surname queries must reach them ----
+import { groundTeam, groundPlayer } from "./ground-scope";
+import { loadScopeCatalog } from "./scope-catalog";
+
+test("pair phrasings ground to the pair entry; single names keep the old ladder", () => {
+  const cat = loadScopeCatalog("tennis");
+  const pair = /granollers.*zeballos|zeballos.*granollers/i;
+  for (const q of ["Granollers/Zeballos", "Granollers and Zeballos", "Marcel Granollers and Horacio Zeballos", "Granollers y Zeballos"]) {
+    const r = groundTeam(q, cat);
+    assert.equal(r.tier, "confident", `${q} must ground confident`);
+    assert.match(r.candidates[0]!.name, pair, q);
+  }
+  // regression guards: exact and single/initial names keep today's behavior
+  assert.equal(groundTeam("Marcel Granollers", cat).candidates[0]!.name, "Marcel Granollers");
+  assert.equal(groundTeam("Spain", cat).candidates[0]!.name, "Spain");
+  assert.ok(groundPlayer("R. Matos", cat).candidates.some((c) => c.name === "Rafael Matos"),
+    "R. Matos must still shortlist the singles player, not only pairs");
+});
+
+test("pair join: two weak partner mentions both gain the joint pair candidate", () => {
+  const plan = {
+    sport: "tennis",
+    selectors: [{
+      subject: { kind: "event" },
+      market_concept: "who wins",
+      scope: { teams: ["Nys", "Roger-Vasselin"], players: [], competition: null, region: null, level: "fixture", stage: null, squad: null, time: null, play_state: null },
+    }],
+  } as QueryPlan;
+  const { legs } = groundScope(plan);
+  const joint = /nys.*roger.*vasselin/i;
+  for (const t of legs[0]!.teams) {
+    assert.ok(t.candidates.some((c) => joint.test(c.name)), `"${t.text}" must carry the joint pair candidate`);
+    assert.notEqual(t.tier, "none");
+  }
+});

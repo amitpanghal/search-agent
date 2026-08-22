@@ -4,9 +4,27 @@ The canonical list of things the resolver deliberately does **not** handle yet, 
 
 ## Tennis
 
-- **Doubles is not supported.** Only singles (one player per side) grounds. Doubles pairs (e.g. "Granollers/Zeballos") are a different shape — two people acting as one side — and live in separate feeds/tree nodes (the `CD` feed, `ATP Doubles`/`WTA Doubles`). A query like "Granollers and Zeballos to win the doubles" won't ground. *Fixable later; deferred because singles covers nearly all queries.*
+- **Doubles: pair-named queries work; one-partner queries still miss.** (Fixed 2026-08-22, verified live
+  against Cincinnati doubles.) Pairs ground by surname-set match against the pair entries in the players
+  table — any order/separator ("Granollers/Zeballos", "Marcel Granollers and Horacio Zeballos"), and split
+  partner mentions rejoin via the leg-level pair join. Padel and table-tennis inherit this (same catalog
+  shape). Still missing: a query naming only ONE partner ("Granollers doubles tonight") — doubles events
+  attach only to pair participant ids and the catalog doesn't link a player to their pairs. *Fixable —
+  needs a player→pairs expansion at recall.* Typos inside a surname don't match either (no fuzzy layer);
+  the entity gate clarifies with suggestions instead. *Deliberately not built until real traffic shows it.*
 
-- **Davis Cup / national-team tennis is not guaranteed.** When countries play instead of individuals (Davis Cup, Billie Jean King Cup), the side is a country team — the 16 `TEAM` entries in the feed (Sweden, Australia, France…). These are kept only if they survive the normalizer's noise filter, which is club-shaped and may drop them (basketball national teams hit the same filter). So "Sweden to win the Davis Cup" may or may not work. *Fixable later; not chased in v1 — rare next to "Alcaraz to win".*
+- **Mixed doubles: honest miss until the feed lists it.** Kambi carries no mixed offering most of the year
+  (no group, no events — checked 2026-08-22). The extractor now keeps the "doubles"/"mixed doubles"
+  qualifier in the market phrase (prompt edit 2026-08-22, **eval gate not yet run**), so these resolve to
+  "not offered" instead of substituting a singles market. When the US Open mixed event appears, the daily
+  catalog refresh picks up its group and pairs ground via the doubles path — untested until then.
+
+- **Davis Cup / national-team tennis: honest out-of-season, thin data.** Probed 2026-08-22: no Davis Cup /
+  BJK Cup / United Cup groups in the feed → "Spain to win the Davis Cup" clarifies honestly (sport
+  inference correctly stays tennis, not football). The catalog holds 37 senior-men and only 2 senior-women
+  NT rows, and 0 of ~56k players carry a countryTeamId link (the tennis half of the normalizer NT gap).
+  Men's Davis Cup should ground once the group returns via the daily refresh; BJK Cup (women) will likely
+  miss. *Fixable later; not chased — rare next to "Alcaraz to win".*
 
 - **No country/region scoping.** Tennis has no geography tree: ATP, WTA, and the Grand Slams sit flat under the sport root, with no country layer above them (a player's nationality is not a scopable region). So "tennis matches in Spain" or "Spanish tennis" can't narrow by region. *Permanent data limit, not a bug — the data simply has no such layer.*
 
