@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { z } from "zod";
 import { QueryPlan } from "./schema";
-import { builtSports } from "./sports";
+import { userSports } from "./sports";
 import { normalizePlan } from "./normalize-plan";
 import { bedrockToolCall } from "./bedrock-call";
 
@@ -21,7 +21,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 // The live SUPPORTED SPORTS menu — every built catalog, de-slugified for reading ("ice-hockey" → "ice
 // hockey"). Injected so the extractor emits a sport getSport will actually match; slugify() on the read side
 // turns the model's answer back into the file slug. Built once at load (catalogData/ ships with the app).
-const SUPPORTED_SPORTS = [...builtSports(), "other"].join(", ");
+const SUPPORTED_SPORTS = [...userSports(), "other"].join(", ");
 // EXTRACTOR_PROMPT points the extractor at a VARIANT prompt file, for offline A/B of prompt edits
 // (scripts/ arm runs) without touching the shipped one. Unset in prod — the default is the real prompt.
 // -v2 is the rewrite (224 lines vs 374): shorter, competition rule restated as "a name that MODIFIES an

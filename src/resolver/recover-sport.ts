@@ -19,7 +19,7 @@
 import type { QueryPlan } from "./schema";
 import { groundTeam, groundPlayer, type ScopeTier } from "./ground-scope";
 import { loadScopeCatalog } from "./scope-catalog";
-import { builtSports, getSport } from "./sports";
+import { userSports, getSport } from "./sports";
 
 export type SportFix =
   | { kind: "keep" }
@@ -38,7 +38,7 @@ function tierIn(name: string, sport: string, tiers: Set<ScopeTier>): boolean {
 // The built sports that ground `name` confident (team OR player). ponytail: O(all-catalogs) lexical scan, only
 // on the blind-anchor path; loadScopeCatalog memoizes per sport. Index the participant names if this ever shows.
 function strongSports(name: string): string[] {
-  return builtSports().filter((s) => {
+  return userSports().filter((s) => {
     const cat = loadScopeCatalog(s);
     return STRONG.has(groundTeam(name, cat).tier) || STRONG.has(groundPlayer(name, cat).tier);
   });

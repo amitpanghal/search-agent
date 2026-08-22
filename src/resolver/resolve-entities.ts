@@ -27,7 +27,8 @@ import {
   type ResolvedScope, type EntityResolution, type ScopeTier, type Candidate,
 } from "./ground-scope";
 import { loadScopeCatalog, type ScopeCatalog } from "./scope-catalog";
-import { builtSports } from "./sports";
+import { fold } from "./lexical";
+import { userSports } from "./sports";
 import { bedrockToolCall } from "./bedrock-call";
 import type { CellRef, SettledEntities } from "./live-menu-types";
 
@@ -106,12 +107,24 @@ const TIER_ORDER: ScopeTier[] = ["confident", "variants", "ambiguous", "shortlis
 const XS_PER_SPORT = 2; // per-sport quota: a flat top-N lets one sport crowd out the rest (33 "Tigers" rows push
 const XS_CAP = 8;       // the baseball one to rank 8). Quota'd, the right row never fell past 5.
 
+// The query literally names the plan's sport ("… basketball winner"): the sport is the USER's word, not an
+// extractor guess, so offering other sports' catalogs contradicts the query. Widening (and with it the
+// cross-sport sport-adoption below) exists to rescue a GUESSED sport — a stated one locks the home catalog.
+// ponytail: strict slug-substring ("ice-hockey" fires only on "ice hockey" verbatim); add sport aliases
+// ("soccer", "mma") if a stated sport ever misses.
+export function queryNamesSport(query: string, sport: string): boolean {
+  return fold(query).includes(fold(sport.replace(/-/g, " ")));
+}
+
 // id -> the sport whose catalog holds it, for ids that came from a catalog OTHER than the plan's.
 export type ForeignIds = Map<number, { sport: string; cand: Candidate }>;
 
 function crossSportRows(name: string, skip: string, out: ForeignIds, competitor: boolean): { id: number; name: string; rank: number }[] {
   const bySport: { rank: number; rows: { id: number; name: string; rank: number }[] }[] = [];
-  for (const sport of builtSports()) {
+  // userSports, not builtSports: the sim catalogs (z-sports/virtual-sports) hold twins that REUSE the real
+  // participant ids, so a correct pick gets tagged foreign-to-a-sim-catalog and the sport-adoption below
+  // flips a right plan to the junk sport. They contribute nothing widening needs.
+  for (const sport of userSports()) {
     if (sport === skip) continue;
     const cat = loadScopeCatalog(sport);
     const rows: { id: number; name: string; rank: number }[] = [];
@@ -163,7 +176,7 @@ type Placement = { legIdx: number; slot: Slot; idx: number };
 // entity repeated across legs the SAME EntityResolution reference, so identity dedup == "one cell per distinct
 // entity": gate it once, record every placement, then fan the pick back per leg in applyOutcomes (never re-ask
 // the same clarification per leg). Returns the cells (for the single decide batch) + ref->placements (writeback).
-function buildEntityCells(scope: ResolvedScope, foreign: ForeignIds): { cells: Cell[]; places: Map<CellRef, Placement[]> } {
+function buildEntityCells(scope: ResolvedScope, foreign: ForeignIds, widenOk: boolean): { cells: Cell[]; places: Map<CellRef, Placement[]> } {
   const scat = loadScopeCatalog(scope.sport);
   const cells: Cell[] = [];
   const places = new Map<CellRef, Placement[]>();
@@ -178,7 +191,7 @@ function buildEntityCells(scope: ResolvedScope, foreign: ForeignIds): { cells: C
       refByEntity.set(res, ref);
       places.set(ref, []);
       const competitor = slot === "team" || slot === "player" || slot === "subject";
-      cells.push(buildEntityCell(ref, res, ground, scat, foreign, competitor, competitor || slot === "competition"));
+      cells.push(buildEntityCell(ref, res, ground, scat, foreign, competitor, widenOk && (competitor || slot === "competition")));
     }
     places.get(ref)!.push({ legIdx, slot, idx });
   };
@@ -327,7 +340,7 @@ export async function resolveEntities(query: string, scope: ResolvedScope, decid
   const settled = structuredClone(scope) as SettledEntities;
   settled.clarifications = [];
   const foreign: ForeignIds = new Map();
-  const { cells, places } = buildEntityCells(scope, foreign);
+  const { cells, places } = buildEntityCells(scope, foreign, !queryNamesSport(query, scope.sport));
   if (!cells.length) return settled;
   const outcomes = await runPass(query, cells, decideFn, foreign);
   applyOutcomes(settled, outcomes, places);

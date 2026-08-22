@@ -11,6 +11,7 @@ import assert from "node:assert/strict";
 import { resolveTimeWindow, eventMatchesTime, applyFixturePick, filterEventsByTime } from "./time-window";
 import { fold, contentTokens, lc, stripSettle } from "./lexical";
 import type { KEvent } from "./offering-client";
+import { queryNamesSport } from "./resolve-entities";
 
 const ev = (id: number, start?: string, state?: string): KEvent => ({ id, ...(start && { start }), ...(state && { state }) });
 // The extractor's time field has all three keys, nullable — spell the absent ones so the tests type-check.
@@ -127,4 +128,11 @@ test("content tokens fold women's markers, decompound goalscorer, and singulariz
   assert.ok(contentTokens("Goalscorer").has("scorer"));
   assert.deepEqual([...contentTokens("Goalscorer")].sort(), [...contentTokens("Goal Scorers")].sort());
   assert.equal(contentTokens("the a of to").size, 0, "stopwords carry no content");
+});
+
+// ---- RC-B guard: a stated sport word locks cross-sport widening ----------------------------------------
+test("a stated sport word locks widening; a guessed sport doesn't", () => {
+  assert.equal(queryNamesSport("czech republic turkey womens basketball winner", "basketball"), true);
+  assert.equal(queryNamesSport("steelers to cover the spread", "american-football"), false);
+  assert.equal(queryNamesSport("ice hockey scores tonight", "ice-hockey"), true);
 });
