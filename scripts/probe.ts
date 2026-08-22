@@ -7,7 +7,8 @@
 //   npm run probe -- "..." --apis=kambi --out run.jsonl    # only feed traffic, also save the full trace
 //
 // Flags: --log=silent|summary|full (default summary) · --apis=llm,kambi (default both) ·
-//   --until=extract|ground|entities|recall · --out FILE (full JSONL trace) · --full-payloads · --fail-fast
+//   --until=extract|ground|entities|recall · --out FILE (full JSONL trace) · --full-payloads · --fail-fast ·
+//   --tz ZONE (IANA zone for time windows; defaults to this machine's zone — pass UTC to reproduce no-tz clients)
 //
 // LIVE = paid (Bedrock + Kambi). Run via `npm run probe` so --env-file=.env supplies AWS creds + BEDROCK_MODEL.
 
@@ -28,6 +29,7 @@ const { values, positionals } = parseArgs({
     "full-payloads": { type: "boolean", default: false },
     "fail-fast": { type: "boolean", default: false },
     selftest: { type: "boolean", default: false },
+    tz: { type: "string", default: Intl.DateTimeFormat().resolvedOptions().timeZone },
   },
 });
 
@@ -136,7 +138,7 @@ async function runOne(query: string): Promise<{ trace: TraceEvent[]; envelope?: 
   let error: Error | undefined;
   await traceStore.run(trace, async () => {
     try {
-      for await (const ev of runPipeline(query, values.until ? { until: values.until } : {})) {
+      for await (const ev of runPipeline(query, { tz: values.tz, ...(values.until ? { until: values.until } : {}) })) {
         if (ev.stage === "done") envelope = ev.envelope;
       }
     } catch (e) { error = e instanceof Error ? e : new Error(String(e)); }

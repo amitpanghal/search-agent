@@ -349,6 +349,12 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
 
     const pick = pickByIdx[i]!;
     const selection = pick.match !== "none" ? selectFor(offersForPick(fr.offers, pick.label)) : undefined;
+    // The stated line isn't always on the ladder — select flags the NEAREST offered rung (a preference, never
+    // a drop). Say so, or "texans -3" answered with -1.5 reads as a wrong answer instead of a substitute.
+    // Bands are exempt: "2+" resolving to "over 1.5" IS the exact conversion, not a substitute.
+    const bandDir = sel.direction === "at_least" || sel.direction === "at_most";
+    if (!bandDir && typeof sel.line === "number" && selection?.line != null && !selection.fallback && selection.line !== sel.line)
+      extraNotes.add(`No ${sel.line} line for "${sel.market_concept}" right now — showing the nearest offered (${selection.line}).`);
     // A `none` pick has no result: distinguish "the scope found no fixture at all" (a fixture-grain leg with an
     // empty scoped slate) from "a fixture existed but no market fit the concept" — execute renders each differently.
     const namedTeams = [...(sel.scope.teams ?? []), ...(sel.subject.kind === "team" ? [sel.subject.name] : [])];

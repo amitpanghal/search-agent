@@ -85,8 +85,15 @@ function parseDateWindow(value: string, base: Date, now: Date, tz: string): [Dat
     return [now, m[2] === "hour" ? addHours(now, n) : m[2] === "week" ? addDays(now, n * 7) : addDays(now, n)];
   }
   if (v === "tomorrow") { const t = addDays(noon(now, tz), 1); return [startOfDay(t, tz), endOfDay(t, tz)]; }
-  if (v === "today" || v === "tonight") return [now, endOfDay(now, tz)];
+  if (v === "today") return [now, endOfDay(now, tz)];
+  // "tonight" runs into the small hours: an 8pm-in-Dallas tip-off is 2am for a European user and still
+  // "tonight"; "today" keeps the strict calendar day.
+  if (v === "tonight") return [now, atWall(addDays(noon(now, tz), 1), tz, 6)];
   if (v === "weekend") return weekendOf(base, tz); // "opening weekend" (base=tournament start) / "this weekend" (base=now)
+  if (v === "next_weekend") return weekendOf(addDays(noon(base, tz), 7), tz); // the weekend after the coming one
+  if (v === "this_week") return [now, endOfDay(addDays(noon(now, tz), (7 - dayOfWeek(now, tz)) % 7), tz)]; // rest of the calendar week, ends Sunday
+  if (v === "this_month") { const p = partsOf(now, tz); return [now, fromWall(p.year, p.month, new Date(Date.UTC(p.year, p.month, 0)).getUTCDate(), 23, 59, 59, 999, tz)]; } // rest of the calendar month (Date.UTC(y,m,0) = its last day)
+  if (v === "next_week") { const mon = addDays(noon(now, tz), ((8 - dayOfWeek(now, tz)) % 7) || 7); return [startOfDay(mon, tz), endOfDay(addDays(mon, 6), tz)]; }
   // a named weekday -> its NEXT occurrence (today counts if today is that day); floor a same-day window to `now`
   // so already-kicked-off games drop, matching the `today` token. The extractor owns "Sun"/"on Saturday" -> token.
   const wd = WEEKDAYS.indexOf(v);

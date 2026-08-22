@@ -5,8 +5,9 @@ description: >-
   LIVE prod pipeline and dumps a per-stage + per-API trace. Use when investigating WHY a query resolved the way
   it did: which stage produced the wrong leg, what the extractor/grounder/market-picker actually returned, what
   Kambi was fetched, or where a query threw. Covers the flags (log level, per-API filter, --until early-stop,
-  --out JSONL), the paid-call discipline, and how to read the trace back to the owning stage. Pair with the
-  resolver-pipeline skill (the stage map) — this skill is how you OBSERVE a live run of it.
+  --out JSONL), the paid-call discipline, the model-tier delegation (probe-runner / triage-runner agents run,
+  Fable diagnoses), and how to read the trace back to the owning stage. Pair with the resolver-pipeline skill
+  (the stage map) — this skill is how you OBSERVE a live run of it.
 ---
 
 # probe
@@ -32,6 +33,18 @@ paid run**, and keep spend down:
   paying to re-run it — re-run only when the *input* (query, prompt, code) actually changed.
 - Only the query, prompt, or a code change should send a fresh call. Don't loop paid runs.
 
+## Delegation (model tiers)
+The main loop (Fable) governs; runs are delegated so raw traces stay out of its context:
+- **probe-runner** agent (Opus 5, effort high) — executes probe/eval/recapture commands and returns a facts-only
+  scorecard + trace JSONL paths. Spawn it for any batch run; hand it the *exact* commands and a scratchpad output path.
+- **triage-runner** agent (Opus 5, effort max) — buckets an already-captured batch by failing stage/symptom;
+  also writes scratchpad-only helper scripts. Works from files; makes no paid calls of its own.
+- **Fable keeps**: diagnosis (WHY a stage is wrong), prompt-rule rewrites, twin/scope reasoning, and every
+  decision. Read the runner's scorecard, then open only the traces worth diagnosing.
+
+Paid-call approval happens BEFORE spawning: Fable asks the user, then hands the runner a fixed command list.
+Runners never add or repeat paid runs.
+
 ## Flags
 | flag | default | effect |
 |------|---------|--------|
@@ -42,6 +55,7 @@ paid run**, and keep spend down:
 | `--out F` | — | append `{query, ok, error, trace, envelope}` as one JSONL line for diffing/reuse |
 | `--full-payloads` | off | in `--log=full`, dump the giant static system prompt + full menus (else elided to size/count) |
 | `--fail-fast` | off | stop the batch on the first throwing query (default: continue, summarise at end) |
+| `--tz ZONE` | this machine's zone | IANA zone for time windows ("tonight", "weekend" …) — the default emulates a real user here; pass `--tz UTC` to reproduce a client that sends no zone. Time-window results depend on this, so note the zone when comparing runs |
 
 Timing (ms since prior event), token counts, cost, and the failure point are always shown.
 
