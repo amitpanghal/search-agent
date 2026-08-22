@@ -27,8 +27,7 @@ export type SportConfig = {
   sportRootId: number;
   participantsFile: string;
   individual?: boolean;
-  // Pass --national-teams to the normalizer (flag NT clubs / link countryTeamId). Basketball is off until
-  // FIBA competitions appear in the offering (see project notes); flip to true when they do.
+  // Pass --national-teams to the normalizer (flag NT clubs / link countryTeamId).
   nationalTeams?: boolean;
   // Event-centric sports (F1): the "competition" a query names is an EVENT (a Grand Prix, a championship) under
   // the sport-root group, not a league group. groundScope grounds it to the sport root so recall fetches every
@@ -52,6 +51,7 @@ export type SportConfig = {
 // Doubles / NT-variant support for more sports plugs in here (see project notes).
 const SPORT_OVERRIDES: Record<string, Pick<SportConfig, "individual" | "nationalTeams" | "tourFeeds" | "eventCentric" | "participantsFrom">> = {
   football: { nationalTeams: true },
+  basketball: { nationalTeams: true },
   tennis: {
     individual: true, nationalTeams: true,
     tourFeeds: { "ATP": "ATP", "WTA": "WTA", "ITF Men": "ITFM", "ITF Women": "ITFW", "UTR Pro Tennis Series": "UTRM", "UTR Pro Tennis Series Women": "UTRW" },
@@ -127,4 +127,15 @@ export function builtSports(): string[] {
   } catch {
     return [];
   }
+}
+
+// Catalogs a user never means by name: z-sports is Kambi's junk drawer, virtual-sports is simulated filler.
+// Offered as choices they become the model's unknown-bucket (9 of 95 sweep queries landed there) and
+// sport-recovery hijack targets ("Barcelona" is confident in virtual-sports), and their sim twins REUSE real
+// participant ids, so entity widening that reads them flips a correct plan's sport to the junk one on
+// adoption. Excluded from the extractor's menu/enum, recover-sport switch targets, and entity widening;
+// the catalogs stay built (getSport still reads a junk slug if one ever arrives from stored data).
+const NON_USER_SPORTS = new Set(["z-sports", "virtual-sports"]);
+export function userSports(): string[] {
+  return builtSports().filter((s) => !NON_USER_SPORTS.has(s));
 }

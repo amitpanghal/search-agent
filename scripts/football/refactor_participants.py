@@ -119,6 +119,22 @@ _NT_WOMEN = re.compile(r"\s+(?:Women|\(W\))$")
 _NT_YOUTH = re.compile(r"\s+U(\d{2})$")
 
 
+def nt_base_name(name: str) -> str:
+    """The NT name with gender/youth suffixes stripped: "Poland (W)" / "Spain U21" -> "Poland" / "Spain"."""
+    base = name or ""
+    for _ in range(2):
+        mw = _NT_WOMEN.search(base)
+        if mw:
+            base = base[: mw.start()]
+            continue
+        my = _NT_YOUTH.search(base)
+        if my:
+            base = base[: my.start()]
+            continue
+        break
+    return base
+
+
 def nt_variant_from_name(name: str | None) -> str:
     """Derive an ntVariant tag from a national-team name's suffix.
 
@@ -529,6 +545,7 @@ def refactor(
     sport_slug: str,
     individual: bool = False,
     national_teams: bool = False,
+    country_names: set[str] | None = None,
 ) -> dict:
     """Transform a raw participants blob into the embedding-ready shape.
 
@@ -628,13 +645,15 @@ def refactor(
         # roster member. Without this, queries like "argentina messi" miss
         # Messi because his groupIds carry his club's home country (USA),
         # not his nationality.
-        # National team = a rostered TEAM whose name exactly matches a country node in the offering
-        # tree (Argentina, Brazil, Morocco (W), …). This is the robust signal. The old "groups collapse
-        # to the sport root" heuristic mass-mis-flags CLUBS as NTs on a tree where many domestic leagues
-        # don't resolve — a club then looks international-only too (1000+ false positives here). An exact
-        # country-name match doesn't. Gated by --national-teams; the country_map lookup below also drives
-        # the countryTeamId back-fill, so detection and linkage share one signal.
-        is_national_team = national_teams and club_name in country_map
+        # National team = a TEAM whose variant-stripped name ("Poland (W)" -> "Poland") matches a country
+        # node in the offering tree. Detection uses `country_names` (country nodes from EVERY sport's
+        # subtree): a sparse sport like basketball has almost no domestic leagues, so its own subtree names
+        # only 3-4 countries while football's name them all. The old "groups collapse to the sport root"
+        # heuristic mass-mis-flags CLUBS as NTs (1000+ false positives); an exact country-name match doesn't.
+        # The countryTeamId/group-id back-fill below still uses the HOME-subtree country_map, so a foreign
+        # sport's node never leaks into groupIds.
+        detect = country_names if country_names is not None else country_map
+        is_national_team = national_teams and nt_base_name(club_name) in detect
 
         nt_country_id: int | None = None
         if is_national_team and club_name in country_map:
@@ -709,7 +728,7 @@ def main() -> None:
     ap.add_argument("--sport-root-id", type=int, required=True, help="Top-level sport node id in groups.json — the unique key that locates the subtree (the tree's 'sport' field is NOT unique: e.g. 3 sports share NOT-SPECIFIED)")
     ap.add_argument("--sport-slug", default="football", help="Sport slug used in output records (default: football)")
     ap.add_argument("--individual", action="store_true", help="Individual-sport mode: players from top-level PARTICIPANT entries")
-    ap.add_argument("--national-teams", action="store_true", help="Flag national-team clubs (ntVariant) and link players to them (countryTeamId). Detection: a TEAM whose groups collapse to the sport root. Football only for now.")
+    ap.add_argument("--national-teams", action="store_true", help="Flag national-team clubs (ntVariant) and link players to them (countryTeamId). Detection: a TEAM whose variant-stripped name matches a country node anywhere in the offering tree.")
     ap.add_argument("--out", required=True, type=Path)
     args = ap.parse_args()
 
@@ -722,6 +741,9 @@ def main() -> None:
     blob = json.loads(args.participants.read_text())
 
     group_index = build_group_index(groups_root, args.sport_root_id)
+    country_names = set()
+    for sport_node in groups_root.get("groups", []):
+        country_names.update(build_country_map(build_group_index(groups_root, sport_node["id"])).keys())
     result = refactor(
         blob,
         group_index,
@@ -731,6 +753,7 @@ def main() -> None:
         sport_slug=args.sport_slug,
         individual=args.individual,
         national_teams=args.national_teams,
+        country_names=country_names,
     )
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
