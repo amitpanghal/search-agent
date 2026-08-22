@@ -1,0 +1,10 @@
+{
+  "competitions": {
+    "mlb": "MLB",
+    "world series": "MLB",
+    "american league": "MLB",
+    "national league": "MLB",
+    "al": "MLB",
+    "nl": "MLB"
+  }
+}

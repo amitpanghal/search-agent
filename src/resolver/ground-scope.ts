@@ -222,8 +222,9 @@ export function groundCompetition(text: string, cat: ScopeCatalog): EntityResolu
 
 // ---- team: full-name exact (ntVariant-aware) -> token-subset shortlist ----
 export function groundTeam(text: string, cat: ScopeCatalog): EntityResolution {
-  const folded = fold(text);
-  const variant = NT_VARIANT[markerOf(text, cat) ?? ""] ?? "senior_men";
+  const text2 = cat.teamAliases.get(fold(text)) ?? text; // nickname -> the catalog's team NAME ("springboks" -> "South Africa")
+  const folded = fold(text2);
+  const variant = NT_VARIANT[markerOf(text2, cat) ?? ""] ?? "senior_men";
   const cand = (id: number, score: number): Candidate => {
     const t = cat.teamById.get(id)!;
     return { id, name: t.name, score, clubId: id, competitionIds: t.competitionIds, groupIds: t.groupIds, ntVariant: t.ntVariant };
@@ -244,7 +245,7 @@ export function groundTeam(text: string, cat: ScopeCatalog): EntityResolution {
 
   // fallback: token-subset (every query token present in the team name) -> shortlist. Bounded; team names
   // are short and ~unique, so this is the rare "Man United" -> "Manchester United" style rescue.
-  const qTokens = [...contentTokens(text)];
+  const qTokens = [...contentTokens(text2)];
   if (qTokens.length) {
     const hits = cat.teams
       .filter((t) => { const nt = contentTokens(t.name); return qTokens.every((q) => nt.has(q)); })
@@ -263,6 +264,19 @@ export function groundTeam(text: string, cat: ScopeCatalog): EntityResolution {
       }
       return { text, tier: "shortlist", candidates: hits.map((t) => cand(t.id, 0.8)) };
     }
+  }
+
+  // A "team" that names NO team but UNIQUELY names a player is that player's side — the extractor emits
+  // the player's name as the team for possessives it can't resolve ("her team to win", "Kane's side").
+  // Catalog-fact guarded, not phrasing-guarded: fires only when no team matched at all AND the player
+  // match is confident. Club + national side both known -> ambiguous, so the entity LLM picks from the
+  // query's context; exactly one known -> confident, fully deterministic.
+  const asPlayer = groundPlayer(text, cat);
+  if (asPlayer.tier === "confident") {
+    const pl = asPlayer.candidates[0]!;
+    const ids = [pl.clubId, pl.countryTeamId].filter((id): id is number => id != null && cat.teamById.has(id));
+    if (ids.length === 1) return { text, tier: "confident", candidates: [cand(ids[0]!, 0.9)] };
+    if (ids.length > 1) return { text, tier: "ambiguous", candidates: ids.map((id) => cand(id, 0.9)) };
   }
   return { text, tier: "none", candidates: [] };
 }
@@ -408,14 +422,23 @@ export function groundScope(plan: QueryPlan, opts: { region?: string | null } = 
     const comp = sc.competition;
     const competition = eventCentricComp ?? (comp ? seed("comp", comp, () => groundCompetition(comp, cat)) : null);
 
-    const teams = sc.teams.map((t) => seed("team", t, () => groundTeam(t, cat)));
+    // `squad` applies to EVERY team on the leg (a fixture can't mix squads): ground each name WITH the
+    // marker appended — the existing marker/twin machinery resolves "Latvia women" -> Latvia (W) — and fall
+    // back to the bare name when no such twin exists (lenient, never drop). A name already carrying its own
+    // marker ("Turkey women", "Italy (W)") is left alone.
+    const squadded = (t: string): string => (sc.squad && !hasVariantMarker(t) ? `${t} ${sc.squad}` : t);
+    const groundTeamSq = (t: string): EntityResolution => {
+      const marked = groundTeam(squadded(t), cat);
+      return marked.tier !== "none" ? marked : groundTeam(t, cat);
+    };
+    const teams = sc.teams.map((t) => seed("team", squadded(t), () => groundTeamSq(t)));
     // A TEAM named only as the market OWNER (subject), with scope.teams left empty, is still a scope anchor — ground
     // it and fold it into `teams` so recall/scopeMenu/filter/grouping treat it like any scope team (mirrors
     // subjectPlayer for players; same asymmetry check-complete handles for the gate). Skip if already in scope.teams.
     const subjTeam = sel.subject.kind === "team" ? sel.subject.name : undefined;
     if (subjTeam && !sc.teams.some((t) => fold(t) === fold(subjTeam))) {
       const name = subjTeam;
-      teams.push(seed("team", name, () => groundTeam(name, cat)));
+      teams.push(seed("team", squadded(name), () => groundTeamSq(name)));
     }
 
     const players = sc.players.map((p) => seed("player", p.name, () => groundPlayer(p.name, cat)));

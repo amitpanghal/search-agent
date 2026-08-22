@@ -40,6 +40,7 @@ export type ScopeCatalog = {
   roster: Map<number, number[]>;
   // curated alias lexicon (scope-aliases.json), all keys folded
   competitionAliases: Map<string, string>; // folded short-form -> competition NAME
+  teamAliases: Map<string, string>; // folded nickname -> team NAME ("springboks" -> "South Africa")
   regionAliases: Map<string, string>; // folded place adjective/short-form -> branch NAME
   markers: Map<string, string>; // folded surface marker -> normalized token
 };
@@ -60,8 +61,8 @@ function firstToken(folded: string): string {
   return folded.split(" ").filter(Boolean)[0] ?? "";
 }
 
-function loadAliases(slug: string): Pick<ScopeCatalog, "competitionAliases" | "regionAliases" | "markers"> {
-  let raw: { competitions?: Record<string, string>; regions?: Record<string, string>; markers?: Record<string, string> };
+function loadAliases(slug: string): Pick<ScopeCatalog, "competitionAliases" | "teamAliases" | "regionAliases" | "markers"> {
+  let raw: { competitions?: Record<string, string>; teams?: Record<string, string>; regions?: Record<string, string>; markers?: Record<string, string> };
   try {
     raw = JSON.parse(readFileSync(scopeAliasPath(slug), "utf8"));
   } catch {
@@ -72,7 +73,7 @@ function loadAliases(slug: string): Pick<ScopeCatalog, "competitionAliases" | "r
     for (const [k, v] of Object.entries(o ?? {})) m.set(fold(k), v);
     return m;
   };
-  return { competitionAliases: fold2(raw.competitions), regionAliases: fold2(raw.regions), markers: fold2(raw.markers) };
+  return { competitionAliases: fold2(raw.competitions), teamAliases: fold2(raw.teams), regionAliases: fold2(raw.regions), markers: fold2(raw.markers) };
 }
 
 function emptyBlob(sport: string): ScopeCatalog {
@@ -97,6 +98,7 @@ function emptyBlob(sport: string): ScopeCatalog {
     roster: new Map(),
     competitionAliases: new Map(),
     regionAliases: new Map(),
+    teamAliases: new Map(),
     markers: new Map(),
   };
 }
