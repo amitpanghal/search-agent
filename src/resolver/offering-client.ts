@@ -156,36 +156,3 @@ export async function onDemandPricing(eventId: number, outcomeIds: number[], lan
   const d = ((await res.json()) as any)?.selectedOdds?.decimal;
   return typeof d === "number" ? d : null;
 }
-
-// ---- prepack coupons (bet-builder Phase 1): PRE-CONFIGURED combinations, a whole betslip already priced ----
-// A coupon is a set of legs joined by AND with ONE combined price. `AUTO` = machine-generated, `CUSTOM` =
-// operator-curated (and the only kind that may span >1 event). The response is SELF-CONTAINED: its own
-// `betOffers` label every leg (criterion / outcome / participant / line), and every leg's outcome id lives in
-// the SAME id space as the normal feed — so a coupon leg matches a resolved pick by raw outcome id. Read-only.
-export type PrePackOutcomeRef = { id: number; betOfferId?: number };
-// A coupon row is one leg-group. TWO shapes seen live: `type:"SIMPLE"` carries ONE outcome directly on `outcome`
-// (group null) — the usual shape for cross-event CUSTOM specials; `type:"BET_BUILDER"` nests its outcomes under
-// `group.groups[].outcomes[]`. `odds` is that row's own (combined) price; the coupon's TOTAL is on prePackCouponBets.
-export type PrePackRow = {
-  id?: number;
-  eventId?: number;
-  type?: string;
-  odds?: { decimal?: number };
-  outcome?: PrePackOutcomeRef; // SIMPLE row: the single outcome (group is absent)
-  group?: { groups?: { outcomes?: PrePackOutcomeRef[] }[]; outcomes?: PrePackOutcomeRef[] };
-};
-export type PrePackCoupon = {
-  id: number;
-  status?: string;
-  prePackCouponRows?: PrePackRow[];
-  prePackCouponBets?: { odds?: { decimal?: number } }[]; // the actual bet = rows combined; carries the combined price
-  prePackCouponTags?: string[]; // ["AUTO"] | ["CUSTOM"]
-};
-export type PrePackResponse = { prePackCoupons: PrePackCoupon[]; betOffers: BetOffer[]; events: KEvent[] };
-
-// /prepackcoupon/eventgroup/{ids} — pre-built coupons for whole competition(s) (comma-separated group ids). One
-// cheap call returns a few hundred coupons across the group's imminent events, each self-labelled by `betOffers`.
-export async function prePackByGroups(groupIds: number[], lang: string = DEFAULT_LOCALE): Promise<PrePackResponse> {
-  const r = await getJson(`${BASE}/prepackcoupon/eventgroup/${groupIds.join("%2C")}?${qs(lang)}`);
-  return { prePackCoupons: r.prePackCoupons ?? [], betOffers: r.betOffers ?? [], events: r.events ?? [] };
-}

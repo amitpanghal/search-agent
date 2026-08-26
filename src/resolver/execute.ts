@@ -3,9 +3,10 @@
 // market decision. It consumes an ExecuteInput (resolved legs + the data they were resolved against) and
 // produces a ResponseEnvelope: one `results` card per event with a pick (its highlighted betoffers, each with the
 // single SELECTED outcome — theory §1, §4), plus a top-level `events[]` holding every referenced event block ONCE
-// (result events + combination-leg events, deduped by id). Events with no pick never appear — the grouping IS the
-// prune. A card joins its event via highlighted[].eventId; `additional` (related-market suggestions) is a flat,
-// query-scoped list capped at 3.
+// (result events + betslip-leg events, deduped by id). Events with no pick never appear — the grouping IS the
+// prune. A leg fully priced into the betslip drops its standalone result card (the combo card answers it). A card
+// joins its event via highlighted[].eventId; `additional` (related-market suggestions) is a flat, query-scoped
+// list capped at 3.
 //
 // odds / line are passed through RAW (integer millis, exactly as the feed sends them — 1800 = 1.80, -500 =
 // -0.5); formatting to decimals is the consumer's job. (SELECT still matches lines in decimals internally.)
@@ -56,7 +57,7 @@ export type EnvelopeBetOffer = {
 // by this id — so each event block is stored ONCE (never re-embedded per card).
 export type EnvelopeHighlighted = { eventId: number; betOffer: EnvelopeBetOffer; outcomes: EnvelopeOutcome[] };
 
-// One event block, stored once in the envelope's `events[]` (covers BOTH result events and combination-leg
+// One event block, stored once in the envelope's `events[]` (covers BOTH result events and betslip-leg
 // events). `state` is the coarse live state ("PREMATCH" | "LIVE" | "FINISHED"); the rest mirrors the feed event.
 export type ResponseEvent = {
   id: number;
@@ -74,16 +75,21 @@ export type ResponseEvent = {
 // A result card = one event's picked markets. The event itself lives in `events[]`; join via highlighted[].eventId.
 export type EnvelopeResult = { highlighted: EnvelopeHighlighted[] };
 
+// A leg's grounded subject — the frontend's tile identity (player tile / team tile). Deduped by id: one entry
+// (one tile) per entity even when it subjects several legs. Only CONFIDENT groundings appear (a tile navigates
+// to the entity's page, which needs the real id). Event tiles come from `events[]`, not here.
+export type EnvelopeSubject = { kind: "player" | "team"; id: number; name: string };
+
 export type ResponseEnvelope = {
   summary: string;
-  events: ResponseEvent[]; // every event referenced by a result OR a combination leg, stored once (deduped by id)
+  events: ResponseEvent[]; // every event referenced by a result OR a betslip leg, stored once (deduped by id)
+  subjects: EnvelopeSubject[]; // grounded leg subjects for tiles, deduped by id; orchestrator fills it
   results: EnvelopeResult[];
   legs: EnvelopeLeg[]; // "We understood" echo — one per selector in QUERY order (see EnvelopeLeg); orchestrator fills it
   additional: EnvelopeHighlighted[]; // query-scoped related-market suggestions, flat + globally capped at 3
   notes: string[];
   clarificationNeeded: string | null;
-  combinations?: Combination[]; // pre-configured combinations for this query, ranked + capped (Bet-builder Phase 1); omitted when none
-  betslip?: Combination; // the user's own resolved legs priced together (Bet-builder Phase 2); omitted when <2 combinable legs
+  betslip?: Combination; // the user's own resolved legs priced together; omitted when <2 combinable legs
   cost?: QueryCost; // per-query LLM token usage + Bedrock cost, attached by runPipeline (see cost.ts)
 };
 
@@ -186,6 +192,10 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
   for (const e of data.events) if (e.id != null) eventById.set(e.id, e);
   for (const b of data.betOffers) for (const o of b.outcomes ?? []) if (o.id != null) outcomeById.set(o.id, { o, b });
 
+  // Outcomes already priced INTO the betslip: a leg fully covered here is answered by the combo card, so its
+  // standalone result card is dropped (the combined odds IS its price). A partially covered leg keeps its card.
+  const comboIds = new Set((input.betslip?.legs ?? []).map((l) => l.outcomeId));
+
   // group resolved legs by EVENT (insertion order preserved). A leg becomes a RESULT only when it picked a
   // market AND select returned a concrete outcome — the prune falls out: an event with no pick never appears.
   const byEvent = new Map<number, { event: KEvent; highlighted: EnvelopeHighlighted[]; byBo: Map<number, { b: BetOffer; outs: EnvelopeOutcome[] }>; additional: EnvelopeHighlighted[]; addBos: Set<number> }>();
@@ -208,6 +218,9 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
     // Which outcomes are the query's PICK (flagged `selected`): a relational multi-fixture leg picks one per
     // fixture (`selectedIds`); every other leg picks the single `outcomeId`. A set so each is flagged in place.
     const selectedSet = new Set<number>(selection?.selectedIds?.length ? selection.selectedIds : selection?.outcomeId != null ? [selection.outcomeId] : []);
+    // Fully combined into the betslip -> no independent result card. Still counts as resolved (its answer is
+    // the combo card); its event block is re-attached after grouping (see the betslip-events loop below).
+    if (selectedSet.size && [...selectedSet].every((id) => comboIds.has(id))) { resolvedLegs++; continue; }
     const founds = ids.map((id) => outcomeById.get(id)).filter((x): x is { o: KOutcome; b: BetOffer } => x != null);
     if (!founds.length) {
       const who = selection?.subject ?? "that selection";
@@ -287,13 +300,18 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
 
   // One card per event with a pick (highlighted only — the event block lives in `events`). `additional` is now
   // query-scoped: flatten each event's related markets into one array (the round-robin above already capped the
-  // TOTAL at 3). `events` holds every result event, then any combination-leg event not already shown (deduped).
+  // TOTAL at 3). `events` holds every result event, then any betslip-leg event not already shown (a fully
+  // combined leg has no result card, but the frontend still needs its event block for the event tile).
   const groups = [...byEvent.values()];
   const results: EnvelopeResult[] = groups.map((g) => ({ highlighted: g.highlighted }));
   const additional: EnvelopeHighlighted[] = groups.flatMap((g) => g.additional);
   const events: ResponseEvent[] = groups.map((g) => toEventBlock(g.event));
   const shownIds = new Set(events.map((e) => e.id));
-  for (const e of input.combinationEvents ?? []) if (!shownIds.has(e.id)) { shownIds.add(e.id); events.push(toEventBlock(e)); }
+  for (const l of input.betslip?.legs ?? []) {
+    if (l.eventId == null || shownIds.has(l.eventId)) continue;
+    const e = eventById.get(l.eventId);
+    if (e) { shownIds.add(l.eventId); events.push(toEventBlock(e)); }
+  }
 
   // 2+ independent market LEGS are not a joint bet -> the same caveat the old union note carried. Count LEGS,
   // not highlighted entries: one over/under leg now spans several line-betoffers.
@@ -314,12 +332,12 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
   return {
     summary: "",
     events,
+    subjects: [], // filled by the orchestrator (it holds the grounded subjects); [] on execute-only callers/tests
     results,
     legs: [], // filled by the orchestrator (it holds the per-selector plan); [] on execute-only callers/tests
     additional,
     notes: [...new Set(notes)],
     clarificationNeeded,
-    ...(input.combinations?.length ? { combinations: input.combinations } : {}),
     ...(input.betslip ? { betslip: input.betslip } : {}),
   };
 }

@@ -134,6 +134,13 @@ export async function runLiveMenuGate(): Promise<GateResult> {
   const a3 = execute({ legs: [legExact("home team to win", "Full Time", { subject: "home" }), legExact("both teams to score", "Both Teams To Score", { dir: "yes" })], data: ex });
   const hl3 = a3.results[0]?.highlighted ?? [];
   check("execute: multi-leg -> 2 resolved (same event)", a3.results.length === 1 && hl3.length === 2 && hl3.every((h) => !!h.outcomes[0]));
+  // Legs fully priced into the betslip lose their standalone result card; the event block stays (for tiles),
+  // and no clarification fires (the legs ARE resolved — their answer is the combo card).
+  const l1 = legExact("home team to win", "Full Time", { subject: "home" });
+  const l2 = legExact("both teams to score", "Both Teams To Score", { dir: "yes" });
+  const slipLegs = [l1, l2].map((l) => ({ eventId: ex.events[0]!.id, market: l.pick.label!, outcome: "x", outcomeId: l.selection!.outcomeId! }));
+  const a4 = execute({ legs: [l1, l2], data: ex, betslip: { tag: "EXACT", odds: 2000, legs: slipLegs } });
+  check("execute: fully-combined legs -> no result cards, event kept", a4.results.length === 0 && a4.events.length === 1 && a4.clarificationNeeded == null);
 
   // ---- (E) SELECT by subjectId — the PREFERRED id-path (select.ts:46). (C) covers the name-path; this locks
   // the id-branch deterministically (no network/LLM) across the four cases it splits into: outright (one named

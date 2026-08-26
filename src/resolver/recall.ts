@@ -15,12 +15,10 @@ import {
   eventsByGroup,
   levelOf,
   batches,
-  prePackByGroups,
   type BetOffer,
   type KEvent,
   type KOutcome,
   type Level,
-  type PrePackResponse,
 } from "./offering-client";
 import { filterEventsByTime, hasWindow, applyFixturePick, resolveTimeWindow, type TimeWindow } from "./time-window";
 import type { ResolvedLegScope } from "./ground-scope";
@@ -154,7 +152,6 @@ export type RecallInput = {
   lang?: string; // Kambi locale (already mapped from plan.language) for the fetch's `lang`; absent -> en_GB. Only localizes labels; `market` stays fixed.
   maxFanoutEvents?: number;
   onlyMain?: boolean; // EVERY leg is the bare-event "main" market -> server-side onlyMain shrink (group/event only; the participant endpoint ignores it, so a per-leg client-side MAIN-tag filter covers that case downstream)
-  prepackGroupIds?: number[]; // competition group ids (one per leg's resolved competition) for the PARALLEL prepack-coupon fetch — never used for betoffer routing (Bet-builder Phase 1)
 };
 
 export type RecallResult = {
@@ -163,7 +160,6 @@ export type RecallResult = {
   data: { betOffers: BetOffer[]; events: KEvent[] };
   truncated: boolean;
   failed: boolean; // a group/participant fetch errored (degraded to empty via failedTask, never thrown)
-  prepacks?: PrePackResponse; // pre-configured combinations fetched in parallel (Bet-builder Phase 1); absent when no competition group / on fetch failure
 };
 
 // The betoffer `description` ("Winner", "Top 4", …) — the market's VARIANT, part of its identity (theory §4).
@@ -250,34 +246,19 @@ function fixtureHasAllTeams(e: KEvent, teamIds: number[]): boolean {
 
 // Build the BROAD RecallResult — NO narrowing (finalize is deleted): per-leg time/grain/co-occurrence narrowing
 // is scopeMenu's job now. The menu here is the broad menu; the orchestrator rebuilds a narrowed one per leg.
-function out(endpoint: RecallResult["endpoint"], betOffers: BetOffer[], events: KEvent[], truncated: boolean, failed = false, prepacks?: PrePackResponse): RecallResult {
-  return { endpoint, menu: buildMenu(betOffers), data: { betOffers, events }, truncated, failed, ...(prepacks ? { prepacks } : {}) };
+function out(endpoint: RecallResult["endpoint"], betOffers: BetOffer[], events: KEvent[], truncated: boolean, failed = false): RecallResult {
+  return { endpoint, menu: buildMenu(betOffers), data: { betOffers, events }, truncated, failed };
 }
 
 // RECALL: deterministic endpoint + ids -> the BROAD live data, via the fetch engine above (cap detection + group
 // fan-out). Endpoint by Model P — a named participant wins; else the competition group(s). No criterion `type=`
 // bound (market deferred), and NO time/grain/co-occurrence narrowing here — that is per-leg, in scopeMenu.
 export async function recall(input: RecallInput): Promise<RecallResult> {
-  // Bet-builder Phase 1: pre-configured combinations. When the query GROUNDED a competition, fetch its coupons in
-  // PARALLEL with the betoffer fetch (kicked off here, awaited at the return) so they never delay resolution.
-  const prepacksP: Promise<PrePackResponse | undefined> = input.prepackGroupIds?.length
-    ? prePackByGroups(input.prepackGroupIds, input.lang).catch(() => undefined)
-    : Promise.resolve(undefined);
-  // Fallback for a league-LESS query (no competition grounded, so prepackGroupIds empty): derive the group(s)
-  // from the resolved fixtures' own groupId and fetch coupons THEN — serial, but only in this case. This is the
-  // ACTIVE competition set (only groups with a fetched fixture), not every competition the entity is registered
-  // in. Any failure degrades to no coupons.
-  const prepacksFor = async (events: KEvent[]): Promise<PrePackResponse | undefined> => {
-    const primary = await prepacksP;
-    if (primary || input.prepackGroupIds?.length) return primary;
-    const groupIds = [...new Set(events.map((e) => e.groupId).filter((x): x is number => x != null))];
-    return groupIds.length ? prePackByGroups(groupIds, input.lang).catch(() => undefined) : undefined;
-  };
   const mainP = input.onlyMain ? { onlyMain: true } : {}; // all-main shrink; participant ignores it (filtered client-side downstream)
   // explicit fixtures -> the event endpoint (via the fan-out batcher)
   if (input.eventIds?.length) {
     const r = await fetchEventOffers(input.eventIds, { ...mainP, lang: input.lang });
-    return out("event", r.betOffers, r.events, r.truncated, false, await prepacksFor(r.events));
+    return out("event", r.betOffers, r.events, r.truncated, false);
   }
   // Model P: a named participant -> participant endpoint (even for competition-grain markets like the Golden Boot);
   // a bare-competition leg -> its group(s). A MIXED query needs BOTH, so build every task and run them together —
@@ -313,7 +294,7 @@ export async function recall(input: RecallInput): Promise<RecallResult> {
   }
   const events = [...evById.values()];
   const endpoint = input.participantIds?.length && input.groupIds?.length ? "mixed" : input.participantIds?.length ? "participant" : "group";
-  return out(endpoint, betOffers, events, results.some((r) => r.truncated), results.some((r) => r.failed), await prepacksFor(events));
+  return out(endpoint, betOffers, events, results.some((r) => r.truncated), results.some((r) => r.failed));
 }
 
 // scopeMenu — narrow the BROAD recall data to ONE leg's scope, then build that leg's menu (replaces finalize's

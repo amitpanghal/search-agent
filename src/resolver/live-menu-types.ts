@@ -7,7 +7,7 @@
 // never re-declared.
 
 import type { ResolvedScope } from "./ground-scope";
-import type { BetOfferResponse, KEvent } from "./offering-client";
+import type { BetOfferResponse } from "./offering-client";
 import type { Combination } from "./combinations";
 
 // Which entity cell a resolution/clarification belongs to (entity-only after the cut — the old "market:i" ref
@@ -115,7 +115,5 @@ export type ExecuteInput = {
   notes?: string[];        // caller-built notes (e.g. unresolved time — needs the per-leg phrase)
   truncated?: boolean;     // recall hit the 2000-betoffer cap / a capped group fan-out
   fetchFailed?: boolean;   // a group/participant fetch errored (degraded to empty, not thrown)
-  combinations?: Combination[]; // pre-configured combinations already ranked/capped for this query (Bet-builder Phase 1)
-  combinationEvents?: KEvent[]; // events referenced by a combination leg that are NOT among the shown results — for envelope enrichment
-  betslip?: Combination;        // the user's OWN resolved legs priced together as one betslip (Bet-builder Phase 2); omitted when <2 combinable legs
+  betslip?: Combination;   // the user's OWN resolved legs priced together as one betslip; omitted when <2 combinable legs
 };

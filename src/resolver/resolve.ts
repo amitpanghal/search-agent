@@ -17,8 +17,8 @@ import { recall, scopeMenu, marketLabelOf } from "./recall";
 import { filterBySubject } from "./filter";
 import { resolveMarkets } from "./resolve-market";
 import { select, type SelectSpec } from "./select";
-import { execute, type ResponseEnvelope } from "./execute";
-import { pickCombinations, buildBetslip } from "./combinations";
+import { execute, type ResponseEnvelope, type EnvelopeSubject } from "./execute";
+import { buildBetslip } from "./combinations";
 import { fold } from "./lexical";
 import { isMain, onDemandPricing, type BetOffer, type KEvent } from "./offering-client";
 import { usageStore, summarizeCost, type RawCall } from "./cost";
@@ -158,7 +158,7 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
   // grounding/fetch/LLM and ask the user to add one (canned message; no network spent).
   const incomplete = checkComplete(plan);
   if (incomplete) {
-    yield { stage: "done", envelope: withCost({ summary: "", events: [], results: [], legs: [], additional: [], notes: [], clarificationNeeded: incomplete.question }) };
+    yield { stage: "done", envelope: withCost({ summary: "", events: [], subjects: [], results: [], legs: [], additional: [], notes: [], clarificationNeeded: incomplete.question }) };
     return;
   }
 
@@ -168,13 +168,13 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
   if (fix.kind === "switch") plan.sport = fix.sport;
   else if (fix.kind === "clarify") {
     const names = fix.sports.map((s) => s.replace(/-/g, " ")).join(" or ");
-    yield { stage: "done", envelope: withCost({ summary: "", events: [], results: [], legs: [], additional: [], notes: [], clarificationNeeded: `That name matches more than one sport — did you mean ${names}? Add the sport or a league to your search.` }) };
+    yield { stage: "done", envelope: withCost({ summary: "", events: [], subjects: [], results: [], legs: [], additional: [], notes: [], clarificationNeeded: `That name matches more than one sport — did you mean ${names}? Add the sport or a league to your search.` }) };
     return;
   }
 
   if (plan.sport === "other" || !getSport(plan.sport)) {
     const what = plan.sport === "other" ? "that sport" : plan.sport;
-    yield { stage: "done", envelope: withCost({ summary: "", events: [], results: [], legs: [], additional: [], notes: [], clarificationNeeded: `We don't support ${what} yet. Try searching for another sport, or check back later as we continue adding more.` }) };
+    yield { stage: "done", envelope: withCost({ summary: "", events: [], subjects: [], results: [], legs: [], additional: [], notes: [], clarificationNeeded: `We don't support ${what} yet. Try searching for another sport, or check back later as we continue adding more.` }) };
     return;
   }
 
@@ -312,6 +312,7 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
 
   const legsOut: ResolvedLeg[] = [];
   const legsUnderstood: EnvelopeLeg[] = []; // "We understood" echo, one per selector in query order
+  const subjectsOut = new Map<number, EnvelopeSubject>(); // grounded leg subjects (tile identities), deduped by id
   for (let i = 0; i < plan.selectors.length; i++) {
     const sel = plan.selectors[i]!;
     const leg = settled.legs[i]!;
@@ -339,6 +340,11 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
       ...(sel.direction ? { dir: sel.direction } : {}),
       ...(pickByIdx[i]?.outcomeLabel ? { outcomeLabel: pickByIdx[i]!.outcomeLabel } : {}),
     };
+    // Tile identity: the leg's confidently-grounded named subject. One entry per entity across all legs.
+    if ((sel.subject.kind === "player" || sel.subject.kind === "team") && spec.subjectId != null && !subjectsOut.has(spec.subjectId)) {
+      const name = subjectName(leg, sel.subject);
+      if (name) subjectsOut.set(spec.subjectId, { kind: sel.subject.kind, id: spec.subjectId, name });
+    }
     // select one market's outcomes; event comes off the picked offers (per-leg home/away binds to the right match).
     const selectFor = (picked: BetOffer[]) =>
       select({ events: scoped.events, betOffers: picked }, spec, { home: eventOf(picked, scoped.events)?.homeName, away: eventOf(picked, scoped.events)?.awayName });
@@ -395,28 +401,12 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
     for (const b of scoped.offers) execOffers.add(b);
   }
 
-  // Bet-builder Phase 1: rank the recalled prepack coupons against THIS query's resolved picks. Collect the
-  // selected outcome ids, then — via the offers those outcomes came from — their betOffer + criterion ids (the
-  // ranking tiers: exact outcome -> same betoffer -> same market). scopeMenu already scoped the events shown.
-  const resolvedOutcomeIds = new Set<number>();
-  for (const l of legsOut) for (const id of l.selection?.selectedIds ?? (l.selection?.outcomeId != null ? [l.selection.outcomeId] : [])) resolvedOutcomeIds.add(id);
-  const resolvedBetofferIds = new Set<number>();
-  const resolvedCriterionIds = new Set<number>();
-  for (const b of execOffers) for (const o of b.outcomes ?? []) {
-    if (o.id == null || !resolvedOutcomeIds.has(o.id)) continue;
-    if (b.id != null) resolvedBetofferIds.add(b.id);
-    if (b.criterion?.id != null) resolvedCriterionIds.add(b.criterion.id);
-  }
-  const combinations = pickCombinations(r.prepacks, new Set(execEvents.keys()), resolvedOutcomeIds, resolvedBetofferIds, resolvedCriterionIds);
-  // Enrich: a kept combination may reference a game we're NOT otherwise showing (a cross-game coupon). Attach
-  // those events (from the prepack response, deduped, shown games excluded) so the frontend can render each leg.
-  const comboEventIds = new Set<number>();
-  for (const c of combinations) for (const l of c.legs) if (l.eventId != null) comboEventIds.add(l.eventId);
-  const combinationEvents = (r.prepacks?.events ?? []).filter((e) => comboEventIds.has(e.id) && !execEvents.has(e.id));
-
-  // Bet-builder Phase 2: price the user's OWN resolved legs together as one EXACT betslip (same-event legs via the
-  // correlated priceCombo endpoint, cross-event legs multiply). Same inputs pickCombinations used; omitted when <2 legs combine.
-  const betslip = await buildBetslip(legsOut, [...execOffers], [...execEvents.values()], onDemandPricing, recallInput.lang);
+  // Price the user's OWN resolved legs together as one EXACT betslip (same-event legs via the correlated
+  // priceCombo endpoint, cross-event legs multiply); omitted when <2 legs combine. Skipped on an all-main
+  // browse: the "picks" are our own main-market fan-out, not user selections, so combining them is noise
+  // (this also spares the onDemandPricing calls for same-event pick groups).
+  const noMarketBrowse = !!recallInput.onlyMain;
+  const betslip = noMarketBrowse ? undefined : await buildBetslip(legsOut, [...execOffers], [...execEvents.values()], onDemandPricing, recallInput.lang);
 
   // Query-level combined-odds bound ("only if the combined odds clear 2.0"). Checked ONCE against the priced
   // betslip, here rather than per leg — a per-selector bound deletes whichever leg it lands on (the Arsenal-at-1.2
@@ -438,11 +428,10 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
     notes: [...extraNotes],
     truncated: r.truncated,
     fetchFailed: r.failed,
-    combinations,
-    combinationEvents,
     ...(betslip ? { betslip } : {}),
   });
   envelope.legs = legsUnderstood; // the per-selector "We understood" echo (execute groups by event and loses order)
+  envelope.subjects = [...subjectsOut.values()]; // grounded leg subjects (tile identities), deduped by id
   emit({ kind: "stage", stage: "execute", out: envelope });
   yield { stage: "done", envelope: withCost(envelope) };
 }
