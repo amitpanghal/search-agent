@@ -25,7 +25,7 @@ import { usageStore, summarizeCost, type RawCall } from "./cost";
 import type { Subject, Line, LineRange } from "./schema";
 import { getSport } from "./sports";
 import { recoverSport } from "./recover-sport";
-import type { ResolvedLeg, MarketPick, EnvelopeLeg } from "./live-menu-types";
+import type { ResolvedLeg, MarketPick, EnvelopeLeg, Selection } from "./live-menu-types";
 import { emit } from "./trace";
 
 // FILTER subject — a NAMED entity narrows the menu to its markets; a relational role (home/away) or `event`
@@ -308,6 +308,16 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
     return events.find((e) => e.id === eid) ?? events[0];
   };
 
+  // Merge the events a selection's picked outcome(s) sit on into the subject's tile entry (one event per
+  // fixture on a multi-fixture leg; deduped across legs sharing the subject).
+  const addSubjectEvents = (entry: EnvelopeSubject | undefined, offers: BetOffer[], selection?: Selection) => {
+    if (!entry || !selection) return;
+    for (const id of selection.selectedIds ?? (selection.outcomeId != null ? [selection.outcomeId] : [])) {
+      const eid = offers.find((b) => b.outcomes?.some((o) => o.id === id))?.eventId;
+      if (eid != null && !entry.eventIds.includes(eid)) entry.eventIds.push(eid);
+    }
+  };
+
   yield { stage: "searching" };
 
   const legsOut: ResolvedLeg[] = [];
@@ -340,10 +350,15 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
       ...(sel.direction ? { dir: sel.direction } : {}),
       ...(pickByIdx[i]?.outcomeLabel ? { outcomeLabel: pickByIdx[i]!.outcomeLabel } : {}),
     };
-    // Tile identity: the leg's confidently-grounded named subject. One entry per entity across all legs.
-    if ((sel.subject.kind === "player" || sel.subject.kind === "team") && spec.subjectId != null && !subjectsOut.has(spec.subjectId)) {
-      const name = subjectName(leg, sel.subject);
-      if (name) subjectsOut.set(spec.subjectId, { kind: sel.subject.kind, id: spec.subjectId, name });
+    // Tile identity: the leg's confidently-grounded named subject. One entry per entity across all legs;
+    // eventIds are merged in below, once this leg's selection lands on concrete outcomes.
+    let subjEntry: EnvelopeSubject | undefined;
+    if ((sel.subject.kind === "player" || sel.subject.kind === "team") && spec.subjectId != null) {
+      subjEntry = subjectsOut.get(spec.subjectId);
+      if (!subjEntry) {
+        const name = subjectName(leg, sel.subject);
+        if (name) subjectsOut.set(spec.subjectId, subjEntry = { kind: sel.subject.kind, id: spec.subjectId, name, eventIds: [] });
+      }
     }
     // select one market's outcomes; event comes off the picked offers (per-leg home/away binds to the right match).
     const selectFor = (picked: BetOffer[]) =>
@@ -364,6 +379,7 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
       for (const label of new Set(mainOffers.map(marketLabelOf))) {
         const selection = selectFor(offersForPick(mainOffers, label));
         if (selection && !selection.fallback) matched = true;
+        addSubjectEvents(subjEntry, mainOffers, selection);
         legsOut.push({ phrase: label, pick: { label, match: "exact" }, ...(selection ? { selection } : {}), ...(spec.subjectId != null ? { subjectId: spec.subjectId } : {}) });
       }
       legsUnderstood.push({ ...under, matched });
@@ -372,6 +388,7 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
 
     const pick = pickByIdx[i]!;
     const selection = pick.match !== "none" ? selectFor(offersForPick(fr.offers, pick.label)) : undefined;
+    addSubjectEvents(subjEntry, fr.offers, selection);
     // The stated line isn't always on the ladder — select flags the NEAREST offered rung (a preference, never
     // a drop). Say so, or "texans -3" answered with -1.5 reads as a wrong answer instead of a substitute.
     // Bands are exempt: "2+" resolving to "over 1.5" IS the exact conversion, not a substitute.

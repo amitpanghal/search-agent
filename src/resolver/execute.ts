@@ -77,8 +77,10 @@ export type EnvelopeResult = { highlighted: EnvelopeHighlighted[] };
 
 // A leg's grounded subject — the frontend's tile identity (player tile / team tile). Deduped by id: one entry
 // (one tile) per entity even when it subjects several legs. Only CONFIDENT groundings appear (a tile navigates
-// to the entity's page, which needs the real id). Event tiles come from `events[]`, not here.
-export type EnvelopeSubject = { kind: "player" | "team"; id: number; name: string };
+// to the entity's page, which needs the real id). Event tiles come from `events[]`, not here. `eventIds` joins
+// into `events[]`: every event the subject's resolved pick(s) landed on (one per fixture for a multi-fixture
+// leg, merged across legs); empty when the subject's leg(s) resolved no outcome.
+export type EnvelopeSubject = { kind: "player" | "team"; id: number; name: string; eventIds: number[] };
 
 export type ResponseEnvelope = {
   summary: string;
