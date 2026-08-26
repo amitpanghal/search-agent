@@ -10,7 +10,9 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { resolveTimeWindow, eventMatchesTime, applyFixturePick, filterEventsByTime } from "./time-window";
 import { fold, contentTokens, lc, stripSettle } from "./lexical";
-import type { KEvent } from "./offering-client";
+import type { BetOffer, KEvent } from "./offering-client";
+import { buildBetslip } from "./combinations";
+import type { ResolvedLeg } from "./live-menu-types";
 import { queryNamesSport } from "./resolve-entities";
 
 const ev = (id: number, start?: string, state?: string): KEvent => ({ id, ...(start && { start }), ...(state && { state }) });
@@ -199,4 +201,32 @@ test("pair join: two weak partner mentions both gain the joint pair candidate", 
     assert.ok(t.candidates.some((c) => joint.test(c.name)), `"${t.text}" must carry the joint pair candidate`);
     assert.notEqual(t.tier, "none");
   }
+});
+
+// ---- betslip subset search: ONE biggest combo, earliest-legs tie-break ----------------------------------
+// 4 picks on one fixture; the fake priceCombo decides combinability, so no network and the call pattern is
+// observable (round 1 = full set, round 2 = the four triples in parallel, pairs never reached).
+const slipFixture = () => {
+  const offers = [1, 2, 3, 4].map((id) => ({
+    id: 10 + id, eventId: 100, criterion: { id, englishLabel: `M${id}` },
+    outcomes: [{ id, odds: 2000, englishLabel: `O${id}` }],
+  })) as BetOffer[];
+  const legs: ResolvedLeg[] = [1, 2, 3, 4].map((id) => ({ phrase: `leg${id}`, pick: { label: `M${id}`, match: "exact" }, selection: { outcomeId: id } }));
+  return { legs, offers, events: [{ id: 100, tags: ["MATCH"] }] as KEvent[] };
+};
+
+test("betslip: one toxic leg falls out, the biggest combo prices in 2 rounds", async () => {
+  const { legs, offers, events } = slipFixture();
+  const calls: number[][] = [];
+  const slip = await buildBetslip(legs, offers, events, async (_e, ids) => { calls.push(ids); return ids.includes(4) ? null : 15000; });
+  assert.deepEqual(slip?.legs.map((l) => l.outcomeId), [1, 2, 3]); // pen-style leg 4 excluded, not the whole group
+  assert.equal(slip?.odds, 15000);
+  assert.equal(calls.length, 5); // full set + the 4 triples; pairs never tried
+});
+
+test("betslip tie-break: among same-size combinable subsets, keep the earliest-mentioned legs", async () => {
+  const { legs, offers, events } = slipFixture();
+  // legs 1 and 2 conflict with EACH OTHER; every set avoiding that pair prices. [1,3,4] must beat [2,3,4].
+  const slip = await buildBetslip(legs, offers, events, async (_e, ids) => (ids.includes(1) && ids.includes(2) ? null : 12000));
+  assert.deepEqual(slip?.legs.map((l) => l.outcomeId), [1, 3, 4]); // drops the later-mentioned conflicting leg
 });

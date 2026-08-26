@@ -28,8 +28,37 @@ export type PriceCombo = (eventId: number, outcomeIds: number[], lang?: string) 
 // EXACT betslip — price the user's OWN resolved legs together. Fixture-level picks only
 // (competition/outright picks have no match event to price against). Same-event ≥2-pick groups are priced by the
 // feed's correlated `priceCombo` (their combined odds is NOT the product); single-pick events and cross-event legs
-// multiply. A same-event group the feed won't combine (priceCombo -> null) is dropped whole; <2 surviving legs ->
-// no betslip. Legs keep query order and carry `outcomeId` so the frontend can show what's in vs out. RAW millis.
+// multiply. A same-event group the feed refuses whole is retried on its subsets (largest first — see
+// priceLargest), so one toxic leg no longer kills the group: it falls out and keeps its independent result card.
+// <2 surviving legs -> no betslip. Legs keep query order and carry `outcomeId` so the frontend can show what's
+// in vs out. RAW millis.
+
+// k-subsets of arr in lexicographic index order — the tie-break: among same-size subsets, the one keeping the
+// earliest-mentioned legs is generated (and therefore picked) first.
+const subsetsOf = (arr: number[], k: number): number[][] => {
+  const out: number[][] = [];
+  const rec = (start: number, cur: number[]) => {
+    if (cur.length === k) { out.push([...cur]); return; }
+    for (let i = start; i <= arr.length - (k - cur.length); i++) { cur.push(arr[i]!); rec(i + 1, cur); cur.pop(); }
+  };
+  rec(0, []);
+  return out;
+};
+
+// The LARGEST combinable subset of one same-event group: try all ids together (1 call — the common case), then
+// on refusal every subset one size smaller IN PARALLEL, stopping at the first size where anything prices.
+// Combinability is monotone (a failing set never combines by adding legs), so top-down never misses a bigger win.
+// ponytail: capped at 3 rounds — a 5-leg group where no triple combines returns null (pairs never tested).
+async function priceLargest(eventId: number, ids: number[], priceCombo: PriceCombo, lang?: string): Promise<{ ids: number[]; price: number } | null> {
+  for (let size = ids.length, round = 0; size >= 2 && round < 3; size--, round++) {
+    const combos = subsetsOf(ids, size);
+    const prices = await Promise.all(combos.map((c) => priceCombo(eventId, c, lang)));
+    const k = prices.findIndex((p) => p != null);
+    if (k >= 0) return { ids: combos[k]!, price: prices[k]! };
+  }
+  return null;
+}
+
 export async function buildBetslip(
   legs: ResolvedLeg[],
   offers: BetOffer[],
@@ -57,20 +86,22 @@ export async function buildBetslip(
     }
   }
 
-  // Price each event group: same-event ≥2 -> correlated API (one round-trip each, all in parallel); single -> the
-  // outcome's own odds. A null price (not combinable / transient) drops that whole group.
+  // Price each event group (all groups in parallel): same-event ≥2 -> the largest combinable subset via the
+  // correlated API (priceLargest); single -> the outcome's own odds. A null (nothing ≥2 combines / transient)
+  // drops that group; legs outside the priced subset fall back to independent result cards.
   const groups = [...byEvent.entries()];
-  const prices = await Promise.all(groups.map(([eid, ids]) =>
-    ids.length >= 2 ? priceCombo(eid, ids, lang) : Promise.resolve(byOutcome.get(ids[0]!)?.o.odds ?? null)));
+  const priced = await Promise.all(groups.map(([eid, ids]) =>
+    ids.length >= 2
+      ? priceLargest(eid, ids, priceCombo, lang)
+      : Promise.resolve(byOutcome.get(ids[0]!)?.o.odds != null ? { ids, price: byOutcome.get(ids[0]!)!.o.odds! } : null)));
 
   const survivors = new Set<number>();
   let product = 1;
-  groups.forEach(([, ids], k) => {
-    const price = prices[k];
-    if (price == null) return; // dropped group
-    product *= price / 1000;
-    for (const id of ids) survivors.add(id);
-  });
+  for (const p of priced) {
+    if (p == null) continue; // dropped group
+    product *= p.price / 1000;
+    for (const id of p.ids) survivors.add(id);
+  }
 
   const outLegs: CombinationLeg[] = [];
   for (const l of legs) {
