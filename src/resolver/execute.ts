@@ -200,7 +200,7 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
 
   // group resolved legs by EVENT (insertion order preserved). A leg becomes a RESULT only when it picked a
   // market AND select returned a concrete outcome — the prune falls out: an event with no pick never appears.
-  const byEvent = new Map<number, { event: KEvent; highlighted: EnvelopeHighlighted[]; byBo: Map<number, { b: BetOffer; outs: EnvelopeOutcome[] }>; additional: EnvelopeHighlighted[]; addBos: Set<number> }>();
+  const byEvent = new Map<number, { event: KEvent; highlighted: EnvelopeHighlighted[]; byBo: Map<number, { b: BetOffer; outs: EnvelopeOutcome[] }> }>();
   const notes: string[] = [...(input.notes ?? [])]; // caller-built notes (e.g. unresolved time) ride along
   const noPick: string[] = []; // clarify sentences for legs with no pick (no-fixture vs no-market)
   let resolvedLegs = 0; // legs that produced ≥1 outcome (drives the "independent markets" caveat — count LEGS)
@@ -220,39 +220,41 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
     // Which outcomes are the query's PICK (flagged `selected`): a relational multi-fixture leg picks one per
     // fixture (`selectedIds`); every other leg picks the single `outcomeId`. A set so each is flagged in place.
     const selectedSet = new Set<number>(selection?.selectedIds?.length ? selection.selectedIds : selection?.outcomeId != null ? [selection.outcomeId] : []);
-    // Fully combined into the betslip -> no independent result card. Still counts as resolved (its answer is
-    // the combo card); its event block is re-attached after grouping (see the betslip-events loop below).
-    if (selectedSet.size && [...selectedSet].every((id) => comboIds.has(id))) { resolvedLegs++; continue; }
+    // Fully combined into the betslip -> no independent result card (its answer is the combo card; its event
+    // block is re-attached after grouping). Still resolved, and its related suggestions are still queued below.
+    const combined = selectedSet.size > 0 && [...selectedSet].every((id) => comboIds.has(id));
     const founds = ids.map((id) => outcomeById.get(id)).filter((x): x is { o: KOutcome; b: BetOffer } => x != null);
-    if (!founds.length) {
-      const who = selection?.subject ?? "that selection";
-      if (selection?.fallback === "subject-absent") notes.push(`${who} isn't priced in the "${phrase}" market. Try another market or choose a different subject.`);
-      else if (selection?.fallback === "line-absent") notes.push(`That line isn't available for "${phrase}". It may not be offered for this event or market.`);
-      else if (selection?.fallback === "odds-absent") notes.push(`No outcome is available in that price range for "${phrase}". Try a different price range or market.`);
-      else notes.push(`We couldn't find a settling outcome for "${phrase}". The market may settle differently than expected.`);
-      continue;
-    }
-    // A single leg's pool can span MULTIPLE fixtures (a "main" market like Match Result over the next N
-    // events). Group each outcome under ITS OWN betoffer's event — not the selected outcome's — else every
-    // fixture's offers collapse into one event block. Different lines are different betoffers; the query's
-    // match is flagged wherever it lands.
-    let placed = 0;
-    for (const f of founds) {
-      const e = f.b.eventId != null ? eventById.get(f.b.eventId) : undefined;
-      if (!e) continue;
-      let g = byEvent.get(e.id);
-      if (!g) byEvent.set(e.id, (g = { event: e, highlighted: [], byBo: new Map(), additional: [], addBos: new Set() }));
-      let grp = g.byBo.get(f.b.id ?? 0);
-      if (!grp) {
-        g.byBo.set(f.b.id ?? 0, (grp = { b: f.b, outs: [] }));
-        g.highlighted.push({ eventId: e.id, betOffer: toBetOffer(f.b), outcomes: grp.outs });
+    if (!combined) {
+      if (!founds.length) {
+        const who = selection?.subject ?? "that selection";
+        if (selection?.fallback === "subject-absent") notes.push(`${who} isn't priced in the "${phrase}" market. Try another market or choose a different subject.`);
+        else if (selection?.fallback === "line-absent") notes.push(`That line isn't available for "${phrase}". It may not be offered for this event or market.`);
+        else if (selection?.fallback === "odds-absent") notes.push(`No outcome is available in that price range for "${phrase}". Try a different price range or market.`);
+        else notes.push(`We couldn't find a settling outcome for "${phrase}". The market may settle differently than expected.`);
+        continue;
       }
-      grp.outs.push({ ...toOutcome(f.o), ...(f.o.id != null && selectedSet.has(f.o.id) ? { selected: true } : {}) });
-      placed++;
-    }
-    if (!placed) {
-      notes.push(`The selected outcome for "${phrase}" isn't linked to a live event. It may no longer be available or isn't included in the current live data.`);
-      continue;
+      // A single leg's pool can span MULTIPLE fixtures (a "main" market like Match Result over the next N
+      // events). Group each outcome under ITS OWN betoffer's event — not the selected outcome's — else every
+      // fixture's offers collapse into one event block. Different lines are different betoffers; the query's
+      // match is flagged wherever it lands.
+      let placed = 0;
+      for (const f of founds) {
+        const e = f.b.eventId != null ? eventById.get(f.b.eventId) : undefined;
+        if (!e) continue;
+        let g = byEvent.get(e.id);
+        if (!g) byEvent.set(e.id, (g = { event: e, highlighted: [], byBo: new Map() }));
+        let grp = g.byBo.get(f.b.id ?? 0);
+        if (!grp) {
+          g.byBo.set(f.b.id ?? 0, (grp = { b: f.b, outs: [] }));
+          g.highlighted.push({ eventId: e.id, betOffer: toBetOffer(f.b), outcomes: grp.outs });
+        }
+        grp.outs.push({ ...toOutcome(f.o), ...(f.o.id != null && selectedSet.has(f.o.id) ? { selected: true } : {}) });
+        placed++;
+      }
+      if (!placed) {
+        notes.push(`The selected outcome for "${phrase}" isn't linked to a live event. It may no longer be available or isn't included in the current live data.`);
+        continue;
+      }
     }
     resolvedLegs += 1;
 
@@ -263,9 +265,29 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
     }
   }
 
+  // One card per event with a pick (highlighted only — the event block lives in `events`). Build `events`
+  // BEFORE the suggestion round-robin: it holds every result event plus any betslip-leg event not already shown
+  // (a fully combined leg has no result card, but the frontend still needs its event block for the event tile),
+  // and suggestions may only reference events that ship.
+  const groups = [...byEvent.values()];
+  const results: EnvelopeResult[] = groups.map((g) => ({ highlighted: g.highlighted }));
+  const events: ResponseEvent[] = groups.map((g) => toEventBlock(g.event));
+  const shownIds = new Set(events.map((e) => e.id));
+  for (const l of input.betslip?.legs ?? []) {
+    if (l.eventId == null || shownIds.has(l.eventId)) continue;
+    const e = eventById.get(l.eventId);
+    if (e) { shownIds.add(l.eventId); events.push(toEventBlock(e)); }
+  }
+
   // Round-robin across legs, rank by rank, until the global related-market budget (3) is spent.
-  // Guarantees >=1 per leg (best-effort) while keeping the total cap hard.
+  // Guarantees >=1 per leg (best-effort) while keeping the total cap hard. Rows attach to any SHOWN event —
+  // result card or betslip-leg — so suggestions survive a fully-combined query. Betoffers already highlighted
+  // in a card or priced into the betslip are never re-suggested.
+  const additional: EnvelopeHighlighted[] = [];
   if (pendingRelated.length) {
+    const usedBos = new Set<number>();
+    for (const g of groups) for (const boId of g.byBo.keys()) usedBos.add(boId);
+    for (const id of comboIds) { const b = outcomeById.get(id)?.b; if (b?.id != null) usedBos.add(b.id); }
     let relBudget = 3;
     const maxRank = Math.max(...pendingRelated.map(p => p.related.length));
     outer: for (let rank = 0; rank < maxRank; rank++) {
@@ -286,33 +308,17 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
           // per player pairing per event, so decrementing once per label let a single label ship dozens of rows
           // under a documented cap of 3.
           if (relBudget <= 0) break;
-          const g = b.eventId != null ? byEvent.get(b.eventId) : undefined;
-          if (!g) continue;
+          if (b.eventId == null || !shownIds.has(b.eventId)) continue;
           const boId = b.id ?? 0;
-          if (g.byBo.has(boId) || g.addBos.has(boId)) continue;
+          if (usedBos.has(boId)) continue;
           const outs = trimRelatedOutcomes(b.outcomes ?? [], subj);
           if (outs == null) continue; // participant-keyed market that doesn't price the subject -> off-topic, drop
-          g.addBos.add(boId);
-          g.additional.push({ eventId: g.event.id, betOffer: toBetOffer(b), outcomes: outs.map(toOutcome) });
+          usedBos.add(boId);
+          additional.push({ eventId: b.eventId, betOffer: toBetOffer(b), outcomes: outs.map(toOutcome) });
           relBudget--;
         }
       }
     }
-  }
-
-  // One card per event with a pick (highlighted only — the event block lives in `events`). `additional` is now
-  // query-scoped: flatten each event's related markets into one array (the round-robin above already capped the
-  // TOTAL at 3). `events` holds every result event, then any betslip-leg event not already shown (a fully
-  // combined leg has no result card, but the frontend still needs its event block for the event tile).
-  const groups = [...byEvent.values()];
-  const results: EnvelopeResult[] = groups.map((g) => ({ highlighted: g.highlighted }));
-  const additional: EnvelopeHighlighted[] = groups.flatMap((g) => g.additional);
-  const events: ResponseEvent[] = groups.map((g) => toEventBlock(g.event));
-  const shownIds = new Set(events.map((e) => e.id));
-  for (const l of input.betslip?.legs ?? []) {
-    if (l.eventId == null || shownIds.has(l.eventId)) continue;
-    const e = eventById.get(l.eventId);
-    if (e) { shownIds.add(l.eventId); events.push(toEventBlock(e)); }
   }
 
   // 2+ independent market LEGS are not a joint bet -> the same caveat the old union note carried. Count LEGS,
