@@ -116,14 +116,17 @@ export async function buildBetslip(
   // Price the assigned groups (all in parallel): ≥2 picks -> the largest combinable subset via the correlated
   // API (priceLargest); single -> the outcome's own odds; groups multiply. A group where NOTHING prices bans
   // that event and re-assigns its legs to their remaining fixtures next round; legs merely outside a priced
-  // subset fall out for good (keep their result cards).
+  // subset fall out for good (keep their result cards). A re-assigned leg landing on an ALREADY-PRICED event
+  // MERGES into that event's group and the whole group re-prices correlated: one event holds ONE price, never
+  // two that multiply (a same-event joint price is not the product of the singles) — so the multiply happens
+  // only at the end, from each event's FINAL group. A refused merge keeps the group that already priced.
   // ponytail: 3 reassign rounds — a chain of 3 fully-refused events leaves the tail legs un-combined.
-  const survivors = new Set<number>();
-  let product = 1;
+  const pricedAt = new Map<number, { ids: number[]; price: number }>(); // eventId -> its ONE priced group
   const banned = new Set<number>();
   let pending = new Set(legPicks.map((_, i) => i));
   for (let round = 0; round < 3 && pending.size; round++) {
-    const groups = assign(pending, banned);
+    const groups = assign(pending, banned).map(([eid, ids]): [number, number[]] =>
+      [eid, [...(pricedAt.get(eid)?.ids ?? []), ...ids].sort((a, b) => legOf(a) - legOf(b))]);
     const priced = await Promise.all(groups.map(([eid, ids]) =>
       ids.length >= 2
         ? priceLargest(eid, ids, priceCombo, lang)
@@ -131,11 +134,19 @@ export async function buildBetslip(
     pending = new Set();
     groups.forEach(([eid, ids], i) => {
       const p = priced[i];
-      if (p == null) { banned.add(eid); for (const id of ids) pending.add(legOf(id)); return; }
-      product *= p.price / 1000;
-      for (const id of p.ids) survivors.add(id);
+      if (p == null) { // a refused MERGE keeps the group that already priced; only the newcomers look elsewhere
+        banned.add(eid);
+        const kept = pricedAt.get(eid)?.ids ?? [];
+        for (const id of ids) if (!kept.includes(id)) pending.add(legOf(id));
+        return;
+      }
+      pricedAt.set(eid, p);
     });
   }
+
+  const survivors = new Set<number>();
+  let product = 1;
+  for (const { ids, price } of pricedAt.values()) { product *= price / 1000; for (const id of ids) survivors.add(id); }
 
   const outLegs: CombinationLeg[] = [];
   for (const l of legs) {

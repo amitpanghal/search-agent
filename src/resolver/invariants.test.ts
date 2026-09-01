@@ -270,6 +270,32 @@ test("betslip: a refused shared event re-assigns its legs — rivals who meet ne
   assert.equal(slip?.odds, 9999);
 });
 
+test("betslip: a leg re-assigned onto an already-priced event re-prices correlated, never multiplies", async () => {
+  // Leg A fans out over both fixtures; B is ev100-only, C is ev200-only. Event 100 (soonest, wins the tie,
+  // takes A+B) refuses whole, so A re-assigns to ev200 — where C already priced as a single. The two picks now
+  // share an event: they must go back through the correlated API, never multiply as two independent singles.
+  const offers = [
+    { id: 11, eventId: 100, criterion: { id: 1, englishLabel: "Full Time" }, outcomes: [{ id: 1, odds: 1200 }] },
+    { id: 12, eventId: 200, criterion: { id: 1, englishLabel: "Full Time" }, outcomes: [{ id: 2, odds: 1500 }] },
+    { id: 13, eventId: 100, criterion: { id: 2, englishLabel: "To Score" }, outcomes: [{ id: 3, odds: 1600 }] },
+    { id: 14, eventId: 200, criterion: { id: 3, englishLabel: "Corners" }, outcomes: [{ id: 4, odds: 1700 }] },
+  ] as BetOffer[];
+  const legs: ResolvedLeg[] = [
+    { phrase: "A", pick: { label: "Full Time", match: "exact" }, selection: { outcomeId: 1, selectedIds: [1, 2] } },
+    { phrase: "B", pick: { label: "To Score", match: "exact" }, selection: { outcomeId: 3 } },
+    { phrase: "C", pick: { label: "Corners", match: "exact" }, selection: { outcomeId: 4 } },
+  ];
+  const events = [
+    { id: 100, tags: ["MATCH"], start: "2026-09-05T14:00:00Z" },
+    { id: 200, tags: ["MATCH"], start: "2026-09-08T19:00:00Z" },
+  ] as KEvent[];
+  const calls: [number, number[]][] = [];
+  const slip = await buildBetslip(legs, offers, events, async (e, ids) => { calls.push([e, ids]); return e === 100 ? null : 9999; });
+  assert.deepEqual(calls, [[100, [1, 3]], [200, [2, 4]]]); // the merged ev200 pair IS re-priced correlated
+  assert.equal(slip?.odds, 9999); // the joint price, never 1.5 × 1.7 = 2550
+  assert.deepEqual(slip?.legs.map((l) => [l.eventId, l.outcomeId]), [[200, 2], [200, 4]]);
+});
+
 test("betslip: legs on disjoint events multiply as a genuine cross-event double", async () => {
   const offers = [
     { id: 11, eventId: 100, criterion: { id: 1, englishLabel: "Full Time" }, outcomes: [{ id: 1, odds: 2000 }] },
@@ -320,4 +346,22 @@ test("select: 'not scoring' on an anonymous team-total ladder picks Under 0.5, n
   assert.equal(sel.fallback, undefined);
   assert.equal(sel.line, 0.5);
   assert.equal(sel.outcomeId, 12);
+});
+
+test("select: zero-of-the-stat needs the real 0.5 rung — a ladder starting higher degrades honestly", () => {
+  // Under 8.5 PAYS on eight corners — a different bet from "no corners". No 0.5 rung -> honest absent,
+  // never the nearest rung shipped as a confident pick. Same for "yes": Over 8.5 is not "to score".
+  const ou = (id: number, line: number): BetOffer => ({
+    id, eventId: 9, betOfferType: { id: 6 }, criterion: { label: "Total Corners" },
+    outcomes: [
+      { id: id * 10 + 1, type: "OT_OVER", line },
+      { id: id * 10 + 2, type: "OT_UNDER", line },
+    ],
+  }) as unknown as BetOffer;
+  const slice = { events: [{ id: 9 }] as KEvent[], betOffers: [ou(1, 8500), ou(2, 9500), ou(3, 10500)] };
+  for (const dir of ["no", "yes"] as const) {
+    const sel = select(slice, { dir });
+    assert.equal(sel.outcomeId, undefined, `dir=${dir} must not pick a far rung`);
+    assert.ok(sel.fallback, `dir=${dir} must degrade honestly`);
+  }
 });

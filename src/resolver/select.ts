@@ -378,15 +378,16 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
     const flt = dir ? pool.filter(({ o }) => dirOf(o) === dir) : pool;
     if (flt[0]) return withPool(flt[0].o);
     // "no <stat>" on an over/under ladder: zero-of-the-stat IS the 0.5 boundary — "not scoring" = Under 0.5,
-    // an owner-bound "to score" (yes) = Over 0.5. Exact 0.5 rung first, else that side's nearest (honest
-    // degrade, same as the line branch). Only reached when no literal Yes/No outcome matched above.
+    // an owner-bound "to score" (yes) = Over 0.5. EXACTLY that rung, never a nearest: on an 8.5/9.5/10.5
+    // corners ladder the nearest rung turns "no corners" into Under 8.5, which PAYS on eight corners, and
+    // withPool ships it with no note or fallback flag to admit the swap. Not even the 1.5 neighbour — for
+    // "no" it is an easier bet at different odds, and its "yes" mirror (Over 1.5) is strictly HARDER than
+    // "to score". No 0.5 rung -> fall through to the honest absent below. Only reached when no literal
+    // Yes/No outcome matched above. ponytail: allow 1.5 for "no" only if the envelope gains a swap note.
     if (dir === "no" || dir === "yes") {
       const side = dir === "no" ? "under" : "over";
-      const rungs = pool.filter(({ o }) => dirOf(o) === side && lineOf(o) != null);
-      const zero =
-        rungs.find(({ o }) => lineOf(o) === 0.5) ??
-        rungs.sort((a, b) => Math.abs(lineOf(a.o)! - 0.5) - Math.abs(lineOf(b.o)! - 0.5))[0];
-      if (zero) return withPool(zero.o, lineOf(zero.o)!);
+      const zero = pool.find(({ o }) => dirOf(o) === side && lineOf(o) === 0.5);
+      if (zero) return withPool(zero.o, 0.5);
     }
     const directional = pool.some(({ o }) => dirOf(o) != null);
     if (!directional && spec.dir !== "no" && pool[0]) {
