@@ -4,7 +4,7 @@ description: >-
   The per-sport entity catalogs in catalogData/ — how they are built (`npm run catalogs`, the fetch → normalize
   → build-scope-index chain), what a scope-index holds (groups/branches/teams/players — entities only, never
   markets), the hand-maintained tuning in sports.ts SPORT_OVERRIDES (individual sports, national teams, tour
-  feeds, participantsFrom:"betoffer"), the curated scope-aliases files, and the daily GitHub refresh. Use when a
+  feeds, participantsFrom:"betoffer"), the curated scope-aliases files, and the local-only refresh. Use when a
   sport fails to ground, a team/player/competition is missing or wrong, adding or re-tuning a sport, editing
   aliases, or touching build-catalogs.ts / fetch-participants.ts / build-scope-index.ts / sports.ts.
 ---
@@ -22,7 +22,7 @@ to build a catalog silently drops the sport.
 ## Building — free, feed-only (no LLM)
 
 ```bash
-npm run catalogs                 # every top-level sport in the offering tree (the daily job)
+npm run catalogs                 # every top-level sport in the offering tree
 npm run catalogs -- baseball     # one sport; reuses the kept .catalog-build/groups.json
 npm run catalogs -- --fresh      # force a fresh tree first
 ```
@@ -59,9 +59,9 @@ forms to catalog names. Discipline: add an alias only to bridge a gap the lexica
 cannot cross (lexically disjoint, e.g. an acronym) — **never** to patch a tuning miss. The table growing is
 a smell.
 
-## Daily refresh
+## Refresh
 
-`.github/workflows/refresh-catalogs.yml` runs `npm run catalogs` at 06:00 UTC, commits
-`chore(catalog): daily refresh` to main (Render auto-deploys). No secrets — the feed is public. Trigger by
-hand from the Actions tab (`workflow_dispatch`). Catalogs go stale against the live feed between refreshes;
-a "missing" brand-new competition may just predate today's run.
+Refresh is local-only: run `npm run catalogs` and commit the result (Render auto-deploys from main). The
+feed API is behind a proxy, so CI/GitHub Actions cannot reach it — there is no automated refresh. Catalogs
+go stale against the live feed between refreshes; a "missing" brand-new competition may just predate the
+last run.

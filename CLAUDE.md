@@ -92,4 +92,5 @@ documentation — read the file top before changing it.
 ## Setup
 
 Copy `.env.example` to `.env` and fill in the AWS Bedrock credentials. Node ≥ 20. Deploys to Render via
-`render.yaml`; a GitHub Action rebuilds the catalogs daily and commits them.
+`render.yaml`. Catalogs are refreshed locally with `npm run catalogs` and committed — the feed API sits
+behind a proxy, so CI can't reach it.

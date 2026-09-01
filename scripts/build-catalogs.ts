@@ -2,7 +2,7 @@
 // catalogData/<slug>-scope-index.json. Per-sport intermediates land in .catalog-build/ and are
 // deleted after that sport builds; groups.json is kept, so a single-sport rebuild can reuse it.
 //
-//   npx tsx scripts/build-catalogs.ts            → every sport in the tree (the daily job)
+//   npx tsx scripts/build-catalogs.ts            → every sport in the tree
 //   npx tsx scripts/build-catalogs.ts baseball   → just one (reuses the kept groups.json)
 //   npx tsx scripts/build-catalogs.ts --fresh    → force a fresh groups.json first
 //
