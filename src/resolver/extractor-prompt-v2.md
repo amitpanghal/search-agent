@@ -145,10 +145,9 @@ subject), and a **bound** on the fixture's posted line (§4).
 
 ## 6. Prices
 
-- **`odds`** `{ min?, max? }` — a price bound: a bare number, one with "priced / odds / at / pays", or a
-  number attached to a price-ranked competitor (favourite / outsider / shortest / longest — the same
-  words as `odds_sort`): "priced above 1.80" → `{ min: 1.80 }`; "between 5.0 and 15.0" →
-  `{ min: 5.0, max: 15.0 }`; "the favourite is under 1.5" → `{ max: 1.5 }` (plus `odds_sort: "low"`).
+- **`odds`** `{ min?, max? }` — a price bound. Emit it whenever the query states a NUMBER about what the
+  bet pays — a bare number, or one with "priced / odds / at / pays" — whatever the number is attached
+  to: "priced above 1.80" → `{ min: 1.80 }`; "between 5.0 and 15.0" → `{ min: 5.0, max: 15.0 }`.
   **A price can wear any surface form — normalize every one to a decimal**: a fraction in any notation
   (`4/1` → `5.0`, `6/4` → `2.5`, `10/11` → `1.91`, spoken "10 to 1" → `11.0`), American (`+150` → `2.5`,
   `-200` → `1.5`), a word ("evens" → `2.0`), or a stake multiplier ("10x return", "3 times my stake" →
@@ -164,10 +163,12 @@ subject), and a **bound** on the fixture's posted line (§4).
   selector's `odds`, however the sentence is phrased: "only if it pays more than 2.5", "only if above
   6/1", "priced over 8/1" on one bet → `odds`, not `combined_odds`. A one-selector plan can never carry
   `combined_odds`. It is always a **price** — a bound on the fixture's posted number is `line` (§4).
-- **`odds_sort`** — a superlative on the **price**: shortest / lowest / best / favourite → `"low"`;
-  longest / highest / biggest / outsider → `"high"`. Emit this instead of `odds`, never a market named
-  "shortest odds". A singular ask — "the favourite", "the winner", "who wins" — always emits **both**
-  `odds_sort: "low"` and `count: 1`, whatever the market.
+- **`odds_sort`** — a superlative on the **price**, when the query asks FOR the price-ranked outcome:
+  shortest / lowest / best / favourite → `"low"`; longest / highest / biggest / outsider → `"high"`.
+  Never a market named "shortest odds". A superlative inside a fixture filter ("games where the
+  favourite is under 1.4") asks for no ranking — the price bound alone carries it. This ranks, `odds`
+  bounds: an ask naming a superlative AND stating a price emits both. A singular ask — "the favourite",
+  "the winner", "who wins" — always emits **both** `odds_sort: "low"` and `count: 1`, whatever the market.
 - **`line_sort`** — a superlative on **how big the fixture's posted line is**: biggest / widest / highest
   → `"high"`, smallest / tightest → `"low"`. Ask what the superlative describes: what the bet **pays** →
   `odds_sort`; how big the **line** is → `line_sort`.

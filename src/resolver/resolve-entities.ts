@@ -234,8 +234,8 @@ function systemPrompt(): string {
 }
 
 // The model sees the raw query (so confident entities appear as words) and each cell's candidates as id+name.
-// Candidate ORDER matters: the first is the grounder's top pick and the resolver anchors on it; tier/score stay
-// hidden so it doesn't over-trust the rank.
+// Candidate ORDER matters: the first is the grounder's top pick, and order decides which rows survive the caps
+// and which names a clarify offers; tier/score stay hidden so the model doesn't over-trust the rank.
 function userMessage(query: string, cells: Cell[]): string {
   const payload = { query, cells: cells.map((c) => ({ ref: c.ref, text: c.text, candidates: c.candidates })) };
   return JSON.stringify(payload, null, 2);
