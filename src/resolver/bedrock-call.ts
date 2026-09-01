@@ -28,9 +28,12 @@ export async function bedrockToolCall(
   schema: Record<string, unknown>,
   maxTokens = 2048,
 ): Promise<Record<string, unknown>> {
-  const modelId = process.env.BEDROCK_MODEL;
+  // Per-stage override: BEDROCK_MODEL_<TOOLNAME> (BEDROCK_MODEL_EMIT_QUERY_PLAN / _SETTLE_CELLS / _PICK)
+  // beats the shared BEDROCK_MODEL, so the three stages can run different models from .env alone.
+  // BEDROCK_PRICE_* stays single-model — per-query cost is approximate under a mixed config.
+  const modelId = process.env[`BEDROCK_MODEL_${toolName.toUpperCase()}`] || process.env.BEDROCK_MODEL;
   if (!modelId) throw new Error("BEDROCK_MODEL must be set (e.g. us.amazon.nova-lite-v1:0).");
-  emit({ kind: "llm-req", tool: toolName, system, user, schema });
+  emit({ kind: "llm-req", tool: toolName, model: modelId, system, user, schema });
 
   const res = await client().send(
     new ConverseCommand({
