@@ -232,6 +232,7 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
       if (!founds.length) {
         const who = selection?.subject ?? "that selection";
         if (selection?.fallback === "subject-absent") notes.push(`${who} isn't priced in the "${phrase}" market. Try another market or choose a different subject.`);
+        else if (selection?.fallback === "side-absent") notes.push(`The "${phrase}" market doesn't offer that side for ${who} — only the opposite one is priced right now.`);
         else if (selection?.fallback === "line-absent") notes.push(`That line isn't available for "${phrase}". It may not be offered for this event or market.`);
         else if (selection?.fallback === "odds-absent") notes.push(`No outcome is available in that price range for "${phrase}". Try a different price range or market.`);
         else notes.push(`We couldn't find a settling outcome for "${phrase}". The market may settle differently than expected.`);

@@ -396,7 +396,10 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
       const top = spec.count != null ? ordered.slice(0, spec.count) : ordered;
       return withPool(top[0]!.o, undefined, top.map(({ o }) => o.id).filter((id): id is number => id != null));
     }
-    return absent("subject-absent");
+    // The subject survived the gate above, so it IS priced here — the asked SIDE just isn't offered. Most feed
+    // scoring markets carry a lone Yes row per player, so "X not to score" has no No to settle against; saying
+    // "X isn't priced" there is simply false.
+    return absent("side-absent");
   }
 
   // ---- (4) no direction / no line -> the owner-bound affirmative (Yes), else the single survivor ----

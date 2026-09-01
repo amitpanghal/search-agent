@@ -72,7 +72,9 @@ export type Selection = {
   selectedIds?: number[];
   line?: number;
   subject?: string;
-  fallback?: "subject-absent" | "line-absent" | "odds-absent";
+  // "side-absent": the subject IS priced in the market, but the asked SIDE isn't offered — most feed scoring
+  // markets carry only a Yes row per player, so "X not to score" has nothing to settle against.
+  fallback?: "subject-absent" | "side-absent" | "line-absent" | "odds-absent";
 };
 
 // ---- new executor input (replaces the FetchPlan's committed `marketIds`) ----
