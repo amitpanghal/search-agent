@@ -347,15 +347,25 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
       // pick from that side so "over 9.5" doesn't flag the Under at 9.5; a handicap has no over/under axis
       // (dirOf undefined) so sidePool == pool, unchanged. A preference, never a drop — every side still rides
       // along in the returned pool for display.
+      // MARGIN on a SIDE ladder: "win by N or more" (at_least, positive N) reaches a handicap whose rungs are
+      // SIGNED from the subject's side — there is no over/under axis to read N against. The rung that pays
+      // exactly at margin N is -(N-0.5) ("by 2+" = -1.5). Stated handicap lines (negative, or on an over/under
+      // ladder) pass through untouched. ponytail: "win by MORE than N" (dir=over) not converted — add -(N+0.5)
+      // when a real query produces it.
+      const sideLadder = !pool.some(({ o }) => dirOf(o) != null);
+      const asMargin = spec.dir === "at_least" && numLine > 0 && sideLadder;
+      const want = asMargin ? -(numLine - 0.5) : numLine;
       const nearest = (set: Cand[]) =>
-        set.filter((c) => effLine(c) != null).sort((a, b) => Math.abs(effLine(a)! - numLine) - Math.abs(effLine(b)! - numLine))[0];
+        set.filter((c) => effLine(c) != null).sort((a, b) => Math.abs(effLine(a)! - want) - Math.abs(effLine(b)! - want))[0];
       const sidePool = dir && pool.some(({ o }) => dirOf(o) === dir) ? pool.filter(({ o }) => dirOf(o) === dir) : pool;
-      // A band takes the rungs on its inclusive side only ("2+" -> over 1.5, never over 2.5); null for a plain
-      // side/handicap, which leaves the exact-then-nearest pick byte-identical to before.
+      // A band takes the rungs on its inclusive side only ("2+" -> over 1.5, never over 2.5); a margin's
+      // inclusive side is the LESS negative rung (-0.5 still pays whenever a 2+ win happens); null for a stated
+      // side/handicap line, which leaves the exact-then-nearest pick byte-identical to before.
       const inBand =
+        asMargin ? (l: number) => l > want :
         spec.dir === "at_least" ? (l: number) => l < numLine : spec.dir === "at_most" ? (l: number) => l > numLine : null;
       const chosen =
-        sidePool.find((c) => effLine(c) === numLine) ??
+        sidePool.find((c) => effLine(c) === want) ??
         (inBand ? nearest(sidePool.filter((c) => effLine(c) != null && inBand(effLine(c)!))) : undefined) ??
         nearest(sidePool);
       return chosen ? withPool(chosen.o, effLine(chosen)!) : absent("line-absent");
@@ -367,6 +377,17 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
     // top `count` (favourite when sort="low"), leader selected. Only a real binary lacking the asked SIDE absents.
     const flt = dir ? pool.filter(({ o }) => dirOf(o) === dir) : pool;
     if (flt[0]) return withPool(flt[0].o);
+    // "no <stat>" on an over/under ladder: zero-of-the-stat IS the 0.5 boundary — "not scoring" = Under 0.5,
+    // an owner-bound "to score" (yes) = Over 0.5. Exact 0.5 rung first, else that side's nearest (honest
+    // degrade, same as the line branch). Only reached when no literal Yes/No outcome matched above.
+    if (dir === "no" || dir === "yes") {
+      const side = dir === "no" ? "under" : "over";
+      const rungs = pool.filter(({ o }) => dirOf(o) === side && lineOf(o) != null);
+      const zero =
+        rungs.find(({ o }) => lineOf(o) === 0.5) ??
+        rungs.sort((a, b) => Math.abs(lineOf(a.o)! - 0.5) - Math.abs(lineOf(b.o)! - 0.5))[0];
+      if (zero) return withPool(zero.o, lineOf(zero.o)!);
+    }
     const directional = pool.some(({ o }) => dirOf(o) != null);
     if (!directional && spec.dir !== "no" && pool[0]) {
       const key = (c: Cand) => oddsOf(c.o) ?? (spec.sort === "high" ? -Infinity : Infinity);

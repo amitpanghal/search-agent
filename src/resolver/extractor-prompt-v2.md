@@ -125,8 +125,9 @@ number is compared against**:
   query treats as something a fixture *has*: "games where the `<stat>` line is above 8.5", "with a total
   under 40", "where it sits below 158". This picks no outcome — it filters which fixtures qualify.
 
-The tell is grammatical: *"over N `<stat>`"* is a rung; *"the line is over N"*, *"with a total under N"*
-is a bound.
+The tell is what the number measures: a count of the stat ("over N `<stat>`") is a rung; the market's
+own posted number ("the line is over N", "with a total under N") is a bound. A number that measures a
+PRICE is never `line` — "the favourite is under 1.5" bounds what that bet pays → `odds` (§6).
 
 ## 5. `direction` — which side of a two-sided market
 
@@ -144,8 +145,10 @@ subject), and a **bound** on the fixture's posted line (§4).
 
 ## 6. Prices
 
-- **`odds`** `{ min?, max? }` — a price bound: a bare number, or one with "priced / odds / at / pays".
-  "priced above 1.80" → `{ min: 1.80 }`; "between 5.0 and 15.0" → `{ min: 5.0, max: 15.0 }`.
+- **`odds`** `{ min?, max? }` — a price bound: a bare number, one with "priced / odds / at / pays", or a
+  number attached to a price-ranked competitor (favourite / outsider / shortest / longest — the same
+  words as `odds_sort`): "priced above 1.80" → `{ min: 1.80 }`; "between 5.0 and 15.0" →
+  `{ min: 5.0, max: 15.0 }`; "the favourite is under 1.5" → `{ max: 1.5 }` (plus `odds_sort: "low"`).
   **A price can wear any surface form — normalize every one to a decimal**: a fraction in any notation
   (`4/1` → `5.0`, `6/4` → `2.5`, `10/11` → `1.91`, spoken "10 to 1" → `11.0`), American (`+150` → `2.5`,
   `-200` → `1.5`), a word ("evens" → `2.0`), or a stake multiplier ("10x return", "3 times my stake" →

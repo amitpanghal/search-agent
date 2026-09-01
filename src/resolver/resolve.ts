@@ -42,15 +42,20 @@ const selectSubject = (s: Subject): string | undefined =>
 // (b) picks the RIGHT player's market when the feed scopes it by name in its LABEL ("Total Aces - Taylor Fritz"
 // vs the combined "Total Aces" — the name is the only thing that separates them). Prefer the subject's NAME (it
 // carries both the grain AND the identity); fall back to the bare "one player" grain hint when the leg named no
-// player (a nameless player prop). Team/event/either_match_team get NO note — their concept already names a
-// team/match market, and a note would clash with a period qualifier ("1st half handicap") and make it abstain.
-// COMPETITION-grain player legs get no note either: an outright (win overall, top scorer) has no per-player-vs-
-// match-total twin — the player is an OUTCOME inside one market (Winner) — so the note only makes the picker read
+// player (a nameless player prop). TEAM-subject legs get the same note — the bare concept ("goals") hides which
+// side the bet binds to, and the picker chose the combined-total twin over "Total Goals by <team>" (Rayo
+// not-scoring bug); the prompt's Grain rule makes a team note a twin-PREFERENCE, not a hard constraint, so a
+// period-qualified concept with no team twin ("1st half handicap (for X)") still picks normally.
+// Event/either_match_team get NO note — their concept already names a match market.
+// COMPETITION-grain legs get no note either: an outright (win overall, top scorer) has no per-subject-vs-
+// match-total twin — the subject is an OUTCOME inside one market (Winner) — so the note only makes the picker read
 // the plain outright as an aggregate "total" and prefer a narrower Top-N (confirmed: TdF "win overall" -> Top 10).
-const betPhrase = (sel: { subject: Subject; market_concept: string }, level?: string): string =>
-  sel.subject.kind === "player" && level !== "competition"
-    ? `${sel.market_concept} (for ${sel.subject.name ?? "one player"})`
-    : sel.market_concept;
+const betPhrase = (sel: { subject: Subject; market_concept: string }, level?: string): string => {
+  if (level === "competition") return sel.market_concept;
+  if (sel.subject.kind === "player") return `${sel.market_concept} (for ${sel.subject.name ?? "one player"})`;
+  if (sel.subject.kind === "team" && sel.subject.name) return `${sel.market_concept} (for ${sel.subject.name})`;
+  return sel.market_concept;
+};
 
 // The grounded PARTICIPANT id for a selector's subject — SELECT's preferred (robust) key, == the feed's
 // outcome.participantId on named markets. Only a CONFIDENT resolution yields an id (an unsure entity must not
@@ -350,10 +355,10 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
       ...(sel.direction ? { dir: sel.direction } : {}),
       ...(pickByIdx[i]?.outcomeLabel ? { outcomeLabel: pickByIdx[i]!.outcomeLabel } : {}),
     };
-    // Tile identity: the leg's confidently-grounded named subject. One entry per entity across all legs;
-    // eventIds are merged in below, once this leg's selection lands on concrete outcomes.
+    // Tile identity: the leg's confidently-grounded named PLAYER (team tiles dropped — events[] carries teams).
+    // One entry per player across all legs; eventIds merge in below if a selection lands on concrete outcomes.
     let subjEntry: EnvelopeSubject | undefined;
-    if ((sel.subject.kind === "player" || sel.subject.kind === "team") && spec.subjectId != null) {
+    if (sel.subject.kind === "player" && spec.subjectId != null) {
       subjEntry = subjectsOut.get(spec.subjectId);
       if (!subjEntry) {
         const name = subjectName(leg, sel.subject);
@@ -421,9 +426,12 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
   // Price the user's OWN resolved legs together as one EXACT betslip (same-event legs via the correlated
   // priceCombo endpoint, cross-event legs multiply); omitted when <2 legs combine. Skipped on an all-main
   // browse: the "picks" are our own main-market fan-out, not user selections, so combining them is noise
-  // (this also spares the onDemandPricing calls for same-event pick groups).
+  // (this also spares the onDemandPricing calls for same-event pick groups). Also skipped when <2 legs hold
+  // a selection: a single leg's multi-fixture selectedIds are one answer PER fixture, not conjuncts — combining
+  // them turns "PL home teams to win" into a forced accumulator and drops every per-match card.
   const noMarketBrowse = !!recallInput.onlyMain;
-  const betslip = noMarketBrowse ? undefined : await buildBetslip(legsOut, [...execOffers], [...execEvents.values()], onDemandPricing, recallInput.lang);
+  const pickedLegs = legsOut.filter((l) => l.selection?.outcomeId != null || l.selection?.selectedIds?.length).length;
+  const betslip = noMarketBrowse || pickedLegs < 2 ? undefined : await buildBetslip(legsOut, [...execOffers], [...execEvents.values()], onDemandPricing, recallInput.lang);
 
   // Query-level combined-odds bound ("only if the combined odds clear 2.0"). Checked ONCE against the priced
   // betslip, here rather than per leg — a per-selector bound deletes whichever leg it lands on (the Arsenal-at-1.2
@@ -448,7 +456,7 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
     ...(betslip ? { betslip } : {}),
   });
   envelope.legs = legsUnderstood; // the per-selector "We understood" echo (execute groups by event and loses order)
-  envelope.subjects = [...subjectsOut.values()]; // grounded leg subjects (tile identities), deduped by id
+  envelope.subjects = envelope.results.length ? [] : [...subjectsOut.values()]; // player tiles, only as a no-results fallback
   emit({ kind: "stage", stage: "execute", out: envelope });
   yield { stage: "done", envelope: withCost(envelope) };
 }

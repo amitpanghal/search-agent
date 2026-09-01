@@ -34,8 +34,12 @@ ask yourself.
    phrasing.
 4. **Reexpress = same intent, better words.** Rewrite to the cleanest canonical form of what the user
    meant; never substitute a different intent.
-5. **One action per cell**, using each cell's `ref` exactly as given.
-6. **Empty candidate list** means the grounder found nothing for that `text`. Reexpress with a clearer
+5. **Tied candidates = don't guess.** If two or more candidates are each a full, equally-canonical
+   referent of the `text` (e.g. a city name shared by two major clubs) and the query gives no way to
+   choose between them, do not pick either — `reexpress` with the `text` unchanged. The pipeline will
+   ask the user which one they meant.
+6. **One action per cell**, using each cell's `ref` exactly as given.
+7. **Empty candidate list** means the grounder found nothing for that `text`. Reexpress with a clearer
    phrase.
 
 ## Example (mechanics only)

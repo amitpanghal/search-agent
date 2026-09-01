@@ -283,7 +283,7 @@ function settleOutcome(cell: Cell, ids: number[], foreign?: ForeignIds): Outcome
 export function clarifyFor(cell: Cell): Outcome {
   const cands = cell.candidates.slice(0, SUGGEST_CAP);
   const question = cands.length
-    ? `We couldn't identify "${cell.text}". Try rewording it, or choose one of these suggestions. (${cands.map((c) => c.name).join(", ")})`
+    ? `"${cell.text}" could mean more than one thing. Choose one of these, or reword your search. (${cands.map((c) => c.name).join(", ")})`
     : `We couldn't identify "${cell.text}". Try rewording it with a team, player, league, or market name.`;
   return { kind: "clarify", ref: cell.ref, question, suggest: cands.map((c) => c.id) };
 }

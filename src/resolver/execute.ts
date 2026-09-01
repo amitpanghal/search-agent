@@ -4,7 +4,8 @@
 // produces a ResponseEnvelope: one `results` card per event with a pick (its highlighted betoffers, each with the
 // single SELECTED outcome — theory §1, §4), plus a top-level `events[]` holding every referenced event block ONCE
 // (result events + betslip-leg events, deduped by id). Events with no pick never appear — the grouping IS the
-// prune. A leg fully priced into the betslip drops its standalone result card (the combo card answers it). A card
+// prune. A leg priced into the betslip drops its standalone card on the combo's event only (the combo card
+// answers it there); its other fixtures keep theirs. A card
 // joins its event via highlighted[].eventId; `additional` (related-market suggestions) is a flat, query-scoped
 // list capped at 3.
 //
@@ -75,17 +76,17 @@ export type ResponseEvent = {
 // A result card = one event's picked markets. The event itself lives in `events[]`; join via highlighted[].eventId.
 export type EnvelopeResult = { highlighted: EnvelopeHighlighted[] };
 
-// A leg's grounded subject — the frontend's tile identity (player tile / team tile). Deduped by id: one entry
-// (one tile) per entity even when it subjects several legs. Only CONFIDENT groundings appear (a tile navigates
-// to the entity's page, which needs the real id). Event tiles come from `events[]`, not here. `eventIds` joins
-// into `events[]`: every event the subject's resolved pick(s) landed on (one per fixture for a multi-fixture
-// leg, merged across legs); empty when the subject's leg(s) resolved no outcome.
-export type EnvelopeSubject = { kind: "player" | "team"; id: number; name: string; eventIds: number[] };
+// A leg's grounded PLAYER subject — the frontend's tile identity, sent ONLY when the query produced no result
+// cards (a "we know who you meant" fallback; team tiles were dropped — events[] already carries the teams).
+// Deduped by id: one entry per player even when he subjects several legs. Only CONFIDENT groundings appear
+// (a tile navigates to the player's page, which needs the real id). `eventIds` joins into `events[]`; with the
+// no-results gate it is almost always empty (kept for the rare execute-side prune of a resolved leg).
+export type EnvelopeSubject = { kind: "player"; id: number; name: string; eventIds: number[] };
 
 export type ResponseEnvelope = {
   summary: string;
   events: ResponseEvent[]; // every event referenced by a result OR a betslip leg, stored once (deduped by id)
-  subjects: EnvelopeSubject[]; // grounded leg subjects for tiles, deduped by id; orchestrator fills it
+  subjects: EnvelopeSubject[]; // grounded player subjects, only when results[] is empty; orchestrator fills it
   results: EnvelopeResult[];
   legs: EnvelopeLeg[]; // "We understood" echo — one per selector in QUERY order (see EnvelopeLeg); orchestrator fills it
   additional: EnvelopeHighlighted[]; // query-scoped related-market suggestions, flat + globally capped at 3
@@ -220,8 +221,11 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
     // Which outcomes are the query's PICK (flagged `selected`): a relational multi-fixture leg picks one per
     // fixture (`selectedIds`); every other leg picks the single `outcomeId`. A set so each is flagged in place.
     const selectedSet = new Set<number>(selection?.selectedIds?.length ? selection.selectedIds : selection?.outcomeId != null ? [selection.outcomeId] : []);
-    // Fully combined into the betslip -> no independent result card (its answer is the combo card; its event
-    // block is re-attached after grouping). Still resolved, and its related suggestions are still queued below.
+    // Events where this leg's pick is priced INTO the betslip: the combo card answers the leg THERE, so that
+    // event's standalone card is dropped — the leg's other fixtures keep theirs. All picks combined -> no card
+    // at all (its event block is re-attached after grouping). Still resolved, related suggestions still queue.
+    const coveredEvents = new Set<number>();
+    for (const id of selectedSet) if (comboIds.has(id)) { const eid = outcomeById.get(id)?.b.eventId; if (eid != null) coveredEvents.add(eid); }
     const combined = selectedSet.size > 0 && [...selectedSet].every((id) => comboIds.has(id));
     const founds = ids.map((id) => outcomeById.get(id)).filter((x): x is { o: KOutcome; b: BetOffer } => x != null);
     if (!combined) {
@@ -240,7 +244,7 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
       let placed = 0;
       for (const f of founds) {
         const e = f.b.eventId != null ? eventById.get(f.b.eventId) : undefined;
-        if (!e) continue;
+        if (!e || coveredEvents.has(e.id)) continue;
         let g = byEvent.get(e.id);
         if (!g) byEvent.set(e.id, (g = { event: e, highlighted: [], byBo: new Map() }));
         let grp = g.byBo.get(f.b.id ?? 0);
@@ -251,7 +255,7 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
         grp.outs.push({ ...toOutcome(f.o), ...(f.o.id != null && selectedSet.has(f.o.id) ? { selected: true } : {}) });
         placed++;
       }
-      if (!placed) {
+      if (!placed && !coveredEvents.size) {
         notes.push(`The selected outcome for "${phrase}" isn't linked to a live event. It may no longer be available or isn't included in the current live data.`);
         continue;
       }

@@ -230,3 +230,94 @@ test("betslip tie-break: among same-size combinable subsets, keep the earliest-m
   const slip = await buildBetslip(legs, offers, events, async (_e, ids) => (ids.includes(1) && ids.includes(2) ? null : 12000));
   assert.deepEqual(slip?.legs.map((l) => l.outcomeId), [1, 3, 4]); // drops the later-mentioned conflicting leg
 });
+
+// ---- betslip event assignment: one pick per LEG, shared event first, refusal re-assigns ------------------
+// Two fan-out legs ("City to win" + "Haaland to score") each pick one outcome per fixture across the same
+// events; the slip must be ONE correlated pair on the soonest shared fixture — never a 2N-leg accumulator.
+const fanoutFixture = () => {
+  // events 100 (soonest) and 200; leg A picks 1@100 / 2@200, leg B picks 3@100 / 4@200.
+  const offers = [
+    { id: 11, eventId: 100, criterion: { id: 1, englishLabel: "Full Time" }, outcomes: [{ id: 1, odds: 1200 }] },
+    { id: 12, eventId: 200, criterion: { id: 1, englishLabel: "Full Time" }, outcomes: [{ id: 2, odds: 1500 }] },
+    { id: 13, eventId: 100, criterion: { id: 2, englishLabel: "To Score" }, outcomes: [{ id: 3, odds: 1600 }] },
+    { id: 14, eventId: 200, criterion: { id: 2, englishLabel: "To Score" }, outcomes: [{ id: 4, odds: 1700 }] },
+  ] as BetOffer[];
+  const legs: ResolvedLeg[] = [
+    { phrase: "city to win", pick: { label: "Full Time", match: "exact" }, selection: { outcomeId: 1, selectedIds: [1, 2] } },
+    { phrase: "haaland to score", pick: { label: "To Score", match: "exact" }, selection: { outcomeId: 3, selectedIds: [3, 4] } },
+  ];
+  const events = [
+    { id: 100, tags: ["MATCH"], start: "2026-09-05T14:00:00Z" },
+    { id: 200, tags: ["MATCH"], start: "2026-09-08T19:00:00Z" },
+  ] as KEvent[];
+  return { legs, offers, events };
+};
+
+test("betslip: two fan-out legs collapse to ONE correlated pair on the soonest shared fixture", async () => {
+  const { legs, offers, events } = fanoutFixture();
+  const calls: [number, number[]][] = [];
+  const slip = await buildBetslip(legs, offers, events, async (e, ids) => { calls.push([e, ids]); return 2030; });
+  assert.deepEqual(calls, [[100, [1, 3]]]); // one correlated call, soonest event only — never an accumulator
+  assert.equal(slip?.odds, 2030);
+  assert.deepEqual(slip?.legs.map((l) => [l.eventId, l.outcomeId]), [[100, 1], [100, 3]]);
+});
+
+test("betslip: a refused shared event re-assigns its legs — rivals who meet next still get their double", async () => {
+  const { legs, offers, events } = fanoutFixture(); // shared event 100 refuses (e.g. City win + Liverpool win same game)
+  const slip = await buildBetslip(legs, offers, events, async (e) => (e === 100 ? null : 9999));
+  // both legs fall back to event 200: still same-event there -> one correlated group on the next fixture
+  assert.deepEqual(slip?.legs.map((l) => [l.eventId, l.outcomeId]), [[200, 2], [200, 4]]);
+  assert.equal(slip?.odds, 9999);
+});
+
+test("betslip: legs on disjoint events multiply as a genuine cross-event double", async () => {
+  const offers = [
+    { id: 11, eventId: 100, criterion: { id: 1, englishLabel: "Full Time" }, outcomes: [{ id: 1, odds: 2000 }] },
+    { id: 12, eventId: 200, criterion: { id: 1, englishLabel: "Full Time" }, outcomes: [{ id: 2, odds: 3000 }] },
+  ] as BetOffer[];
+  const legs: ResolvedLeg[] = [
+    { phrase: "city to win", pick: { label: "Full Time", match: "exact" }, selection: { outcomeId: 1 } },
+    { phrase: "liverpool to win", pick: { label: "Full Time", match: "exact" }, selection: { outcomeId: 2 } },
+  ];
+  const events = [{ id: 100, tags: ["MATCH"] }, { id: 200, tags: ["MATCH"] }] as KEvent[];
+  let called = false;
+  const slip = await buildBetslip(legs, offers, events, async () => { called = true; return null; });
+  assert.equal(called, false); // singles use their own odds — the correlated API is never hit
+  assert.equal(slip?.odds, 6000); // 2.0 × 3.0
+  assert.deepEqual(slip?.legs.map((l) => l.outcomeId), [1, 2]);
+});
+
+// ---------------------------------------------------------------------------------------------------------
+// SELECT: margin asks and zero-of-the-stat — "win by 2+" lands the -(N-0.5) handicap rung, "not scoring"
+// lands Under 0.5 on an anonymous over/under ladder (not a subject-absent).
+import { select } from "./select";
+
+test("select: 'win by 2 or more' picks the subject's -1.5 handicap rung, not the nearest-to-+2", () => {
+  const hcp = (id: number, line: number): BetOffer => ({
+    id, eventId: 9, betOfferType: { id: 1 }, criterion: { label: "Handicap" },
+    outcomes: [
+      { id: id * 10 + 1, type: "OT_ONE", line, participant: "Barca", participantId: 160 },
+      { id: id * 10 + 2, type: "OT_CROSS", line },
+      { id: id * 10 + 3, type: "OT_TWO", line },
+    ],
+  }) as unknown as BetOffer;
+  const slice = { events: [{ id: 9 }] as KEvent[], betOffers: [hcp(1, -500), hcp(2, -1500), hcp(3, -2500)] };
+  const sel = select(slice, { subjectId: 160, lineValue: 2, dir: "at_least" });
+  assert.equal(sel.line, -1.5);
+  assert.equal(sel.outcomeId, 21);
+});
+
+test("select: 'not scoring' on an anonymous team-total ladder picks Under 0.5, not subject-absent", () => {
+  const ou = (id: number, line: number): BetOffer => ({
+    id, eventId: 9, betOfferType: { id: 6 }, criterion: { label: "Total Goals by Rayo" },
+    outcomes: [
+      { id: id * 10 + 1, type: "OT_OVER", line },
+      { id: id * 10 + 2, type: "OT_UNDER", line },
+    ],
+  }) as unknown as BetOffer;
+  const slice = { events: [{ id: 9 }] as KEvent[], betOffers: [ou(1, 500), ou(2, 1500)] };
+  const sel = select(slice, { subjectId: 214, subject: "Rayo", dir: "no" });
+  assert.equal(sel.fallback, undefined);
+  assert.equal(sel.line, 0.5);
+  assert.equal(sel.outcomeId, 12);
+});
