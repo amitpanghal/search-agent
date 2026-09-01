@@ -60,6 +60,7 @@ const SPORT_OVERRIDES: Record<string, Pick<SportConfig, "individual" | "national
   // individual so they build via the individual path (players captured, not dropped). Fuller
   // doubles / NT-variant handling (Ryder Cup, Davis-Cup-style, etc.) is deferred — see project notes.
   golf: { individual: true },
+  badminton: { individual: true },
   darts: { individual: true, participantsFrom: "betoffer" },
   snooker: { individual: true },
   chess: { individual: true },
