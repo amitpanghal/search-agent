@@ -86,9 +86,18 @@ const callModel: DecideManyFn = async (phrases, menu, query) => {
     `LIVE menu (ref: label) — the only markets actually offered:\n${list}\n\nBETS (leg: phrase):\n${bets}\n\n` +
     `${query ? `Original request (context):\n"${query}"\n\n` : ""}For EACH bet, pick one market by ref (or none) and label it exact/close/none.`;
   const out = await bedrockToolCall(systemPrompt(), user, TOOL_NAME, INPUT_SCHEMA, Math.min(2048, 256 + 256 * phrases.length));
-  // Map picks back to phrase order BY `leg` (robust to reordering); any omitted leg -> none.
-  const picks = (Array.isArray(out.picks) ? out.picks : []) as Array<{ leg?: number } & RawPick>;
+  return picksByLeg((Array.isArray(out.picks) ? out.picks : []) as Array<{ leg?: number } & RawPick>, phrases.length);
+};
+
+// Map raw picks back to bet order BY `leg` (robust to reordering). A pick with NO `leg` falls back to its
+// POSITION, but only when the model returned exactly one pick per bet — then position is unambiguous. Qwen
+// answers in free text, so a runaway `related` array can hit maxTokens mid-list and cut off a trailing `leg`;
+// without this a correct exact pick collapsed to none ("goals" -> Total Goals ref 31, shown as "no market").
+export const picksByLeg = (picks: Array<{ leg?: number } & RawPick>, bets: number): RawPick[] => {
   const byLeg = new Map<number, RawPick>();
-  for (const p of picks) if (typeof p.leg === "number") byLeg.set(p.leg, { ref: p.ref, match: p.match, outcome: p.outcome, related: p.related });
-  return phrases.map((_, i) => byLeg.get(i) ?? { ref: null, match: "none" });
+  picks.forEach((p, i) => {
+    const leg = typeof p.leg === "number" ? p.leg : picks.length === bets ? i : undefined;
+    if (leg != null) byLeg.set(leg, { ref: p.ref, match: p.match, outcome: p.outcome, related: p.related });
+  });
+  return Array.from({ length: bets }, (_, i) => byLeg.get(i) ?? { ref: null, match: "none" });
 };

@@ -107,7 +107,7 @@ function render(query: string, trace: TraceEvent[], envelope: ResponseEnvelope |
         if (level === "full") console.log(`  → llm ${stageOf[e.tool] ?? e.tool}  (system ${e.system.length}B${full ? `:\n${indent(e.system)}` : ""})\n    user:\n${indent(e.user)}\n    schema: ${safe(e.schema, full)}`);
         continue;
       }
-      console.log(`  [llm ${stageOf[e.tool] ?? e.tool}] ${dt}  ${e.inputTokens}/${e.outputTokens} tok${level === "full" ? `\n${indent(safe(e.output, full))}` : ""}`);
+      console.log(`  [llm ${stageOf[e.tool] ?? e.tool}] ${dt}  ${e.inputTokens}/${e.outputTokens} tok${e.stopReason === "max_tokens" ? "  \x1b[33m⚠ cut off (max_tokens)\x1b[0m" : ""}${level === "full" ? `\n${indent(safe(e.output, full))}` : ""}`);
     } else {
       if (!apis.has("kambi") || level === "silent") continue;
       if (e.kind === "kambi-req") { if (level === "full") console.log(`  → GET ${shortUrl(e.url)}`); continue; }

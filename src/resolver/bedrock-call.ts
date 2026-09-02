@@ -57,12 +57,12 @@ export async function bedrockToolCall(
   // others (Qwen) treat the tool as optional and answer in a TEXT block instead. Accept either channel:
   // the tool's pre-parsed input, or JSON sliced out of the text (strips ```json fences / stray prose).
   const toolUse = (blocks as Array<{ toolUse?: { input?: unknown } }>).find((b) => b.toolUse)?.toolUse;
-  if (toolUse) { const out = (toolUse.input ?? {}) as Record<string, unknown>; emit({ kind: "llm-resp", tool: toolName, output: out, inputTokens: u?.inputTokens ?? 0, outputTokens: u?.outputTokens ?? 0 }); return out; }
+  if (toolUse) { const out = (toolUse.input ?? {}) as Record<string, unknown>; emit({ kind: "llm-resp", tool: toolName, output: out, inputTokens: u?.inputTokens ?? 0, outputTokens: u?.outputTokens ?? 0, stopReason: res.stopReason }); return out; }
 
   const text = (blocks as Array<{ text?: string }>).map((b) => b.text ?? "").join(" ").trim();
   const start = text.indexOf("{"), end = text.lastIndexOf("}");
   if (start !== -1 && end > start) {
-    try { const out = JSON.parse(text.slice(start, end + 1)) as Record<string, unknown>; emit({ kind: "llm-resp", tool: toolName, output: out, inputTokens: u?.inputTokens ?? 0, outputTokens: u?.outputTokens ?? 0 }); return out; } catch { /* fall through to throw */ }
+    try { const out = JSON.parse(text.slice(start, end + 1)) as Record<string, unknown>; emit({ kind: "llm-resp", tool: toolName, output: out, inputTokens: u?.inputTokens ?? 0, outputTokens: u?.outputTokens ?? 0, stopReason: res.stopReason }); return out; } catch { /* fall through to throw */ }
   }
   throw new Error(`Bedrock returned no toolUse or parseable JSON for "${toolName}". Got: ${text.slice(0, 500) || "(empty)"}`);
 }

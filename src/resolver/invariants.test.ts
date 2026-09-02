@@ -12,6 +12,7 @@ import { resolveTimeWindow, eventMatchesTime, applyFixturePick, filterEventsByTi
 import { fold, contentTokens, lc, stripSettle } from "./lexical";
 import type { BetOffer, KEvent } from "./offering-client";
 import { buildBetslip } from "./combinations";
+import { picksByLeg } from "./resolve-market";
 import type { ResolvedLeg } from "./live-menu-types";
 import { queryNamesSport } from "./resolve-entities";
 
@@ -364,4 +365,18 @@ test("select: zero-of-the-stat needs the real 0.5 rung — a ladder starting hig
     assert.equal(sel.outcomeId, undefined, `dir=${dir} must not pick a far rung`);
     assert.ok(sel.fallback, `dir=${dir} must degrade honestly`);
   }
+});
+
+// ---------------------------------------------------------------------------------------------------------
+// RESOLVE-MARKET: a pick that lost its `leg` (Qwen's free-text JSON cut off at maxTokens mid-`related`) still
+// binds by POSITION when there is exactly one pick per bet — the captured Real Madrid "goals" output below
+// carried the right market (ref 31, exact) and was shown as "no market" because `leg` never arrived.
+test("resolve-market: a leg-less pick binds by position when picks match bets one-to-one", () => {
+  const cutOff = [{ match: "exact", ref: 31, related: [0, 15, 10, 20, 27, 40, 12, 26] }]; // no `leg`
+  assert.deepEqual(picksByLeg(cutOff as never, 1)[0], { ref: 31, match: "exact", outcome: undefined, related: cutOff[0]!.related });
+  // explicit legs still win over position (reordered picks bind correctly)
+  const swapped = [{ leg: 1, ref: 5, match: "close" }, { leg: 0, ref: 2, match: "exact" }];
+  assert.deepEqual(picksByLeg(swapped as never, 2).map((p) => p.ref), [2, 5]);
+  // a count mismatch never guesses: 2 bets, 1 leg-less pick -> both none
+  assert.deepEqual(picksByLeg(cutOff as never, 2).map((p) => p.match), ["none", "none"]);
 });
