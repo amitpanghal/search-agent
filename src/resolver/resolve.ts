@@ -456,7 +456,7 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
     ...(betslip ? { betslip } : {}),
   });
   envelope.legs = legsUnderstood; // the per-selector "We understood" echo (execute groups by event and loses order)
-  envelope.subjects = envelope.results.length ? [] : [...subjectsOut.values()]; // player tiles, only as a no-results fallback
+  envelope.subjects = envelope.results.length >= 3 ? [] : [...subjectsOut.values()]; // player tiles, only as a no-results fallback
   emit({ kind: "stage", stage: "execute", out: envelope });
   yield { stage: "done", envelope: withCost(envelope) };
 }
