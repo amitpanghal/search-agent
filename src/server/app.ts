@@ -30,6 +30,11 @@ const QueryBody = z.object({
 export function buildApp() {
   const app = new Hono();
 
+  // Health/keepalive probe. Returns 200 so an uptime pinger doesn't record a failure on every hit —
+  // cron-job.org disables a job after 25 consecutive failures, which would silently end the keepalive
+  // that stops Render's free instance from spinning down (a wake costs the next user ~60s).
+  app.get("/", (c) => c.text("ok"));
+
   // CORS so a browser frontend (the MFE) can POST cross-origin. `*` echoes the caller's origin; lock this
   // to the real frontend origin before any public deployment.
   app.use("/query", cors({ origin: (o) => o ?? "*", allowMethods: ["POST", "OPTIONS"] }));
