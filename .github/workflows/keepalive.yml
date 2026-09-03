@@ -8,7 +8,7 @@
 name: keepalive
 on:
   schedule:
-    - cron: "*/12 * * * *"
+    - cron: "3,15,27,39,51 * * * *" # every 12min, offset off the congested :00-style slots (GitHub delays those)
   workflow_dispatch: # manual run, to test it
 jobs:
   ping:
