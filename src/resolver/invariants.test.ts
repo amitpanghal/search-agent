@@ -8,7 +8,6 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { resolveTimeWindow, eventMatchesTime, applyFixturePick, filterEventsByTime } from "./time-window";
 import { fold, contentTokens, lc, stripSettle } from "./lexical";
 import type { BetOffer, KEvent } from "./offering-client";
@@ -146,36 +145,26 @@ test("a stated sport word locks widening; a guessed sport doesn't", () => {
 // groups ("US Open" vs "US Open Women"); the squad marker must pick the twin, and must NEVER degrade the
 // bare name when no twin matches (squad "men" has no twin -> falls back to the men's group).
 import { groundScope } from "./ground-scope";
-import { scopeIndexPath } from "./sports";
 import type { QueryPlan } from "./schema";
-
-// The twin pair is DISCOVERED from the committed catalog, never hard-coded: every competition is
-// seasonal, so a pinned name ("US Open") silently fails the day that tournament leaves the feed.
-const tennisIdx = JSON.parse(readFileSync(scopeIndexPath("tennis"), "utf8"));
-const tennisNames = new Set<string>([...tennisIdx.groups, ...tennisIdx.branches].map((g: { name: string }) => g.name));
-const womensTwin = [...tennisNames].find((n) => n.endsWith(" Women") && tennisNames.has(n.slice(0, -" Women".length)));
-const baseComp = womensTwin?.slice(0, -" Women".length);
 
 const planFor = (squad: string | null): QueryPlan => ({
   sport: "tennis",
   selectors: [{
     subject: { kind: "event" },
     market_concept: "who wins",
-    scope: { teams: [], players: [], competition: baseComp!, region: null, level: "competition", stage: null, squad, time: null, play_state: null },
+    scope: { teams: [], players: [], competition: "US Open", region: null, level: "competition", stage: null, squad, time: null, play_state: null },
   }],
 } as QueryPlan);
 
 test("squad 'women' grounds the competition to its Women twin; null and 'men' keep the men's group", () => {
-  assert.ok(womensTwin, "committed tennis catalog has no '<X>' / '<X> Women' pair to test against");
-
   const women = groundScope(planFor("women")).legs[0]!.competition!;
   assert.equal(women.tier, "confident");
-  assert.equal(women.candidates[0]!.name, womensTwin);
+  assert.equal(women.candidates[0]!.name, "US Open Women");
 
   for (const squad of [null, "men"]) {
     const comp = groundScope(planFor(squad)).legs[0]!.competition!;
     assert.equal(comp.tier, "confident", `squad=${squad} must stay confident`);
-    assert.equal(comp.candidates[0]!.name, baseComp, `squad=${squad} must keep the men's group`);
+    assert.equal(comp.candidates[0]!.name, "US Open", `squad=${squad} must keep the men's group`);
   }
 });
 
