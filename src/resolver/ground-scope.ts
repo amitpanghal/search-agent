@@ -86,6 +86,13 @@ const SHORTLIST_FLOOR = 0.45;
 // Kings League comp, but WC26 has ~16x the roster), so the bare query is edition-ambiguous, not confident.
 const MAJOR_RATIO = 3;
 
+// Prominence order for weakly-matched names: more live competitions = more bettable right now = what a bare
+// name most likely means ("Lamine" → Yamal, in 5 comps, not a 1-comp namesake). Feed-derived and sport-agnostic
+// (no fame list, updates with every catalog refresh); ties keep catalog order (sort is stable). Side effect:
+// esports clones (typically 1 comp) sink below the real club.
+export const byProminence = (a: Candidate, b: Candidate): number =>
+  (b.competitionIds?.length ?? 0) - (a.competitionIds?.length ?? 0);
+
 // National-team ntVariant selection from a surface marker; default senior_men (the catalog's senior NT row).
 const NT_VARIANT: Record<string, string> = { u23: "youth_men_u23", u21: "youth_men_u21", u20: "youth_men_u20" };
 
@@ -248,8 +255,7 @@ export function groundTeam(text: string, cat: ScopeCatalog): EntityResolution {
   const qTokens = [...contentTokens(text2)];
   if (qTokens.length) {
     const hits = cat.teams
-      .filter((t) => { const nt = contentTokens(t.name); return qTokens.every((q) => nt.has(q)); })
-      .slice(0, TOP_K);
+      .filter((t) => { const nt = contentTokens(t.name); return qTokens.every((q) => nt.has(q)); });
     if (hits.length === 1) return { text, tier: "confident", candidates: [cand(hits[0]!.id, 0.8)] };
     if (hits.length > 1) {
       // Deterministic twin collapse: when the query named no variant, drop the gendered/reserve/youth siblings
@@ -262,7 +268,7 @@ export function groundTeam(text: string, cat: ScopeCatalog): EntityResolution {
         if (seniors.length === 1 && hits.every((t) => base(t.name) === base(seniors[0]!.name)))
           return { text, tier: "confident", candidates: [cand(seniors[0]!.id, 0.8)] };
       }
-      return { text, tier: "shortlist", candidates: hits.map((t) => cand(t.id, 0.8)) };
+      return { text, tier: "shortlist", candidates: hits.map((t) => cand(t.id, 0.8)).sort(byProminence) };
     }
   }
 
@@ -310,7 +316,10 @@ export function groundPlayer(text: string, cat: ScopeCatalog): EntityResolution 
   const resolveSet = (ids: number[], weak: boolean): EntityResolution => {
     if (!ids.length) return { text, tier: "none", candidates: [] };
     if (ids.length === 1) return { text, tier: weak ? "shortlist" : "confident", candidates: [cand(ids[0]!, weak ? 0.7 : 1)] };
-    return { text, tier: weak ? "shortlist" : "ambiguous", candidates: ids.slice(0, TOP_K).map((id) => cand(id, weak ? 0.7 : 1)) };
+    // no cap here: the constraint pass must see every candidate (retier caps the OUTPUT after pruning).
+    const cands = ids.map((id) => cand(id, weak ? 0.7 : 1));
+    if (weak) cands.sort(byProminence);
+    return { text, tier: weak ? "shortlist" : "ambiguous", candidates: cands };
   };
 
   const full = cat.playerByFull.get(folded);
@@ -374,7 +383,8 @@ function links(c: Candidate, rootId: number): Set<number> {
 // one candidate of every other set, STRONG links first (direct membership: this player's club IS this team),
 // falling back to WEAK (shared league). A filter that would empty a set is skipped — that skip is what lets a
 // stale/incomplete roster fall through to the weaker signal instead of deleting the correct answer.
-// ponytail: O(passes · mentions² · candidates²) with mentions ≤ ~6 and candidates ≤ TOP_K — microseconds.
+// ponytail: O(passes · mentions² · candidates²) with mentions ≤ ~6; seed sets are UNCAPPED since the TOP_K cut
+// moved to retier (post-prune), so a first-name set can be a few hundred wide — still well under a millisecond.
 export function propagate(sets: Candidate[][], rootId: number): Candidate[][] {
   const cur = sets.map((s) => s.slice());
   const memo = new Map<Candidate, Set<number>>();
@@ -402,10 +412,15 @@ export function propagate(sets: Candidate[][], rootId: number): Candidate[][] {
   return cur;
 }
 
-// Re-tier a mention after pruning: a set narrowed to exactly one is settled.
-const retier = (r: EntityResolution, kept: Candidate[]): EntityResolution =>
-  kept.length === r.candidates.length ? r
-    : { text: r.text, tier: kept.length === 1 ? "confident" : r.tier, candidates: kept };
+// Re-tier a mention after pruning — and CAP it here, after the constraint pass, never before: seeds stay
+// uncapped so a linked candidate beyond TOP_K can still win ("Lamine" is 13 wide, Yamal sits 6th), while the
+// entity gate never sees more rows than before. A set narrowed to exactly one is settled; the cap alone never
+// creates confidence (the confident check reads the UNCAPPED survivor count).
+export const retier = (r: EntityResolution, kept: Candidate[]): EntityResolution => {
+  const capped = kept.slice(0, TOP_K);
+  return capped.length === r.candidates.length ? r
+    : { text: r.text, tier: kept.length === 1 ? "confident" : r.tier, candidates: capped };
+};
 
 // Constrain ONE freshly-ground mention against already-settled ones (the entity gate's re-express path, so a
 // re-grounded phrase gets the same relational narrowing the seed pass got).

@@ -173,10 +173,14 @@ const trimRelatedOutcomes = (outcomes: KOutcome[], subj: { subjectId?: number; s
     : outcomes;
 };
 
-// Sentence for a leg that produced no pick, sized to how much the query pinned down. no-market: the fixture was
+// Sentence for a leg that produced no pick, sized to how much the query pinned down. subject-absent: the fixture
+// and its menu exist but the resolved subject isn't priced anywhere on it (likely not playing, or the wrong
+// person was resolved — naming them lets the user correct us). no-market: the fixture was
 // found but the concept isn't offered. no-fixture: we know the scope (teams joined by " vs "); two teams => the
 // matchup isn't live, one team => nudge for an opponent/competition (which also disambiguates the sport).
-const noPickReason = (unavailable: { kind: "no-fixture" | "no-market"; scope?: string } | undefined, phrase: string): string => {
+const noPickReason = (unavailable: { kind: "no-fixture" | "no-market" | "subject-absent"; scope?: string; subject?: string; event?: string } | undefined, phrase: string): string => {
+  if (unavailable?.kind === "subject-absent")
+    return `${unavailable.subject} isn't priced in any market for ${unavailable.event ?? "this game"}. They may not be taking part — check the name or try a different player.`;
   if (unavailable?.kind !== "no-fixture")
     return `No "${phrase}" market is available. It may not be offered for the selected game or event.`;
   const { scope } = unavailable;

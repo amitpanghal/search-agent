@@ -14,7 +14,9 @@ import type { BetOffer, KEvent } from "./offering-client";
 import { buildBetslip } from "./combinations";
 import { picksByLeg } from "./resolve-market";
 import type { ResolvedLeg } from "./live-menu-types";
-import { queryNamesSport } from "./resolve-entities";
+import { queryNamesSport, adoptSport, resolveEntities } from "./resolve-entities";
+import { propagate, retier, byProminence, type Candidate } from "./ground-scope";
+import { execute } from "./execute";
 
 const ev = (id: number, start?: string, state?: string): KEvent => ({ id, ...(start && { start }), ...(state && { state }) });
 // The extractor's time field has all three keys, nullable — spell the absent ones so the tests type-check.
@@ -379,4 +381,85 @@ test("resolve-market: a leg-less pick binds by position when picks match bets on
   assert.deepEqual(picksByLeg(swapped as never, 2).map((p) => p.ref), [2, 5]);
   // a count mismatch never guesses: 2 bets, 1 leg-less pick -> both none
   assert.deepEqual(picksByLeg(cutOff as never, 2).map((p) => p.match), ["none", "none"]);
+});
+
+// ---------------------------------------------------------------------------------------------------------
+// EXECUTE: a none-pick leg whose fixture menu EXISTED but was emptied by the subject filter must say the
+// SUBJECT is absent (naming the grounded person, so a wrong grounding is visible and correctable) — never the
+// false "no market is available". The generic no-market wording stays for a genuinely missing concept.
+test("execute: subject-absent clarify names the resolved subject, not a missing market", () => {
+  const leg = (unavailable: ResolvedLeg["unavailable"]): ResolvedLeg => ({ phrase: "to score", pick: { match: "none" }, unavailable });
+  const run = (unavailable: ResolvedLeg["unavailable"]) =>
+    execute({ legs: [leg(unavailable)], data: { events: [], betOffers: [] } }).clarificationNeeded ?? "";
+
+  const absent = run({ kind: "subject-absent", subject: "Jamal Musiala", event: "FC Barcelona - Racing Santander" });
+  assert.ok(absent.includes("Jamal Musiala"), "must name the grounded subject");
+  assert.ok(absent.includes("FC Barcelona - Racing Santander"), "must name the fixture");
+  assert.ok(!absent.includes("No \"to score\" market"), "must not claim the market is missing");
+
+  const noMarket = run({ kind: "no-market" });
+  assert.ok(noMarket.includes("No \"to score\" market"), "a genuinely missing concept keeps the old wording");
+});
+
+// ---------------------------------------------------------------------------------------------------------
+// GROUNDER: the shortlist cap must run AFTER the constraint pass, never before — a candidate beyond the cap
+// whose club IS the named team has to survive and settle the mention ("Lamine" is 13 wide, Yamal sits 6th).
+test("grounder: a linked candidate beyond the shortlist cap survives the cross-check", () => {
+  const p = (id: number, clubId: number): Candidate => ({ id, name: `P${id}`, score: 0.7, clubId, competitionIds: [] });
+  const team: Candidate = { id: 100, name: "FC Barcelona", score: 1, clubId: 100, competitionIds: [] };
+  // six same-first-name players; only the LAST (beyond the old cap of 5) belongs to the team.
+  const players = [p(1, 11), p(2, 12), p(3, 13), p(4, 14), p(5, 15), p(6, 100)];
+  const [kept] = propagate([players, [team]], 0);
+  assert.deepEqual(kept!.map((c) => c.id), [6], "the strong club link must keep exactly the linked player");
+  const res = retier({ text: "lamine", tier: "shortlist", candidates: players }, kept!);
+  assert.equal(res.tier, "confident");
+  assert.equal(res.candidates[0]!.id, 6);
+  // uncapped seed, capped OUTPUT: an un-narrowed set still hands the entity gate at most 5 rows, not confident
+  const wide = retier({ text: "x", tier: "shortlist", candidates: players }, players);
+  assert.equal(wide.candidates.length, 5);
+  assert.equal(wide.tier, "shortlist");
+});
+
+// ---------------------------------------------------------------------------------------------------------
+// ENTITY GATE: a lone cross-sport pick must not flip the sport when anything settled in the HOME sport — a
+// leg is never split across two sports (football Yamal + basketball Barcelona). No home evidence keeps the
+// wrong-sport rescue alive; disagreeing foreign picks never flip.
+test("entity gate: a lone foreign pick cannot flip the sport against home-settled evidence", () => {
+  const foreign = new Map([[358, { sport: "basketball", cand: { id: 358, name: "FC Barcelona", score: 0.8 } }]]);
+  const pick = (id: number, ref = "team:0") =>
+    ({ kind: "settle-entity", ref, resolution: { text: "barcelona", tier: "confident", candidates: [{ id, name: "FC Barcelona", score: 0.8 }] } });
+  const legHome = { teams: [], players: [], subjectPlayer: { text: "lamine", tier: "confident", candidates: [{ id: 7, name: "Lamine Yamal", score: 1 }] } };
+  const legBare = { teams: [], players: [], subjectPlayer: null };
+  assert.equal(adoptSport([pick(358)] as never, [legHome] as never, foreign as never), null, "home player vetoes");
+  assert.equal(adoptSport([pick(358)] as never, [legBare] as never, foreign as never), "basketball", "rescue intact");
+  const f2 = new Map([...foreign, [9, { sport: "ice-hockey", cand: { id: 9, name: "X", score: 0.8 } }]]);
+  assert.equal(adoptSport([pick(358), pick(9, "team:1")] as never, [legBare] as never, f2 as never), null, "disagreement never flips");
+});
+
+// ---------------------------------------------------------------------------------------------------------
+// GROUNDER: weak shortlists rank by live-competition breadth (a bare "Lamine" should surface Yamal, in 5
+// comps, before a 1-comp namesake) — ties keep catalog order via stable sort.
+test("grounder: weak shortlists rank by live-competition prominence", () => {
+  const c = (id: number, comps: number[]): Candidate => ({ id, name: `C${id}`, score: 0.7, competitionIds: comps });
+  assert.deepEqual([c(1, [1]), c(2, [1, 2, 3]), c(3, [1, 2])].sort(byProminence).map((x) => x.id), [2, 3, 1]);
+});
+
+// ---------------------------------------------------------------------------------------------------------
+// ENTITY GATE: settling a name from a WEAK shortlist is a guess — the envelope must carry a non-blocking
+// "Showing X — could also be Y" note naming the runners-up (results + hedge, never a silent wrong answer).
+test("entity gate: a pick from a weak shortlist ships with a 'could also be' note", async () => {
+  const scope = { sport: "football", legs: [{ region: null, competition: null, level: "fixture", stage: null,
+    time: null, playState: null, teams: [], players: [], playerRoles: [], subjectPlayer: { text: "lamine",
+    tier: "shortlist", candidates: [
+      { id: 1, name: "Lamine A", score: 0.7, competitionIds: [1, 2] },
+      { id: 2, name: "Lamine B", score: 0.7, competitionIds: [1] },
+    ] } }] };
+  const decide = async (_q: string, cells: { ref: string; candidates: { id: number }[] }[]) =>
+    [{ ref: cells[0]!.ref, action: "pick", id: cells[0]!.candidates[0]!.id }];
+  // the query NAMES the sport, so no cross-sport widening (keeps the test offline-cheap and deterministic)
+  const settled = await resolveEntities("lamine to score football", scope as never, decide as never);
+  assert.equal(settled.notes.length, 1);
+  assert.ok(settled.notes[0]!.includes("Showing Lamine A"), settled.notes[0]);
+  assert.ok(settled.notes[0]!.includes("Lamine B"), settled.notes[0]);
+  assert.equal(settled.clarifications.length, 0);
 });

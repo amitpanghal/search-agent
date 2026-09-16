@@ -27,6 +27,7 @@ export type Clarification = { ref: CellRef | "market" | "scope" | "time"; questi
 // — the market is decided AFTER the fetch now, so nothing market-shaped is committed at this stage.
 export type SettledEntities = ResolvedScope & {
   clarifications: Clarification[];
+  notes: string[]; // non-blocking hedges ("Showing X — could also be Y"); ride the envelope's notes[]
 };
 
 // ---- RECALL output: the live menu ----
@@ -88,8 +89,10 @@ export type ResolvedLeg = {
   // to the SAME subject as the highlighted pick (a player-anchored query shouldn't list every player again).
   subjectId?: number;
   // why a `none`-pick leg has no result: the scope matched no fixture (`no-fixture`, `scope` = the team it
-  // wanted) vs a fixture existed but no market fit the concept (`no-market`). Drives the clarify wording.
-  unavailable?: { kind: "no-fixture" | "no-market"; scope?: string };
+  // wanted), vs the fixture's menu existed but the resolved subject isn't priced anywhere on it
+  // (`subject-absent`, `subject` = the grounded name, `event` = the fixture when unambiguous), vs a fixture
+  // existed but no market fit the concept (`no-market`). Drives the clarify wording.
+  unavailable?: { kind: "no-fixture" | "no-market" | "subject-absent"; scope?: string; subject?: string; event?: string };
 };
 
 // One leg of the "We understood" echo — the resolver's per-selector interpretation, in QUERY order (NOT grouped

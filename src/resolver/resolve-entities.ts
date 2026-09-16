@@ -334,20 +334,57 @@ function applyOutcomes(s: SettledEntities, outcomes: Outcome[], places: Map<Cell
   }
 }
 
+// Every candidate came from another sport's catalog (settleOutcome never mixes local and foreign rows).
+const isForeign = (res: EntityResolution, foreign: ForeignIds): boolean =>
+  res.candidates.length > 0 && res.candidates.every((c) => foreign.has(c.id));
+
+// SPORT ADOPTION with a home-sport veto. Adopt a foreign pick's sport only when every foreign pick agrees AND
+// nothing corroborates the home sport. Corroboration = any team/player settled in the HOME catalog: a local
+// gate pick (incl. a re-express that re-grounded home) or an entity already confident at ground time (never a
+// cell). One home-settled entity means the query makes sense here — a lone foreign pick must not drag the leg
+// into another sport (the Lamine split: a football player + a basketball club on one leg). Regions and
+// competitions don't vote — their names repeat across sports (the inversion recover-sport.ts documents).
+export function adoptSport(outcomes: Outcome[], legs: ResolvedScope["legs"], foreign: ForeignIds): string | null {
+  const sports = new Set(outcomes.flatMap((o) =>
+    o.kind === "settle-entity" && isForeign(o.resolution, foreign)
+      ? [foreign.get(o.resolution.candidates[0]!.id)!.sport] : []));
+  if (sports.size !== 1) return null;
+  const homeSettled = (r: EntityResolution | null): boolean =>
+    !!r && (r.tier === "confident" || r.tier === "variants") && r.candidates.some((c) => !foreign.has(c.id));
+  const home =
+    outcomes.some((o) => o.kind === "settle-entity" && !isForeign(o.resolution, foreign)) ||
+    legs.some((l) => [...l.teams, ...l.players, l.subjectPlayer].some(homeSettled));
+  return home ? null : [...sports][0]!;
+}
+
 // resolveEntities: the deterministic orchestrator. Returns a cloned ResolvedScope with entity picks collapsed
 // to confident + a clarifications sidecar. A clarify is terminal for its cell; recall fetches only confident ids.
 export async function resolveEntities(query: string, scope: ResolvedScope, decideFn: DecideFn = decide): Promise<SettledEntities> {
   const settled = structuredClone(scope) as SettledEntities;
   settled.clarifications = [];
+  settled.notes = [];
   const foreign: ForeignIds = new Map();
   const { cells, places } = buildEntityCells(scope, foreign, !queryNamesSport(query, scope.sport));
   if (!cells.length) return settled;
   const outcomes = await runPass(query, cells, decideFn, foreign);
-  applyOutcomes(settled, outcomes, places);
-  // A pick from another catalog means the extractor's sport was wrong. Adopt it only when EVERY cross-sport
-  // pick agrees — disagreeing anchors mean we misread the query, and guessing there is how a correct plan dies.
-  const picks = new Set(outcomes.flatMap((o) =>
-    o.kind === "settle-entity" ? o.resolution.candidates.map((c) => foreign.get(c.id)?.sport).filter((x): x is string => !!x) : []));
-  if (picks.size === 1) settled.sport = [...picks][0]!;
+  const adopted = adoptSport(outcomes, scope.legs, foreign);
+  if (adopted) settled.sport = adopted;
+  // A foreign pick we did NOT adopt would split the leg across two sports — demote it to a clarify on its
+  // original cell (fail toward asking; the local candidates are the choices).
+  const cellByRef = new Map(cells.map((c) => [c.ref, c]));
+  const kept = adopted ? outcomes : outcomes.map((o) =>
+    o.kind === "settle-entity" && isForeign(o.resolution, foreign) ? clarifyFor(cellByRef.get(o.ref)!) : o);
+  // A pick from a WEAK shortlist is our best guess, not knowledge — say so and name the runners-up, so the
+  // user can correct us without a blocking question (a result + hedge beats a silent wrong answer).
+  for (const o of kept) {
+    if (o.kind !== "settle-entity") continue;
+    const cell = cellByRef.get(o.ref);
+    if (!cell || cell.entity.tier !== "shortlist" || cell.entity.candidates.length < 2) continue;
+    const picked = new Set(o.resolution.candidates.map((c) => c.id));
+    const others = cell.entity.candidates.filter((c) => !picked.has(c.id)).slice(0, 3).map((c) => c.name);
+    if (others.length) settled.notes.push(
+      `Showing ${o.resolution.candidates[0]!.name} for "${cell.text}" — could also be ${others.join(", ")}. Add a team or competition to be exact.`);
+  }
+  applyOutcomes(settled, kept, places);
   return settled;
 }

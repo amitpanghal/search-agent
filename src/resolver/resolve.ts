@@ -404,10 +404,13 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
     // empty scoped slate) from "a fixture existed but no market fit the concept" — execute renders each differently.
     const namedTeams = [...(sel.scope.teams ?? []), ...(sel.subject.kind === "team" ? [sel.subject.name] : [])];
     const wantedFixture = sel.scope.level === "fixture" || namedTeams.length > 0 || !!sel.scope.time;
+    const filteredSubject = subjectName(leg, sel.subject);
     const unavailable = pick.match === "none"
       ? (scoped.events.length === 0 && wantedFixture
           ? { kind: "no-fixture" as const, ...(namedTeams.length ? { scope: [...new Set(namedTeams)].join(" vs ") } : {}) }
-          : { kind: "no-market" as const })
+          : scoped.offers.length > 0 && fr.offers.length === 0 && filteredSubject
+            ? { kind: "subject-absent" as const, subject: filteredSubject, ...(scoped.events.length === 1 ? { event: scoped.events[0]!.name } : {}) }
+            : { kind: "no-market" as const })
       : undefined;
     legsOut.push({ phrase: sel.market_concept, pick, ...(selection ? { selection } : {}), ...(spec.subjectId != null ? { subjectId: spec.subjectId } : {}), ...(unavailable ? { unavailable } : {}) });
     legsUnderstood.push({ ...under, matched: !!selection && !selection.fallback, ...(pick.label ? { market: pick.label } : {}) });
@@ -450,7 +453,7 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
     legs: legsOut,
     data: { events: [...execEvents.values()], betOffers: [...execOffers] },
     clarifications: settled.clarifications,
-    notes: [...extraNotes],
+    notes: [...settled.notes, ...extraNotes],
     truncated: r.truncated,
     fetchFailed: r.failed,
     ...(betslip ? { betslip } : {}),
