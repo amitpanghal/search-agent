@@ -25,6 +25,7 @@ const isKnownZone = (tz: string): boolean => {
 const QueryBody = z.object({
   query: z.string().min(1).max(500),
   tz: z.string().refine(isKnownZone, "unknown IANA timezone").optional(),
+  locale: z.string().regex(/^[a-z]{2}_[A-Z]{2}$/, "locale must look like sv_SE").optional(),
 });
 
 export function buildApp() {
@@ -42,8 +43,9 @@ export function buildApp() {
   app.post("/query", async (c) => {
     let query: string;
     let tz: string | undefined;
+    let locale: string | undefined;
     try {
-      ({ query, tz } = QueryBody.parse(await c.req.json()));
+      ({ query, tz, locale } = QueryBody.parse(await c.req.json()));
     } catch (err) {
       return c.json({ error: err instanceof Error ? err.message : "Invalid request body" }, 400);
     }
@@ -51,7 +53,7 @@ export function buildApp() {
 
     return streamSSE(c, async (stream) => {
       try {
-        for await (const evt of runPipeline(query, { tz })) {
+        for await (const evt of runPipeline(query, { tz, locale })) {
           // Stage markers carry only their name; `done` carries the whole envelope.
           await stream.writeSSE({
             event: evt.stage,

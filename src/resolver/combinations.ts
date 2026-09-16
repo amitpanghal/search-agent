@@ -156,8 +156,8 @@ export async function buildBetslip(
       const { b, o } = byOutcome.get(id)!;
       outLegs.push({
         ...(b.eventId != null ? { eventId: b.eventId } : {}),
-        market: b.criterion?.englishLabel ?? b.criterion?.label ?? "?",
-        outcome: o.englishLabel ?? o.label ?? "?",
+        market: b.criterion?.label ?? b.criterion?.englishLabel ?? "?",
+        outcome: o.label ?? o.englishLabel ?? "?",
         ...(o.participant ? { participant: o.participant } : {}),
         ...(o.line != null ? { line: o.line } : {}),
         outcomeId: id,

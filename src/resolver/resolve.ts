@@ -141,7 +141,7 @@ export type StageEvent =
 // expensive phase (extract LLM, recall fetch, market-resolve LLM) and a final `done` carrying the envelope.
 // The SSE server forwards each yield; resolveQuery (below) drains it to the single envelope for non-streaming
 // callers (eval, probes).
-export async function* runPipeline(query: string, opts: { until?: string; tz?: string } = {}): AsyncGenerator<StageEvent> {
+export async function* runPipeline(query: string, opts: { until?: string; tz?: string; locale?: string } = {}): AsyncGenerator<StageEvent> {
   // Per-query LLM usage: each stage runs inside usageStore so bedrock-call records its tokens here (cost.ts).
   // Stamp every `done` envelope with the running total so the frontend can show per-query token/cost.
   const calls: RawCall[] = [];
@@ -198,7 +198,7 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
 
   // Guard: if the entity gate couldn't resolve any ids (e.g. ambiguous player with no competition anchor)
   // and raised clarifications, return them instead of crashing in recall with "need groupIds, participantIds…".
-  const recallInput = planRecall(settled, plan);
+  const recallInput = planRecall(settled, plan, opts.locale);
   if (!recallInput.participantIds?.length && !recallInput.groupIds?.length && !recallInput.eventIds?.length) {
     if (settled.clarifications.length > 0) {
       yield { stage: "done", envelope: withCost(execute({ legs: [], data: { betOffers: [], events: [] }, clarifications: settled.clarifications })) };

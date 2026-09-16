@@ -43,7 +43,7 @@ function legParticipants(leg: ResolvedLegScope, cat: ScopeCatalog): number[] {
   ];
 }
 
-export function planRecall(settled: SettledEntities, plan: QueryPlan): RecallInput {
+export function planRecall(settled: SettledEntities, plan: QueryPlan, locale?: string): RecallInput {
   const cat = loadScopeCatalog(plan.sport);
   const legs = settled.legs;
   const participantIds = [...new Set(legs.flatMap((l) => legParticipants(l, cat)))];
@@ -64,8 +64,8 @@ export function planRecall(settled: SettledEntities, plan: QueryPlan): RecallInp
   // those cases fetch broad and the main leg's MAIN-tag filter is applied per-leg downstream (resolve.ts).
   const onlyMain = plan.selectors.every((s) => s.market_concept === "main");
 
-  // Localize the feed's labels to the query's language (code owns the name->locale map; unmapped/absent -> en_GB).
-  const base: RecallInput = { levels, lang: localeOf(plan.language), ...(playState ? { playState } : {}), ...(onlyMain ? { onlyMain: true } : {}) };
+  // Localize the feed's labels: the client's locale wins; absent -> the query's detected language -> en_GB.
+  const base: RecallInput = { levels, lang: locale ?? localeOf(plan.language), ...(playState ? { playState } : {}), ...(onlyMain ? { onlyMain: true } : {}) };
   // Model P: a named participant -> participant endpoint; a bare-competition leg -> its group; a mixed query -> both.
   return { ...base, ...(participantIds.length ? { participantIds } : {}), ...(groupIds.length ? { groupIds } : {}) };
 }
