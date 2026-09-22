@@ -169,7 +169,7 @@ for a later intent.
      JEV_PRICE_IN=0.042
      ```
      and the first comment line gains "and the Jev key".
-   - Run `npm test` → green, 38 tests; `npm run typecheck`; `npm run gate:live-menu`.
+   - Run `npm test` → green, 39 tests; `npm run typecheck`; `npm run gate:live-menu`.
    - Files: `src/resolver/jev-call.ts` (new), `src/resolver/resolve-entities.ts`,
      `src/resolver/disambiguator-prompt.md` (deleted), `src/resolver/bedrock-call.ts`, `.env.example`,
      `src/resolver/invariants.test.ts`. Commit: `build: step 2 — Jev settles the entity cells`.
@@ -207,7 +207,7 @@ for a later intent.
 |---|---|---|
 | 1 — Jev settles a confident cell, one request for all cells | `jev-call.ts`, `resolve-entities.ts` | `invariants.test.ts` → "Jev settles confident cells in one request…": Saka → 1005184672, Premier League → 1000094985, fetch called once |
 | 2 — below threshold / `none` / no candidates → today's clarify, no Bedrock | `resolve-entities.ts` | "a Jev pick below the threshold clarifies…" (Tottenham 0.75 → 1 clarify, 5 distinct `suggest`) and "a cell with no candidates clarifies without a Jev request" (0 fetch calls); no AWS env in `npm test`, so a Bedrock call would throw |
-| 3 — Qwen gone: no prompt file, no `bedrock-call` import, `Decision` = `pick`; missing key fails by name | `resolve-entities.ts`, `disambiguator-prompt.md` (deleted), `bedrock-call.ts` | "a missing JEV_ACCESS_KEY fails the query by name…" (rejects, 0 fetch calls); the file facts are checked in review by `grep -n bedrock-call src/resolver/resolve-entities.ts` (empty) and `ls src/resolver/disambiguator-prompt.md` (gone); `npm test` 38 green, `npm run gate:live-menu` green |
+| 3 — Qwen gone: no prompt file, no `bedrock-call` import, `Decision` = `pick`; missing key fails by name | `resolve-entities.ts`, `disambiguator-prompt.md` (deleted), `bedrock-call.ts` | "a missing JEV_ACCESS_KEY fails the query by name…" (rejects, 0 fetch calls); the file facts are checked in review by `grep -n bedrock-call src/resolver/resolve-entities.ts` (empty) and `ls src/resolver/disambiguator-prompt.md` (gone); `npm test` 39 green, `npm run gate:live-menu` green |
 | 4 — retry once on 429/529; every other failure → clarify, no error to the caller | `jev-call.ts` | "Jev failures retry once on 429/529 and otherwise clarify": 429→200 settles (2 calls), 529→529 clarifies (2 calls), thrown fetch clarifies (1 call), bad body clarifies (1 call) |
 | 5 — one `llm-req` + one `llm-resp` per request; one `usageStore` row priced `inputTokens × JEV_PRICE_IN / 1e6` | `jev-call.ts`, `cost.ts` | the trace and `rows` asserts inside the criterion-1 test, plus "cost: a row carrying its own price…" (`summarizeCost`, Bedrock row still priced from `BEDROCK_PRICE_*`) |
 | 6 — one live comparison pasted in the PR | pull request body | no automated test — by design a paid probe with an OK (step 4); review checks the paste is present and the id is 1000094985 or the cell clarified |
@@ -216,7 +216,7 @@ Criteria 1–5 have a test. Criterion 6 is evidence in the pull request by desig
 
 ## Checks
 
-- `npm test` — 38 tests (33 + 5), no `.env`, no network
+- `npm test` — 39 tests (33 + step 1's cost test + 5), no `.env`, no network
 - `npm run typecheck`
 - `npm run gate:live-menu`
 - `npm run eval -- --from <existing capture>` — free replay; entity gate unchanged
@@ -225,3 +225,9 @@ Criteria 1–5 have a test. Criterion 6 is evidence in the pull request by desig
   (criterion 6); reuse the saved trace, never re-run
 - Review greps: `grep -rn "reexpress\|reground\|disambiguator-prompt\|bedrockToolCall" src/resolver/resolve-entities.ts`
   → empty; `git diff sdlc-jev --stat` shows only the files the steps name
+
+## Decisions
+
+- 2026-09-22 — Test count corrected from 38 to 39: the plan's "33 + 5" left out the cost test step 1 adds, so
+  the total after step 2 is 33 + 1 + 5. Found while building step 2; fixed here in the same commit. Decided
+  by: engineer (factual).
