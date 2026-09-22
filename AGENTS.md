@@ -47,8 +47,12 @@ genuinely about model behaviour.
 
 ## Git & PRs
 
-- The integration branch is **`main`**. Feature branches are cut from `origin/main` after `git fetch`;
-  all PRs target `main`. Nobody edits `main` directly.
+- **The integration branch is `sdlc-jev`** for the SDLC + Jev initiative, until that branch itself
+  merges to `main`. Wherever the loop skills, `intent/README.md` or the guides say `main` or
+  `origin/main`, read `sdlc-jev` / `origin/sdlc-jev`: feature branches are cut from `origin/sdlc-jev`
+  after `git fetch`, every pull request targets `sdlc-jev`, and nobody edits `sdlc-jev` directly. When
+  the initiative lands, one pull request `sdlc-jev` → `main` carries it all, and this line and the
+  `branches:` filter in `.github/workflows/artifact-status.yml` go back to `main`.
 - One feature, one branch, one worktree. Two implementations never share a working tree.
 - **A branch already used by another worktree.** Git lets a branch be checked out in one worktree at a
   time, and a session's worktree under `.claude/worktrees/` keeps its branch after the session ends. When

@@ -28,7 +28,8 @@ on:
     # ticking one is an edit. Without it the check keeps judging the text from
     # the last push, and "Re-run jobs" replays that same stale text.
     types: [opened, synchronize, reopened, edited, labeled, unlabeled]
-    branches: [main]
+    # sdlc-jev is the integration branch while the SDLC + Jev initiative runs (see AGENTS.md, Git & PRs).
+    branches: [main, sdlc-jev]
 
 permissions:
   contents: read
