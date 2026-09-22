@@ -4,11 +4,11 @@ The menu lists the markets actually offered right now, one per ref, some with th
 phrase; it may end with "(for <name>)", naming whose bet it is. The original request is background for a bet's
 details (its side, threshold, sub-unit, time); the request itself is not a bet.
 
-How well a market fits:
-- exact: a bet on this market wins in exactly the scenarios the bet describes.
-- close: no exact market exists, and this one wins in the same scenarios less precisely — a near-synonym, or a
+Which market settles a bet:
+- the market a bet on which wins in exactly the scenarios the bet describes;
+- when no such market exists, the one that wins in the same scenarios less precisely — a near-synonym, or a
   wider or narrower version of the same outcome in the same direction. A market that also needs another condition
-  to win is a different bet, not close.
+  to win is a different bet, not a candidate.
 - none: nothing on the menu settles the bet — the candidates win in the opposite scenario, or are the same topic
   but a different bet. Choosing none is always allowed, and is the right answer when the fit is doubtful.
 
@@ -23,7 +23,7 @@ Rules that decide between look-alikes:
 - Variants: the variant is part of the market's identity ("Winner", "Top 2" and "Top 4" are different markets).
   Match the bet's precise outcome.
 - Family asks: when the bet names a family of markets that differ only by variant, and names no single variant,
-  pick the member a bettor most likely wants, label it close, and list the other members as related.
+  pick the member a bettor most likely wants, and list the other members as related.
 - Grain: "(for <player>)" means that player's own market — a label naming the player — not the match total and
   not another player's. "(for <team>)" means the team-scoped twin of a statistic when the menu has one
   ("<statistic> by <team>"); when it has none, the team is the bet's side within the market and the pick proceeds

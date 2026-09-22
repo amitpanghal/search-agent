@@ -1,7 +1,8 @@
 // RESOLVE(market) — ONE Jev request per query. Every BET is a phrase plus its own FILTERED live menu; Jev answers
-// `choice` questions per bet: which menu item settles it (`pick`), whether the menu holds an exact market or only
-// a close one (`fit`), which other market this bettor would add next (`next`), and which listed outcome the bet
-// names (`outcome`, only when the bet's menu carries outcomes). The rulebook (resolve-market-prompt.md) rides ONCE
+// `choice` questions per bet: which menu item settles it (`pick`), which other market this bettor would add next
+// (`next`), and which listed outcome the bet names (`outcome`, only when the bet's menu carries outcomes). A
+// committed pick is always `exact`: the exact/close label reached no consumer (the envelope echoes `matched`
+// from select), so the question that produced it was dropped (spec Decisions, 2026-09-23). The rulebook (resolve-market-prompt.md) rides ONCE
 // in `state.rules`; the union of all bets' menus rides once in `state.menu`, and each bet's questions list only ITS
 // refs, so bets with different menus share one round-trip. A pick counts at or above JEV_MARKET_THRESHOLD on the
 // chosen option's probability; below it, on `none`, or when Jev does not answer, the bet is `{ match: "none" }` —
@@ -94,7 +95,6 @@ export const decideWithJev: DecideManyFn = async (bets, query) => {
       questions[`pick${key}`] = { type: "choice", instructions: `${who} Which menu market settles this bet? Apply state.rules. Answer none when no market on the menu settles it.`, criteria: { ...labelOf(refs), none: NONE_PICK } };
       questions[`next${key}`] = { type: "choice", instructions: `${who} Which other market on the same fixture would a bettor who placed this bet most likely add next?`, criteria: labelOf(refs) };
     });
-    questions[`fit:${i}`] = { type: "choice", instructions: `${who} Does the menu hold a market that settles this bet exactly (exact), or only one that settles it less precisely, as state.rules define close?`, criteria: { exact: "a market on the menu wins in exactly the bet's scenarios", close: "only a less precise market of the same outcome and direction exists" } };
     const outs = [...new Set(b.menu.flatMap((m) => m.outcomes ?? []))];
     if (outs.length) questions[`outcome:${i}`] = { type: "choice", instructions: `${who} Which listed outcome does this bet name? Answer none when it names no listed outcome.`, criteria: { ...Object.fromEntries(outs.map((o) => [o, o])), none: NONE_OUTCOME } };
   });
@@ -110,13 +110,12 @@ export const decideWithJev: DecideManyFn = async (bets, query) => {
       .sort((x, y) => (y.probabilities[y.choice] ?? 0) - (x.probabilities[x.choice] ?? 0))[0];
     if (!best) return { ref: null, match: "none" };
     const ref = own(best.choice);
-    const match = res.answers[`fit:${i}`]?.choice === "exact" ? "exact" : "close";
     const outcome = res.answers[`outcome:${i}`]?.choice;
     const related = answersFor(res.answers, `next:${i}`)
       .flatMap((a) => Object.entries(a.probabilities))
       .sort((x, y) => y[1] - x[1])
       .map(([k]) => own(k))
       .filter((r) => r >= 0);
-    return { ref, match, outcome: outcome && outcome !== "none" ? outcome : null, related };
+    return { ref, match: "exact", outcome: outcome && outcome !== "none" ? outcome : null, related };
   });
 };

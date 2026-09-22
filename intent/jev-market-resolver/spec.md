@@ -10,7 +10,7 @@
 one `MarketPick` per bet out — and its injectable decider. Its default decider `callModel` (line 82, Bedrock)
 is replaced by a Jev-backed one built on the transport that already ships for the entity stage (`jevChoice`,
 `src/resolver/jev-call.ts:46`): for every bet a `pick` question over that bet's own menu refs plus `none`, a
-two-option `fit` question (`exact` | `close`), a `next` question for related markets, and the outcome answer;
+`next` question for related markets, and the outcome answer;
 all bets of a query travel in ONE request whose `state` carries the union menu, so the orchestrator
 (`resolve.ts:268–307`) stops firing one call per menu group and makes a single call after the groups are
 prepared. A pick counts only at or above a probability threshold; below it, on `none`, or when Jev does not
@@ -33,10 +33,10 @@ cell). Both are recorded under Decisions; the intent's number is corrected with 
    the labels. Test (stubbed global `fetch`, canned answers): the Andorra bets `who wins (for Andorra)`, `both
    teams to score`, `correct score` against the captured menus resolve to `Full Time`, `Both Teams To Score`,
    `Correct Score` — the picks Qwen made on 2026-09-21.
-2. **`exact` or `close` from a two-option question.** Each bet also carries a `choice` question with options
-   `exact` and `close`; the pick's `match` is the more probable option. Observable: the envelope leg's
-   `pick.match`; `Family asks` (a bet naming a whole family) still returns `close` plus the family as `related`.
-   Test: canned `fit` answer `exact` 0.9 → `match: "exact"`; `close` 0.7 → `match: "close"`.
+2. **A committed pick is `exact`.** No fit question is asked: every pick that clears criterion 1 carries
+   `match: "exact"`; `close` is never produced (amended 2026-09-23, see Decisions — the label reached no
+   consumer). Observable: the market gate (`exact` on a gold id) and the trace's `market` row. Test: the
+   criterion-1 test asserts `["Full Time", "exact"]`, and the request body carries no `fit:*` question.
 3. **Below the threshold, `none` — never a guess.** A pick below `JEV_MARKET_THRESHOLD`, a `none` choice, or a
    ref the menu does not carry yields `{ match: "none" }`, and the leg renders today's no-market message
    (`execute.ts:216`, `noPickReason`). Observable: the envelope leg has no `pick.label` and its `unavailable.kind`
@@ -168,8 +168,8 @@ cell). Both are recorded under Decisions; the intent's number is corrected with 
   outcomes? }], bets: [{ leg, phrase, refs }] }` — `rules` is the text of `resolve-market-prompt.md`, sent ONCE;
   `menu` is the union of the groups' filtered menus deduped by label, `refs` the indices each bet may pick from.
   `questions`: per bet `b`, `pick:b` (`choice`, criteria = that bet's refs as `"<ref>": label` plus `none`),
-  `fit:b` (`choice`, criteria `exact` / `close`), `next:b` (`choice`, that bet's refs), and the outcome answer per
-  criterion 4. Each question's `instructions` is a one-line template in code naming the bet (its leg, its phrase
+  `next:b` (`choice`, that bet's refs), and the outcome answer per criterion 4 (the `fit:b` question was dropped on
+  2026-09-23, see Decisions). Each question's `instructions` is a one-line template in code naming the bet (its leg, its phrase
   with the `(for <name>)` grain hint from `betPhrase`, `resolve.ts:53`) and pointing at `state.rules`. Only
   `choice` questions are used.
 - **Reply** (`Reply`, `jev-call.ts:32`): `answers[key] = { choice, probabilities }`; `usage.input_tokens`.
@@ -183,7 +183,7 @@ cell). Both are recorded under Decisions; the intent's number is corrected with 
 ## Test plan
 
 - **Unit, criteria 1–10** (`src/resolver/invariants.test.ts`, stubbed global `fetch`, no network, no model):
-  Andorra bets → the three Qwen picks (1); `fit` 0.9/0.7 → exact/close (2); below threshold, `none`, bad ref →
+  Andorra bets → the three Qwen picks, labelled `exact`, no `fit:*` in the body (1, 2); below threshold, `none`, bad ref →
   `none` (3); outcome `3-2` kept, `9-9` dropped (4); `next` top-3 minus pick (5); two menus → one `fetch`, picks
   from own menus (6); 429→200, 529→529, thrown `fetch` (7); key unset rejects naming `JEV_ACCESS_KEY` (8); env
   names ⊆ `.env.example`, secrets ⊆ `render.yaml` (9); one usage row `tool: "pick"` with `priceIn` (10). Canned
@@ -304,4 +304,10 @@ cell). Both are recorded under Decisions; the intent's number is corrected with 
   (`Total Goals`, `close`) at 0.72–0.73. The replay's confident-wrong pick sat at 0.62 and Jev's own `none` at
   0.56, so 0.7 still separates right from wrong, with a 0.08 margin instead of 0.18. Chosen over carrying the
   leg's line into the bet phrase (a `betPhrase` change) and over accepting the abstain. Decided by: product owner.
+- 2026-09-23 — The `fit` question is dropped and every committed pick is `exact`. A code check showed the
+  exact/close label reached no consumer: the envelope's per-leg echo is `{ subject, phrase, market, line,
+  matched }` with `matched` derived from `select`, and every downstream test reads only `match === "none"`. The
+  label fed the market gate (which still passes on `exact`) and the trace, at ~600 input tokens per 3-leg query
+  (≈ $0.000025, 5% of the market row). Criterion 2 reworded; this closes its earlier "Product owner to confirm".
+  Decided by: product owner.
 

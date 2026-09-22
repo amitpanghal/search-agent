@@ -646,7 +646,7 @@ test("entity gate: the threshold is inclusive, env-driven, and falls back to 0.8
 
 // ---------------------------------------------------------------------------------------------------------
 // MARKET on Jev (intent/jev-market-resolver). ONE Jev request per resolveMarkets call carries every bet: the union
-// menu once in state, and per bet a pick / fit / next / outcome `choice` question over THAT bet's own refs. A pick
+// menu once in state, and per bet a pick / next / outcome `choice` question over THAT bet's own refs. A pick
 // counts at or above JEV_MARKET_THRESHOLD; everything else is `none`. No network: fetch is stubbed and answers by
 // LABEL against the request it receives, so the tests never depend on how the decider numbers the union menu. The
 // bets and menus are the 2026-09-21 Qwen captures (src/eval/market-picks.capture.json); the expected labels are
@@ -656,9 +656,9 @@ const CAPTURE = JSON.parse(readFileSync(new URL("../eval/market-picks.capture.js
 const andorra = CAPTURE.cases.filter((c) => c.query.startsWith("andorra"));
 const asBet = (c: CapturedCase) => ({ phrase: c.phrase, menu: c.menu });
 const marketEnv = { ...jevEnv, JEV_MARKET_THRESHOLD: undefined };
-type Canned = { pick: string; prob?: number; fit?: { exact: number; close: number }; next?: Record<string, number>; outcome?: string };
+type Canned = { pick: string; prob?: number; next?: Record<string, number>; outcome?: string };
 type JevBody = { state: { menu: { label: string }[] }; questions: Record<string, { criteria: Record<string, string> }> };
-// A fetch stub that reads the request and answers each bet by label: pick (a label, "none", or a raw key), fit,
+// A fetch stub that reads the request and answers each bet by label: pick (a label, "none", or a raw key),
 // next (label -> probability) and outcome. Usage is fixed so the cost row is checkable.
 const jevStub = (t: TestContext, legs: Canned[]) =>
   t.mock.method(globalThis, "fetch", async (_url: unknown, init: { body: string }) => {
@@ -668,8 +668,6 @@ const jevStub = (t: TestContext, legs: Canned[]) =>
     legs.forEach((c, b) => {
       const key = refOf(c.pick), p = c.prob ?? 0.97;
       answers[`pick:${b}`] = { type: "choice", choice: key, probabilities: { [key]: p, none: 1 - p } };
-      const f = c.fit ?? { exact: 0.9, close: 0.1 };
-      answers[`fit:${b}`] = { type: "choice", choice: f.exact >= f.close ? "exact" : "close", probabilities: f };
       if (c.next) {
         const probs = Object.fromEntries(Object.entries(c.next).map(([l, pr]) => [refOf(l), pr]));
         answers[`next:${b}`] = { type: "choice", choice: Object.entries(probs).sort((x, y) => y[1] - x[1])[0]![0], probabilities: probs };
@@ -688,21 +686,13 @@ test("market: Jev picks each bet from its own menu in ONE request", async (t) =>
     assert.deepEqual(picks.map((p) => [p.label, p.match]), [["Full Time", "exact"], ["Both Teams To Score", "exact"]]);
     const body = requestBody(fetch);
     assert.ok((body.state as { rules?: string }).rules!.length > 500, "the rulebook rides once, in state.rules");
-    assert.deepEqual(Object.keys(body.questions).filter((k) => k.endsWith(":0")).sort(), ["fit:0", "next:0", "outcome:0", "pick:0"]);
+    assert.deepEqual(Object.keys(body.questions).filter((k) => k.endsWith(":0")).sort(), ["next:0", "outcome:0", "pick:0"]);
     // pick:0 offers bet 0's own menu + none — nothing from bet 1's menu; the union menu is deduped by label
     const keys0 = Object.keys(body.questions["pick:0"]!.criteria);
     assert.equal(keys0.length, andorra[0]!.menu.length + 1);
     assert.ok(keys0.includes("none"));
     assert.deepEqual(new Set(keys0.filter((k) => k !== "none").map((k) => body.state.menu[Number(k)]!.label)), new Set(andorra[0]!.menu.map((m) => m.label)));
     assert.equal(body.state.menu.length, new Set([...andorra[0]!.menu, ...andorra[1]!.menu].map((m) => m.label)).size);
-  });
-});
-
-test("market: exact or close is the fit question's more probable option", async (t) => {
-  await withEnv(marketEnv, async () => {
-    jevStub(t, [{ pick: "Full Time", fit: { exact: 0.9, close: 0.1 } }, { pick: "Both Teams To Score", fit: { exact: 0.3, close: 0.7 } }]);
-    const picks = await resolveMarkets([asBet(andorra[0]!), asBet(andorra[1]!)]);
-    assert.deepEqual(picks.map((p) => p.match), ["exact", "close"]);
   });
 });
 
@@ -742,7 +732,7 @@ test("market: related is the next question's top three, pick excluded", async (t
 
 test("market: Jev failures retry once on 429/529 and otherwise answer none, never throw", async (t) => {
   await withEnv(marketEnv, async () => {
-    const ok = { answers: { "pick:0": { type: "choice", choice: "0", probabilities: { "0": 0.97, none: 0.03 } }, "fit:0": { type: "choice", choice: "exact", probabilities: { exact: 0.9, close: 0.1 } } }, usage: { input_tokens: 10 } };
+    const ok = { answers: { "pick:0": { type: "choice", choice: "0", probabilities: { "0": 0.97, none: 0.03 } } }, usage: { input_tokens: 10 } };
     const run = async (seq: Array<Response | Error>) => {
       const fetch = stubFetch(t, seq);
       const trace: TraceEvent[] = [];

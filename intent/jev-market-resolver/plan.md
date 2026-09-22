@@ -255,4 +255,7 @@ rule**, **Never drop a row on missing data**, and the skills-and-documents rule 
 - 2026-09-23 — Step 7 also changed `src/resolver/resolve-market.ts` (threshold default 0.8 → 0.7), `.env.example`
   and the criterion-3 test: the live probe's bare-concept leg sat at 0.72–0.73 and the product owner chose the
   lower cut over a `betPhrase` change. Plan fact; decided by: engineer, on the product owner's choice.
+- 2026-09-23 — After verification the product owner dropped the `fit` question (spec criterion 2 amended): one
+  question per bet fewer in `resolve-market.ts`, its test removed, and the stage row in the resolver-pipeline
+  skill updated. Plan fact; decided by: engineer, on the product owner's choice.
 

@@ -8,7 +8,7 @@ description: >-
   per-leg scope, the market-deferred fetch, grounding tiers, or the entity/market LLM steps. Read this BEFORE
   editing pipeline code; pair it with the probe skill to actually run a query through it and read the trace.
 metadata:
-  version: "1.2"
+  version: "1.3"
 ---
 
 # resolver-pipeline
@@ -47,7 +47,7 @@ both ids are env-driven, so never hard-code a model name.
 | 6 | recall | `recall.ts` | network | `RecallInput` → `RecallResult` (broad live data + menu; the only network in the rig) |
 | 7 | scopeMenu | `recall.ts` (`scopeMenu`) | no | broad data + one leg → that leg's narrowed offers/events/menu (grain, comp, teams, time, state) |
 | 8 | filterBySubject | `filter.ts` | no | scoped offers → only markets that PRICE the subject (P/Q/M/E homes; diacritic-folded) |
-| 9 | resolveMarkets | `resolve-market.ts` + `resolve-market-prompt.md` | Jev | bets (phrase + its own filtered menu) → one `MarketPick` per bet (exact/close/none); ONE request per query, per-bet `pick`/`fit`/`next`/`outcome` choice questions |
+| 9 | resolveMarkets | `resolve-market.ts` + `resolve-market-prompt.md` | Jev | bets (phrase + its own filtered menu) → one `MarketPick` per bet (exact/close/none); ONE request per query, per-bet `pick`/`next`/`outcome` choice questions; a committed pick is `exact` |
 | 10 | select | `select.ts` | no | picked market's real betoffers + spec → concrete `Selection` (outcome(s), or `fallback`) |
 | 11 | execute | `execute.ts` | no | resolved legs + referenced data → `ResponseEnvelope` (grouped by event; thin, no fetch) |
 
