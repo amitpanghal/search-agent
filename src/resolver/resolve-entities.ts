@@ -139,7 +139,9 @@ function crossSportRows(name: string, skip: string, out: ForeignIds, competitor:
       rank = Math.min(rank, TIER_ORDER.indexOf(res.tier));
       for (const c of res.candidates.slice(0, XS_PER_SPORT)) {
         out.set(c.id, { sport, cand: c });
-        rows.push({ id: c.id, name: c.name, rank: 0 }); // per-sport rank is stamped on the way out
+        // The team and the player grounder both hit the same row: drop the repeat HERE, before the quota, so it
+        // never spends a slot a distinct entity could have used. `out` still records every hit.
+        if (!rows.some((r) => r.id === c.id)) rows.push({ id: c.id, name: c.name, rank: 0 }); // rank stamped on the way out
       }
     }
     if (rows.length) bySport.push({ rank, rows });

@@ -30,9 +30,12 @@ order and caps are otherwise untouched. No new module, no data shape change.
    `Tottenham Hotspur FC (votizlove)`, `Tottenham Hotspur FC (toni)`, `Tottenham` — today's list minus its
    duplicate, nothing re-ranked (the resolve-entities contract: the first row is the grounder's top pick and
    order decides which rows survive the caps, `resolve-entities.ts:239` comment).
-3. **The clarify shown to the user names each entity once.** When the decider settles nothing for that cell,
-   the clarification `resolveEntities` returns (`clarifyFor`, `resolve-entities.ts:283`) lists `Tottenham`
-   once in its question text and its `suggest` ids are distinct.
+3. **The clarification shown to the user is built from the deduped list.** When the decider settles nothing
+   for that cell, the clarification `resolveEntities` returns (`clarifyFor`, `resolve-entities.ts:283`) has
+   distinct `suggest` ids and its question names each suggested entity once. For the Tottenham plan the five
+   suggestions are the five own rows (the cap of 5, `SUGGEST_CAP`, falls before the foreign row), so the
+   proof is the dedupe sitting upstream of `clarifyFor` plus the assertions that `suggest` holds 5 distinct
+   ids and the question names 5 distinct entities.
 4. **The failing test is shown before the fix.** The pull request body pastes the new invariant's failing
    output as run against the code before the change (the assertion message naming 7 rows / 6 distinct), then
    the passing run after it. Review checks the paste is present; the test itself is criterion 1's proof.
@@ -83,7 +86,7 @@ None. `Cell.candidates` stays `{ id: number; name: string }[]`; `SettledEntities
   competition: null, region: null, stage: null, squad: null, time: null, play_state: null } }] })`, calls
   `resolveEntities("Tottenham Hotspur to win", scope, decide)` with a decider that records the cells and
   returns `[]`, and asserts: ids distinct and 6 long (1); the exact name order (2); one clarification whose
-  `suggest` ids are distinct and whose question contains `Tottenham` once (3). Red on today's code, green
+  `suggest` holds 5 distinct ids and whose question names 5 distinct entities (3). Red on today's code, green
   after.
 - **Type check:** `npm run typecheck`.
 - **Existing gates:** `npm test` (the 32 current invariants) and `npm run gate:live-menu` stay green.
@@ -112,3 +115,7 @@ None. `Cell.candidates` stays `{ id: number; name: string }[]`; `SettledEntities
 - 2026-09-22 — Accepted in the chat by the product owner, who also acts as engineer and tester on this
   initiative; committed directly on the integration branch `sdlc-jev` at their instruction, so there is no spec
   pull request with reader boxes for this feature. Decided by: product owner.
+- 2026-09-22 — Criterion 3 reworded: `clarifyFor` shows only the first 5 candidates (`SUGGEST_CAP`,
+  `resolve-entities.ts:38`) and the 5 own rows precede the foreign row, so the name `Tottenham` never reaches
+  the question; the criterion now checks distinctness of what is shown. Found in plan mode. Decided by:
+  engineer (factual).
