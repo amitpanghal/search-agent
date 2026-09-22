@@ -1,5 +1,5 @@
-// bedrock-call — shared transport for calling the configured Bedrock model (BEDROCK_MODEL) via the Converse
-// API's forced tool use. The two Bedrock steps (extract, resolve-market) go through it; the entity gate goes
+// bedrock-call — transport for calling the configured Bedrock model (BEDROCK_MODEL) via the Converse API's
+// forced tool use. The one Bedrock step (extract) goes through it; the entity gate and the market pick go
 // through jev-call.ts.
 // Returns the parsed tool input object; each caller decodes its own fields. Creds come from the standard AWS
 // env chain (AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_REGION), loaded from .env.

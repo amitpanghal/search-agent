@@ -14,7 +14,7 @@ import type { BetOffer, KEvent } from "./offering-client";
 import { buildBetslip } from "./combinations";
 import { resolveMarkets, decideWithJev } from "./resolve-market";
 import type { ResolvedLeg, Menu } from "./live-menu-types";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { queryNamesSport, adoptSport, resolveEntities } from "./resolve-entities";
 import { propagate, retier, byProminence, type Candidate } from "./ground-scope";
 import { execute } from "./execute";
@@ -770,4 +770,20 @@ test("market: one request emits one llm-req/llm-resp pair and one priced usage r
     assert.equal(llm[0]!.kind === "llm-req" && llm[0]!.model, "jev-latest");
     assert.deepEqual(rows, [{ tool: "pick", inputTokens: 9494, outputTokens: 0, priceIn: 0.042, priceOut: 0 }]);
   });
+});
+
+// ---------------------------------------------------------------------------------------------------------
+// CONFIG: every model env name the code reads is documented in .env.example, and the deploy blueprint declares
+// the secrets a fresh Render service must be prompted for. A key that is read but never declared ships a service
+// that fails every query by name (the market pick now needs JEV_ACCESS_KEY on every named-market query).
+test("config: every model env name read in src/ is documented, and the deploy declares the secrets", () => {
+  const root = new URL("../../", import.meta.url);
+  const files = readdirSync(new URL("src/", root), { recursive: true, encoding: "utf8" }).filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts"));
+  const src = files.map((f) => readFileSync(new URL(`src/${f}`, root), "utf8")).join("\n");
+  const names = new Set([...src.matchAll(/process\.env\.((?:AWS|BEDROCK|JEV)_\w+)/g), ...src.matchAll(/envNumber\("((?:AWS|BEDROCK|JEV)_\w+)"/g)].map((m) => m[1]!));
+  assert.ok(names.size >= 8, `expected the model env names, saw ${[...names].join(", ")}`);
+  const example = readFileSync(new URL(".env.example", root), "utf8");
+  for (const n of names) assert.match(example, new RegExp(`^${n}=`, "m"), `${n} is read but not in .env.example`);
+  const render = readFileSync(new URL("render.yaml", root), "utf8");
+  for (const n of ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_REGION", "BEDROCK_MODEL", "JEV_ACCESS_KEY"]) assert.match(render, new RegExp(`key: ${n}\\b`), `${n} is not declared in render.yaml`);
 });

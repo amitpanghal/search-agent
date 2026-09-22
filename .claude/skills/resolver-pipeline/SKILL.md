@@ -8,7 +8,7 @@ description: >-
   per-leg scope, the market-deferred fetch, grounding tiers, or the entity/market LLM steps. Read this BEFORE
   editing pipeline code; pair it with the probe skill to actually run a query through it and read the trace.
 metadata:
-  version: "1.1"
+  version: "1.2"
 ---
 
 # resolver-pipeline
@@ -30,11 +30,12 @@ consequences that explain most of the design:
   an honest `fallback`, never a blind pick.
 
 ## Stages (in pipeline order)
-Order and chaining live in `runPipeline` (`resolve.ts`). LLM = one call to `BEDROCK_MODEL` via the Bedrock
-Converse API (temp 0, forced tool use — see `bedrock-call.ts`); everything else is deterministic and zero-LLM.
-Stage 4 is the exception: one Jev `choice` request (TypeSafe, `jev-call.ts`, model `JEV_MODEL`) answered with
-a probability per option and no text — a pick is trusted only at or above `JEV_ENTITY_THRESHOLD`. The shipped
-Bedrock model is Qwen3-Next-80B-A3B-Instruct; both ids are env-driven, so never hard-code a model name.
+Order and chaining live in `runPipeline` (`resolve.ts`). Stage 1 is the one Bedrock call (`BEDROCK_MODEL` via the
+Converse API, temp 0, forced tool use — see `bedrock-call.ts`). Stages 4 and 9 are one Jev `choice` request each
+(TypeSafe, `jev-call.ts`, model `JEV_MODEL`), answered with a probability per option and no text — a pick is
+trusted only at or above `JEV_ENTITY_THRESHOLD` / `JEV_MARKET_THRESHOLD`, otherwise the cell clarifies / the bet
+is `none`. Everything else is deterministic and zero-LLM. The shipped Bedrock model is Qwen3-Next-80B-A3B-Instruct;
+both ids are env-driven, so never hard-code a model name.
 
 | # | Stage | File | LLM? | In → Out |
 |---|-------|------|------|----------|
@@ -46,14 +47,15 @@ Bedrock model is Qwen3-Next-80B-A3B-Instruct; both ids are env-driven, so never 
 | 6 | recall | `recall.ts` | network | `RecallInput` → `RecallResult` (broad live data + menu; the only network in the rig) |
 | 7 | scopeMenu | `recall.ts` (`scopeMenu`) | no | broad data + one leg → that leg's narrowed offers/events/menu (grain, comp, teams, time, state) |
 | 8 | filterBySubject | `filter.ts` | no | scoped offers → only markets that PRICE the subject (P/Q/M/E homes; diacritic-folded) |
-| 9 | resolveMarkets | `resolve-market.ts` + `resolve-market-prompt.md` | LLM | phrases + filtered menu → one `MarketPick` per phrase (exact/close/none); BATCHED per group |
+| 9 | resolveMarkets | `resolve-market.ts` + `resolve-market-prompt.md` | Jev | bets (phrase + its own filtered menu) → one `MarketPick` per bet (exact/close/none); ONE request per query, per-bet `pick`/`fit`/`next`/`outcome` choice questions |
 | 10 | select | `select.ts` | no | picked market's real betoffers + spec → concrete `Selection` (outcome(s), or `fallback`) |
 | 11 | execute | `execute.ts` | no | resolved legs + referenced data → `ResponseEnvelope` (grouped by event; thin, no fetch) |
 
 ## Grouping & "main" (the orchestrator's two non-obvious moves)
 In `resolve.ts`, selectors are grouped by a **signature** = filter-subject + grounded subject id + level +
 competition id + team ids + time + stage + playState (built from GROUNDED ids, so surface variants collapse).
-Each group gets ONE `scopeMenu` + ONE `filterBySubject` + ONE batched `resolveMarkets` call.
+Each group gets ONE `scopeMenu` + ONE `filterBySubject`; every group's bets then travel in the query's ONE
+`resolveMarkets` request, each bet with its own group's menu.
 
 A `market_concept === "main"` selector is a sentinel: it skips the LLM market pick entirely and fans out into
 **every** main-tagged market for its matched fixtures (line/subject/odds still apply via `select`).
@@ -107,8 +109,9 @@ the free gates (`npm test`, `npm run gate:live-menu`, `npm run typecheck`); only
 ## Files
 - `resolve.ts` — orchestrator (`runPipeline`, grouping, "main" fan-out, `PipelineDeps`).
 - per-stage files as listed in the table above.
-- prompts: `extractor-prompt-v2.md` (live; `extractor-prompt.md` was the dead v1 and is deleted),
-  `resolve-market-prompt.md`. The entity gate has no prompt file: its Jev question text lives in
+- prompts: `extractor-prompt-v2.md` (live; `extractor-prompt.md` was the dead v1 and is deleted) for Bedrock;
+  `resolve-market-prompt.md` is the market rulebook Jev reads once per request in `state.rules` (the per-question
+  templates live in `resolve-market.ts`). The entity gate has no prompt file: its Jev question text lives in
   `resolve-entities.ts`.
 - `bedrock-call.ts`, `jev-call.ts` — the two model transports (Bedrock Converse; TypeSafe Jev).
 - `live-menu-types.ts`, `schema.ts`, `ground-scope.ts`, `offering-client.ts` — the shared types.

@@ -19,7 +19,7 @@ if any fails (CI-usable):
    never a criterion id. Throttles are retried (8×) so a rate limit costs time, not a data point.
 2. **Entity gate** (deterministic, free) — the scope grounder on the gold's own scope text; graded on the
    pinned catalog ids and expected tier.
-3. **Market-resolution gate** (LLM, paid) — resolve-market picks from the CAPTURED snapshot menu
+3. **Market-resolution gate** (Jev, paid — pennies) — resolve-market picks from the CAPTURED snapshot menu
    (src/eval/live-menu.snapshot.json) by each gold market cell's concept phrase; pass = `exact` on a gold
    criterion id. Market-TYPE only, subject-agnostic (the snapshot is one fixture + the WC26 outrights).
 

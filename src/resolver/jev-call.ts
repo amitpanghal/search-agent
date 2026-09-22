@@ -1,5 +1,5 @@
 // jev-call — the second model transport: TypeSafe's Jev decision model (POST api.typesafe.ai/v1/systemone),
-// used by the entity gate (resolve-entities.ts) and nothing else. Jev is not on Bedrock and has no text
+// used by the entity gate (resolve-entities.ts) and the market pick (resolve-market.ts). Jev is not on Bedrock and has no text
 // output: it answers a `choice` question with one probability per option, which is exactly what settling a
 // candidate list needs and nothing a prompt-and-parse round trip adds. It mirrors bedrock-call.ts at the seams
 // — trace `emit` on request and reply, one usage row into usageStore — so probe traces and the cost block read

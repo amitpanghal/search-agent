@@ -63,8 +63,9 @@ Timing (ms since prior event), token counts, cost, and the failure point are alw
 Each `stage` row is one pipeline stage; **its bug lives in that stage's file** (see the resolver-pipeline skill's
 stage→file table). Quick map: `extract`→extract.ts+prompt · `ground`→ground-scope.ts · `entities`→resolve-entities.ts+prompt
 · `recall`→recall.ts (the fetch) · `scopeMenu`/`filter`→per-leg narrowing (recall.ts/filter.ts) · `market`→resolve-market.ts+prompt
-· `select`→select.ts (outcome/fallback) · `execute`→execute.ts (envelope). `[llm …]` rows are the Bedrock
-boundary (bedrock-call.ts); `[kambi]` rows the offering boundary (offering-client.ts).
+· `select`→select.ts (outcome/fallback) · `execute`→execute.ts (envelope). `[llm …]` rows are the model
+boundary (Bedrock for `emit_query_plan`, bedrock-call.ts; Jev for `settle_cells` and `pick`, jev-call.ts);
+`[kambi]` rows the offering boundary (offering-client.ts).
 
 - **Wrong leg?** Walk the rows top-down to the first one that's already wrong — that stage owns it. A leg that's
   right in `market` but missing in `execute` is a select/data-prune issue, not a pick issue.

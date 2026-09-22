@@ -145,8 +145,8 @@ One line each; the full rule, why, and how it is checked are in `code-convention
   shared types; `src/server/` is a thin Hono app (transport only); `src/eval/` the gold set, scorer and
   gates; `scripts/` the probe and catalog builders.
 - Data: `zod` for every model-facing schema; `@aws-sdk/client-bedrock-runtime` Converse with forced tool
-  use for the extractor and market calls (`bedrock-call.ts`); plain `fetch` to TypeSafe's Jev for the entity
-  gate (`jev-call.ts`) and for the Kambi feed (`offering-client.ts`).
+  use for the extractor (`bedrock-call.ts`); plain `fetch` to TypeSafe's Jev for the entity gate and the market
+  pick (`jev-call.ts`) and for the Kambi feed (`offering-client.ts`).
   No database, no ORM.
 - Every source file opens with a comment explaining **why** it is the way it is. Those headers are the
   real documentation — read the file top before changing it.
