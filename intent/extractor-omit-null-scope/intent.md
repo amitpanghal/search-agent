@@ -39,7 +39,8 @@ cheaper.
 
 - `schema.ts` is shipped resolver code: plan and approval before the edit (the **Human-gated resolver
   code** rule).
-- The extract cache is keyed by the query alone, so any grading after the change must recapture.
+- There is no extract cache: every eval row and probe pays for a fresh extraction, and a capture taken before
+  the change reflects the old schema, so any grading after the change needs fresh extractions.
 - The ship gate `npm run eval` and a proving probe are paid runs: one of each, with an explicit OK (the
   **Ask before paid runs** rule).
 
@@ -51,3 +52,6 @@ current baseline (one paid run), and the normalized plans for the gold set are i
 
 ## Decisions
 
+- 2026-09-22 — Constraint corrected: no extract cache exists (`extract.ts` calls Bedrock on every run; the
+  eval's only reuse is `--from` replay of a saved capture). The consequence — grade on fresh extractions after the
+  change — stands. Fact, fixed by the engineer in the spec pull request.
