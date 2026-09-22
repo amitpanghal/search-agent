@@ -296,7 +296,7 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
     // dependency, so all groups' picks run concurrently; awaited together after the loop.
     // ponytail: unbounded fan-out (one call per group). If a query splits into enough groups to hit Bedrock's
     // per-second limit, pool it like recall.ts (chunk + Promise.all).
-    if (llmIdxs.length) pickJobs.push({ idxs: llmIdxs, picks: usageStore.run(calls, () => resolveMarkets(llmIdxs.map((i) => betPhrase(plan.selectors[i]!, settled.legs[i]!.level)), fr.menu, undefined, query)) });
+    if (llmIdxs.length) pickJobs.push({ idxs: llmIdxs, picks: usageStore.run(calls, () => resolveMarkets(llmIdxs.map((i) => ({ phrase: betPhrase(plan.selectors[i]!, settled.legs[i]!.level), menu: fr.menu })), undefined, query)) });
     // anchored group -> remember the fixtures it prices, so later floating groups inherit them
     if (!floating) for (const b of fr.offers) if (b.eventId != null) anchorEventIds.add(b.eventId);
   }

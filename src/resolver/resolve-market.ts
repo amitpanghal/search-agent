@@ -1,54 +1,38 @@
-// RESOLVE(market) — build plan Phase 2. The LLM picks one market per BET from the FILTERED live menu and labels
-// each exact | close | none (theory §4). It sees LABELS ONLY (no odds, no outcomes) and picks by `ref`; we map
-// the ref back to the menu item's label (the market identity). The model may always abstain (`none`). BATCHED (Q2): legs that share
-// one filtered menu resolve in a SINGLE call — the menu is sent once, not per leg — saving repeated input tokens
-// and a round-trip. `resolveMarket` (singular) is a thin wrapper kept for the offline gates. The contract —
-// confident-wrong ≈ 1 in 180 case-evaluations. Model is BEDROCK_MODEL via the Converse API (see bedrock-call.ts).
+// RESOLVE(market) — ONE Jev request per query. Every BET is a phrase plus its own FILTERED live menu; Jev answers
+// `choice` questions per bet: which menu item settles it (`pick`), whether the menu holds an exact market or only
+// a close one (`fit`), which other market this bettor would add next (`next`), and which listed outcome the bet
+// names (`outcome`, only when the bet's menu carries outcomes). The rulebook (resolve-market-prompt.md) rides ONCE
+// in `state.rules`; the union of all bets' menus rides once in `state.menu`, and each bet's questions list only ITS
+// refs, so bets with different menus share one round-trip. A pick counts at or above JEV_MARKET_THRESHOLD on the
+// chosen option's probability; below it, on `none`, or when Jev does not answer, the bet is `{ match: "none" }` —
+// the "no market" leg (abstain over wrong). The ref maps back to the menu item's LABEL (the market identity); the
+// model sees labels only, never odds. No Bedrock call is made here; a missing JEV_ACCESS_KEY fails the query by
+// name (jev-call.ts). `resolveMarket` (singular) is a thin wrapper kept for the offline gates.
 
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { bedrockToolCall } from "./bedrock-call";
+import { jevChoice, envNumber, type JevQuestion, type JevReply } from "./jev-call";
 import type { Menu, MarketPick, MatchLabel } from "./live-menu-types";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const TOOL_NAME = "pick";
+const OPTION_CAP = 254; // Jev takes 255 options per question; one slot is `none`
+const NONE_PICK = "No market on the menu settles this bet";
+const NONE_OUTCOME = "The bet names no listed outcome";
 
-let cachedPrompt: string | undefined;
-const systemPrompt = (): string => (cachedPrompt ??= readFileSync(join(HERE, "resolve-market-prompt.md"), "utf8"));
+let cachedRules: string | undefined;
+const rules = (): string => (cachedRules ??= readFileSync(join(HERE, "resolve-market-prompt.md"), "utf8"));
 
-// One pick per BET: `leg` echoes which bet it answers (so a missing/reordered pick is detectable, never silently
-// mis-bound), `ref` indexes the shared menu (null = none).
-const INPUT_SCHEMA: Record<string, unknown> = {
-  type: "object",
-  properties: {
-    picks: {
-      type: "array",
-      description: "exactly one pick per bet",
-      items: {
-        type: "object",
-        properties: {
-          leg: { type: "integer", description: "the bet's leg index this pick answers" },
-          ref: { type: ["integer", "null"], description: "the chosen menu item's ref, or null for none" },
-          match: { type: "string", enum: ["exact", "close", "none"] },
-          outcome: { type: ["string", "null"], description: "verbatim outcome label from the picked item's [outcomes: …], when the bet names one; else null" },
-          related: { type: "array", items: { type: "integer" }, maxItems: 3, description: "the (up to 3) menu refs for other markets on the same fixture, most related first; [] only if the fixture has no other market" },
-        },
-        required: ["leg", "ref", "match"],
-      },
-    },
-  },
-  required: ["picks"],
-};
-
-// The raw model output for one bet (a menu ref + label), before we map it back to the market identity.
+// The raw model output for one bet (a ref into the bet's OWN menu + labels), before we map it back to the market identity.
 export type RawPick = { ref: number | null; match: string; outcome?: string | null; related?: number[] };
-// Batched decider — one call for all bets sharing the menu. Injectable so the gate can replay captured decisions.
-export type DecideManyFn = (phrases: string[], menu: Menu, query?: string) => Promise<RawPick[]>;
+export type Bet = { phrase: string; menu: Menu };
+// Batched decider — one call for every bet of the query, each with its own menu. Injectable so the gates can replay.
+export type DecideManyFn = (bets: Bet[], query?: string) => Promise<RawPick[]>;
 // Singular decider — kept for the offline gates' per-phrase replay.
 export type DecideFn = (phrase: string, menu: Menu) => Promise<RawPick>;
 
-// Map one raw pick -> MarketPick. `none` (or a ref the menu doesn't carry, or a missing leg) collapses to an
+// Map one raw pick -> MarketPick. `none` (or a ref the menu doesn't carry, or a missing answer) collapses to an
 // abstain with no market identity, so a hallucinated/absent pick can never become a confident wrong answer.
 // `outcomeLabel` is only accepted when it appears verbatim in the item's outcomes list (anti-hallucination).
 const toPick = (raw: RawPick | undefined, menu: Menu): MarketPick => {
@@ -65,39 +49,70 @@ const toPick = (raw: RawPick | undefined, menu: Menu): MarketPick => {
   return { label: item.label, match, ...(outcomeLabel ? { outcomeLabel } : {}), ...(related.length ? { related } : {}) };
 };
 
-// Pick + label a market for EACH phrase against the one shared filtered menu, in a single model call.
-export async function resolveMarkets(phrases: string[], menu: Menu, decideFn: DecideManyFn = callModel, query?: string): Promise<MarketPick[]> {
-  if (!phrases.length) return [];
-  if (!menu.length) return phrases.map(() => ({ match: "none", reason: "empty menu" }));
-  const raws = await decideFn(phrases, menu, query);
-  return phrases.map((_, i) => toPick(raws[i], menu));
+// Pick + label a market for EACH bet against its own menu, in a single model call. A bet with an empty menu is
+// `none` without asking (a choice between `none` and nothing).
+export async function resolveMarkets(bets: Bet[], decideFn: DecideManyFn = decideWithJev, query?: string): Promise<MarketPick[]> {
+  const asked = bets.filter((b) => b.menu.length);
+  const raws = asked.length ? await decideFn(asked, query) : [];
+  let i = 0;
+  return bets.map((b) => (b.menu.length ? toPick(raws[i++], b.menu) : { match: "none" }));
 }
 
-// Singular convenience (one phrase). Kept so the offline gates' singular replay deciders work unchanged.
+// Singular convenience (one phrase, one menu). Kept so the offline gates' singular replay deciders work unchanged.
 export async function resolveMarket(phrase: string, menu: Menu, decideFn?: DecideFn): Promise<MarketPick> {
-  const many: DecideManyFn = decideFn ? async (ps, m) => [await decideFn(ps[0]!, m)] : callModel;
-  return (await resolveMarkets([phrase], menu, many))[0]!;
+  const many: DecideManyFn = decideFn ? async (bs) => [await decideFn(bs[0]!.phrase, bs[0]!.menu)] : decideWithJev;
+  return (await resolveMarkets([{ phrase, menu }], many))[0]!;
 }
 
-const callModel: DecideManyFn = async (phrases, menu, query) => {
-  const list = menu.map((m, i) => `${i}: ${m.label}${m.outcomes?.length ? `  [outcomes: ${m.outcomes.join(" | ")}]` : ""}`).join("\n");
-  const bets = phrases.map((p, i) => `${i}: ${p}`).join("\n");
-  const user =
-    `LIVE menu (ref: label) — the only markets actually offered:\n${list}\n\nBETS (leg: phrase):\n${bets}\n\n` +
-    `${query ? `Original request (context):\n"${query}"\n\n` : ""}For EACH bet, pick one market by ref (or none) and label it exact/close/none.`;
-  const out = await bedrockToolCall(systemPrompt(), user, TOOL_NAME, INPUT_SCHEMA, Math.min(2048, 256 + 256 * phrases.length));
-  return picksByLeg((Array.isArray(out.picks) ? out.picks : []) as Array<{ leg?: number } & RawPick>, phrases.length);
-};
+const chunk = <T>(xs: T[], n: number): T[][] => Array.from({ length: Math.ceil(xs.length / n) || 1 }, (_, i) => xs.slice(i * n, (i + 1) * n));
 
-// Map raw picks back to bet order BY `leg` (robust to reordering). A pick with NO `leg` falls back to its
-// POSITION, but only when the model returned exactly one pick per bet — then position is unambiguous. Qwen
-// answers in free text, so a runaway `related` array can hit maxTokens mid-list and cut off a trailing `leg`;
-// without this a correct exact pick collapsed to none ("goals" -> Total Goals ref 31, shown as "no market").
-export const picksByLeg = (picks: Array<{ leg?: number } & RawPick>, bets: number): RawPick[] => {
-  const byLeg = new Map<number, RawPick>();
-  picks.forEach((p, i) => {
-    const leg = typeof p.leg === "number" ? p.leg : picks.length === bets ? i : undefined;
-    if (leg != null) byLeg.set(leg, { ref: p.ref, match: p.match, outcome: p.outcome, related: p.related });
+// The answers for one question, or for its chunks (`key`, `key:0`, `key:1`, …) when a bet's menu did not fit one question.
+const answersFor = (answers: JevReply["answers"], key: string) =>
+  Object.entries(answers).filter(([k]) => k === key || k.startsWith(`${key}:`)).map(([, a]) => a);
+
+// The decider: build the union menu + per-bet questions, ONE request, then decode by probability.
+export const decideWithJev: DecideManyFn = async (bets, query) => {
+  const union: Menu = [];
+  const refByLabel = new Map<string, number>();
+  const betRefs = bets.map((b) => b.menu.map((m) => {
+    let r = refByLabel.get(m.label);
+    if (r == null) { r = union.length; refByLabel.set(m.label, r); union.push(m); }
+    return r;
+  }));
+  const labelOf = (refs: number[]): Record<string, string> => Object.fromEntries(refs.map((r) => [String(r), union[r]!.label]));
+  const questions: Record<string, JevQuestion> = {};
+  bets.forEach((b, i) => {
+    const who = `Bet ${i}: "${b.phrase}".`;
+    // ponytail: never seen above 128 labels; chunking keeps every item askable instead of dropping any at Jev's 255 cap
+    const chunks = chunk(betRefs[i]!, OPTION_CAP);
+    chunks.forEach((refs, c) => {
+      const key = chunks.length > 1 ? `:${i}:${c}` : `:${i}`;
+      questions[`pick${key}`] = { type: "choice", instructions: `${who} Which menu market settles this bet? Apply state.rules. Answer none when no market on the menu settles it.`, criteria: { ...labelOf(refs), none: NONE_PICK } };
+      questions[`next${key}`] = { type: "choice", instructions: `${who} Which other market on the same fixture would a bettor who placed this bet most likely add next?`, criteria: labelOf(refs) };
+    });
+    questions[`fit:${i}`] = { type: "choice", instructions: `${who} Does the menu hold a market that settles this bet exactly (exact), or only one that settles it less precisely, as state.rules define close?`, criteria: { exact: "a market on the menu wins in exactly the bet's scenarios", close: "only a less precise market of the same outcome and direction exists" } };
+    const outs = [...new Set(b.menu.flatMap((m) => m.outcomes ?? []))];
+    if (outs.length) questions[`outcome:${i}`] = { type: "choice", instructions: `${who} Which listed outcome does this bet name? Answer none when it names no listed outcome.`, criteria: { ...Object.fromEntries(outs.map((o) => [o, o])), none: NONE_OUTCOME } };
   });
-  return Array.from({ length: bets }, (_, i) => byLeg.get(i) ?? { ref: null, match: "none" });
+  const state = { query, rules: rules(), menu: union.map((m, ref) => ({ ref, ...m })), bets: bets.map((b, i) => ({ leg: i, phrase: b.phrase, refs: betRefs[i] })) };
+  const res = await jevChoice(TOOL_NAME, state, questions);
+  const threshold = envNumber("JEV_MARKET_THRESHOLD", 0.8, 0, 1); // a blank or bad value must never become 0/NaN
+  return bets.map((b, i): RawPick => {
+    if (!res) return { ref: null, match: "none" }; // Jev did not answer: every bet abstains, the query still answers
+    const own = (unionRef: string): number => betRefs[i]!.indexOf(Number(unionRef)); // -1 -> toPick abstains
+    // pick: across chunks, the committed option with the highest probability; below the threshold or `none` -> abstain
+    const best = answersFor(res.answers, `pick:${i}`)
+      .filter((a) => a.choice !== "none" && (a.probabilities[a.choice] ?? 0) >= threshold)
+      .sort((x, y) => (y.probabilities[y.choice] ?? 0) - (x.probabilities[x.choice] ?? 0))[0];
+    if (!best) return { ref: null, match: "none" };
+    const ref = own(best.choice);
+    const match = res.answers[`fit:${i}`]?.choice === "exact" ? "exact" : "close";
+    const outcome = res.answers[`outcome:${i}`]?.choice;
+    const related = answersFor(res.answers, `next:${i}`)
+      .flatMap((a) => Object.entries(a.probabilities))
+      .sort((x, y) => y[1] - x[1])
+      .map(([k]) => own(k))
+      .filter((r) => r >= 0);
+    return { ref, match, outcome: outcome && outcome !== "none" ? outcome : null, related };
+  });
 };

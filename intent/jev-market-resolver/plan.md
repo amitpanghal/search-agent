@@ -241,3 +241,11 @@ src/eval/market-resolve-gate.ts` (Qwen) · step 6 the Jev replay script · step 
 House rules in play: **Ask before paid runs**, **Human-gated resolver code** (this plan is the approval record; the
 prompt text above is the old→new), **Sport-agnostic prompts**, **Never branch on phrasing**, **the smallest-diff
 rule**, **Never drop a row on missing data**, and the skills-and-documents rule (step 5).
+
+## Decisions
+
+- 2026-09-22 — Step 3 also touched one line of `src/resolver/resolve.ts` (the `resolveMarkets` call site, line 299):
+  the new per-bet-menu signature would otherwise leave the orchestrator uncompilable between steps 3 and 4, and a
+  red type check is never committed. Step 4 still owns the collect-then-one-call change. Plan fact; decided by:
+  engineer.
+

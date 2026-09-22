@@ -1,0 +1,1130 @@
+{
+ "captured": "2026-09-21",
+ "source": "probe traces andorra.jsonl + baltimore.jsonl (Qwen, resolve-market pick requests)",
+ "cases": [
+  {
+   "query": "andorra to win its first game and BTTS and with a score line of 3-2",
+   "leg": 0,
+   "phrase": "who wins (for Andorra)",
+   "menu": [
+    {
+     "label": "Total Goals - 1st Half"
+    },
+    {
+     "label": "Handicap"
+    },
+    {
+     "label": "Total Goals by Andorra"
+    },
+    {
+     "label": "Total Goals"
+    },
+    {
+     "label": "First Goal (Draw: No Goals)",
+     "outcomes": [
+      "1",
+      "Draw",
+      "2"
+     ]
+    },
+    {
+     "label": "Correct Score",
+     "outcomes": [
+      "2-5",
+      "5-3",
+      "4-4",
+      "2-3",
+      "2-2",
+      "0-4",
+      "1-0",
+      "3-3",
+      "4-3",
+      "1-4",
+      "2-1",
+      "1-1",
+      "3-4",
+      "5-1",
+      "4-0",
+      "3-2",
+      "3-1",
+      "0-5",
+      "1-5",
+      "3-5",
+      "2-4",
+      "1-2",
+      "1-3",
+      "0-1",
+      "0-2",
+      "4-1",
+      "0-0",
+      "4-2",
+      "5-0",
+      "3-0",
+      "2-0",
+      "5-2",
+      "0-3",
+      "5-4"
+     ]
+    },
+    {
+     "label": "Asian Total"
+    },
+    {
+     "label": "Draw No Bet - 1st Half"
+    },
+    {
+     "label": "3-Way Handicap",
+     "outcomes": [
+      "1",
+      "Draw",
+      "2"
+     ]
+    },
+    {
+     "label": "Draw No Bet"
+    },
+    {
+     "label": "Double Chance - 1st Half",
+     "outcomes": [
+      "1X",
+      "X2"
+     ]
+    },
+    {
+     "label": "Half Time/Full Time",
+     "outcomes": [
+      "2/2",
+      "1/1",
+      "1/X",
+      "1/2",
+      "X/1",
+      "X/X",
+      "X/2",
+      "2/1",
+      "2/X"
+     ]
+    },
+    {
+     "label": "Full Time - 2UP",
+     "outcomes": [
+      "1",
+      "Draw",
+      "2"
+     ]
+    },
+    {
+     "label": "Asian Handicap"
+    },
+    {
+     "label": "Total Corners"
+    },
+    {
+     "label": "Next Corner, No Corner No Bet (1)"
+    },
+    {
+     "label": "Total Goals - 2nd Half"
+    },
+    {
+     "label": "Both Teams To Score - 1st Half"
+    },
+    {
+     "label": "Total Goals by Andorra - 1st Half"
+    },
+    {
+     "label": "Goal in Both Halves"
+    },
+    {
+     "label": "Half Time",
+     "outcomes": [
+      "1",
+      "Draw",
+      "2"
+     ]
+    },
+    {
+     "label": "Full Time",
+     "outcomes": [
+      "1",
+      "Draw",
+      "2"
+     ]
+    },
+    {
+     "label": "Both Teams To Score"
+    },
+    {
+     "label": "2nd Half",
+     "outcomes": [
+      "1",
+      "Draw",
+      "2"
+     ]
+    },
+    {
+     "label": "Andorra to Win to Nil"
+    },
+    {
+     "label": "Most Corners",
+     "outcomes": [
+      "1",
+      "Draw",
+      "2"
+     ]
+    },
+    {
+     "label": "Total Corners by Andorra"
+    },
+    {
+     "label": "Double Chance",
+     "outcomes": [
+      "1X",
+      "X2"
+     ]
+    }
+   ],
+   "qwen": {
+    "label": "Full Time",
+    "match": "exact",
+    "related": [
+     "Total Goals by Andorra",
+     "Total Goals",
+     "Both Teams To Score",
+     "Andorra to Win to Nil"
+    ]
+   }
+  },
+  {
+   "query": "andorra to win its first game and BTTS and with a score line of 3-2",
+   "leg": 1,
+   "phrase": "both teams to score",
+   "menu": [
+    {
+     "label": "Total Goals - 1st Half"
+    },
+    {
+     "label": "Handicap"
+    },
+    {
+     "label": "Total Goals by Andorra"
+    },
+    {
+     "label": "Total Goals"
+    },
+    {
+     "label": "Total Goals by Malta - 1st Half"
+    },
+    {
+     "label": "First Goal (Draw: No Goals)",
+     "outcomes": [
+      "1",
+      "Draw",
+      "2"
+     ]
+    },
+    {
+     "label": "Correct Score",
+     "outcomes": [
+      "2-5",
+      "5-3",
+      "4-4",
+      "2-3",
+      "2-2",
+      "0-4",
+      "1-0",
+      "3-3",
+      "4-3",
+      "1-4",
+      "2-1",
+      "1-1",
+      "3-4",
+      "5-1",
+      "4-0",
+      "3-2",
+      "3-1",
+      "0-5",
+      "1-5",
+      "3-5",
+      "2-4",
+      "1-2",
+      "1-3",
+      "0-1",
+      "0-2",
+      "4-1",
+      "0-0",
+      "4-2",
+      "5-0",
+      "3-0",
+      "2-0",
+      "5-2",
+      "0-3",
+      "5-4"
+     ]
+    },
+    {
+     "label": "Asian Total"
+    },
+    {
+     "label": "Draw No Bet - 1st Half"
+    },
+    {
+     "label": "3-Way Handicap",
+     "outcomes": [
+      "1",
+      "Draw",
+      "2"
+     ]
+    },
+    {
+     "label": "Draw No Bet"
+    },
+    {
+     "label": "Double Chance - 1st Half",
+     "outcomes": [
+      "1X",
+      "X2"
+     ]
+    },
+    {
+     "label": "Half Time/Full Time",
+     "outcomes": [
+      "2/2",
+      "1/1",
+      "1/X",
+      "1/2",
+      "X/1",
+      "X/X",
+      "X/2",
+      "2/1",
+      "2/X"
+     ]
+    },
+    {
+     "label": "Full Time - 2UP",
+     "outcomes": [
+      "1",
+      "Draw",
+      "2"
+     ]
+    },
+    {
+     "label": "Asian Handicap"
+    },
+    {
+     "label": "Total Corners"
+    },
+    {
+     "label": "Next Corner, No Corner No Bet (1)"
+    },
+    {
+     "label": "Total Goals - 2nd Half"
+    },
+    {
+     "label": "Both Teams To Score - 1st Half"
+    },
+    {
+     "label": "Total Corners by Malta"
+    },
+    {
+     "label": "Total Goals by Andorra - 1st Half"
+    },
+    {
+     "label": "Goal in Both Halves"
+    },
+    {
+     "label": "Half Time",
+     "outcomes": [
+      "1",
+      "Draw",
+      "2"
+     ]
+    },
+    {
+     "label": "Full Time",
+     "outcomes": [
+      "1",
+      "Draw",
+      "2"
+     ]
+    },
+    {
+     "label": "Both Teams To Score"
+    },
+    {
+     "label": "2nd Half",
+     "outcomes": [
+      "1",
+      "Draw",
+      "2"
+     ]
+    },
+    {
+     "label": "Andorra to Win to Nil"
+    },
+    {
+     "label": "Total Goals by Malta"
+    },
+    {
+     "label": "Most Corners",
+     "outcomes": [
+      "1",
+      "Draw",
+      "2"
+     ]
+    },
+    {
+     "label": "Malta to Win to Nil"
+    },
+    {
+     "label": "Total Corners by Andorra"
+    },
+    {
+     "label": "Double Chance",
+     "outcomes": [
+      "1X",
+      "X2"
+     ]
+    },
+    {
+     "label": "Gibraltar to Win to Nil"
+    },
+    {
+     "label": "Total Goals by Gibraltar"
+    },
+    {
+     "label": "Total Corners by Gibraltar"
+    },
+    {
+     "label": "Total Goals by Gibraltar - 1st Half"
+    }
+   ],
+   "qwen": {
+    "label": "Both Teams To Score",
+    "match": "exact",
+    "related": [
+     "Both Teams To Score - 1st Half",
+     "Goal in Both Halves",
+     "Total Corners by Malta",
+     "Total Goals by Andorra - 1st Half"
+    ]
+   }
+  },
+  {
+   "query": "andorra to win its first game and BTTS and with a score line of 3-2",
+   "leg": 2,
+   "phrase": "correct score",
+   "menu": [
+    {
+     "label": "Total Goals - 1st Half"
+    },
+    {
+     "label": "Handicap"
+    },
+    {
+     "label": "Total Goals by Andorra"
+    },
+    {
+     "label": "Total Goals"
+    },
+    {
+     "label": "Total Goals by Malta - 1st Half"
+    },
+    {
+     "label": "First Goal (Draw: No Goals)",
+     "outcomes": [
+      "1",
+      "Draw",
+      "2"
+     ]
+    },
+    {
+     "label": "Correct Score",
+     "outcomes": [
+      "2-5",
+      "5-3",
+      "4-4",
+      "2-3",
+      "2-2",
+      "0-4",
+      "1-0",
+      "3-3",
+      "4-3",
+      "1-4",
+      "2-1",
+      "1-1",
+      "3-4",
+      "5-1",
+      "4-0",
+      "3-2",
+      "3-1",
+      "0-5",
+      "1-5",
+      "3-5",
+      "2-4",
+      "1-2",
+      "1-3",
+      "0-1",
+      "0-2",
+      "4-1",
+      "0-0",
+      "4-2",
+      "5-0",
+      "3-0",
+      "2-0",
+      "5-2",
+      "0-3",
+      "5-4"
+     ]
+    },
+    {
+     "label": "Asian Total"
+    },
+    {
+     "label": "Draw No Bet - 1st Half"
+    },
+    {
+     "label": "3-Way Handicap",
+     "outcomes": [
+      "1",
+      "Draw",
+      "2"
+     ]
+    },
+    {
+     "label": "Draw No Bet"
+    },
+    {
+     "label": "Double Chance - 1st Half",
+     "outcomes": [
+      "1X",
+      "X2"
+     ]
+    },
+    {
+     "label": "Half Time/Full Time",
+     "outcomes": [
+      "2/2",
+      "1/1",
+      "1/X",
+      "1/2",
+      "X/1",
+      "X/X",
+      "X/2",
+      "2/1",
+      "2/X"
+     ]
+    },
+    {
+     "label": "Full Time - 2UP",
+     "outcomes": [
+      "1",
+      "Draw",
+      "2"
+     ]
+    },
+    {
+     "label": "Asian Handicap"
+    },
+    {
+     "label": "Total Corners"
+    },
+    {
+     "label": "Next Corner, No Corner No Bet (1)"
+    },
+    {
+     "label": "Total Goals - 2nd Half"
+    },
+    {
+     "label": "Both Teams To Score - 1st Half"
+    },
+    {
+     "label": "Total Corners by Malta"
+    },
+    {
+     "label": "Total Goals by Andorra - 1st Half"
+    },
+    {
+     "label": "Goal in Both Halves"
+    },
+    {
+     "label": "Half Time",
+     "outcomes": [
+      "1",
+      "Draw",
+      "2"
+     ]
+    },
+    {
+     "label": "Full Time",
+     "outcomes": [
+      "1",
+      "Draw",
+      "2"
+     ]
+    },
+    {
+     "label": "Both Teams To Score"
+    },
+    {
+     "label": "2nd Half",
+     "outcomes": [
+      "1",
+      "Draw",
+      "2"
+     ]
+    },
+    {
+     "label": "Andorra to Win to Nil"
+    },
+    {
+     "label": "Total Goals by Malta"
+    },
+    {
+     "label": "Most Corners",
+     "outcomes": [
+      "1",
+      "Draw",
+      "2"
+     ]
+    },
+    {
+     "label": "Malta to Win to Nil"
+    },
+    {
+     "label": "Total Corners by Andorra"
+    },
+    {
+     "label": "Double Chance",
+     "outcomes": [
+      "1X",
+      "X2"
+     ]
+    },
+    {
+     "label": "Gibraltar to Win to Nil"
+    },
+    {
+     "label": "Total Goals by Gibraltar"
+    },
+    {
+     "label": "Total Corners by Gibraltar"
+    },
+    {
+     "label": "Total Goals by Gibraltar - 1st Half"
+    }
+   ],
+   "qwen": {
+    "label": "Correct Score",
+    "match": "exact",
+    "related": [
+     "Full Time",
+     "Half Time",
+     "Full Time - 2UP",
+     "Handicap"
+    ]
+   }
+  },
+  {
+   "query": "baltimore to win and Kazuma to score a HR, Shane Bazz to have atleast 3 strikeouts and total runs over 7.5",
+   "leg": 0,
+   "phrase": "to win (for Baltimore)",
+   "menu": [
+    {
+     "label": "Moneyline"
+    },
+    {
+     "label": "Total Runs"
+    },
+    {
+     "label": "Run Line"
+    },
+    {
+     "label": "Total Runs Odd/Even",
+     "outcomes": [
+      "Odd",
+      "Even"
+     ]
+    },
+    {
+     "label": "Total Runs - First 3 Innings"
+    },
+    {
+     "label": "Draw No Bet - First 5 Innings"
+    },
+    {
+     "label": "Total Runs - First 7 Innings"
+    },
+    {
+     "label": "Draw No Bet - First 3 Innings"
+    },
+    {
+     "label": "4+ Hits, Runs & RBIs Recorded by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "2+ Hits, Runs & RBIs Recorded by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "1+ Hits, Runs & RBIs Recorded by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "3+ Hits, Runs & RBIs Recorded by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Total RBI by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Total Stolen Bases by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "3+ Strikeouts thrown by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Player to hit 2 or more Home Runs - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Most Hits",
+     "outcomes": [
+      "1",
+      "Draw",
+      "2"
+     ]
+    },
+    {
+     "label": "Player to Hit a Home Run - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Total Hits by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "1+ Doubles by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "1+ Runs Scored by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Handicap - First 5 Innings"
+    },
+    {
+     "label": "2+ Runs Scored by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Handicap - First 3 Innings"
+    },
+    {
+     "label": "1+ RBIs by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "3+ Hits by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "1+ Hits by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Total Runs - Inning 1"
+    },
+    {
+     "label": "2+ Hits by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Total Runs by Baltimore Orioles"
+    },
+    {
+     "label": "2+ Bases Recorded by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Total Bases Recorded by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "3+ Bases Recorded by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "2+ RBIs by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Total Runs - First 5 Innings"
+    },
+    {
+     "label": "Draw No Bet - First 7 Innings"
+    },
+    {
+     "label": "Total Outs Recorded by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Handicap - First 7 Innings"
+    },
+    {
+     "label": "Lead After 3 Innings",
+     "outcomes": [
+      "1",
+      "Draw",
+      "2"
+     ]
+    },
+    {
+     "label": "Lead After 5 Innings",
+     "outcomes": [
+      "1",
+      "Draw",
+      "2"
+     ]
+    },
+    {
+     "label": "Baltimore Orioles to Score a Run - Inning 1"
+    },
+    {
+     "label": "4+ Strikeouts thrown by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "5+ Strikeouts thrown by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "6+ Strikeouts thrown by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Total Strikeouts by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Inning 1",
+     "outcomes": [
+      "1",
+      "Draw",
+      "2"
+     ]
+    },
+    {
+     "label": "Baltimore Orioles to Score 1st and Win"
+    },
+    {
+     "label": "Lead After 7 Innings",
+     "outcomes": [
+      "1",
+      "Draw",
+      "2"
+     ]
+    }
+   ],
+   "qwen": {
+    "label": "Moneyline",
+    "match": "close",
+    "related": [
+     "Total Runs",
+     "Run Line",
+     "Total Runs Odd/Even",
+     "Total Runs - First 3 Innings",
+     "Draw No Bet - First 5 Innings"
+    ]
+   }
+  },
+  {
+   "query": "baltimore to win and Kazuma to score a HR, Shane Bazz to have atleast 3 strikeouts and total runs over 7.5",
+   "leg": 1,
+   "phrase": "to score a HR (for Kazuma)",
+   "menu": [
+    {
+     "label": "Player to Hit a Home Run - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "1+ Doubles by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "2+ Hits by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "2+ Bases Recorded by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Total RBI by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Player to hit 2 or more Home Runs - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "2+ Hits, Runs & RBIs Recorded by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "1+ Hits, Runs & RBIs Recorded by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "4+ Hits, Runs & RBIs Recorded by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "2+ Runs Scored by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "1+ Runs Scored by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "1+ Hits by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "3+ Hits by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "1+ RBIs by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Total Bases Recorded by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Total Hits by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "3+ Hits, Runs & RBIs Recorded by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "3+ Bases Recorded by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "2+ RBIs by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    }
+   ],
+   "qwen": {
+    "label": "Player to Hit a Home Run - Including Extra Innings (Listed player must be in starting lineup for bets to stand)",
+    "match": "exact",
+    "related": [
+     "1+ Runs Scored by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)",
+     "1+ Hits by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)",
+     "1+ RBIs by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)",
+     "Total Bases Recorded by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)",
+     "Total Hits by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    ]
+   }
+  },
+  {
+   "query": "baltimore to win and Kazuma to score a HR, Shane Bazz to have atleast 3 strikeouts and total runs over 7.5",
+   "leg": 2,
+   "phrase": "strikeouts (for Shane Bazz)",
+   "menu": [
+    {
+     "label": "3+ Strikeouts thrown by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Total Outs Recorded by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "4+ Strikeouts thrown by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "5+ Strikeouts thrown by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "6+ Strikeouts thrown by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Total Strikeouts by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    }
+   ],
+   "qwen": {
+    "label": "3+ Strikeouts thrown by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)",
+    "match": "exact",
+    "related": [
+     "Total Outs Recorded by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)",
+     "4+ Strikeouts thrown by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    ]
+   }
+  },
+  {
+   "query": "baltimore to win and Kazuma to score a HR, Shane Bazz to have atleast 3 strikeouts and total runs over 7.5",
+   "leg": 3,
+   "phrase": "total runs",
+   "menu": [
+    {
+     "label": "Moneyline"
+    },
+    {
+     "label": "Total Runs"
+    },
+    {
+     "label": "Run Line"
+    },
+    {
+     "label": "Total Runs Odd/Even",
+     "outcomes": [
+      "Odd",
+      "Even"
+     ]
+    },
+    {
+     "label": "Total Runs - First 3 Innings"
+    },
+    {
+     "label": "Draw No Bet - First 5 Innings"
+    },
+    {
+     "label": "Total Runs - First 7 Innings"
+    },
+    {
+     "label": "Draw No Bet - First 3 Innings"
+    },
+    {
+     "label": "4+ Hits, Runs & RBIs Recorded by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "2+ Hits, Runs & RBIs Recorded by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "1+ Hits, Runs & RBIs Recorded by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "3+ Hits, Runs & RBIs Recorded by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Total RBI by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Total Stolen Bases by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Toronto Blue Jays to Score a Run - Inning 1"
+    },
+    {
+     "label": "3+ Strikeouts thrown by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Player to hit 2 or more Home Runs - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Most Hits",
+     "outcomes": [
+      "1",
+      "Draw",
+      "2"
+     ]
+    },
+    {
+     "label": "Toronto Blue Jays to Score 1st and Win"
+    },
+    {
+     "label": "Player to Hit a Home Run - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Total Hits by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "1+ Doubles by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "1+ Runs Scored by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Handicap - First 5 Innings"
+    },
+    {
+     "label": "2+ Runs Scored by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Handicap - First 3 Innings"
+    },
+    {
+     "label": "1+ RBIs by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "3+ Hits by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "1+ Hits by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Total Runs - Inning 1"
+    },
+    {
+     "label": "2+ Hits by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Total Runs by Baltimore Orioles"
+    },
+    {
+     "label": "2+ Bases Recorded by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Total Bases Recorded by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "3+ Bases Recorded by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "2+ RBIs by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Total Runs - First 5 Innings"
+    },
+    {
+     "label": "Draw No Bet - First 7 Innings"
+    },
+    {
+     "label": "Total Outs Recorded by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Total Runs by Toronto Blue Jays"
+    },
+    {
+     "label": "Handicap - First 7 Innings"
+    },
+    {
+     "label": "Lead After 3 Innings",
+     "outcomes": [
+      "1",
+      "Draw",
+      "2"
+     ]
+    },
+    {
+     "label": "Lead After 5 Innings",
+     "outcomes": [
+      "1",
+      "Draw",
+      "2"
+     ]
+    },
+    {
+     "label": "Baltimore Orioles to Score a Run - Inning 1"
+    },
+    {
+     "label": "4+ Strikeouts thrown by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "5+ Strikeouts thrown by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "6+ Strikeouts thrown by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Total Strikeouts by the Player - Including Extra Innings (Listed player must be in starting lineup for bets to stand)"
+    },
+    {
+     "label": "Inning 1",
+     "outcomes": [
+      "1",
+      "Draw",
+      "2"
+     ]
+    },
+    {
+     "label": "Baltimore Orioles to Score 1st and Win"
+    },
+    {
+     "label": "Lead After 7 Innings",
+     "outcomes": [
+      "1",
+      "Draw",
+      "2"
+     ]
+    }
+   ],
+   "qwen": {
+    "label": "Total Runs",
+    "match": "exact",
+    "related": [
+     "Moneyline",
+     "Run Line",
+     "Total Runs Odd/Even",
+     "Total Runs by Baltimore Orioles",
+     "Total Runs by Toronto Blue Jays",
+     "Total Runs - First 5 Innings",
+     "Total Runs - First 3 Innings",
+     "Total Runs - First 7 Innings",
+     "Total Runs - Inning 1"
+    ]
+   }
+  }
+ ]
+}

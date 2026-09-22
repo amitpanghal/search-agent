@@ -77,10 +77,10 @@ export async function runLiveMenuGate(): Promise<GateResult> {
   }
 
   // ---- (B2) RESOLVE batched: many legs sharing ONE menu resolve in a single call (Q2) ----
-  const replayMany = (golds: ({ label: string; match: MatchLabel } | null)[]): DecideManyFn => async (_phrases, menu) =>
-    golds.map((g) => {
+  const replayMany = (golds: ({ label: string; match: MatchLabel } | null)[]): DecideManyFn => async (bets) =>
+    golds.map((g, i) => {
       if (g == null) return { ref: null, match: "none", reason: "replay none" };
-      const ref = menu.findIndex((m) => m.label.toLowerCase() === g.label.toLowerCase());
+      const ref = bets[i]!.menu.findIndex((m) => m.label.toLowerCase() === g.label.toLowerCase());
       return ref >= 0 ? { ref, match: g.match, reason: "replay" } : { ref: null, match: "none", reason: "gold not in menu" };
     });
   {
@@ -89,7 +89,7 @@ export async function runLiveMenuGate(): Promise<GateResult> {
       { label: "Finishing Position — Winner", match: "exact" },
       { label: "Finishing Position — Top 4", match: "exact" },
     ];
-    const picks = await resolveMarkets(["Spain to win the World Cup", "Spain to finish in the top 4"], menu, replayMany(golds));
+    const picks = await resolveMarkets([{ phrase: "Spain to win the World Cup", menu }, { phrase: "Spain to finish in the top 4", menu }], replayMany(golds));
     const labelOf = (p: (typeof picks)[number]) => (p.match === "none" ? null : p.label ?? null);
     const ok = picks.length === golds.length && picks.every((p, i) => p.match === golds[i]!.match && (labelOf(p) ?? "").toLowerCase() === golds[i]!.label.toLowerCase());
     check("resolve batched: 2 legs share one menu -> 2 correct picks", ok, picks.map((p) => `${p.match} ${labelOf(p) ?? "—"}`).join(" | "));

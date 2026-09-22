@@ -12,8 +12,9 @@ import { resolveTimeWindow, eventMatchesTime, applyFixturePick, filterEventsByTi
 import { fold, contentTokens, lc, stripSettle } from "./lexical";
 import type { BetOffer, KEvent } from "./offering-client";
 import { buildBetslip } from "./combinations";
-import { picksByLeg } from "./resolve-market";
-import type { ResolvedLeg } from "./live-menu-types";
+import { resolveMarkets, decideWithJev } from "./resolve-market";
+import type { ResolvedLeg, Menu } from "./live-menu-types";
+import { readFileSync } from "node:fs";
 import { queryNamesSport, adoptSport, resolveEntities } from "./resolve-entities";
 import { propagate, retier, byProminence, type Candidate } from "./ground-scope";
 import { execute } from "./execute";
@@ -381,20 +382,6 @@ test("select: zero-of-the-stat needs the real 0.5 rung — a ladder starting hig
 });
 
 // ---------------------------------------------------------------------------------------------------------
-// RESOLVE-MARKET: a pick that lost its `leg` (Qwen's free-text JSON cut off at maxTokens mid-`related`) still
-// binds by POSITION when there is exactly one pick per bet — the captured Real Madrid "goals" output below
-// carried the right market (ref 31, exact) and was shown as "no market" because `leg` never arrived.
-test("resolve-market: a leg-less pick binds by position when picks match bets one-to-one", () => {
-  const cutOff = [{ match: "exact", ref: 31, related: [0, 15, 10, 20, 27, 40, 12, 26] }]; // no `leg`
-  assert.deepEqual(picksByLeg(cutOff as never, 1)[0], { ref: 31, match: "exact", outcome: undefined, related: cutOff[0]!.related });
-  // explicit legs still win over position (reordered picks bind correctly)
-  const swapped = [{ leg: 1, ref: 5, match: "close" }, { leg: 0, ref: 2, match: "exact" }];
-  assert.deepEqual(picksByLeg(swapped as never, 2).map((p) => p.ref), [2, 5]);
-  // a count mismatch never guesses: 2 bets, 1 leg-less pick -> both none
-  assert.deepEqual(picksByLeg(cutOff as never, 2).map((p) => p.match), ["none", "none"]);
-});
-
-// ---------------------------------------------------------------------------------------------------------
 // EXECUTE: a none-pick leg whose fixture menu EXISTED but was emptied by the subject filter must say the
 // SUBJECT is absent (naming the grounded person, so a wrong grounding is visible and correctable) — never the
 // false "no market is available". The generic no-market wording stays for a genuinely missing concept.
@@ -655,4 +642,132 @@ test("entity gate: the threshold is inclusive, env-driven, and falls back to 0.8
   assert.equal(await settledAt(0.5, { JEV_ENTITY_THRESHOLD: "high" }), false, "non-numeric env falls back, not NaN");
   assert.equal(await settledAt(0.9, { JEV_PRICE_IN: "" }), true);
   assert.equal(rows.at(-1)!.priceIn, 0.042, "blank JEV_PRICE_IN falls back to the default price");
+});
+
+// ---------------------------------------------------------------------------------------------------------
+// MARKET on Jev (intent/jev-market-resolver). ONE Jev request per resolveMarkets call carries every bet: the union
+// menu once in state, and per bet a pick / fit / next / outcome `choice` question over THAT bet's own refs. A pick
+// counts at or above JEV_MARKET_THRESHOLD; everything else is `none`. No network: fetch is stubbed and answers by
+// LABEL against the request it receives, so the tests never depend on how the decider numbers the union menu. The
+// bets and menus are the 2026-09-21 Qwen captures (src/eval/market-picks.capture.json); the expected labels are
+// the picks Qwen made then.
+type CapturedCase = { query: string; leg: number; phrase: string; menu: Menu; qwen: { label: string | null; match: string } };
+const CAPTURE = JSON.parse(readFileSync(new URL("../eval/market-picks.capture.json", import.meta.url), "utf8")) as { cases: CapturedCase[] };
+const andorra = CAPTURE.cases.filter((c) => c.query.startsWith("andorra"));
+const asBet = (c: CapturedCase) => ({ phrase: c.phrase, menu: c.menu });
+const marketEnv = { ...jevEnv, JEV_MARKET_THRESHOLD: undefined };
+type Canned = { pick: string; prob?: number; fit?: { exact: number; close: number }; next?: Record<string, number>; outcome?: string };
+type JevBody = { state: { menu: { label: string }[] }; questions: Record<string, { criteria: Record<string, string> }> };
+// A fetch stub that reads the request and answers each bet by label: pick (a label, "none", or a raw key), fit,
+// next (label -> probability) and outcome. Usage is fixed so the cost row is checkable.
+const jevStub = (t: TestContext, legs: Canned[]) =>
+  t.mock.method(globalThis, "fetch", async (_url: unknown, init: { body: string }) => {
+    const body = JSON.parse(init.body) as JevBody;
+    const refOf = (label: string) => { const i = body.state.menu.findIndex((m) => m.label === label); return i >= 0 ? String(i) : label; };
+    const answers: Record<string, unknown> = {};
+    legs.forEach((c, b) => {
+      const key = refOf(c.pick), p = c.prob ?? 0.97;
+      answers[`pick:${b}`] = { type: "choice", choice: key, probabilities: { [key]: p, none: 1 - p } };
+      const f = c.fit ?? { exact: 0.9, close: 0.1 };
+      answers[`fit:${b}`] = { type: "choice", choice: f.exact >= f.close ? "exact" : "close", probabilities: f };
+      if (c.next) {
+        const probs = Object.fromEntries(Object.entries(c.next).map(([l, pr]) => [refOf(l), pr]));
+        answers[`next:${b}`] = { type: "choice", choice: Object.entries(probs).sort((x, y) => y[1] - x[1])[0]![0], probabilities: probs };
+      }
+      if (c.outcome) answers[`outcome:${b}`] = { type: "choice", choice: c.outcome, probabilities: { [c.outcome]: 0.95, none: 0.05 } };
+    });
+    return reply({ answers, usage: { input_tokens: 9494, output_tokens: 0 } });
+  });
+const requestBody = (fetch: ReturnType<typeof jevStub>): JevBody => JSON.parse(fetch.mock.calls[0]!.arguments[1]!.body as string);
+
+test("market: Jev picks each bet from its own menu in ONE request", async (t) => {
+  await withEnv(marketEnv, async () => {
+    const fetch = jevStub(t, [{ pick: "Full Time" }, { pick: "Both Teams To Score" }]);
+    const picks = await resolveMarkets([asBet(andorra[0]!), asBet(andorra[1]!)], undefined, andorra[0]!.query);
+    assert.equal(fetch.mock.callCount(), 1);
+    assert.deepEqual(picks.map((p) => [p.label, p.match]), [["Full Time", "exact"], ["Both Teams To Score", "exact"]]);
+    const body = requestBody(fetch);
+    assert.ok((body.state as { rules?: string }).rules!.length > 500, "the rulebook rides once, in state.rules");
+    assert.deepEqual(Object.keys(body.questions).filter((k) => k.endsWith(":0")).sort(), ["fit:0", "next:0", "outcome:0", "pick:0"]);
+    // pick:0 offers bet 0's own menu + none — nothing from bet 1's menu; the union menu is deduped by label
+    const keys0 = Object.keys(body.questions["pick:0"]!.criteria);
+    assert.equal(keys0.length, andorra[0]!.menu.length + 1);
+    assert.ok(keys0.includes("none"));
+    assert.deepEqual(new Set(keys0.filter((k) => k !== "none").map((k) => body.state.menu[Number(k)]!.label)), new Set(andorra[0]!.menu.map((m) => m.label)));
+    assert.equal(body.state.menu.length, new Set([...andorra[0]!.menu, ...andorra[1]!.menu].map((m) => m.label)).size);
+  });
+});
+
+test("market: exact or close is the fit question's more probable option", async (t) => {
+  await withEnv(marketEnv, async () => {
+    jevStub(t, [{ pick: "Full Time", fit: { exact: 0.9, close: 0.1 } }, { pick: "Both Teams To Score", fit: { exact: 0.3, close: 0.7 } }]);
+    const picks = await resolveMarkets([asBet(andorra[0]!), asBet(andorra[1]!)]);
+    assert.deepEqual(picks.map((p) => p.match), ["exact", "close"]);
+  });
+});
+
+test("market: below threshold, none, or an unknown ref is none", async (t) => {
+  await withEnv(marketEnv, async () => {
+    jevStub(t, [{ pick: "Full Time", prob: 0.79 }, { pick: "none", prob: 0.9 }, { pick: "999" }]);
+    const picks = await resolveMarkets([asBet(andorra[0]!), asBet(andorra[1]!), asBet(andorra[2]!)]);
+    assert.deepEqual(picks, [{ match: "none" }, { match: "none" }, { match: "none" }]);
+  });
+  await withEnv({ ...marketEnv, JEV_MARKET_THRESHOLD: "0.7" }, async () => {
+    jevStub(t, [{ pick: "Full Time", prob: 0.79 }]);
+    assert.equal((await resolveMarkets([asBet(andorra[0]!)]))[0]!.label, "Full Time", "the cut is env-driven");
+  });
+});
+
+test("market: a named outcome comes back verbatim, an unlisted one is dropped", async (t) => {
+  await withEnv(marketEnv, async () => {
+    jevStub(t, [{ pick: "Correct Score", outcome: "3-2" }]);
+    assert.equal((await resolveMarkets([asBet(andorra[2]!)]))[0]!.outcomeLabel, "3-2");
+    jevStub(t, [{ pick: "Correct Score", outcome: "9-9" }]);
+    assert.equal((await resolveMarkets([asBet(andorra[2]!)]))[0]!.outcomeLabel, undefined);
+  });
+});
+
+test("market: related is the next question's top three, pick excluded", async (t) => {
+  await withEnv(marketEnv, async () => {
+    jevStub(t, [{ pick: "Full Time", next: { "Full Time": 0.5, "Total Goals": 0.2, "Both Teams To Score": 0.15, "Handicap": 0.1, "Total Goals by Andorra": 0.05 } }]);
+    const [p] = await resolveMarkets([asBet(andorra[0]!)]);
+    assert.deepEqual(p!.related, ["Total Goals", "Both Teams To Score", "Handicap"]);
+  });
+});
+
+test("market: Jev failures retry once on 429/529 and otherwise answer none, never throw", async (t) => {
+  await withEnv(marketEnv, async () => {
+    const ok = { answers: { "pick:0": { type: "choice", choice: "0", probabilities: { "0": 0.97, none: 0.03 } }, "fit:0": { type: "choice", choice: "exact", probabilities: { exact: 0.9, close: 0.1 } } }, usage: { input_tokens: 10 } };
+    const run = async (seq: Array<Response | Error>) => {
+      const fetch = stubFetch(t, seq);
+      const trace: TraceEvent[] = [];
+      const picks = await traceStore.run(trace, () => resolveMarkets([{ phrase: "who wins", menu: [{ label: "Full Time" }] }]));
+      fetch.mock.restore();
+      return { calls: fetch.mock.callCount(), pick: picks[0]!.match, resps: trace.filter((e) => e.kind === "llm-resp").length };
+    };
+    assert.deepEqual(await run([reply({}, 429, { "Retry-After": "0" }), reply(ok)]), { calls: 2, pick: "exact", resps: 1 }, "429 then 200");
+    assert.deepEqual(await run([reply({}, 529, { "Retry-After": "0" }), reply({}, 529)]), { calls: 2, pick: "none", resps: 1 }, "529 twice");
+    assert.deepEqual(await run([new Error("ECONNRESET")]), { calls: 1, pick: "none", resps: 1 }, "thrown fetch");
+    assert.deepEqual(await run([reply("not json")]), { calls: 1, pick: "none", resps: 1 }, "malformed body");
+  });
+});
+
+test("market: a missing JEV_ACCESS_KEY rejects by name and makes no request", async (t) => {
+  await withEnv({ ...marketEnv, JEV_ACCESS_KEY: undefined }, async () => {
+    const fetch = jevStub(t, [{ pick: "Full Time" }]);
+    await assert.rejects(resolveMarkets([asBet(andorra[0]!)]), /JEV_ACCESS_KEY/);
+    assert.equal(fetch.mock.callCount(), 0);
+  });
+});
+
+test("market: one request emits one llm-req/llm-resp pair and one priced usage row", async (t) => {
+  await withEnv(marketEnv, async () => {
+    jevStub(t, [{ pick: "Full Time" }, { pick: "Both Teams To Score" }]);
+    const trace: TraceEvent[] = [], rows: RawCall[] = [];
+    await traceStore.run(trace, () => usageStore.run(rows, () => decideWithJev([asBet(andorra[0]!), asBet(andorra[1]!)])));
+    const llm = trace.filter((e) => (e.kind === "llm-req" || e.kind === "llm-resp") && e.tool === "pick");
+    assert.deepEqual(llm.map((e) => e.kind), ["llm-req", "llm-resp"]);
+    assert.equal(llm[0]!.kind === "llm-req" && llm[0]!.model, "jev-latest");
+    assert.deepEqual(rows, [{ tool: "pick", inputTokens: 9494, outputTokens: 0, priceIn: 0.042, priceOut: 0 }]);
+  });
 });
