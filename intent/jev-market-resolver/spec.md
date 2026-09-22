@@ -247,3 +247,5 @@ cell). Both are recorded under Decisions; the intent's number is corrected with 
   `instructions` is a one-line template in code (bet leg, phrase, pointer to the rules). The earlier wording
   repeated the ~1.2k-token rulebook in every question, 4× per bet; the 2026-09-21 measurement the intent rests
   on used rules-in-state. Decided by: engineer (factual).
+- 2026-09-22 — Criterion 12 baseline, Qwen, one run of `npx tsx src/eval/market-resolve-gate.ts` before the
+  switch: `Market-resolve gate (live resolve vs captured snapshot 2026-06-22): 3/3`. Decided by: engineer (factual).
