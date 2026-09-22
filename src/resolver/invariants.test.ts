@@ -708,12 +708,12 @@ test("market: exact or close is the fit question's more probable option", async 
 
 test("market: below threshold, none, or an unknown ref is none", async (t) => {
   await withEnv(marketEnv, async () => {
-    jevStub(t, [{ pick: "Full Time", prob: 0.79 }, { pick: "none", prob: 0.9 }, { pick: "999" }]);
+    jevStub(t, [{ pick: "Full Time", prob: 0.69 }, { pick: "none", prob: 0.9 }, { pick: "999" }]);
     const picks = await resolveMarkets([asBet(andorra[0]!), asBet(andorra[1]!), asBet(andorra[2]!)]);
     assert.deepEqual(picks, [{ match: "none" }, { match: "none" }, { match: "none" }]);
   });
-  await withEnv({ ...marketEnv, JEV_MARKET_THRESHOLD: "0.7" }, async () => {
-    jevStub(t, [{ pick: "Full Time", prob: 0.79 }]);
+  await withEnv({ ...marketEnv, JEV_MARKET_THRESHOLD: "0.6" }, async () => {
+    jevStub(t, [{ pick: "Full Time", prob: 0.69 }]);
     assert.equal((await resolveMarkets([asBet(andorra[0]!)]))[0]!.label, "Full Time", "the cut is env-driven");
   });
 });

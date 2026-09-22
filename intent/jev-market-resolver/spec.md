@@ -286,3 +286,22 @@ cell). Both are recorded under Decisions; the intent's number is corrected with 
   and never reached `sdlc-jev`. Applied here in `resolve-market.ts` with a test; criterion 4 reads "verbatim from
   the listed outcomes" and side codes are placeholders `buildMenu` adds, not outcomes a bet can name. Decided by:
   engineer (factual).
+- 2026-09-23 — Criterion 12 on Jev, one run of `npx tsx src/eval/market-resolve-gate.ts` after the switch:
+  `Market-resolve gate (live resolve vs captured snapshot 2026-06-22): 3/3` — equal to the Qwen baseline (3/3).
+  Decided by: engineer (factual).
+- 2026-09-23 — Criterion 13, one live probe (`npm run probe -- "Deportivo Cali to win, both teams to score and over
+  2.5 goals vs Independiente Santa Fe"`, trace `live2.jsonl` in the session scratchpad; a first attempt on a Copa
+  Chile fixture clarified at the entity gate — "Copa Chile" is not in the catalog, "Colo Colo" grounds only to
+  esports clones — and never reached the market stage). Three legs, two menu groups (45- and 51-label menus, union
+  51), one request: `[llm market] 866ms 11232/3650 tok`, envelope `cost.calls` = one `market` row, $0.000472 for
+  3 bets = $0.00016 per bet; `market` stage row: `#0 → Full Time (exact) · #1 → Both Teams To Score (exact) ·
+  #2 → — (none)`. Full Time 0.95 and BTTS 1.00 match Qwen's picks for the same bets. Leg 2 reached Jev as the
+  bare phrase `goals` (the extractor holds the line 2.5 in its own field; `betPhrase` never carried it, Qwen read
+  it off the raw request) and Jev put `Total Goals` at 0.72, fit `close` 0.83 — under the 0.8 cut, so `none`
+  where Qwen picked Total Goals. A second identical probe (`live3.jsonl`, 1049 ms) gave 0.73 / `close` 0.76: not
+  noise. Decided by: engineer (factual).
+- 2026-09-23 — `JEV_MARKET_THRESHOLD` default lowered from 0.8 to **0.7** so the bare-concept leg above commits
+  (`Total Goals`, `close`) at 0.72–0.73. The replay's confident-wrong pick sat at 0.62 and Jev's own `none` at
+  0.56, so 0.7 still separates right from wrong, with a 0.08 margin instead of 0.18. Chosen over carrying the
+  leg's line into the bet phrase (a `betPhrase` change) and over accepting the abstain. Decided by: product owner.
+

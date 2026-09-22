@@ -252,4 +252,7 @@ rule**, **Never drop a row on missing data**, and the skills-and-documents rule 
   surfaced, not for the threshold (which stays 0.8): `toPick` now refuses the result market's side codes `"1"`/`"2"`
   as `outcomeLabel` (the 2026-09-10 fix that never left the `snipe` branch), with a case in the criterion-4 test.
   Plan fact; decided by: engineer.
+- 2026-09-23 — Step 7 also changed `src/resolver/resolve-market.ts` (threshold default 0.8 → 0.7), `.env.example`
+  and the criterion-3 test: the live probe's bare-concept leg sat at 0.72–0.73 and the product owner chose the
+  lower cut over a `betPhrase` change. Plan fact; decided by: engineer, on the product owner's choice.
 

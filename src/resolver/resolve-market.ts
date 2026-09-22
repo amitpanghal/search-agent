@@ -100,7 +100,7 @@ export const decideWithJev: DecideManyFn = async (bets, query) => {
   });
   const state = { query, rules: rules(), menu: union.map((m, ref) => ({ ref, ...m })), bets: bets.map((b, i) => ({ leg: i, phrase: b.phrase, refs: betRefs[i] })) };
   const res = await jevChoice(TOOL_NAME, state, questions);
-  const threshold = envNumber("JEV_MARKET_THRESHOLD", 0.8, 0, 1); // a blank or bad value must never become 0/NaN
+  const threshold = envNumber("JEV_MARKET_THRESHOLD", 0.7, 0, 1); // a blank or bad value must never become 0/NaN
   return bets.map((b, i): RawPick => {
     if (!res) return { ref: null, match: "none" }; // Jev did not answer: every bet abstains, the query still answers
     const own = (unionRef: string): number => betRefs[i]!.indexOf(Number(unionRef)); // -1 -> toPick abstains
