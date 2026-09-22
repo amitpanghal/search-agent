@@ -2,7 +2,7 @@
 
 - **Date:** 2026-09-22
 - **Source:** human
-- **Status:** accepted
+- **Status:** superseded
 - **Jira:** none
 
 ## Problem / observed signal
@@ -55,3 +55,15 @@ current baseline (one paid run), and the normalized plans for the gold set are i
 - 2026-09-22 — Constraint corrected: no extract cache exists (`extract.ts` calls Bedrock on every run; the
   eval's only reuse is `--from` replay of a saved capture). The consequence — grade on fresh extractions after the
   change — stands. Fact, fixed by the engineer in the spec pull request.
+- 2026-09-22 — Superseded: measured, premise falsified. (1) A before capture of the 290 gold queries on the shipped
+  schema: 0 of 311 scopes omitted any of the eight value-or-null keys (7.05 emitted empty per scope). (2) With the
+  fields optional in the tool schema (`scope.required = ["level"]`, zod defaults, input-mode JSON schema; branch
+  `feature/extractor-omit-null-scope`, last commit 54b9b00, deleted unmerged): 61 matched rows, still 0 omitted,
+  output tokens 5,151 → 5,135, raw output byte-identical in 47 of 61. (3) The Baltimore probe on the new schema:
+  239 output tokens (was 223), every empty still emitted. (4) A prompt variant turning every field-level "else
+  null" into "omit", plus the `competition` description: 5 queries, 0 omitted, two queries lost a leg.
+  Qwen3-Next-80B fills every property the tool schema lists whatever `required`, the prompt or the field
+  description says, so the desired outcome is not reachable by a schema or prompt change. Spend about $0.47.
+  The remaining levers — a model that honours optional fields, a no-LLM path for simple queries, prefetch during
+  extract — are a new intent. Captures: local, gitignored, `scripts/.trace-out/omit-null-scope/`. Decided by:
+  product owner.
