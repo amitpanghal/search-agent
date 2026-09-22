@@ -25,7 +25,7 @@ import { usageStore, summarizeCost, type RawCall } from "./cost";
 import type { Subject, Line, LineRange } from "./schema";
 import { getSport } from "./sports";
 import { recoverSport } from "./recover-sport";
-import type { ResolvedLeg, MarketPick, EnvelopeLeg, Selection } from "./live-menu-types";
+import type { ResolvedLeg, MarketPick, EnvelopeLeg, Selection, Menu } from "./live-menu-types";
 import { emit } from "./trace";
 
 // FILTER subject — a NAMED entity narrows the menu to its markets; a relational role (home/away) or `event`
@@ -262,10 +262,10 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
   const anchorEventIds = new Set<number>();
   const ordered = [...groups].sort(([, a], [, b]) => Number(isFloating(a[0]!)) - Number(isFloating(b[0]!)));
 
-  // Per group: scopeMenu + filterBySubject (deterministic, synchronous), then ONE resolveMarkets LLM call for that
-  // group's named legs against its shared filtered menu (the answer-preserving multi=false batch). Ordered
-  // anchored-first so the sync prep populates anchorEventIds before any floating group reads it.
-  const pickJobs: { idxs: number[]; picks: Promise<MarketPick[]> }[] = [];
+  // Per group: scopeMenu + filterBySubject (deterministic, synchronous); the group's named legs become BETS (phrase +
+  // this group's filtered menu) collected for ONE Jev request after the loop. Ordered anchored-first so the sync
+  // prep populates anchorEventIds before any floating group reads it.
+  const pickJobs: { idxs: number[]; bets: { phrase: string; menu: Menu }[] }[] = [];
   for (const [key, idxs] of ordered) {
     const leg = settled.legs[idxs[0]!]!;
     const sel0 = plan.selectors[idxs[0]!]!;
@@ -292,18 +292,16 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
     // An unidentified-subject leg abstains (see subjectUnidentified): none-pick now, no market call spent.
     idxs.forEach((i) => { if (subjectUnidentified(settled.legs[i]!, plan.selectors[i]!.subject)) pickByIdx[i] = { match: "none" }; });
     const llmIdxs = idxs.filter((i) => plan.selectors[i]!.market_concept !== "main" && pickByIdx[i] == null);
-    // Kick the pick off WITHOUT awaiting — each group resolves against its own menu with no cross-group
-    // dependency, so all groups' picks run concurrently; awaited together after the loop.
-    // ponytail: unbounded fan-out (one call per group). If a query splits into enough groups to hit Bedrock's
-    // per-second limit, pool it like recall.ts (chunk + Promise.all).
-    if (llmIdxs.length) pickJobs.push({ idxs: llmIdxs, picks: usageStore.run(calls, () => resolveMarkets(llmIdxs.map((i) => ({ phrase: betPhrase(plan.selectors[i]!, settled.legs[i]!.level), menu: fr.menu })), undefined, query)) });
+    if (llmIdxs.length) pickJobs.push({ idxs: llmIdxs, bets: llmIdxs.map((i) => ({ phrase: betPhrase(plan.selectors[i]!, settled.legs[i]!.level), menu: fr.menu })) });
     // anchored group -> remember the fixtures it prices, so later floating groups inherit them
     if (!floating) for (const b of fr.offers) if (b.eventId != null) anchorEventIds.add(b.eventId);
   }
-  // All group picks were kicked off concurrently above; await together, then map each group's results back to its
-  // leg indices (order within a group == llmIdxs order == resolveMarkets phrase order).
-  const jobResults = await Promise.all(pickJobs.map((j) => j.picks));
-  pickJobs.forEach((j, ji) => j.idxs.forEach((i, k) => { pickByIdx[i] = jobResults[ji]![k]!; }));
+  // ONE market request for the whole query: every group's bets in one call (each bet keeps its own menu), then map
+  // the flat results back to leg indices (job order, then llmIdxs order == bet order).
+  const allBets = pickJobs.flatMap((j) => j.bets);
+  const picks = allBets.length ? await usageStore.run(calls, () => resolveMarkets(allBets, undefined, query)) : [];
+  let k = 0;
+  pickJobs.forEach((j) => j.idxs.forEach((i) => { pickByIdx[i] = picks[k++]!; }));
   emit({ kind: "stage", stage: "market", out: pickByIdx });
 
   // Relational subjects need the fixture's home/away — from THIS leg's picked betoffer's event, within the
