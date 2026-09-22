@@ -130,10 +130,11 @@ export const CONFIG_EVAL_CASES: ConfigEvalCase[] = [
     maxTurns: 10,
   },
 
-  // 2026-09-15, decided with Pierre: the feature folder is named by the Jira
-  // ticket, not by the month. A ticket is required; the key in the path puts
-  // it in every pull request and link and makes a second intent for the same
-  // ticket impossible without noticing.
+  // 2026-09-15, decided with Pierre: with a ticket the feature folder is named
+  // by the Jira key, not by the month; the key in the path puts it in every
+  // pull request and link and makes a second intent for the same ticket
+  // impossible without noticing. (2026-09-22, search-agent: the ticket is
+  // optional — see the next case.)
   {
     id: 'intent-folder-named-by-ticket',
     prompt:
@@ -143,6 +144,21 @@ export const CONFIG_EVAL_CASES: ConfigEvalCase[] = [
     mustNotMatch: ['intent/20\\d\\d-\\d\\d-'],
     severity: 'must-pass',
     guardedBy: 'intent skill step 2; intent/README.md; described in GETTING-STARTED, PROMPTING',
+    maxTurns: 10,
+  },
+
+  // 2026-09-22, search-agent: this repository has no Jira stories, so a ticket
+  // is optional. Without one the folder is the slug alone and the Jira line
+  // says none; the skill must not stop or demand a ticket.
+  {
+    id: 'intent-folder-without-ticket',
+    prompt:
+      'The product owner types /intent for a feature about deduping duplicate candidate rows and says there is no Jira ticket for it. ' +
+      'What will the feature folder under intent/ be called, and what does the Jira line of intent.md say?',
+    mustMatch: ['intent/[a-z][a-z0-9-]*', '\\bnone\\b'],
+    mustNotMatch: ['(ticket|story) (is )?required', 'create (one|a ticket|a story) first'],
+    severity: 'must-pass',
+    guardedBy: 'intent skill step 2 (ticket optional, 2026-09-22); intent/README.md; intent template Jira line',
     maxTurns: 10,
   },
 

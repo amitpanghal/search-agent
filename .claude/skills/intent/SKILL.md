@@ -6,9 +6,10 @@ description: >
   "/intent", "capture an intent", "start a feature", "turn this Sentry issue /
   analytics finding / user report into an intent", gives a Jira key or URL
   ("/intent SB-12345"), or hands you a problem statement that should become
-  tracked feature work. A Jira ticket is read first and the interview covers
-  only what the ticket does not say. Produces
-  intent/<ticket>-<slug>/intent.md from the template; it does NOT write specs,
+  tracked feature work. When a Jira ticket exists it is read first and the
+  interview covers only what the ticket does not say; a ticket is optional.
+  Produces intent/<ticket>-<slug>/intent.md (intent/<slug>/ when there is no
+  ticket) from the template; it does NOT write specs,
   plans, or code — /spec is the next step. ALSO use when the user points at a
   feature folder whose intent is already accepted ("/intent intent/<slug>",
   "change the intent", "the spec found the intent wrong", "the desired
@@ -17,13 +18,13 @@ description: >
   and the change travels in the open spec pull request if there is one.
 compatibility: Repos with an intent/ directory at the root (this template).
 metadata:
-  version: "1.8"
+  version: "1.9"
 ---
 
 # /intent — capture an intent artifact
 
-Create `intent/<ticket>-<slug>/intent.md` from
-`intent/_templates/intent.md`. The artifact records WHY, not HOW.
+Create `intent/<ticket>-<slug>/intent.md` (`intent/<slug>/intent.md` when there is
+no ticket) from `intent/_templates/intent.md`. The artifact records WHY, not HOW.
 
 ## Procedure
 
@@ -49,23 +50,25 @@ Create `intent/<ticket>-<slug>/intent.md` from
    the plan and the automated review can read. It does not replace the
    ticket; it travels with the code.
 
-   **Before anything else, read the ticket's comments.** If one starts with
+   **When there is a ticket, read its comments before anything else.** If one starts with
    `Development loop ·`, this ticket is already in the loop: say so, name
    the feature folder the comment points at, and ask whether the user wants
    to continue there (change the intent, run the next step) instead of
    creating a second intent. Two intents for one ticket is the thing to
    avoid.
-2. **Name the directory** `intent/<ticket>-<slug>/`: the Jira ticket key
-   exactly as Jira writes it (`SB-194034`, `PD-9207` — any project), a dash,
-   and a 2–4 word kebab slug. **A ticket is required.** No intent exists
-   without one: the ticket is where the product owner and the team see the
-   feature; the intent is its copy in the repository. If the user gave no
-   key, ask *"Which Jira ticket is this for?"* If there is none yet, say the
-   product owner creates one first and stop — or, when the Atlassian
-   connector is in the session and the user says so, create it from the
-   problem statement and continue. Then check `intent/`: a folder that
-   already starts with this key means the ticket is in the loop — go to
-   "Changing an accepted intent" below instead of creating a second one.
+2. **Name the directory.** With a ticket: `intent/<ticket>-<slug>/`, the Jira
+   key exactly as Jira writes it (`SB-194034`, `PD-9207` — any project), a
+   dash, and a 2–4 word kebab slug; the key in the path puts the ticket in
+   every pull request, link and commit. Without one: `intent/<slug>/`, and the
+   `Jira:` line says `none` — every later step then skips its Jira comments.
+   **A ticket is optional.** If the user gave no key, ask once: *"Which Jira
+   ticket is this for? Say none if there isn't one."* When the Atlassian
+   connector is in the session and the user asks for a ticket, create it from
+   the problem statement and continue with its key. Then check `intent/`
+   against a second intent for the same work: with a key, a folder that
+   already starts with it; without, a folder whose slug names the same
+   feature. Either means the work is in the loop — go to "Changing an
+   accepted intent" below instead of creating a second one.
 3. **Fill every template section.** Rules that matter:
    - The observed signal must link real evidence (Sentry permalink, analytics
      query, PR/issue URL). No evidence → say "no hard evidence; based on X".
@@ -87,7 +90,7 @@ Create `intent/<ticket>-<slug>/intent.md` from
 6. **Offer to hand it in, in plain words.** The user may not use git. Ask
    exactly: *"Shall I hand it in, so an engineer can merge it?"* On yes:
    - `git fetch`, cut `intent/<slug>` from `origin/main`;
-   - commit only `intent/<ticket>-<slug>/intent.md`, message
+   - commit only the feature folder's `intent.md`, message
      `intent: <short name>`;
    - push, then open the pull request against `main` with the title
      `Intent: <short name>` and a body that links the intent directory and

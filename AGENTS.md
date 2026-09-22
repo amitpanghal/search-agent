@@ -61,7 +61,8 @@ genuinely about model behaviour.
 
 ## Feature artifacts & the development loop
 
-- Feature work is tracked as version-controlled artifacts in `intent/<ticket>-<slug>/`: `intent.md`
+- Feature work is tracked as version-controlled artifacts in `intent/<ticket>-<slug>/` (or
+  `intent/<slug>/` when there is no ticket): `intent.md`
   (why — via `/intent`) → `spec.md` (what, with acceptance criteria + policy constraints — via `/spec`)
   → `plan.md` (how — via `/plan-spec`, which commits the approved plan before any code) → code (via
   `/build-plan`, one plan step per commit, then PASS/FAIL per criterion). The tester fills the spec's

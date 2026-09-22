@@ -80,9 +80,9 @@ Say a support ticket arrives: on mobile, "Place bet" does nothing after the
 user's session has expired.
 
 Three people, three files, one feature. The feature folder is named by the
-Jira ticket: `intent/SB-194034-betslip-balance-warning/`. No intent exists
-without a ticket, so the ticket key is in every path, link and pull request
-of the feature. Nobody edits `main`. The intent and
+Jira ticket: `intent/SB-194034-betslip-balance-warning/`. When there is a
+ticket its key is in every path, link and pull request of the feature; without
+one the folder is the slug alone and the intent says `Jira: none`. Nobody edits `main`. The intent and
 the spec each reach `main` through their own small pull request, before any
 code. The plan and the code share one feature branch and reach `main`
 together, so `plan.md` is not on `main` until the code is.

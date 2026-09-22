@@ -3,7 +3,7 @@
 - **Date:** <yyyy-mm-dd>
 - **Source:** human | maintain-loop
 - **Status:** draft | accepted | superseded  <!-- set to accepted by the product owner, in the /intent chat, before hand-in -->
-- **Jira:** <PROJECT-123 — the ticket this intent belongs to; required, and the folder name starts with it>
+- **Jira:** <PROJECT-123 — the ticket this intent belongs to, and the folder name starts with it; or `none` — then the folder is the slug alone and no step writes Jira comments>
 
 ## Problem / observed signal
 

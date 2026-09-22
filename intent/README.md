@@ -4,7 +4,7 @@ This directory holds the version-controlled artifact chain for feature work
 (the Plan/Design stages of the AI-native SDLC loop):
 
 ```
-intent/<ticket>-<slug>/
+intent/<ticket>-<slug>/          (intent/<slug>/ when there is no ticket)
   intent.md   what problem, for whom, what outcome — the WHY   (/intent)
   spec.md     acceptance criteria + policy constraints — the WHAT (/spec)
   plan.md     implementation plan from plan mode — the HOW
@@ -12,12 +12,14 @@ intent/<ticket>-<slug>/
 
 ## Rules
 
-- **One directory per feature/fix**, named `<ticket>-<slug>`: the Jira
-  ticket key as Jira writes it, then a short kebab name (e.g.
-  `SB-194034-betslip-balance-warning`). A ticket is required; there is no
-  intent without one. The key in the path means every pull request, link
-  and commit that names the folder names the ticket, and a second intent
-  for the same ticket cannot be created without noticing.
+- **One directory per feature/fix.** With a Jira ticket it is named
+  `<ticket>-<slug>`: the key as Jira writes it, then a short kebab name (e.g.
+  `SB-194034-betslip-balance-warning`); the key in the path means every pull
+  request, link and commit that names the folder names the ticket, and a
+  second intent for the same ticket cannot be created without noticing.
+  Without a ticket it is named `<slug>` alone and `intent.md` says
+  `Jira: none`; every step then skips its Jira comments. A ticket is
+  optional, not required.
 - `intent.md` and `spec.md` are created from `_templates/` via the `/intent`
   and `/spec` skills. `plan.md` is the approved plan-mode output, written and
   committed by `/plan-spec` before `/build-plan` writes any code.

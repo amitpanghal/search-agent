@@ -871,7 +871,7 @@ left out. Today the sections are:
    day-one questions as a list; where existing rules must go to reach the
    spec and the review.
 5. Your first feature, start to finish: the example ticket; the folder
-   named by the Jira ticket; the sentence "nobody edits main, the plan is
+   named by the Jira ticket (or by the slug alone when there is none); the sentence "nobody edits main, the plan is
    not on main until the code is"; two lanes, colour-coded, showing where
    each file lives (lane one is main: intent.md and spec.md, each arriving
    by its own small pull request before any code; lane two is the feature
