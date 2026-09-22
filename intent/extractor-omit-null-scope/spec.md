@@ -2,7 +2,7 @@
 
 - **Intent:** ./intent.md
 - **Date:** 2026-09-22
-- **Status:** accepted
+- **Status:** superseded
 
 ## Summary
 
@@ -176,3 +176,6 @@ The `emit_query_plan` tool's `inputSchema` changes as criterion 1 states (the `r
   pull request with reader boxes for this feature. That acceptance confirms the three decisions above marked
   `Product owner to confirm.` (the relaxed set, the two captures as baseline, the criterion 3 bars). Decided by:
   product owner.
+- 2026-09-22 — Superseded with the intent. On the branch, criteria 1 and 2 were met (tests green, typecheck
+  green) and criteria 3 and 4 were not: the model's output did not change. See `intent.md` Decisions for the four
+  measurements. Nothing merged. Decided by: product owner.
