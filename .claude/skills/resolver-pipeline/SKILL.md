@@ -7,6 +7,8 @@ description: >-
   ResponseEnvelope, deciding which stage owns a bug or behaviour, adding/changing a stage, or reasoning about
   per-leg scope, the market-deferred fetch, grounding tiers, or the entity/market LLM steps. Read this BEFORE
   editing pipeline code; pair it with the probe skill to actually run a query through it and read the trace.
+metadata:
+  version: "1.1"
 ---
 
 # resolver-pipeline
@@ -30,14 +32,16 @@ consequences that explain most of the design:
 ## Stages (in pipeline order)
 Order and chaining live in `runPipeline` (`resolve.ts`). LLM = one call to `BEDROCK_MODEL` via the Bedrock
 Converse API (temp 0, forced tool use — see `bedrock-call.ts`); everything else is deterministic and zero-LLM.
-The shipped model is Qwen3-Next-80B-A3B-Instruct; the id is env-driven, so never hard-code a model name.
+Stage 4 is the exception: one Jev `choice` request (TypeSafe, `jev-call.ts`, model `JEV_MODEL`) answered with
+a probability per option and no text — a pick is trusted only at or above `JEV_ENTITY_THRESHOLD`. The shipped
+Bedrock model is Qwen3-Next-80B-A3B-Instruct; both ids are env-driven, so never hard-code a model name.
 
 | # | Stage | File | LLM? | In → Out |
 |---|-------|------|------|----------|
 | 1 | extract | `extract.ts` + `extractor-prompt-v2.md` | LLM | `query` → `QueryPlan` (text-valued, ≥1 selector, each with its own scope) |
 | 2 | checkComplete | `check-complete.ts` | no | gate: no team/player/competition/region anchor → clarify and STOP (no fetch) |
 | 3 | groundScope | `ground-scope.ts` | no | `QueryPlan` → `ResolvedScope` (per-leg entity candidates + tier; lexical, no embeddings) |
-| 4 | resolveEntities | `resolve-entities.ts` + `disambiguator-prompt.md` | LLM | `ResolvedScope` → `SettledEntities` (ONE call: pick / reexpress per cell; clarify is deterministic) |
+| 4 | resolveEntities | `resolve-entities.ts` + `jev-call.ts` | Jev | `ResolvedScope` → `SettledEntities` (ONE request: a pick at or above `JEV_ENTITY_THRESHOLD` per cell; everything else clarifies deterministically) |
 | 5 | planRecall | `plan-recall.ts` | no | `SettledEntities` + plan → `RecallInput` (BROAD union across legs; no market) |
 | 6 | recall | `recall.ts` | network | `RecallInput` → `RecallResult` (broad live data + menu; the only network in the rig) |
 | 7 | scopeMenu | `recall.ts` (`scopeMenu`) | no | broad data + one leg → that leg's narrowed offers/events/menu (grain, comp, teams, time, state) |
@@ -104,5 +108,7 @@ the free gates (`npm test`, `npm run gate:live-menu`, `npm run typecheck`); only
 - `resolve.ts` — orchestrator (`runPipeline`, grouping, "main" fan-out, `PipelineDeps`).
 - per-stage files as listed in the table above.
 - prompts: `extractor-prompt-v2.md` (live; `extractor-prompt.md` was the dead v1 and is deleted),
-  `disambiguator-prompt.md`, `resolve-market-prompt.md`.
+  `resolve-market-prompt.md`. The entity gate has no prompt file: its Jev question text lives in
+  `resolve-entities.ts`.
+- `bedrock-call.ts`, `jev-call.ts` — the two model transports (Bedrock Converse; TypeSafe Jev).
 - `live-menu-types.ts`, `schema.ts`, `ground-scope.ts`, `offering-client.ts` — the shared types.

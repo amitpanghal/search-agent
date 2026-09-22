@@ -16,7 +16,8 @@ decides the market against the menu that actually came back.
 
 ## Setup commands
 
-- Install: `npm install` (Node ≥ 20; copy `.env.example` to `.env` and fill in the Bedrock credentials)
+- Install: `npm install` (Node ≥ 20; copy `.env.example` to `.env` and fill in the Bedrock credentials and
+  `JEV_ACCESS_KEY`)
 - Run tests (CI and agents): `npm test`
 - Type check: `npm run typecheck`
 - Lint: none — the type check is the bar
@@ -140,11 +141,12 @@ One line each; the full rule, why, and how it is checked are in `code-convention
 
 - Language: TypeScript, `strict` + `noUncheckedIndexedAccess`, ES2022 modules (`"type": "module"`), run
   with `tsx`; Node ≥ 20 (`engines`). Use `fileURLToPath(import.meta.url)`, never `__dirname`.
-- Composition: `src/resolver/` is the pipeline, one file per stage plus the three prompts (`.md`) and
+- Composition: `src/resolver/` is the pipeline, one file per stage plus the two prompts (`.md`) and
   shared types; `src/server/` is a thin Hono app (transport only); `src/eval/` the gold set, scorer and
   gates; `scripts/` the probe and catalog builders.
 - Data: `zod` for every model-facing schema; `@aws-sdk/client-bedrock-runtime` Converse with forced tool
-  use for the model calls (`bedrock-call.ts`); plain `fetch` for the Kambi feed (`offering-client.ts`).
+  use for the extractor and market calls (`bedrock-call.ts`); plain `fetch` to TypeSafe's Jev for the entity
+  gate (`jev-call.ts`) and for the Kambi feed (`offering-client.ts`).
   No database, no ORM.
 - Every source file opens with a comment explaining **why** it is the way it is. Those headers are the
   real documentation — read the file top before changing it.
@@ -169,7 +171,7 @@ probe traces (`--out`), and the eval reports. The maintain loop stays off until 
 ## Layout
 
 ```
-src/resolver/     the pipeline — one file per stage, plus the three prompts (.md) and shared types
+src/resolver/     the pipeline — one file per stage, plus the two prompts (.md) and shared types
 src/eval/         gold set + structural scorer + the two gates
 src/server/       Hono app, POST /query as SSE. Thin: transport only
 scripts/          probe.ts (debugging) and the catalog/feed builders
@@ -196,6 +198,7 @@ eval/config/      golden prompts for the agent-config regression harness
 
 ## Setup
 
-Copy `.env.example` to `.env` and fill in the AWS Bedrock credentials. Node ≥ 20. Deploys to Render via
+Copy `.env.example` to `.env` and fill in the AWS Bedrock credentials and the Jev key (`JEV_ACCESS_KEY`).
+Node ≥ 20. Deploys to Render via
 `render.yaml`. Catalogs are refreshed locally with `npm run catalogs` and committed — the feed API sits
 behind a proxy, so CI can't reach it.
