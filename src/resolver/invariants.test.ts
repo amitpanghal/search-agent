@@ -17,6 +17,16 @@ import type { ResolvedLeg } from "./live-menu-types";
 import { queryNamesSport, adoptSport, resolveEntities } from "./resolve-entities";
 import { propagate, retier, byProminence, type Candidate } from "./ground-scope";
 import { execute } from "./execute";
+import { summarizeCost } from "./cost";
+
+// Set env vars for the duration of fn, then put back exactly what was there (delete, never the string
+// "undefined") — the cost and the entity gate read process.env at call time.
+async function withEnv<T>(vars: Record<string, string | undefined>, fn: () => T | Promise<T>): Promise<T> {
+  const prev = Object.fromEntries(Object.keys(vars).map((k) => [k, process.env[k]]));
+  const set = (o: Record<string, string | undefined>) => { for (const [k, v] of Object.entries(o)) v === undefined ? delete process.env[k] : (process.env[k] = v); };
+  set(vars);
+  try { return await fn(); } finally { set(prev); }
+}
 
 const ev = (id: number, start?: string, state?: string): KEvent => ({ id, ...(start && { start }), ...(state && { state }) });
 // The extractor's time field has all three keys, nullable — spell the absent ones so the tests type-check.
@@ -505,4 +515,19 @@ test("entity gate: cross-sport widening lists each id once when the team and pla
   const shown = cell.candidates.slice(0, 5).map((c) => c.name);
   assert.equal(new Set(shown).size, 5);
   for (const n of shown) assert.equal(clar.question.split(n).length - 1, 1, ` named more than once`);
+});
+
+// ---------------------------------------------------------------------------------------------------------
+// COST: a row may carry its own price (a Jev row: JEV_PRICE_IN on input, output free); a row without one is
+// a Bedrock row and prices from BEDROCK_PRICE_*. One query mixes both, so each row prices from its own source.
+test("cost: a row carrying its own price is priced from the row; a plain row from BEDROCK_PRICE_*", async () => {
+  await withEnv({ BEDROCK_PRICE_IN: "3", BEDROCK_PRICE_OUT: "15" }, () => {
+    const c = summarizeCost([
+      { tool: "settle_cells", inputTokens: 460, outputTokens: 0, priceIn: 0.042, priceOut: 0 },
+      { tool: "pick", inputTokens: 0, outputTokens: 1_000_000 },
+    ]);
+    assert.equal(c.calls[0]!.stage, "entities");
+    assert.ok(Math.abs(c.calls[0]!.cost - 460 * 0.042 / 1e6) < 1e-12, `jev row cost ${c.calls[0]!.cost}`);
+    assert.equal(c.calls[1]!.cost, 15);
+  });
 });

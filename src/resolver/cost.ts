@@ -1,12 +1,15 @@
-// Per-query LLM cost accounting. Every Bedrock call funnels through bedrock-call.ts, which records its token
-// usage into the per-query store below (AsyncLocalStorage — no arg threading, and safe across concurrent
-// requests: each query gets its own array). runPipeline wraps each LLM stage in usageStore.run(calls, …) so
-// the calls land in that query's own list; summarizeCost() turns them into the envelope's `cost` block.
+// Per-query LLM cost accounting. Every model call funnels through bedrock-call.ts or jev-call.ts, which record
+// its token usage into the per-query store below (AsyncLocalStorage — no arg threading, and safe across
+// concurrent requests: each query gets its own array). runPipeline wraps each LLM stage in
+// usageStore.run(calls, …) so the calls land in that query's own list; summarizeCost() turns them into the
+// envelope's `cost` block. A row prices from its own priceIn/priceOut when it carries them (Jev), else from
+// BEDROCK_PRICE_* (Bedrock) — two transports, one cost block.
 
 import { AsyncLocalStorage } from "node:async_hooks";
 import { fileURLToPath } from "node:url";
 
-export type RawCall = { tool: string; inputTokens: number; outputTokens: number };
+// priceIn/priceOut: USD per 1M tokens for THIS row; unset means a Bedrock row, priced from BEDROCK_PRICE_*.
+export type RawCall = { tool: string; inputTokens: number; outputTokens: number; priceIn?: number; priceOut?: number };
 export type LlmCall = { stage: string; inputTokens: number; outputTokens: number; cost: number };
 export type QueryCost = {
   calls: LlmCall[]; // one row per LLM call made for the query, in call order
@@ -24,15 +27,16 @@ const STAGE: Record<string, string> = { emit_query_plan: "extract", settle_cells
 // ponytail: Bedrock price is per-model and per-region — a calibration knob, not a constant. Set
 // BEDROCK_PRICE_IN / BEDROCK_PRICE_OUT to your model's price in USD per 1M tokens; unset => cost reports 0
 // (token counts are still real). Read at call time so a late .env load / model swap is picked up.
-const costOf = (inTok: number, outTok: number): number =>
-  (inTok * Number(process.env.BEDROCK_PRICE_IN ?? 0) + outTok * Number(process.env.BEDROCK_PRICE_OUT ?? 0)) / 1e6;
+const costOf = (c: RawCall): number =>
+  (c.inputTokens * (c.priceIn ?? Number(process.env.BEDROCK_PRICE_IN ?? 0)) +
+    c.outputTokens * (c.priceOut ?? Number(process.env.BEDROCK_PRICE_OUT ?? 0))) / 1e6;
 
 export function summarizeCost(raw: RawCall[]): QueryCost {
   const calls: LlmCall[] = raw.map((c) => ({
     stage: STAGE[c.tool] ?? c.tool,
     inputTokens: c.inputTokens,
     outputTokens: c.outputTokens,
-    cost: costOf(c.inputTokens, c.outputTokens),
+    cost: costOf(c),
   }));
   return {
     calls,
@@ -49,9 +53,10 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const c = summarizeCost([
     { tool: "emit_query_plan", inputTokens: 1_000_000, outputTokens: 0 },
     { tool: "pick", inputTokens: 0, outputTokens: 1_000_000 },
+    { tool: "settle_cells", inputTokens: 1_000_000, outputTokens: 0, priceIn: 0.042, priceOut: 0 }, // a Jev row
   ]);
-  console.assert(c.totalInputTokens === 1_000_000 && c.totalOutputTokens === 1_000_000, "token totals wrong");
-  console.assert(Math.abs(c.totalCost - 18) < 1e-9, `total cost expected 18, got ${c.totalCost}`);
-  console.assert(c.calls[0]!.stage === "extract" && c.calls[1]!.stage === "market", "stage labels wrong");
+  console.assert(c.totalInputTokens === 2_000_000 && c.totalOutputTokens === 1_000_000, "token totals wrong");
+  console.assert(Math.abs(c.totalCost - 18.042) < 1e-9, `total cost expected 18.042, got ${c.totalCost}`);
+  console.assert(c.calls[0]!.stage === "extract" && c.calls[1]!.stage === "market" && c.calls[2]!.stage === "entities", "stage labels wrong");
   console.log("cost.ts self-check OK:", JSON.stringify(c));
 }
