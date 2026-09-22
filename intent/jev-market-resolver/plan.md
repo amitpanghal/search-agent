@@ -248,4 +248,8 @@ rule**, **Never drop a row on missing data**, and the skills-and-documents rule 
   the new per-bet-menu signature would otherwise leave the orchestrator uncompilable between steps 3 and 4, and a
   red type check is never committed. Step 4 still owns the collect-then-one-call change. Plan fact; decided by:
   engineer.
+- 2026-09-22 — Step 6 also touched `src/resolver/resolve-market.ts` and `invariants.test.ts` for a defect the replay
+  surfaced, not for the threshold (which stays 0.8): `toPick` now refuses the result market's side codes `"1"`/`"2"`
+  as `outcomeLabel` (the 2026-09-10 fix that never left the `snipe` branch), with a case in the criterion-4 test.
+  Plan fact; decided by: engineer.
 

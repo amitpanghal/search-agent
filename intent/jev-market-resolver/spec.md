@@ -249,3 +249,40 @@ cell). Both are recorded under Decisions; the intent's number is corrected with 
   on used rules-in-state. Decided by: engineer (factual).
 - 2026-09-22 — Criterion 12 baseline, Qwen, one run of `npx tsx src/eval/market-resolve-gate.ts` before the
   switch: `Market-resolve gate (live resolve vs captured snapshot 2026-06-22): 3/3`. Decided by: engineer (factual).
+- 2026-09-22 — Criterion 11, the Jev replay (one run, 5 requests, 76,552 input tokens ≈ $0.003, no Bedrock): 16 of 17
+  cases as expected. Right picks sit at 0.90–1.00; the raw picks of the wrong / should-be-`none` cases at 0.30–0.62
+  (Jev itself chose `none` at 0.56 for the absent 2nd-half twin; the threshold caught `Group Finishing Position —
+  Winner` at 0.62 for "finish bottom of the group"). `JEV_MARKET_THRESHOLD` stays at its default **0.8**, inside the
+  0.62–0.90 gap. The one miss is an abstain, not a wrong pick: "win by 2 or more (for Turkey)" split its mass
+  between the `Handicap` and `Asian Handicap` twins (top 0.30) and fell to `none` — accepted as the safe side of
+  the threshold. The fit question agreed with Qwen on every committed pick (min exact 0.67 on "3+ Strikeouts",
+  where Qwen also hedged). Decided by: engineer. Product owner to confirm.
+
+  | group | phrase | menu | pick | p(pick) | exact/close | outcome | expected (Qwen) | ok |
+  |---|---|---|---|---|---|---|---|---|
+  | group | phrase | menu | pick | p(pick) | exact/close | outcome | expected (Qwen) | ok |
+  |---|---|---|---|---|---|---|---|---|
+  | andorra to win its first game and BTTS a | who wins (for Andorra) | 28 | Full Time | 0.97 | 0.92/0.08 → exact | 1 | Full Time (Full Time exact) | ✓ |
+  | andorra to win its first game and BTTS a | both teams to score | 36 | Both Teams To Score | 1.00 | 1.00/0.00 → exact | — | Both Teams To Score (Both Teams To Score exact) | ✓ |
+  | andorra to win its first game and BTTS a | correct score | 36 | Correct Score | 1.00 | 0.99/0.01 → exact | 3-2 | Correct Score (Correct Score exact) | ✓ |
+  | baltimore to win and Kazuma to score a H | to win (for Baltimore) | 48 | Moneyline | 1.00 | 0.99/0.01 → exact | — | Moneyline (Moneyline close) | ✓ |
+  | baltimore to win and Kazuma to score a H | to score a HR (for Kazuma) | 19 | Player to Hit a Home Run… | 1.00 | 0.99/0.01 → exact | — | Player to Hit a Home Run… (Player to Hit a Home Run… exact) | ✓ |
+  | baltimore to win and Kazuma to score a H | strikeouts (for Shane Bazz) | 6 | 3+ Strikeouts… | 0.90 | 0.67/0.33 → exact | — | 3+ Strikeouts… (3+ Strikeouts… exact) | ✓ |
+  | baltimore to win and Kazuma to score a H | total runs | 51 | Total Runs | 0.99 | 0.89/0.11 → exact | — | Total Runs (Total Runs exact) | ✓ |
+  | gate cells (snapshot match) | both teams to score | 101 | Both Teams To Score | 1.00 | 1.00/0.00 → exact | — | Both Teams To Score | ✓ |
+  | gate cells (snapshot match) | BTTS | 101 | Both Teams To Score | 0.99 | 1.00/0.00 → exact | — | Both Teams To Score | ✓ |
+  | gate cells (snapshot match) | draw | 101 | Full Time | 0.98 | 0.97/0.03 → exact | Draw | Full Time | Draw No Bet | ✓ |
+  | gate cells (snapshot match) | draw no bet | 101 | Draw No Bet | 0.98 | 0.99/0.01 → exact | — | Full Time | Draw No Bet | ✓ |
+  | look-alikes (snapshot match) | who wins (for USA) | 101 | Full Time | 1.00 | 0.99/0.01 → exact | 1 | Full Time | ✓ |
+  | look-alikes (snapshot match) | first half total goals over 1.5 | 101 | Total Goals - 1st Half | 0.90 | 0.86/0.14 → exact | — | Total Goals - 1st Half | ✓ |
+  | look-alikes (snapshot match) | win the 2nd half to nil (for Turkey) | 101 | none | 0.56 | 0.45/0.55 → none | — | none | ✓ |
+  | look-alikes (snapshot match) | win by 2 or more (for Turkey) | 101 | none (raw Asian Handicap) | 0.30 | 0.25/0.75 → none | — | Handicap | Asian Handicap | ✗ |
+  | wrong direction (snapshot competition) | finish bottom of the group (for Turkey) | 39 | none (raw Group Finishing Position — Winner) | 0.62 | 0.65/0.35 → none | — | none | ✓ |
+
+- 2026-09-22 — The replay surfaced a latent wrong-side path: for "who wins (for Andorra)" the outcome question
+  returned the result market's side code `"1"`, which `toPick` accepted (it is listed) and `select.ts:234` would
+  bind to the HOME side over the grounded subject. Qwen's prompt suppressed the outcome on a plain win; the fix
+  recorded on 2026-09-10 (`toPick` refuses the side codes `"1"`/`"2"`, `Draw` stays) lived on the `snipe` branch
+  and never reached `sdlc-jev`. Applied here in `resolve-market.ts` with a test; criterion 4 reads "verbatim from
+  the listed outcomes" and side codes are placeholders `buildMenu` adds, not outcomes a bet can name. Decided by:
+  engineer (factual).

@@ -34,12 +34,16 @@ export type DecideFn = (phrase: string, menu: Menu) => Promise<RawPick>;
 
 // Map one raw pick -> MarketPick. `none` (or a ref the menu doesn't carry, or a missing answer) collapses to an
 // abstain with no market identity, so a hallucinated/absent pick can never become a confident wrong answer.
-// `outcomeLabel` is only accepted when it appears verbatim in the item's outcomes list (anti-hallucination).
+// `outcomeLabel` is only accepted when it appears verbatim in the item's outcomes list (anti-hallucination) and is
+// not a result market's SIDE code: buildMenu writes "1"/"2" next to "Draw" so the 1X2 market is recognisable, but a
+// side is chosen by the grounded subject in select — a code here would bind the HOME side to any bet (the 2026-09-10
+// "Arsenal to win → Sunderland" chain). "Draw" is a real outcome and stays.
+const SIDE_CODES = new Set(["1", "2"]);
 const toPick = (raw: RawPick | undefined, menu: Menu): MarketPick => {
   const match = (raw?.match ?? "none") as MatchLabel;
   if (!raw || match === "none" || raw.ref == null || !menu[raw.ref]) return { match: "none" };
   const item = menu[raw.ref]!;
-  const outcomeLabel = raw.outcome && item.outcomes?.includes(raw.outcome) ? raw.outcome : undefined;
+  const outcomeLabel = raw.outcome && item.outcomes?.includes(raw.outcome) && !SIDE_CODES.has(raw.outcome) ? raw.outcome : undefined;
   // related: the model's suggested refs (deduped, self dropped, capped 3). No same-event filter here — execute
   // attaches a related market only if a betoffer with that label exists on the pick's OWN event, so the real
   // event guard is downstream; filtering here on the menu's example eventId only dropped valid same-event markets.

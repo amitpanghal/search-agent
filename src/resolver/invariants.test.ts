@@ -724,6 +724,11 @@ test("market: a named outcome comes back verbatim, an unlisted one is dropped", 
     assert.equal((await resolveMarkets([asBet(andorra[2]!)]))[0]!.outcomeLabel, "3-2");
     jevStub(t, [{ pick: "Correct Score", outcome: "9-9" }]);
     assert.equal((await resolveMarkets([asBet(andorra[2]!)]))[0]!.outcomeLabel, undefined);
+    // a result market's side code is a placeholder buildMenu adds, never a bet's outcome: the subject picks the side
+    jevStub(t, [{ pick: "Full Time", outcome: "1" }]);
+    assert.equal((await resolveMarkets([asBet(andorra[0]!)]))[0]!.outcomeLabel, undefined, "side code refused");
+    jevStub(t, [{ pick: "Full Time", outcome: "Draw" }]);
+    assert.equal((await resolveMarkets([asBet(andorra[0]!)]))[0]!.outcomeLabel, "Draw", "Draw is a real outcome");
   });
 });
 
