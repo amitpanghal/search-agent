@@ -164,13 +164,14 @@ cell). Both are recorded under Decisions; the intent's number is corrected with 
 
 ## Data / API contracts
 
-- **Jev request** (`jevChoice("pick", state, questions)`): `state = { query, menu: [{ ref, label,
-  outcomes? }], bets: [{ leg, phrase, refs }] }` — `menu` is the union of the groups' filtered menus deduped by
-  label, `refs` the indices each bet may pick from. `questions`: per bet `b`, `pick:b` (`choice`, criteria =
-  that bet's refs as `"<ref>": label` plus `none`), `fit:b` (`choice`, criteria `exact` / `close`), `next:b`
-  (`choice`, that bet's refs), and the outcome answer per criterion 4. All questions carry the rules from
-  `resolve-market-prompt.md` as `instructions`; the bet phrase (with its `(for <name>)` grain hint from
-  `betPhrase`, `resolve.ts:53`) is in the instructions of its own questions. Only `choice` questions are used.
+- **Jev request** (`jevChoice("pick", state, questions)`): `state = { query, rules, menu: [{ ref, label,
+  outcomes? }], bets: [{ leg, phrase, refs }] }` — `rules` is the text of `resolve-market-prompt.md`, sent ONCE;
+  `menu` is the union of the groups' filtered menus deduped by label, `refs` the indices each bet may pick from.
+  `questions`: per bet `b`, `pick:b` (`choice`, criteria = that bet's refs as `"<ref>": label` plus `none`),
+  `fit:b` (`choice`, criteria `exact` / `close`), `next:b` (`choice`, that bet's refs), and the outcome answer per
+  criterion 4. Each question's `instructions` is a one-line template in code naming the bet (its leg, its phrase
+  with the `(for <name>)` grain hint from `betPhrase`, `resolve.ts:53`) and pointing at `state.rules`. Only
+  `choice` questions are used.
 - **Reply** (`Reply`, `jev-call.ts:32`): `answers[key] = { choice, probabilities }`; `usage.input_tokens`.
 - **`RawPick`** (`resolve-market.ts:45`) and **`MarketPick`** (`live-menu-types.ts:55`) unchanged.
 - **`DecideManyFn`** becomes `(bets: { phrase: string; menu: Menu }[], query?: string) => Promise<RawPick[]>`
@@ -242,3 +243,7 @@ cell). Both are recorded under Decisions; the intent's number is corrected with 
   front (the intent's constraint). Decided by: engineer. Product owner to confirm.
 - 2026-09-22 — Written on the integration branch `sdlc-jev` at the product owner's instruction, as the
   disambiguator's spec was; accepted in the chat by the product owner on 2026-09-22, who also acts as engineer and tester on this initiative, so there is no spec pull request with reader boxes. Decided by: product owner.
+- 2026-09-22 — Contract amended by the plan: the rulebook goes ONCE in `state.rules`, and each question's
+  `instructions` is a one-line template in code (bet leg, phrase, pointer to the rules). The earlier wording
+  repeated the ~1.2k-token rulebook in every question, 4× per bet; the 2026-09-21 measurement the intent rests
+  on used rules-in-state. Decided by: engineer (factual).
