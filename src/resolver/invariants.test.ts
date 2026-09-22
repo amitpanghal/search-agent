@@ -6,7 +6,7 @@
 //   3. the day/hour calendar is read in the USER's zone, the instants stay UTC
 // Run: npm test
 
-import { test } from "node:test";
+import { test, type TestContext } from "node:test";
 import assert from "node:assert/strict";
 import { resolveTimeWindow, eventMatchesTime, applyFixturePick, filterEventsByTime } from "./time-window";
 import { fold, contentTokens, lc, stripSettle } from "./lexical";
@@ -17,6 +17,17 @@ import type { ResolvedLeg } from "./live-menu-types";
 import { queryNamesSport, adoptSport, resolveEntities } from "./resolve-entities";
 import { propagate, retier, byProminence, type Candidate } from "./ground-scope";
 import { execute } from "./execute";
+import { summarizeCost, usageStore, type RawCall } from "./cost";
+import { traceStore, type TraceEvent } from "./trace";
+
+// Set env vars for the duration of fn, then put back exactly what was there (delete, never the string
+// "undefined") — the cost and the entity gate read process.env at call time.
+async function withEnv<T>(vars: Record<string, string | undefined>, fn: () => T | Promise<T>): Promise<T> {
+  const prev = Object.fromEntries(Object.keys(vars).map((k) => [k, process.env[k]]));
+  const set = (o: Record<string, string | undefined>) => { for (const [k, v] of Object.entries(o)) v === undefined ? delete process.env[k] : (process.env[k] = v); };
+  set(vars);
+  try { return await fn(); } finally { set(prev); }
+}
 
 const ev = (id: number, start?: string, state?: string): KEvent => ({ id, ...(start && { start }), ...(state && { state }) });
 // The extractor's time field has all three keys, nullable — spell the absent ones so the tests type-check.
@@ -469,22 +480,24 @@ test("entity gate: a pick from a weak shortlist ships with a 'could also be' not
 // catalog; a row both of them hit was pushed twice, so the model (and the clarify) saw one entity as two.
 // Pins names from the committed football/trotting catalogs: a `npm run catalogs` refresh that renames or
 // drops an esports clone updates the expected list here, in the same change.
+// The football plan whose team cell widens to 5 esports clones + a trotting horse (committed catalogs).
+const tottenhamPlan = {
+  sport: "football",
+  selectors: [{
+    subject: { kind: "team", name: "Tottenham Hotspur" },
+    market_concept: "to win",
+    scope: { teams: ["Tottenham Hotspur"], players: [], competition: null, region: null, level: "fixture", stage: null, squad: null, time: null, play_state: null },
+  }],
+} as QueryPlan;
+
 test("entity gate: cross-sport widening lists each id once when the team and player grounders both hit", async () => {
-  const plan = {
-    sport: "football",
-    selectors: [{
-      subject: { kind: "team", name: "Tottenham Hotspur" },
-      market_concept: "to win",
-      scope: { teams: ["Tottenham Hotspur"], players: [], competition: null, region: null, level: "fixture", stage: null, squad: null, time: null, play_state: null },
-    }],
-  } as QueryPlan;
   const seen: { ref: string; candidates: { id: number; name: string }[] }[] = [];
   const decide = async (_q: string, cells: { ref: string; candidates: { id: number; name: string }[] }[]) => {
     seen.push(...cells.map((c) => ({ ref: c.ref, candidates: c.candidates })));
     return [];
   };
   // the query names no sport word, so widening fires (queryNamesSport)
-  const settled = await resolveEntities("Tottenham Hotspur to win", groundScope(plan) as never, decide as never);
+  const settled = await resolveEntities("Tottenham Hotspur to win", groundScope(tottenhamPlan) as never, decide as never);
 
   const cell = seen.find((c) => c.ref === "team:0")!;
   assert.ok(cell, `expected a team:0 cell, got ${seen.map((c) => c.ref).join(", ")}`);
@@ -505,4 +518,141 @@ test("entity gate: cross-sport widening lists each id once when the team and pla
   const shown = cell.candidates.slice(0, 5).map((c) => c.name);
   assert.equal(new Set(shown).size, 5);
   for (const n of shown) assert.equal(clar.question.split(n).length - 1, 1, ` named more than once`);
+});
+
+// ---------------------------------------------------------------------------------------------------------
+// COST: a row may carry its own price (a Jev row: JEV_PRICE_IN on input, output free); a row without one is
+// a Bedrock row and prices from BEDROCK_PRICE_*. One query mixes both, so each row prices from its own source.
+test("cost: a row carrying its own price is priced from the row; a plain row from BEDROCK_PRICE_*", async () => {
+  await withEnv({ BEDROCK_PRICE_IN: "3", BEDROCK_PRICE_OUT: "15" }, () => {
+    const c = summarizeCost([
+      { tool: "settle_cells", inputTokens: 460, outputTokens: 0, priceIn: 0.042, priceOut: 0 },
+      { tool: "pick", inputTokens: 0, outputTokens: 1_000_000 },
+    ]);
+    assert.equal(c.calls[0]!.stage, "entities");
+    assert.ok(Math.abs(c.calls[0]!.cost - 460 * 0.042 / 1e6) < 1e-12, `jev row cost ${c.calls[0]!.cost}`);
+    assert.equal(c.calls[1]!.cost, 15);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------------------
+// ENTITY GATE on Jev (intent/jev-disambiguator). The default decider sends ONE request to TypeSafe's Jev and
+// trusts a pick only at or above JEV_ENTITY_THRESHOLD; everything else clarifies. No network: the global
+// fetch is stubbed with Node's own mock (restored when the test ends) and the replies are the 2026-09-21
+// replay answers verbatim. `npm test` loads no .env, so a stray Bedrock call would throw on the missing AWS
+// key — that is the "never a Bedrock call" proof.
+const SAKA = { id: 1005184672, name: "Bukayo Saka" }, SAKA2 = { id: 1030173441, name: "Mathis Saka" };
+const PL = [{ id: 1000094985, name: "Premier League (England)" }, { id: 1000171537, name: "Premier League (Ukraine)" }, { id: 1000251645, name: "Premier League (Armenia)" }];
+const scored = (cs: { id: number; name: string }[]) => cs.map((c) => ({ ...c, score: 0.7 }));
+// one leg, two doubtful cells: subject:0 "Saka" (shortlist) and competition:0 "Premier League" (ambiguous)
+const jevScope = () => ({ sport: "football", legs: [{ region: null, level: "fixture", stage: null, time: null, playState: null, teams: [], players: [], playerRoles: [],
+  competition: { text: "Premier League", tier: "ambiguous", candidates: scored(PL) },
+  subjectPlayer: { text: "Saka", tier: "shortlist", candidates: scored([SAKA, SAKA2]) } }] });
+const JEV_QUERY = "Saka winner Premier League football"; // names the sport: no cross-sport widening, offline-cheap
+const JEV_OK = {
+  answers: {
+    "subject:0": { type: "choice", choice: "1005184672", confidence: 0.97, probabilities: { "1005184672": 0.98, none: 0.02, "1030173441": 0 } },
+    "competition:0": { type: "choice", choice: "1000094985", confidence: 1, probabilities: { "1000094985": 1, "1000171537": 0, "1000251645": 0, none: 0 } },
+  },
+  usage: { input_tokens: 1109, output_tokens: 0 },
+};
+const reply = (body: unknown, status = 200, headers: Record<string, string> = {}) =>
+  new Response(typeof body === "string" ? body : JSON.stringify(body), { status, headers });
+// The stubbed fetch hands out `seq` in order (a Response, or an Error to throw); returns the mock for counting.
+const stubFetch = (t: TestContext, seq: Array<Response | Error>) =>
+  t.mock.method(globalThis, "fetch", async () => { const r = seq.shift(); if (r instanceof Error) throw r; return r ?? reply({}, 500); });
+const jevEnv = { JEV_ACCESS_KEY: "test", JEV_MODEL: undefined, JEV_PRICE_IN: undefined, JEV_ENTITY_THRESHOLD: undefined };
+
+test("entity gate: Jev settles confident cells in one request, with real trace and cost rows", async (t) => {
+  await withEnv(jevEnv, async () => {
+    const fetch = stubFetch(t, [reply(JEV_OK)]);
+    const trace: TraceEvent[] = [], rows: RawCall[] = [];
+    const settled = await traceStore.run(trace, () => usageStore.run(rows, () => resolveEntities(JEV_QUERY, jevScope() as never)));
+    assert.equal(fetch.mock.callCount(), 1);
+    const body = JSON.parse(fetch.mock.calls[0]!.arguments[1]!.body as string);
+    assert.equal(body.model, "jev-latest");
+    assert.equal(body.questions["subject:0"].type, "choice");
+    assert.deepEqual(Object.keys(body.questions["subject:0"].criteria), ["1005184672", "1030173441", "none"]);
+    const leg = settled.legs[0]!;
+    assert.equal(leg.subjectPlayer!.tier, "confident");
+    assert.equal(leg.subjectPlayer!.candidates[0]!.id, 1005184672);
+    assert.equal(leg.competition!.tier, "confident");
+    assert.equal(leg.competition!.candidates[0]!.id, 1000094985);
+    assert.equal(settled.clarifications.length, 0);
+    const llm = trace.filter((e) => (e.kind === "llm-req" || e.kind === "llm-resp") && e.tool === "settle_cells");
+    assert.deepEqual(llm.map((e) => e.kind), ["llm-req", "llm-resp"]);
+    assert.equal(llm[0]!.kind === "llm-req" && llm[0]!.model, "jev-latest");
+    assert.deepEqual(rows, [{ tool: "settle_cells", inputTokens: 1109, outputTokens: 0, priceIn: 0.042, priceOut: 0 }]);
+  });
+});
+
+test("entity gate: a Jev pick below the threshold clarifies, never a Bedrock call", async (t) => {
+  await withEnv(jevEnv, async () => {
+    // the recorded reply: the trotting horse at 0.75 (none 0.19) — a confident-wrong pick the threshold refuses
+    const fetch = stubFetch(t, [reply({ answers: { "team:0": { type: "choice", choice: "1003385961", confidence: 0.7, probabilities: { "1003385961": 0.75, none: 0.19, "1008202005": 0.03 } } }, usage: { input_tokens: 787 } })]);
+    const settled = await resolveEntities("Tottenham Hotspur to win", groundScope(tottenhamPlan) as never);
+    assert.equal(fetch.mock.callCount(), 1);
+    assert.notEqual(settled.legs[0]!.teams[0]!.tier, "confident");
+    assert.equal(settled.clarifications.length, 1);
+    const clar = settled.clarifications[0]!;
+    assert.equal(clar.suggest!.length, 5);
+    assert.equal(new Set(clar.suggest).size, 5);
+  });
+});
+
+test("entity gate: a cell with no candidates clarifies without a Jev request", async (t) => {
+  await withEnv(jevEnv, async () => {
+    const fetch = stubFetch(t, []);
+    const scope = { sport: "football", legs: [{ region: null, competition: null, level: "fixture", stage: null, time: null, playState: null, players: [], playerRoles: [], subjectPlayer: null,
+      teams: [{ text: "Zxqv United", tier: "none", candidates: [] }] }] };
+    const settled = await resolveEntities("Zxqv United to win football", scope as never);
+    assert.equal(fetch.mock.callCount(), 0);
+    assert.equal(settled.clarifications.length, 1);
+    assert.match(settled.clarifications[0]!.question, /^We couldn't identify/);
+  });
+});
+
+test("entity gate: a missing JEV_ACCESS_KEY fails the query by name and makes no request", async (t) => {
+  await withEnv({ ...jevEnv, JEV_ACCESS_KEY: undefined }, async () => {
+    const fetch = stubFetch(t, [reply(JEV_OK)]);
+    await assert.rejects(resolveEntities(JEV_QUERY, jevScope() as never), /JEV_ACCESS_KEY/);
+    assert.equal(fetch.mock.callCount(), 0);
+  });
+});
+
+test("entity gate: Jev failures retry once on 429/529 and otherwise clarify", async (t) => {
+  await withEnv(jevEnv, async () => {
+    const run = async (seq: Array<Response | Error>) => {
+      const fetch = stubFetch(t, seq);
+      const trace: TraceEvent[] = [];
+      const settled = await traceStore.run(trace, () => resolveEntities(JEV_QUERY, jevScope() as never));
+      fetch.mock.restore();
+      return { calls: fetch.mock.callCount(), settled: settled.legs[0]!.subjectPlayer!.tier === "confident", clarified: settled.clarifications.length, resps: trace.filter((e) => e.kind === "llm-resp").length };
+    };
+    assert.deepEqual(await run([reply({}, 429, { "Retry-After": "0" }), reply(JEV_OK)]), { calls: 2, settled: true, clarified: 0, resps: 1 }, "429 then 200");
+    assert.deepEqual(await run([reply({}, 529, { "Retry-After": "0" }), reply({}, 529)]), { calls: 2, settled: false, clarified: 2, resps: 1 }, "529 twice");
+    assert.deepEqual(await run([new Error("ECONNRESET")]), { calls: 1, settled: false, clarified: 2, resps: 1 }, "thrown fetch");
+    assert.deepEqual(await run([reply("not json")]), { calls: 1, settled: false, clarified: 2, resps: 1 }, "malformed body");
+  });
+});
+
+// The cut is "at or above", it is env-driven, and a blank or non-numeric value falls back to 0.8 — never to 0 or
+// NaN, either of which would compare false and accept every pick (the fail-open the review caught).
+test("entity gate: the threshold is inclusive, env-driven, and falls back to 0.8 on a bad value", async (t) => {
+  const at = (p: number) => reply({ answers: { "subject:0": { choice: "1005184672", probabilities: { "1005184672": p, none: 1 - p } } }, usage: { input_tokens: 1 } });
+  const oneCell = () => { const s = jevScope(); s.legs[0]!.competition = null as never; return s; };
+  const rows: RawCall[] = [];
+  const settledAt = (p: number, env: Record<string, string | undefined>) => withEnv({ ...jevEnv, ...env }, async () => {
+    const fetch = stubFetch(t, [at(p)]);
+    const s = await usageStore.run(rows, () => resolveEntities(JEV_QUERY, oneCell() as never));
+    fetch.mock.restore();
+    return s.legs[0]!.subjectPlayer!.tier === "confident";
+  });
+  assert.equal(await settledAt(0.8, {}), true, "exactly 0.8 settles");
+  assert.equal(await settledAt(0.79, {}), false, "0.79 clarifies");
+  assert.equal(await settledAt(0.98, { JEV_ENTITY_THRESHOLD: "0.99" }), false, "the env raises the bar");
+  assert.equal(await settledAt(0.5, { JEV_ENTITY_THRESHOLD: "" }), false, "blank env falls back to 0.8, not 0");
+  assert.equal(await settledAt(0.5, { JEV_ENTITY_THRESHOLD: "high" }), false, "non-numeric env falls back, not NaN");
+  assert.equal(await settledAt(0.9, { JEV_PRICE_IN: "" }), true);
+  assert.equal(rows.at(-1)!.priceIn, 0.042, "blank JEV_PRICE_IN falls back to the default price");
 });

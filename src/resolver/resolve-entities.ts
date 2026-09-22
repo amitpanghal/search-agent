@@ -1,54 +1,49 @@
-// resolve-entities — the entity gate (build plan Phase 6, trim of the old disambiguate.ts). The grounder is
-// precision-biased: when it can't confidently resolve an ENTITY (region/competition/team/player) it returns a
-// tier + candidate list, never a forced guess. This LLM layer reads the raw query plus those candidate sets
-// and either PICKS the right id, RE-EXPRESSES a cell to try again, or CLARIFIES (asks the user). Pipeline:
+// resolve-entities — the entity gate. The grounder is precision-biased: when it can't confidently resolve an
+// ENTITY (region/competition/team/player) it returns a tier + candidate list, never a forced guess. This stage
+// settles those cells with ONE request to Jev (TypeSafe's decision model, jev-call.ts): a `choice` question
+// per cell over its candidates plus `none`, answered with a probability per option. A pick is trusted only at
+// or above JEV_ENTITY_THRESHOLD on the chosen option's probability; everything else — below threshold, `none`,
+// no candidates, a failed request — is asked back to the user by this file, deterministically. Pipeline:
 //
 //   extract → groundScope → resolveEntities → recall(live menu) → filter → resolve(market) → select → execute
 //
-// The MARKET half of the old disambiguate is gone (markets resolve from the live menu AFTER fetch); this file
-// keeps only its entity work: deterministic grounder first → LLM only on doubtful tiers → clarify on genuine
-// collision → recall fetches only confident ids. Output is SettledEntities (no marketIds, no combos).
+// Deterministic grounder first → model only on doubtful tiers → clarify on genuine collision → recall fetches
+// only confident ids. Output is SettledEntities (no marketIds, no combos). History, so nobody re-adds it: the
+// Qwen decider (Bedrock, with a prompt file of its own) that sat here also had a rewrite action — reword the
+// phrase, re-ground, try again. Jev has no text output, so it went with the call; the one captured rewrite
+// ("Spurs" → "Tottenham Hotspur") did not rescue its cell either. The stage makes no Bedrock call at all.
 //
-//   - `decide(query, cells)` — the ONLY LLM call, made ONCE. Stateless: one action per cell, `pick` or
-//     `reexpress`. The model has no clarify action: a cell it cannot settle (and whose re-ground stays
-//     doubtful) is asked back to the user by this file, deterministically. A second model call used to sit
-//     here to re-read the re-grounded candidates; it only ever converted a clarify into a silent rescue pick,
-//     so it was dropped — the cost of a round trip on every doubtful tail for an occasional saved user turn.
-//   - `resolveEntities(query, scope)` — the DETERMINISTIC orchestrator: build entity cells, call `decide`,
-//     re-ground any reexpress, collapse picks to confident cells, raise clarifications.
-// Replayable: eval injects a captured `decide()` through the deterministic orchestrator with no model call.
+//   - `decideWithJev(query, cells)` — the ONLY model request, made ONCE: `pick` or nothing per cell.
+//   - `resolveEntities(query, scope)` — the DETERMINISTIC orchestrator: build entity cells, decide, collapse
+//     picks to confident cells, raise clarifications.
+// Replayable: tests inject a decider (`DecideFn`) or stub `fetch`, through the same deterministic orchestrator.
 
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
-import { z } from "zod";
 import {
-  groundRegion, groundCompetition, groundTeam, groundPlayer, constrainTo,
+  groundCompetition, groundTeam, groundPlayer,
   type ResolvedScope, type EntityResolution, type ScopeTier, type Candidate,
 } from "./ground-scope";
 import { loadScopeCatalog, type ScopeCatalog } from "./scope-catalog";
 import { fold } from "./lexical";
 import { userSports } from "./sports";
-import { bedrockToolCall } from "./bedrock-call";
+import { jevChoice, envNumber, type JevQuestion } from "./jev-call";
 import type { CellRef, SettledEntities } from "./live-menu-types";
-
-const HERE = dirname(fileURLToPath(import.meta.url));
 
 const ENTITY_CAP = 5; // entity candidates shown to the model
 const SUGGEST_CAP = 5; // ids a clarify may suggest
-// An ENTITY cell is sent to the resolver only at these doubtful tiers; confident/variants/main passes through.
-// A `none` entity IS sent (empty candidate list) so it can still re-express.
+// An ENTITY cell is built only at these doubtful tiers; confident/variants/main passes through. A `none` entity
+// IS built: it has no own candidates, but cross-sport widening may still find it rows; with none at all it
+// clarifies directly ("We couldn't identify …") without reaching the model.
 const SENT_TIERS = new Set<ScopeTier>(["ambiguous", "shortlist", "none"]);
 
 // ---- public types ----
 
-export type Decision =
-  | { ref: CellRef; action: "pick"; id: number }
-  | { ref: CellRef; action: "reexpress"; phrase: string };
+// The model's only action: a pick. A cell with no decision (below threshold, `none`, no candidates, a failed
+// request) clarifies — there is no rewrite-and-retry, Jev has no text output.
+export type Decision = { ref: CellRef; action: "pick"; id: number };
 
 // `candidates` is the capped id+name list shown to the model AND the pick-validation set (a pick id must be one
-// of these — guards hallucinated ids). `entity` is the full grounding (so a pick collapses back to a confident
-// cell with relation meta intact). `reground` re-runs the (sync) grounder over a re-expressed phrase.
+// of these — guards ids the model was never offered). `entity` is the full grounding (so a pick collapses back
+// to a confident cell with relation meta intact).
 export type Cell = {
   ref: CellRef;
   text: string;
@@ -56,17 +51,14 @@ export type Cell = {
   ids: number[];
   candidates: { id: number; name: string }[];
   entity: EntityResolution;
-  reground: (phrase: string) => Cell;
 };
 
-// The (only) non-deterministic step, injectable so eval can REPLAY captured decisions with no model call.
+// The (only) non-deterministic step, injectable so tests can REPLAY canned decisions with no model call.
 export type DecideFn = (query: string, cells: Cell[]) => Promise<Decision[]> | Decision[];
 
-// ---- builder: gate + caps + reground closures (entity-only) ----
+// ---- builder: gate + caps (entity-only) ----
 
-// An entity cell wraps the grounder call so its reground returns a fresh Cell. `ground` closes over the
-// entity's structural context (a competition over its region branch, a player over its comp/team scope).
-// Same-named twins get their game appended so the LLM/clarify can tell them apart: esports lists "Team Liquid"
+// Same-named twins get their game appended so the model/clarify can tell them apart: esports lists "Team Liquid"
 // once per game, so an unresolved head-to-head reaches here as N identical "Team Liquid" candidates. Label only on
 // a name collision, by the candidate's non-sport-root group ("Dota 2"). No-ops for unique names and for entities
 // without groups (players/competitions carry no groupIds).
@@ -149,7 +141,7 @@ function crossSportRows(name: string, skip: string, out: ForeignIds, competitor:
   return bySport.sort((a, b) => a.rank - b.rank).flatMap((s) => s.rows.slice(0, XS_PER_SPORT).map((r) => ({ ...r, rank: s.rank })));
 }
 
-function buildEntityCell(ref: CellRef, res: EntityResolution, ground: (phrase: string) => EntityResolution, cat: ScopeCatalog, foreign: ForeignIds, competitor: boolean, widen: boolean): Cell {
+function buildEntityCell(ref: CellRef, res: EntityResolution, cat: ScopeCatalog, foreign: ForeignIds, competitor: boolean, widen: boolean): Cell {
   const own = labelCandidates(res.candidates.slice(0, ENTITY_CAP), cat);
   // Region cells are excluded: a place name is a competitor in half the catalogs ("Italy" is a team) and
   // widening it would offer a national side for a scope word.
@@ -164,9 +156,6 @@ function buildEntityCell(ref: CellRef, res: EntityResolution, ground: (phrase: s
       .slice(0, own.length + XS_CAP)
       .map(({ id, name }) => ({ id, name })),
     entity: res,
-    // grounding uses the reexpressed phrase, but the cell keeps the USER: clarify quotes their words, and
-    // resolve.ts subject-matching folds e.text — a model rewrite must not replace either.
-    reground: (phrase) => ({ ...buildEntityCell(ref, ground(phrase), ground, cat, foreign, competitor, widen), text: res.text }),
   };
 }
 
@@ -185,7 +174,7 @@ function buildEntityCells(scope: ResolvedScope, foreign: ForeignIds, widenOk: bo
   const refByEntity = new Map<EntityResolution, CellRef>(); // identity dedup: a shared grounding -> its one cell
   const count: Record<Slot, number> = { region: 0, competition: 0, team: 0, player: 0, subject: 0 };
 
-  const add = (slot: Slot, res: EntityResolution | null, legIdx: number, idx: number, ground: (p: string) => EntityResolution) => {
+  const add = (slot: Slot, res: EntityResolution | null, legIdx: number, idx: number) => {
     if (!res || !SENT_TIERS.has(res.tier)) return; // confident/variants: already settled in the clone, no cell
     let ref = refByEntity.get(res);
     if (ref === undefined) {
@@ -193,68 +182,54 @@ function buildEntityCells(scope: ResolvedScope, foreign: ForeignIds, widenOk: bo
       refByEntity.set(res, ref);
       places.set(ref, []);
       const competitor = slot === "team" || slot === "player" || slot === "subject";
-      cells.push(buildEntityCell(ref, res, ground, scat, foreign, competitor, widenOk && (competitor || slot === "competition")));
+      cells.push(buildEntityCell(ref, res, scat, foreign, competitor, widenOk && (competitor || slot === "competition")));
     }
     places.get(ref)!.push({ legIdx, slot, idx });
   };
 
-  // A re-expressed phrase re-grounds by NAME, then gets the same relational narrowing the seed pass applied in
-  // groundScope — constrained against this leg's already-settled entities (the doubtful cell being regrounded is
-  // not confident, so it never constrains itself).
   scope.legs.forEach((leg, legIdx) => {
-    const settled = [leg.region, leg.competition, ...leg.teams, ...leg.players, leg.subjectPlayer]
-      .filter((x): x is EntityResolution => x !== null && x.tier === "confident");
-    const rg = (fn: (p: string) => EntityResolution) => (p: string) => constrainTo(fn(p), settled, scat);
-    add("region", leg.region, legIdx, 0, rg((p) => groundRegion(p, scat)));
-    add("competition", leg.competition, legIdx, 0, rg((p) => groundCompetition(p, scat)));
-    leg.teams.forEach((t, i) => add("team", t, legIdx, i, rg((p) => groundTeam(p, scat))));
-    leg.players.forEach((pl, i) => add("player", pl, legIdx, i, rg((p) => groundPlayer(p, scat))));
-    // Market-owner player (the leg's subject) settles in the SAME batch — gated and re-grounded like a player.
-    add("subject", leg.subjectPlayer, legIdx, 0, rg((p) => groundPlayer(p, scat)));
+    add("region", leg.region, legIdx, 0);
+    add("competition", leg.competition, legIdx, 0);
+    leg.teams.forEach((t, i) => add("team", t, legIdx, i));
+    leg.players.forEach((pl, i) => add("player", pl, legIdx, i));
+    // Market-owner player (the leg's subject) settles in the SAME batch — gated like a player.
+    add("subject", leg.subjectPlayer, legIdx, 0);
   });
   return { cells, places };
 }
 
-// ---- decide(): the one LLM call, forced tool use ----
+// ---- decideWithJev(): the one model request, a `choice` question per cell ----
 
-const zPick = z.object({ ref: z.string(), action: z.literal("pick"), id: z.number() });
-const zReexpress = z.object({ ref: z.string(), action: z.literal("reexpress"), phrase: z.string().min(1) });
-const DecisionItem = z.discriminatedUnion("action", [zPick, zReexpress]);
-const DecideOut = z.object({ decisions: z.array(DecisionItem) });
-
-function toInputSchema(s: z.ZodType): Record<string, unknown> {
-  const j = z.toJSONSchema(s) as Record<string, unknown>;
-  delete j.$schema;
-  return j;
-}
-const DECIDE_SCHEMA = toInputSchema(DecideOut);
 const TOOL_NAME = "settle_cells";
+const NONE = "None of these is what the query means";
+// The measured wording (2026-09-21 replay: Saka 0.98, Premier League 1.00, the Tottenham horse 0.75 → clarify).
+// `kind` is the cell's slot word as-is ("subject" included): that is what was measured, so it stays.
+const instructions = (kind: string, text: string): string =>
+  `Which candidate is the ${kind} the query means by "${text}"? Judge by meaning, not string overlap. Answer none if no candidate fits or two candidates fit equally.`;
 
-let cachedPrompt: string | undefined;
-function systemPrompt(): string {
-  return (cachedPrompt ??= readFileSync(join(HERE, "disambiguator-prompt.md"), "utf8"));
-}
-
-// The model sees the raw query (so confident entities appear as words) and each cell's candidates as id+name.
-// Candidate ORDER matters: the first is the grounder's top pick, and order decides which rows survive the caps
-// and which names a clarify offers; tier/score stay hidden so the model doesn't over-trust the rank.
-function userMessage(query: string, cells: Cell[]): string {
-  const payload = { query, cells: cells.map((c) => ({ ref: c.ref, text: c.text, candidates: c.candidates })) };
-  return JSON.stringify(payload, null, 2);
-}
-
-export async function decide(query: string, cells: Cell[]): Promise<Decision[]> {
-  const raw = await bedrockToolCall(
-    systemPrompt(),
-    userMessage(query, cells),
-    TOOL_NAME,
-    DECIDE_SCHEMA,
-    1024,
-  ) as { decisions?: unknown };
-  const items = Array.isArray(raw.decisions) ? (raw.decisions as Array<Record<string, unknown>>) : [];
-  // Per-decision parse, NOT all-or-nothing: keep every well-formed action, drop only the malformed ones (a
-  // dropped cell clarifies, same as an undecided one).
-  return items.flatMap((d) => { const p = DecisionItem.safeParse(d); return p.success ? [p.data as Decision] : []; });
+// The model sees the raw query (so confident entities appear as words) and each cell's candidates as id+name —
+// once in `state`, once as that cell's options. Candidate ORDER matters: the first is the grounder's top pick,
+// and order decides which rows survive the caps and which names a clarify offers; tier/score stay hidden. A
+// pick is trusted only at or above JEV_ENTITY_THRESHOLD on the chosen option's probability — below it, or on
+// `none`, the cell has no decision and runPass asks the user. Cells with no candidates never reach the model (a
+// choice between `none` and nothing), and a transport failure (null) leaves every cell undecided.
+export async function decideWithJev(query: string, cells: Cell[]): Promise<Decision[]> {
+  const asked = cells.filter((c) => c.candidates.length);
+  if (!asked.length) return [];
+  const questions: Record<string, JevQuestion> = Object.fromEntries(asked.map((c) => [c.ref, {
+    type: "choice",
+    instructions: instructions(c.ref.split(":")[0]!, c.text),
+    criteria: { ...Object.fromEntries(c.candidates.map((k) => [String(k.id), k.name])), none: NONE },
+  }]));
+  const state = { query, cells: asked.map((c) => ({ ref: c.ref, text: c.text, candidates: c.candidates })) };
+  const res = await jevChoice(TOOL_NAME, state, questions);
+  if (!res) return [];
+  const threshold = envNumber("JEV_ENTITY_THRESHOLD", 0.8, 0, 1); // a blank or bad value must never become 0/NaN
+  return asked.flatMap((c) => {
+    const a = res.answers[c.ref];
+    if (!a || a.choice === "none" || (a.probabilities[a.choice] ?? 0) < threshold) return [];
+    return [{ ref: c.ref, action: "pick" as const, id: Number(a.choice) }];
+  });
 }
 
 // ---- orchestrator: single-call loop + validation + SettledEntities assembly ----
@@ -290,31 +265,14 @@ export function clarifyFor(cell: Cell): Outcome {
   return { kind: "clarify", ref: cell.ref, question, suggest: cands.map((c) => c.id) };
 }
 
-// ONE call, then deterministic settlement. A cell settles three ways: a valid pick; a re-express whose
-// re-ground lands confident/variants; otherwise clarify. A re-express that lands doubtful-but-non-empty
-// clarifies with the FRESH candidates — the rewrite found a better list, so those are the better choices to
-// offer the user, even though nothing here commits to one of them.
+// ONE request, then deterministic settlement: a valid pick settles the cell; anything else — no decision, or an
+// id outside the candidate list — clarifies on the cell as the user phrased it.
 async function runPass(query: string, cells: Cell[], decideFn: DecideFn, foreign: ForeignIds): Promise<Outcome[]> {
   const decisions = firstByRef(await decideFn(query, cells));
-  const outcomes: Outcome[] = [];
-  for (const cell of cells) {
+  return cells.map((cell) => {
     const d = decisions.get(cell.ref);
-    if (d?.action === "pick" && validPick(cell, d.id)) {
-      outcomes.push(settleOutcome(cell, [d.id], foreign));
-      continue;
-    }
-    let open = cell; // undecided/invalid decisions clarify on the ORIGINAL cell
-    if (d?.action === "reexpress" && d.phrase.trim()) {
-      const fresh = cell.reground(d.phrase);
-      if (fresh.tier === "confident" || fresh.tier === "variants") {
-        outcomes.push(settleOutcome(fresh, fresh.ids, foreign));
-        continue;
-      }
-      if (fresh.candidates.length) open = fresh;
-    }
-    outcomes.push(clarifyFor(open));
-  }
-  return outcomes;
+    return d && validPick(cell, d.id) ? settleOutcome(cell, [d.id], foreign) : clarifyFor(cell);
+  });
 }
 
 // Fan a settled resolution back to every leg location that referenced the (deduped) cell.
@@ -342,8 +300,7 @@ const isForeign = (res: EntityResolution, foreign: ForeignIds): boolean =>
 
 // SPORT ADOPTION with a home-sport veto. Adopt a foreign pick's sport only when every foreign pick agrees AND
 // nothing corroborates the home sport. Corroboration = any team/player settled in the HOME catalog: a local
-// gate pick (incl. a re-express that re-grounded home) or an entity already confident at ground time (never a
-// cell). One home-settled entity means the query makes sense here — a lone foreign pick must not drag the leg
+// gate pick or an entity already confident at ground time (never a cell). One home-settled entity means the query makes sense here — a lone foreign pick must not drag the leg
 // into another sport (the Lamine split: a football player + a basketball club on one leg). Regions and
 // competitions don't vote — their names repeat across sports (the inversion recover-sport.ts documents).
 export function adoptSport(outcomes: Outcome[], legs: ResolvedScope["legs"], foreign: ForeignIds): string | null {
@@ -361,7 +318,7 @@ export function adoptSport(outcomes: Outcome[], legs: ResolvedScope["legs"], for
 
 // resolveEntities: the deterministic orchestrator. Returns a cloned ResolvedScope with entity picks collapsed
 // to confident + a clarifications sidecar. A clarify is terminal for its cell; recall fetches only confident ids.
-export async function resolveEntities(query: string, scope: ResolvedScope, decideFn: DecideFn = decide): Promise<SettledEntities> {
+export async function resolveEntities(query: string, scope: ResolvedScope, decideFn: DecideFn = decideWithJev): Promise<SettledEntities> {
   const settled = structuredClone(scope) as SettledEntities;
   settled.clarifications = [];
   settled.notes = [];

@@ -1,5 +1,6 @@
 // bedrock-call — shared transport for calling the configured Bedrock model (BEDROCK_MODEL) via the Converse
-// API's forced tool use. The three prod LLM steps (extract, resolve-entities, resolve-market) all go through it.
+// API's forced tool use. The two Bedrock steps (extract, resolve-market) go through it; the entity gate goes
+// through jev-call.ts.
 // Returns the parsed tool input object; each caller decodes its own fields. Creds come from the standard AWS
 // env chain (AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_REGION), loaded from .env.
 //
@@ -28,8 +29,8 @@ export async function bedrockToolCall(
   schema: Record<string, unknown>,
   maxTokens = 2048,
 ): Promise<Record<string, unknown>> {
-  // Per-stage override: BEDROCK_MODEL_<TOOLNAME> (BEDROCK_MODEL_EMIT_QUERY_PLAN / _SETTLE_CELLS / _PICK)
-  // beats the shared BEDROCK_MODEL, so the three stages can run different models from .env alone.
+  // Per-stage override: BEDROCK_MODEL_<TOOLNAME> (BEDROCK_MODEL_EMIT_QUERY_PLAN / _PICK) beats the shared
+  // BEDROCK_MODEL, so the two stages can run different models from .env alone.
   // BEDROCK_PRICE_* stays single-model — per-query cost is approximate under a mixed config.
   const modelId = process.env[`BEDROCK_MODEL_${toolName.toUpperCase()}`] || process.env.BEDROCK_MODEL;
   if (!modelId) throw new Error("BEDROCK_MODEL must be set (e.g. us.amazon.nova-lite-v1:0).");
