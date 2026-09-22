@@ -138,6 +138,7 @@ function crossSportRows(name: string, skip: string, out: ForeignIds, competitor:
       if (res.tier === "none") continue;
       rank = Math.min(rank, TIER_ORDER.indexOf(res.tier));
       for (const c of res.candidates.slice(0, XS_PER_SPORT)) {
+        if (rows.some((r) => r.id === c.id)) continue; // team+player grounders both hit the same row
         out.set(c.id, { sport, cand: c });
         rows.push({ id: c.id, name: c.name, rank: 0 }); // per-sport rank is stamped on the way out
       }

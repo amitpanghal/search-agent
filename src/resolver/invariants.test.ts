@@ -463,3 +463,46 @@ test("entity gate: a pick from a weak shortlist ships with a 'could also be' not
   assert.ok(settled.notes[0]!.includes("Lamine B"), settled.notes[0]);
   assert.equal(settled.clarifications.length, 0);
 });
+
+// ---------------------------------------------------------------------------------------------------------
+// ENTITY GATE: cross-sport widening runs the team AND the player grounder against every other sport's
+// catalog; a row both of them hit was pushed twice, so the model (and the clarify) saw one entity as two.
+// Pins names from the committed football/trotting catalogs: a `npm run catalogs` refresh that renames or
+// drops an esports clone updates the expected list here, in the same change.
+test("entity gate: cross-sport widening lists each id once when the team and player grounders both hit", async () => {
+  const plan = {
+    sport: "football",
+    selectors: [{
+      subject: { kind: "team", name: "Tottenham Hotspur" },
+      market_concept: "to win",
+      scope: { teams: ["Tottenham Hotspur"], players: [], competition: null, region: null, level: "fixture", stage: null, squad: null, time: null, play_state: null },
+    }],
+  } as QueryPlan;
+  const seen: { ref: string; candidates: { id: number; name: string }[] }[] = [];
+  const decide = async (_q: string, cells: { ref: string; candidates: { id: number; name: string }[] }[]) => {
+    seen.push(...cells.map((c) => ({ ref: c.ref, candidates: c.candidates })));
+    return [];
+  };
+  // the query names no sport word, so widening fires (queryNamesSport)
+  const settled = await resolveEntities("Tottenham Hotspur to win", groundScope(plan) as never, decide as never);
+
+  const cell = seen.find((c) => c.ref === "team:0")!;
+  assert.ok(cell, `expected a team:0 cell, got ${seen.map((c) => c.ref).join(", ")}`);
+  const ids = cell.candidates.map((c) => c.id);
+  // criterion 1: each id once
+  assert.equal(new Set(ids).size, ids.length, `rows ${ids.length}, distinct ${new Set(ids).size}`);
+  // criterion 2: the survivors keep their order
+  assert.deepEqual(cell.candidates.map((c) => c.name), [
+    "Tottenham Hotspur (Jekos)", "Tottenham Hotspur (MakcwellLm)", "Tottenham Hotspur (Nicolas_Rage)",
+    "Tottenham Hotspur FC (votizlove)", "Tottenham Hotspur FC (toni)", "Tottenham",
+  ]);
+  // criterion 3: the clarify the user sees is built from the deduped list
+  assert.equal(settled.clarifications.length, 1);
+  const clar = settled.clarifications[0]!;
+  assert.equal(clar.suggest!.length, 5);
+  assert.equal(new Set(clar.suggest).size, 5);
+  // the question names each suggested entity once (the names carry parentheses, so count them, not the list)
+  const shown = cell.candidates.slice(0, 5).map((c) => c.name);
+  assert.equal(new Set(shown).size, 5);
+  for (const n of shown) assert.equal(clar.question.split(n).length - 1, 1, ` named more than once`);
+});
