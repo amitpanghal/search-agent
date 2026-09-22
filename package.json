@@ -15,7 +15,8 @@
     "probe": "tsx --env-file=.env scripts/probe.ts",
     "gate:live-menu": "tsx src/eval/live-menu-gate.ts",
     "typecheck": "tsc --noEmit",
-    "gold": "tsx scripts/expand-gold.ts"
+    "gold": "tsx scripts/expand-gold.ts",
+    "ai:eval:config": "tsx eval/config/run.ts"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.967.0",

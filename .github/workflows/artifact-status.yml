@@ -1,0 +1,122 @@
+name: Artifact status
+
+# "The draft check". A deterministic gate, no Claude involved, zero cost, two
+# rules:
+#  1. an intent.md or spec.md that a pull request adds or changes must say
+#     `Status: accepted` (or `superseded`) before it can merge;
+#  2. a pull request that adds or changes a spec.md must have all three reader
+#     boxes ticked in its body (engineer, product owner, tester) — the /spec
+#     skill writes the boxes; the readers tick them;
+#  3. a spec.md whose Decisions carry the marker `Product owner to confirm.`
+#     must have the product owner's box in its new wording, "I confirm the
+#     decisions listed below", so the tick covers those decisions and not
+#     only "nothing beyond the intent".
+# The intent is accepted by the product
+# owner in the /intent chat; the spec is accepted by its reviewer, who edits
+# the line on the pull request. Either way, a `draft` reaching main means the
+# acceptance step was skipped, and /spec and plan mode would refuse to run on
+# it later — so refuse here, where it is one click to fix.
+#
+# Exempt: pull requests labelled `maintain-loop`. Those intents are written by
+# the maintain loop as drafts on purpose; a person accepts them in triage.
+#
+# Make this a required status check (`Artifact status / check`) once the team
+# has run the loop a few times. It has no path filter, so it always reports.
+on:
+  pull_request:
+    # `edited` matters: the reader boxes live in the pull request text, and
+    # ticking one is an edit. Without it the check keeps judging the text from
+    # the last push, and "Re-run jobs" replays that same stale text.
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  check:
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'maintain-loop') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Every changed intent.md / spec.md must say Status accepted
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          # ':!intent/_templates/**' — the templates are not artifacts; their Status line lists the allowed values.
+          files=$(git diff --name-only --diff-filter=AM "$BASE" "$HEAD" -- 'intent/*/intent.md' 'intent/*/spec.md' ':!intent/_templates/**' || true)
+          if [ -z "$files" ]; then
+            echo "No intent.md or spec.md changed. Nothing to check."
+            exit 0
+          fi
+          fail=0
+          for f in $files; do
+            # The status line looks like:  - **Status:** accepted
+            status=$(grep -m1 -iE '^\s*-\s*\*\*Status:\*\*' "$f" | sed -E 's/.*\*\*Status:\*\*[[:space:]]*//; s/[[:space:]]*(<!--.*)?$//' | tr '[:upper:]' '[:lower:]' || true)
+            case "$status" in
+              accepted|superseded)
+                echo "OK    $f  (Status: $status)";;
+              "")
+                echo "FAIL  $f  has no Status line"; fail=1;;
+              *)
+                echo "FAIL  $f  says Status: $status — must be accepted before merge"; fail=1;;
+            esac
+          done
+          if [ "$fail" = 1 ]; then
+            echo
+            echo "An intent is accepted by the product owner in the /intent chat."
+            echo "A spec is accepted by its reviewer: edit the Status line on this"
+            echo "branch (Files changed → ⋯ → Edit file), commit, then approve."
+            exit 1
+          fi
+
+      - name: A spec pull request needs all three reader boxes ticked
+        if: always()
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -euo pipefail
+          specs=$(git diff --name-only --diff-filter=AM "$BASE" "$HEAD" -- 'intent/*/spec.md' ':!intent/_templates/**' || true)
+          if [ -z "$specs" ]; then
+            echo "No spec.md changed. Nothing to check."
+            exit 0
+          fi
+          fail=0
+          for reader in "Engineer" "Product owner" "Tester"; do
+            if printf '%s' "$BODY" | grep -qiE "^\s*-\s*\[[xX]\]\s*${reader}:"; then
+              echo "OK    $reader has ticked"
+            elif printf '%s' "$BODY" | grep -qiE "^\s*-\s*\[ \]\s*${reader}:"; then
+              echo "FAIL  $reader has not ticked yet"; fail=1
+            else
+              echo "FAIL  no box for $reader in the pull request text"; fail=1
+            fi
+          done
+          # Rule 3: a marked decision needs the product owner's box in its new wording.
+          for f in $specs; do
+            if git show "$HEAD:$f" | grep -q 'Product owner to confirm\.'; then
+              if printf '%s' "$BODY" | grep -qiE "^\s*-\s*\[[xX ]\]\s*Product owner:\s*I confirm the decisions listed below"; then
+                echo "OK    $f has decisions for the product owner and the box names them"
+              else
+                echo "FAIL  $f has a decision marked 'Product owner to confirm.' but the product owner's box does not say 'I confirm the decisions listed below'"; fail=1
+              fi
+            fi
+          done
+          if [ "$fail" = 1 ]; then
+            echo
+            echo "A spec has three readers. Each ticks their own box in the pull"
+            echo "request text (Edit the description, click the box, Update)."
+            echo "The /spec skill writes the three boxes; if they are missing, paste:"
+            echo "- [ ] Engineer: every criterion is technically true and buildable"
+            echo "- [ ] Product owner: I confirm the decisions listed below; nothing beyond the intent, nothing against its non-goals"
+            echo "  - <one line per Decisions entry that ends with 'Product owner to confirm.', or 'no decisions wait for the product owner'>"
+            echo "- [ ] Tester: every criterion can be checked from outside; Test plan filled in"
+            exit 1
+          fi
