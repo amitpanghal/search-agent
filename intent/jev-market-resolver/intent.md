@@ -86,3 +86,5 @@ half the time and at a quarter of the cost.
 
 ## Decisions
 
+- 2026-09-22 — Fact fix: "29 captured `pick` requests" → 6 (Andorra 2, Baltimore 4; 7 bets). The 2026-09-10
+  traces no longer exist; only the 2026-09-21 A/B traces do. Found by /spec; no change to the outcome or scope.
