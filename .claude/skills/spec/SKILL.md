@@ -43,16 +43,13 @@ Create `spec.md` next to a given `intent/<slug>/intent.md`, from
    skill whose domain the intent touches, per this mapping (multiple rows
    usually apply; "any code" always does):
 
-   <!-- TODO(template): extend this table with the project's own policy
-        skills — one row per domain area a spec could touch. Keep the
-        "any code" row; every project ships code-conventions. -->
-
    | Intent touches | Read `.claude/skills/…/SKILL.md` |
    |---|---|
    | any code at all | `code-conventions` |
-   | <domain area, e.g. bet placement / stake handling> | `<skill-name>` |
-   | <domain area, e.g. operator configuration / branding> | `<skill-name>` |
-   | <domain area, e.g. copy / localisation> | `<skill-name>` |
+   | anything under `src/resolver/` — a stage, a prompt, `schema.ts`, the grounder, the shared types | `resolver-pipeline` |
+   | a model, prompt or schema change that must pass the ship gate, or the gold set itself | `eval` |
+   | entity grounding, a sport's catalog, `sports.ts` overrides, the scope-alias files | `catalog` |
+   | a claim about why a query resolved the way it did (the evidence for the intent or a criterion) | `probe` |
 
    The table lists the current policy skills, but treat it as a floor, not a
    ceiling: scan `.claude/skills/` for any newer skill whose description
