@@ -8,15 +8,23 @@
 // Only a missing key throws — a configuration error fails the query by name, as a missing AWS key does.
 //
 // Config (env): JEV_ACCESS_KEY (required), JEV_MODEL (default jev-latest), JEV_PRICE_IN (USD per 1M input
-// tokens, default 0.042; Jev output is free).
+// tokens, default 0.042; Jev output is free). A blank or non-numeric number falls back to its default.
 
 import { z } from "zod";
 import { usageStore } from "./cost";
 import { emit } from "./trace";
 
 const URL = "https://api.typesafe.ai/v1/systemone";
-const TIMEOUT_MS = 3000; // ponytail: a stall is a network error, not a hang; raise if Jev's p99 ever nears it
-const RETRY_MS = 500;    // backoff before the one retry on 429/529 when the reply names no Retry-After
+const TIMEOUT_MS = 3000;   // ponytail: a stall is a network error, not a hang; raise if Jev's p99 ever nears it
+const RETRY_MS = 500;      // backoff before the one retry on 429/529 when the reply names no Retry-After
+const RETRY_MAX_MS = 2000; // cap on an honoured Retry-After — a query must never sit minutes on a throttle
+
+// A numeric env value, or `fallback` when it is unset, blank, non-numeric or outside [min, max]. A config typo
+// must never silently become 0 or NaN: a NaN threshold compares false and would wave every pick through.
+export function envNumber(name: string, fallback: number, min = -Infinity, max = Infinity): number {
+  const n = Number(process.env[name]);
+  return process.env[name] && Number.isFinite(n) && n >= min && n <= max ? n : fallback;
+}
 
 export type JevQuestion = { type: "choice"; instructions: string; criteria: Record<string, string> };
 
@@ -40,20 +48,22 @@ export async function jevChoice(toolName: string, state: unknown, questions: Rec
   if (!key) throw new Error("JEV_ACCESS_KEY must be set (see jev-call.ts header).");
   const model = process.env.JEV_MODEL || "jev-latest";
   const body = JSON.stringify({ model, state, questions });
-  emit({ kind: "llm-req", tool: toolName, model, system: Object.values(questions)[0]?.instructions ?? "", user: JSON.stringify(state), schema: questions });
+  emit({ kind: "llm-req", tool: toolName, model, system: Object.values(questions).map((q) => q.instructions).join("\n"), user: JSON.stringify(state), schema: questions });
   const fail = (error: string): null => { emit({ kind: "llm-resp", tool: toolName, output: { error }, inputTokens: 0, outputTokens: 0 }); return null; };
   try {
     let res = await post(key, body);
     if (res.status === 429 || res.status === 529) {
       const after = res.headers.get("retry-after");
-      await new Promise((r) => setTimeout(r, after === null || Number.isNaN(Number(after)) ? RETRY_MS : Number(after) * 1000));
+      const wait = after !== null && Number.isFinite(Number(after)) ? Math.min(Number(after) * 1000, RETRY_MAX_MS) : RETRY_MS;
+      await res.body?.cancel().catch(() => undefined); // release the throttled reply's socket before waiting
+      await new Promise((r) => setTimeout(r, wait));
       res = await post(key, body);
     }
     if (!res.ok) return fail(`HTTP ${res.status}`);
     const parsed = Reply.safeParse(await res.json());
     if (!parsed.success) return fail("malformed body");
     const inputTokens = parsed.data.usage?.input_tokens ?? 0, outputTokens = parsed.data.usage?.output_tokens ?? 0;
-    usageStore.getStore()?.push({ tool: toolName, inputTokens, outputTokens, priceIn: Number(process.env.JEV_PRICE_IN ?? 0.042), priceOut: 0 });
+    usageStore.getStore()?.push({ tool: toolName, inputTokens, outputTokens, priceIn: envNumber("JEV_PRICE_IN", 0.042, 0), priceOut: 0 });
     emit({ kind: "llm-resp", tool: toolName, output: parsed.data.answers, inputTokens, outputTokens });
     return parsed.data;
   } catch (e) {

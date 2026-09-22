@@ -25,7 +25,7 @@ import {
 import { loadScopeCatalog, type ScopeCatalog } from "./scope-catalog";
 import { fold } from "./lexical";
 import { userSports } from "./sports";
-import { jevChoice, type JevQuestion } from "./jev-call";
+import { jevChoice, envNumber, type JevQuestion } from "./jev-call";
 import type { CellRef, SettledEntities } from "./live-menu-types";
 
 const ENTITY_CAP = 5; // entity candidates shown to the model
@@ -224,7 +224,7 @@ export async function decideWithJev(query: string, cells: Cell[]): Promise<Decis
   const state = { query, cells: asked.map((c) => ({ ref: c.ref, text: c.text, candidates: c.candidates })) };
   const res = await jevChoice(TOOL_NAME, state, questions);
   if (!res) return [];
-  const threshold = Number(process.env.JEV_ENTITY_THRESHOLD ?? 0.8);
+  const threshold = envNumber("JEV_ENTITY_THRESHOLD", 0.8, 0, 1); // a blank or bad value must never become 0/NaN
   return asked.flatMap((c) => {
     const a = res.answers[c.ref];
     if (!a || a.choice === "none" || (a.probabilities[a.choice] ?? 0) < threshold) return [];

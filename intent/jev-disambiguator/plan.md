@@ -231,3 +231,13 @@ Criteria 1–5 have a test. Criterion 6 is evidence in the pull request by desig
 - 2026-09-22 — Test count corrected from 38 to 39: the plan's "33 + 5" left out the cost test step 1 adds, so
   the total after step 2 is 33 + 1 + 5. Found while building step 2; fixed here in the same commit. Decided
   by: engineer (factual).
+- 2026-09-22 — Step 4's pull request replaced by a direct merge into `sdlc-jev` at the product owner's
+  instruction, after the code review (`/code-review high`, 7 findings). Findings 1–5 and 7 fixed in the
+  review-fixes commit: `JEV_ENTITY_THRESHOLD` and `JEV_PRICE_IN` parsed through `envNumber` (blank, non-numeric
+  or out-of-range → default, never 0/NaN), Retry-After capped at 2 s, the throttled reply's body cancelled
+  before the retry, the trace `system` field carries every cell's instructions, and one test pins the inclusive
+  threshold, the env override and the fallbacks (40 tests). Finding 6 — candidates serialised twice per cell
+  (`state` and `criteria`, ~half the stage's Jev tokens) — is the spec's prescribed shape and stays as a
+  follow-up measurement. Live probes of 2026-09-22 (criterion 6): Premier League → 1000094985 at 1.00, 662 ms;
+  Tottenham horse 0.50 → clarify; bad key → HTTP 401 → clarify; missing key → named error. Decided by: product
+  owner (route), engineer (fixes).

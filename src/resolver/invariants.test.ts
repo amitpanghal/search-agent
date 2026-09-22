@@ -635,3 +635,24 @@ test("entity gate: Jev failures retry once on 429/529 and otherwise clarify", as
     assert.deepEqual(await run([reply("not json")]), { calls: 1, settled: false, clarified: 2, resps: 1 }, "malformed body");
   });
 });
+
+// The cut is "at or above", it is env-driven, and a blank or non-numeric value falls back to 0.8 — never to 0 or
+// NaN, either of which would compare false and accept every pick (the fail-open the review caught).
+test("entity gate: the threshold is inclusive, env-driven, and falls back to 0.8 on a bad value", async (t) => {
+  const at = (p: number) => reply({ answers: { "subject:0": { choice: "1005184672", probabilities: { "1005184672": p, none: 1 - p } } }, usage: { input_tokens: 1 } });
+  const oneCell = () => { const s = jevScope(); s.legs[0]!.competition = null as never; return s; };
+  const rows: RawCall[] = [];
+  const settledAt = (p: number, env: Record<string, string | undefined>) => withEnv({ ...jevEnv, ...env }, async () => {
+    const fetch = stubFetch(t, [at(p)]);
+    const s = await usageStore.run(rows, () => resolveEntities(JEV_QUERY, oneCell() as never));
+    fetch.mock.restore();
+    return s.legs[0]!.subjectPlayer!.tier === "confident";
+  });
+  assert.equal(await settledAt(0.8, {}), true, "exactly 0.8 settles");
+  assert.equal(await settledAt(0.79, {}), false, "0.79 clarifies");
+  assert.equal(await settledAt(0.98, { JEV_ENTITY_THRESHOLD: "0.99" }), false, "the env raises the bar");
+  assert.equal(await settledAt(0.5, { JEV_ENTITY_THRESHOLD: "" }), false, "blank env falls back to 0.8, not 0");
+  assert.equal(await settledAt(0.5, { JEV_ENTITY_THRESHOLD: "high" }), false, "non-numeric env falls back, not NaN");
+  assert.equal(await settledAt(0.9, { JEV_PRICE_IN: "" }), true);
+  assert.equal(rows.at(-1)!.priceIn, 0.042, "blank JEV_PRICE_IN falls back to the default price");
+});
