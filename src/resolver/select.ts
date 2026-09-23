@@ -402,16 +402,18 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
     return absent("side-absent");
   }
 
-  // ---- (4) no direction / no line -> the owner-bound affirmative (Yes), else the single survivor ----
-  const yes = !hasNamed ? pool.find(({ o }) => dirOf(o) === "yes") : undefined;
-  const chosen = (yes ?? pool[0])?.o;
-  if (!chosen) return absent("subject-absent");
+  // ---- (4) no direction / no line -> the owner-bound affirmative (Yes), else an over/under ladder's LOWEST
+  // Over ("France to score" = Over 0.5, never whichever rung the feed lists first), else the single survivor ----
+  const yes = !hasNamed ? pool.filter(({ o }) => dirOf(o) === "yes") : [];
+  const overs = pool.filter(({ o }) => dirOf(o) === "over" && lineOf(o) != null).sort((a, b) => lineOf(a.o)! - lineOf(b.o)!);
   // MULTI-FIXTURE: the pool holds one answer PER FIXTURE, each its own -> flag one per event, not just the
   // first. Not only the relational case ("home teams to win"): a NAMED subject spans fixtures too ("City to
   // win", several upcoming games), and flagging only the first leaves every later card rendered with nothing
   // selected. Dedupe over the answers `chosen` came from, so the flagged id per event matches the pick rule.
   // A single-fixture pool keeps single-pick semantics, unchanged.
-  const answers = yes ? pool.filter(({ o }) => dirOf(o) === "yes") : pool;
+  const answers = yes.length ? yes : overs.length ? overs : pool;
+  const chosen = answers[0]?.o;
+  if (!chosen) return absent("subject-absent");
   const perEvent = new Map<number, number>();
   for (const { o, bo } of answers) if (bo.eventId != null && o.id != null && !perEvent.has(bo.eventId)) perEvent.set(bo.eventId, o.id);
   return withPool(chosen, undefined, ids, perEvent.size > 1 ? [...perEvent.values()] : undefined);

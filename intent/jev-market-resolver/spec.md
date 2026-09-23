@@ -27,7 +27,9 @@ cell). Both are recorded under Decisions; the intent's number is corrected with 
 1. **Jev picks, from the bet's own menu.** A query whose legs name a market produces one Jev request with tool
    name `pick` (the `STAGE` map `pick → market`, `cost.ts:26`, is unchanged) and, per bet, a `choice` question
    whose options are that bet's filtered menu refs plus `none`. A pick whose chosen option's probability is at or
-   above `JEV_MARKET_THRESHOLD` (`NEW` env, read with `envNumber`, `jev-call.ts:24`) becomes a `MarketPick`
+   above `JEV_MARKET_THRESHOLD` (`NEW` env, read with `envNumber`, `jev-call.ts:24`), or whose `none` probability
+   leaves Jev at least 0.8 sure some menu market settles the bet (1 − p(none) ≥ 0.8; amended 2026-09-23, see
+   Decisions), becomes a `MarketPick`
    through today's `toPick` (`resolve-market.ts:54`): `label` = the menu item's label, `match` from criterion 2.
    Observable: the probe trace shows one `[llm pick]` row with a `jev-` model id and the `market` stage row shows
    the labels. Test (stubbed global `fetch`, canned answers): the Andorra bets `who wins (for Andorra)`, `both
@@ -37,7 +39,7 @@ cell). Both are recorded under Decisions; the intent's number is corrected with 
    `match: "exact"`; `close` is never produced (amended 2026-09-23, see Decisions — the label reached no
    consumer). Observable: the market gate (`exact` on a gold id) and the trace's `market` row. Test: the
    criterion-1 test asserts `["Full Time", "exact"]`, and the request body carries no `fit:*` question.
-3. **Below the threshold, `none` — never a guess.** A pick below `JEV_MARKET_THRESHOLD`, a `none` choice, or a
+3. **Below the threshold, `none` — never a guess.** A pick below both cuts of criterion 1, a `none` choice, or a
    ref the menu does not carry yields `{ match: "none" }`, and the leg renders today's no-market message
    (`execute.ts:216`, `noPickReason`). Observable: the envelope leg has no `pick.label` and its `unavailable.kind`
    is `no-market`. Test: canned pick at threshold − 0.01 → `none`; canned `none` → `none`; canned ref 999 → `none`.
@@ -310,4 +312,15 @@ cell). Both are recorded under Decisions; the intent's number is corrected with 
   label fed the market gate (which still passes on `exact`) and the trace, at ~600 input tokens per 3-leg query
   (≈ $0.000025, 5% of the market row). Criterion 2 reworded; this closes its earlier "Product owner to confirm".
   Decided by: product owner.
+- 2026-09-23 — Criterion 1 gains a second cut: a pick also commits when 1 − p(none) ≥ 0.8. A live probe ("Something
+  with mbappe scoring a goal and france to score and over 2.5 goals in next game") dropped the Mbappé leg: Jev split
+  `To Score` 0.53 / `To Score (Fielded Anytime)` 0.44 / `none` 0.03 — sure a market settles the bet, torn between
+  two twins that both do — and the 0.7 cut on the top option alone made it `none`, whose message then claimed no
+  market exists. Replacing the cut with 1 − p(none) ≥ 0.7 alone was measured first and rejected: the replay's
+  "finish bottom of the group" committed the wrong `Group Finishing Position — Winner` (0.65, none 0.29 → 0.71).
+  Kept: today's cut OR 1 − p(none) ≥ 0.8, so no pick that committed before can drop. Replay (one run, 74,864 input
+  tokens ≈ $0.003): 16 of 16 — "win by 2 or more" now commits `Asian Handicap` (0.42, none 0.08), "bottom of the
+  group" stays `none` (0.64, none 0.31), "win the 2nd half to nil" stays `none`; every other pick 0.92–1.00 with
+  none ≤ 0.02. (The replay has 16 cases: the 2026-09-22 entry's "16 of 17" was 15 of 16.) Live probe after the
+  change: all three legs match, one betslip @ 1.81. Decided by: engineer. Product owner to confirm.
 

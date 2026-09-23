@@ -5,7 +5,8 @@
 // from select), so the question that produced it was dropped (spec Decisions, 2026-09-23). The rulebook (resolve-market-prompt.md) rides ONCE
 // in `state.rules`; the union of all bets' menus rides once in `state.menu`, and each bet's questions list only ITS
 // refs, so bets with different menus share one round-trip. A pick counts at or above JEV_MARKET_THRESHOLD on the
-// chosen option's probability; below it, on `none`, or when Jev does not answer, the bet is `{ match: "none" }` —
+// chosen option's probability, or when Jev is at least 0.8 sure SOME market settles the bet (1 - p(none)); below
+// both, on `none`, or when Jev does not answer, the bet is `{ match: "none" }` —
 // the "no market" leg (abstain over wrong). The ref maps back to the menu item's LABEL (the market identity); the
 // model sees labels only, never odds. No Bedrock call is made here; a missing JEV_ACCESS_KEY fails the query by
 // name (jev-call.ts). `resolveMarket` (singular) is a thin wrapper kept for the offline gates.
@@ -18,6 +19,7 @@ import type { Menu, MarketPick, MatchLabel } from "./live-menu-types";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const TOOL_NAME = "pick";
+const SOME_CUT = 0.8; // ponytail: fixed from the 2026-09-23 replay; an env like JEV_MARKET_THRESHOLD if it needs tuning
 const OPTION_CAP = 254; // Jev takes 255 options per question; one slot is `none`
 const NONE_PICK = "No market on the menu settles this bet";
 const NONE_OUTCOME = "The bet names no listed outcome";
@@ -104,9 +106,13 @@ export const decideWithJev: DecideManyFn = async (bets, query) => {
   return bets.map((b, i): RawPick => {
     if (!res) return { ref: null, match: "none" }; // Jev did not answer: every bet abstains, the query still answers
     const own = (unionRef: string): number => betRefs[i]!.indexOf(Number(unionRef)); // -1 -> toPick abstains
-    // pick: across chunks, the committed option with the highest probability; below the threshold or `none` -> abstain
+    // pick: across chunks, the committed option with the highest probability, kept when Jev is sure of IT (at or
+    // above the threshold) or sure SOME market settles the bet (1 - p(none) >= SOME_CUT) — two twins that both settle
+    // it ("To Score" 0.53 / "To Score (Fielded Anytime)" 0.44 / none 0.03) no longer split the vote into an abstain.
+    // SOME_CUT sits higher because it is the looser question: the 2026-09-23 replay's confident-wrong pick ("finish
+    // bottom of the group" -> Group Finishing Position — Winner, 0.65) had 1 - p(none) = 0.71. No `none` -> abstain.
     const best = answersFor(res.answers, `pick:${i}`)
-      .filter((a) => a.choice !== "none" && (a.probabilities[a.choice] ?? 0) >= threshold)
+      .filter((a) => a.choice !== "none" && ((a.probabilities[a.choice] ?? 0) >= threshold || 1 - (a.probabilities.none ?? 1) >= SOME_CUT))
       .sort((x, y) => (y.probabilities[y.choice] ?? 0) - (x.probabilities[x.choice] ?? 0))[0];
     if (!best) return { ref: null, match: "none" };
     const ref = own(best.choice);

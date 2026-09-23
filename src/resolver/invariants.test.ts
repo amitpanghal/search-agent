@@ -381,6 +381,19 @@ test("select: zero-of-the-stat needs the real 0.5 rung — a ladder starting hig
   }
 });
 
+test("select: no side and no line on an over/under ladder picks the LOWEST Over, not the feed's first rung", () => {
+  const ou = (id: number, line: number): BetOffer => ({
+    id, eventId: 9, betOfferType: { id: 6 }, criterion: { label: "Total Goals by France" },
+    outcomes: [
+      { id: id * 10 + 1, type: "OT_OVER", line },
+      { id: id * 10 + 2, type: "OT_UNDER", line },
+    ],
+  }) as unknown as BetOffer;
+  const pick = (lines: number[]) => select({ events: [{ id: 9 }] as KEvent[], betOffers: lines.map((l, i) => ou(i + 1, l)) }, { subjectId: 321, subject: "France" });
+  assert.deepEqual([pick([1500, 2500, 500]).line, pick([1500, 2500, 500]).outcomeId], [0.5, 31], "'France to score' = Over 0.5");
+  assert.equal(pick([2500, 1500, 3500]).line, 1.5, "no 0.5 rung -> the lowest offered, never a drop");
+});
+
 // ---------------------------------------------------------------------------------------------------------
 // EXECUTE: a none-pick leg whose fixture menu EXISTED but was emptied by the subject filter must say the
 // SUBJECT is absent (naming the grounded person, so a wrong grounding is visible and correctable) — never the
@@ -656,7 +669,7 @@ const CAPTURE = JSON.parse(readFileSync(new URL("../eval/market-picks.capture.js
 const andorra = CAPTURE.cases.filter((c) => c.query.startsWith("andorra"));
 const asBet = (c: CapturedCase) => ({ phrase: c.phrase, menu: c.menu });
 const marketEnv = { ...jevEnv, JEV_MARKET_THRESHOLD: undefined };
-type Canned = { pick: string; prob?: number; next?: Record<string, number>; outcome?: string };
+type Canned = { pick: string; prob?: number; none?: number; next?: Record<string, number>; outcome?: string };
 type JevBody = { state: { menu: { label: string }[] }; questions: Record<string, { criteria: Record<string, string> }> };
 // A fetch stub that reads the request and answers each bet by label: pick (a label, "none", or a raw key),
 // next (label -> probability) and outcome. Usage is fixed so the cost row is checkable.
@@ -667,7 +680,7 @@ const jevStub = (t: TestContext, legs: Canned[]) =>
     const answers: Record<string, unknown> = {};
     legs.forEach((c, b) => {
       const key = refOf(c.pick), p = c.prob ?? 0.97;
-      answers[`pick:${b}`] = { type: "choice", choice: key, probabilities: { [key]: p, none: 1 - p } };
+      answers[`pick:${b}`] = { type: "choice", choice: key, probabilities: { [key]: p, none: c.none ?? 1 - p } };
       if (c.next) {
         const probs = Object.fromEntries(Object.entries(c.next).map(([l, pr]) => [refOf(l), pr]));
         answers[`next:${b}`] = { type: "choice", choice: Object.entries(probs).sort((x, y) => y[1] - x[1])[0]![0], probabilities: probs };
@@ -705,6 +718,17 @@ test("market: below threshold, none, or an unknown ref is none", async (t) => {
   await withEnv({ ...marketEnv, JEV_MARKET_THRESHOLD: "0.6" }, async () => {
     jevStub(t, [{ pick: "Full Time", prob: 0.69 }]);
     assert.equal((await resolveMarkets([asBet(andorra[0]!)]))[0]!.label, "Full Time", "the cut is env-driven");
+  });
+});
+
+test("market: a pick commits when Jev is sure of it OR sure some market fits (1 - none >= 0.8)", async (t) => {
+  // 2026-09-23 numbers: "to score (for Mbappé)" split To Score 0.53 / Fielded Anytime 0.44 / none 0.03 -> commits;
+  // "finish bottom of the group" -> the wrong Winner market 0.65 / none 0.29 -> 0.71, abstains; the bare "goals"
+  // leg at 0.72 / none 0.28 still commits on its own probability.
+  await withEnv(marketEnv, async () => {
+    jevStub(t, [{ pick: "Full Time", prob: 0.53, none: 0.03 }, { pick: "Both Teams To Score", prob: 0.65, none: 0.29 }, { pick: "Correct Score", prob: 0.72, none: 0.28 }]);
+    const picks = await resolveMarkets([asBet(andorra[0]!), asBet(andorra[1]!), asBet(andorra[2]!)]);
+    assert.deepEqual(picks.map((p) => p.label ?? p.match), ["Full Time", "none", "Correct Score"]);
   });
 });
 
