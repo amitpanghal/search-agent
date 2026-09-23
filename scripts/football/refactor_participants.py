@@ -410,6 +410,11 @@ def _collect_friendly_ids(group_index: dict[int, dict]) -> set[int]:
     }
 
 
+def _roster_size(team: dict) -> int:
+    """Players listed on a raw TEAM record (inner LABELs don't count)."""
+    return sum(1 for m in team.get("teamMembers") or [] if m.get("type") == "PARTICIPANT")
+
+
 def _remove_noise(
     clubs: list[dict],
     players: dict[int, dict],
@@ -451,25 +456,44 @@ def _remove_noise(
         if not comps or all(i in friendly_ids for i in comps):
             drop_clubs.add(c["id"])
 
-    # h (clubs). Dedupe by (name, sorted(groupIds)); keep lowest id; union
-    # losers' competitionIds onto the keeper. Clubs that share a name but
+    # h (clubs). Dedupe by (name, sorted(groupIds)); union losers'
+    # competitionIds onto the keeper. The keeper is the twin in the most
+    # non-friendly competitions, then the biggest squad, then the lowest id:
+    # Kambi keeps a stale twin of some teams next to the live one the
+    # fixtures use, and the stale one is often the older, lower id
+    # (Belgium 1000000211: Friendlies + Euro 2028, no matches; 1007458818:
+    # + Nations League + WC 2030, every match). Friendlies don't count, as
+    # in (g): a stale twin still hangs on to them (Australia 1000000249:
+    # club + international friendlies only). Clubs that share a name but
     # have different groupIds (e.g. "Alianza FC" in El Salvador vs Panama)
     # don't collide here and stay as separate records.
+    # ponytail: competition count is a proxy for "the id the feed offers
+    # on"; a live-offers check per twin is exact if a stale twin ever wins.
     by_key: dict[tuple[str, tuple[int, ...]], list[dict]] = {}
     for c in clubs:
         if c["id"] in drop_clubs:
             continue
         by_key.setdefault((c["name"], tuple(sorted(c["groupIds"]))), []).append(c)
+    repoint: dict[int, int] = {}  # dropped twin id -> keeper id
     for group in by_key.values():
         if len(group) < 2:
             continue
-        group.sort(key=lambda c: c["id"])
+        group.sort(key=lambda c: (-sum(i not in friendly_ids for i in c["competitionIds"]), -c["rosterSize"], c["id"]))
         keeper, *losers = group
         merged = set(keeper["competitionIds"])
         for loser in losers:
             merged.update(loser["competitionIds"])
             drop_clubs.add(loser["id"])
+            repoint[loser["id"]] = keeper["id"]
         keeper["competitionIds"] = sorted(merged)
+
+    # A player linked to a dropped twin follows it to the keeper: else the
+    # clubId cascade below drops the player, and a dangling countryTeamId
+    # unlinks it from its national team.
+    for p in players.values():
+        p["clubId"] = repoint.get(p["clubId"], p["clubId"])
+        if p.get("countryTeamId") in repoint:
+            p["countryTeamId"] = repoint[p["countryTeamId"]]
 
     clubs = [c for c in clubs if c["id"] not in drop_clubs]
     surviving_ids = {c["id"] for c in clubs}
@@ -592,6 +616,7 @@ def refactor(
                     "name": club_name,
                     "competitionIds": sorted(set(ccomp) | (set(cgrp) - {sport_root_id})),
                     "groupIds": [],
+                    "rosterSize": _roster_size(p),
                 }
                 if national_teams:
                     # In an individual sport the country teams are the rostered TEAMs (Davis / BJK Cup
@@ -667,6 +692,7 @@ def refactor(
             "name": club_name,
             "competitionIds": comp_ids,
             "groupIds": grp_ids,
+            "rosterSize": _roster_size(p),
         }
         if national_teams:
             club["ntVariant"] = nt_variant_from_name(club_name) if is_national_team else None

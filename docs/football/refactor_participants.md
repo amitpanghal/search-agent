@@ -233,14 +233,24 @@ g. **Friendly-only clubs.** Drop clubs whose only remaining
    `England Legends`, `Rest of the World XI`, `Bordeaux II`, etc.
 
 h. **Same-shape duplicates.** Collapse clubs sharing
-   `(name, sorted(groupIds))` to the lowest id; collapse players
+   `(name, sorted(groupIds))` to the twin in the most non-friendly
+   competitions (friendlies as in g), then the biggest `rosterSize`, then
+   the lowest id; collapse players
    sharing `(name, clubId)` to the lowest id. Loser's `competitionIds`
    (and `groupIds` for players) union onto the keeper before drop, so
-   no membership is lost. Legitimately distinct clubs with the same
-   name but different `groupIds` (e.g. `Alianza FC` El Salvador vs
-   Panama) don't collide and stay separate. The `Australia`
-   national-team duplicate (one record carried `World Cup 2026`, the
-   other didn't) collapses to the lower id with the comp set unioned.
+   no membership is lost, and a player whose `clubId` / `countryTeamId`
+   points at a dropped club is re-pointed to its keeper. Legitimately
+   distinct clubs with the same name but different `groupIds` (e.g.
+   `Alianza FC` El Salvador vs Panama) don't collide and stay separate.
+   Why not the lowest id: Kambi keeps a stale twin of some national
+   teams next to the live one its fixtures use, and the stale one is the
+   older, lower id. `Belgium` 1000000211 (Friendlies + Euro 2028, no
+   matches) vs 1007458818 (+ Nations League + WC 2030, every match);
+   `Germany`, `Spain`, `Australia` and `Argentina` had the same split.
+   Keeping the lowest id emptied every head-to-head on those teams.
+   Friendlies don't count because the stale twin keeps them: `Australia`
+   1000000249 sits in club + international friendlies only, the live
+   1003314312 in international friendlies + WC 2030.
 
 i. **Final zero-roster sweep.** After all player drops, any club left
    with zero roster members is removed (same invariant as the
@@ -273,7 +283,8 @@ Club record:
   "sport": "football",
   "name": "Manchester City",
   "competitionIds": [1000093381, 1000093393, 1000094983, 1000094984, 1000094985, 1000094986, 1000246008, 2000087729, 2000108084],
-  "groupIds": [1000093190, 1000461733]
+  "groupIds": [1000093190, 1000461733],
+  "rosterSize": 27
 }
 ```
 
@@ -312,6 +323,9 @@ Field notes:
   players it's the union across the club squad(s) they're listed in; for
   ~2.4% of players it carries extra national-team / youth competitions
   beyond the club's set.
+- `rosterSize` — players listed on the raw TEAM record (inner LABELs
+  don't count). A tiebreak for picking the keeper among same-shape
+  duplicates (h); not read by the scope-index build.
 - `clubId` — single-club back-pointer on player records. For players
   listed under multiple TEAMs (club + national team), the scalar `clubId`
   is whichever TEAM the flattener saw first; the full affiliation surface
