@@ -50,11 +50,15 @@ const selectSubject = (s: Subject): string | undefined =>
 // COMPETITION-grain legs get no note either: an outright (win overall, top scorer) has no per-subject-vs-
 // match-total twin — the subject is an OUTCOME inside one market (Winner) — so the note only makes the picker read
 // the plain outright as an aggregate "total" and prefer a narrower Top-N (confirmed: TdF "win overall" -> Top 10).
-const betPhrase = (sel: { subject: Subject; market_concept: string }, level?: string): string => {
-  if (level === "competition") return sel.market_concept;
-  if (sel.subject.kind === "player") return `${sel.market_concept} (for ${sel.subject.name ?? "one player"})`;
-  if (sel.subject.kind === "team" && sel.subject.name) return `${sel.market_concept} (for ${sel.subject.name})`;
-  return sel.market_concept;
+// A bare unit noun ("goals") is not a bet; the selector's direction + numeric line make it one ("goals over 2.5").
+// Folded from fields, never from wording, so every surface form of the same bet reads the same. Handicaps (no
+// direction), correct scores (string line) and ranges (object line) stay as the concept alone.
+const betPhrase = (sel: { subject: Subject; market_concept: string; direction?: string; line?: unknown }, level?: string): string => {
+  const concept = typeof sel.line === "number" && sel.direction ? `${sel.market_concept} ${sel.direction.replace("_", " ")} ${sel.line}` : sel.market_concept;
+  if (level === "competition") return concept;
+  if (sel.subject.kind === "player") return `${concept} (for ${sel.subject.name ?? "one player"})`;
+  if (sel.subject.kind === "team" && sel.subject.name) return `${concept} (for ${sel.subject.name})`;
+  return concept;
 };
 
 // The grounded PARTICIPANT id for a selector's subject — SELECT's preferred (robust) key, == the feed's
