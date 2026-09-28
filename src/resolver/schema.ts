@@ -61,11 +61,11 @@ const Time = z
   .object({
     date_window: z
       .object({ value: z.string().min(1), anchor: z.enum(["tournament", "now"]) })
-      .nullable(),
-    kickoff_time_of_day: z.string().min(1).nullable(),
+      .nullable().default(null),
+    kickoff_time_of_day: z.string().min(1).nullable().default(null),
     fixture_pick: z
       .object({ order: z.enum(["earliest", "latest"]), count: z.number().int().min(1) })
-      .nullable(),
+      .nullable().default(null),
   })
   .refine(
     (t) => t.date_window !== null || t.kickoff_time_of_day !== null || t.fixture_pick !== null,
@@ -78,8 +78,8 @@ const Time = z
 // tagged independently per leg (a tournament-wide outcome is `competition`, a single match is `fixture`), so a
 // mixed-grain query keeps each leg's grain and a fixture leg keeps its `time` even when a sibling is competition.
 const Scope = z.object({
-  teams: z.array(z.string().min(1)),
-  players: z.array(z.object({ name: z.string().min(1), role: z.enum(["plays", "starts", "captain"]) })),
+  teams: z.array(z.string().min(1)).default([]),
+  players: z.array(z.object({ name: z.string().min(1), role: z.enum(["plays", "starts", "captain"]) })).default([]),
   // The ONE field carrying a `.describe()`. Guidance in the system prompt is 340 lines from the point of
   // generation and loses to the model's own instinct here: a league whose name states its own sport (MLB, UFC,
   // WNBA) gets spent on `sport` and never reaches this field, leaving `null` — and a plan with no competition,
@@ -89,12 +89,12 @@ const Scope = z.object({
   competition: z
     .string()
     .min(1)
-    .nullable()
+    .nullable().default(null)
     .describe(
       "The league, tournament or competition this leg settles in, as text. Fill this in whenever the query " +
         "names one — INCLUDING a league whose name states its own sport (MLB, UFC, NRL, WNBA) and one used " +
         "only as a modifier on another noun (\"<LEAGUE> games tonight\"). Having used that same name to " +
-        "identify `sport` does NOT exempt it: it belongs in both places. Use null only when the query names " +
+        "identify `sport` does NOT exempt it: it belongs in both places. Leave it out when the query names " +
         "no competition at all. A fixture pairing (\"A vs B\", or two adjacent team names with no " +
         "joiner) is teams, never a competition.",
     ),
@@ -102,18 +102,18 @@ const Scope = z.object({
   // like "Champions League") — distinct from a country named as a TEAM, which stays in `teams`. The scope
   // grounder resolves it to a top-level branch and hard-scopes competition candidates to that branch's
   // subtree. Nullable; populated by the extractor (see extractor-prompt-v2.md region/team routing rule).
-  region: z.string().min(1).nullable(),
+  region: z.string().min(1).nullable().default(null),
   level: z.enum(["fixture", "competition"]),
-  stage: z.string().min(1).nullable(), // the tournament round as text, else null
+  stage: z.string().min(1).nullable().default(null), // the tournament round as text, else null
   // A squad qualifier stated in the leg ("women", "ladies", "U21"), else null. ONE word for the whole leg —
   // a fixture can't mix squads, so grounding applies it to EVERY team named (the (W)/youth twin), and null
   // keeps the men's-senior default. Kept as text like `stage`; the grounder's marker machinery normalizes it.
-  squad: z.string().min(1).nullable(),
-  time: Time.nullable(),
+  squad: z.string().min(1).nullable().default(null),
+  time: Time.nullable().default(null),
   // In-play vs pre-match restriction (sport-agnostic). `live` = matches in progress; `prematch` = not yet
   // started; `null` = no preference. Required-nullable like `region` (always present, value-or-null), so the
   // scope keeps its fixed shape. Disjoint from `time`: a bare clock phrase is a time window, not a state.
-  play_state: z.enum(["live", "prematch"]).nullable(),
+  play_state: z.enum(["live", "prematch"]).nullable().default(null),
 });
 export type Scope = z.infer<typeof Scope>;
 

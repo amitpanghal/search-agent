@@ -35,8 +35,21 @@ const TOOL_NAME = "emit_query_plan";
 // (root anyOf). Wrap it in { plan }. zod v4's native toJSONSchema inlines single-use schemas,
 // so the result is self-contained (no $defs/$ref) for the API.
 const PlanEnvelope = z.object({ plan: QueryPlan });
+// What the model sees vs what we validate: zod's export marks each value-or-null field with `"default": null`
+// and an explicit null branch, and GPT-6 Luna reads both as "write null" (measured 2026-09-29: optional in
+// `required` plus the prompt's "leave it out" moved nothing, 14/14 nulls). Strip both from the tool schema
+// only; schema.ts still accepts null and fills it for an omitted field, so the parsed plan keeps its shape.
+const slim = (o: unknown): unknown => {
+  if (Array.isArray(o)) return o.map(slim);
+  if (!o || typeof o !== "object") return o;
+  const { default: _default, anyOf, ...rest } = o as { default?: unknown; anyOf?: Array<Record<string, unknown>> } & Record<string, unknown>;
+  const branches = anyOf?.filter((b) => b.type !== "null");
+  const base = branches?.length === 1 ? { ...rest, ...branches[0] } : branches ? { ...rest, anyOf: branches } : rest;
+  return Object.fromEntries(Object.entries(base).map(([k, v]) => [k, slim(v)]));
+};
 const INPUT_SCHEMA: Record<string, unknown> = (() => {
-  const schema = z.toJSONSchema(PlanEnvelope) as Record<string, unknown>;
+  // io:"input": a null-defaulted field leaves `required`, so the model may omit it; zod fills null on parse.
+  const schema = slim(z.toJSONSchema(PlanEnvelope, { io: "input" })) as Record<string, unknown>;
   delete schema.$schema;
   return schema;
 })();

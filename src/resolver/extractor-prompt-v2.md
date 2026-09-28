@@ -186,7 +186,7 @@ on every leg**.
   "tonight's `<NAME>` unders", "`<NAME>` Sunday matches", "`<NAME>` card", "`<NAME>` winner" all yield
   competition `<NAME>`. Reading the sport off that name never consumes it. The sides that play are
   **never** the competition: a pairing — "A vs B", "A @ B", or two adjacent team names with no joiner at
-  all ("A B totals") — goes to `teams`, and `competition` stays null
+  all ("A B totals") — goes to `teams`, and `competition` is left out
   unless a league or tournament is separately named.
 - **`teams`** — named teams that scope the match(es) ("A vs B" → `["A","B"]`). May be empty. A fixture
   is often named by bare juxtaposition — "A B totals", "A B who wins": two adjacent competitor names ARE
@@ -200,9 +200,9 @@ on every leg**.
 - **`level`** — what settles THIS leg: `"competition"` for a tournament-wide outcome (outright, award,
   tournament-long stat leader, a team's progression); else `"fixture"`, even when a competition is named.
   Two legs may differ.
-- **`stage`** — the round as the query words it ("quarterfinal", "final"), else null.
+- **`stage`** — the round as the query words it ("quarterfinal", "final"), else leave it out.
 - **`squad`** — a squad qualifier stated anywhere in the leg — "women", "ladies", "U21", "reserves" — as
-  the query words it, else null. One value covers the whole leg: "france croatia women volleyball" →
+  the query words it, else leave it out. One value covers the whole leg: "france croatia women volleyball" →
   `teams: ["France", "Croatia"]`, `squad: "women"`. Keep the team names bare.
 - **`time`** — `{ date_window, kickoff_time_of_day, fixture_pick }`; omit the whole object when the leg
   states no timing, never an all-null object. A fixture leg **keeps its own time** even when a sibling leg
@@ -215,10 +215,10 @@ on every leg**.
     `fixture_pick`, never a window. `anchor` is
     `"tournament"` for tournament-relative phrases ("opening weekend"), else `"now"`. "Monday night"
     splits into `date_window` `monday` **and** `kickoff_time_of_day` "night".
-  - `kickoff_time_of_day` — a time-of-day band as stated ("morning", "late kick-offs"), else null.
+  - `kickoff_time_of_day` — a time-of-day band as stated ("morning", "late kick-offs"), else leave it out.
   - `fixture_pick` `{ order, count }` — fixtures picked by clock order. Set it ONLY when the query
     bounds HOW MANY fixtures: a stated number ("next 2 games" → `count` 2) or a singular ("next game"
-    → 1). A plural with no number ("upcoming games") bounds nothing — leave it null. `order` =
+    → 1). A plural with no number ("upcoming games") bounds nothing — leave it out. `order` =
     `earliest` for the soonest ones (next, upcoming, first), `latest` for the most recent past ones
     (last, previous). Whoever the matches belong to — named ("`<NAME>`'s next game") or a
     pronoun standing for one ("his next game") — goes to `teams`/`players` **and** `fixture_pick` is still
