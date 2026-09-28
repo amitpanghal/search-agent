@@ -12,7 +12,7 @@ import { resolveTimeWindow, eventMatchesTime, applyFixturePick, filterEventsByTi
 import { fold, contentTokens, lc, stripSettle } from "./lexical";
 import type { BetOffer, KEvent } from "./offering-client";
 import { buildBetslip } from "./combinations";
-import { picksByLeg } from "./resolve-market";
+import { picksByLeg, resolveMarkets } from "./resolve-market";
 import type { ResolvedLeg } from "./live-menu-types";
 import { queryNamesSport, adoptSport, resolveEntities } from "./resolve-entities";
 import { propagate, retier, byProminence, type Candidate } from "./ground-scope";
@@ -462,4 +462,12 @@ test("entity gate: a pick from a weak shortlist ships with a 'could also be' not
   assert.ok(settled.notes[0]!.includes("Showing Lamine A"), settled.notes[0]);
   assert.ok(settled.notes[0]!.includes("Lamine B"), settled.notes[0]);
   assert.equal(settled.clarifications.length, 0);
+});
+
+test("resolve-market: a 1X2 side code is never an outcomeLabel (the subject gate picks the side); Draw still is", async () => {
+  const menu = [{ label: "Full Time", outcomes: ["1", "Draw", "2"] }];
+  const saying = (outcome: string) => async () => [{ ref: 0, match: "exact", outcome }];
+  assert.equal((await resolveMarkets(["to win"], menu, saying("1")))[0]!.outcomeLabel, undefined);
+  assert.equal((await resolveMarkets(["to win"], menu, saying("2")))[0]!.outcomeLabel, undefined);
+  assert.equal((await resolveMarkets(["to draw"], menu, saying("Draw")))[0]!.outcomeLabel, "Draw");
 });
