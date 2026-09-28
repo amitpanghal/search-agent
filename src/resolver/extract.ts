@@ -15,7 +15,7 @@ import { normalizePlan } from "./normalize-plan";
 import { bedrockToolCall } from "./bedrock-call";
 
 // Label for logging/eval; the actual model id is read from BEDROCK_MODEL at call time.
-export const EXTRACTION_MODEL = process.env.BEDROCK_MODEL ?? "bedrock";
+export const EXTRACTION_MODEL = (process.env.LLM_PROVIDER === "openai" ? process.env.OPENAI_MODEL : process.env.BEDROCK_MODEL) ?? "bedrock";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 // The live SUPPORTED SPORTS menu — every built catalog, de-slugified for reading ("ice-hockey" → "ice

@@ -9,6 +9,7 @@
 import { BedrockRuntimeClient, ConverseCommand } from "@aws-sdk/client-bedrock-runtime";
 import { usageStore } from "./cost";
 import { emit } from "./trace";
+import { openaiToolCall } from "./openai-call";
 
 let cached: BedrockRuntimeClient | null = null;
 function client(): BedrockRuntimeClient {
@@ -31,9 +32,14 @@ export async function bedrockToolCall(
   // Per-stage override: BEDROCK_MODEL_<TOOLNAME> (BEDROCK_MODEL_EMIT_QUERY_PLAN / _SETTLE_CELLS / _PICK)
   // beats the shared BEDROCK_MODEL, so the three stages can run different models from .env alone.
   // BEDROCK_PRICE_* stays single-model — per-query cost is approximate under a mixed config.
+  // LLM_PROVIDER=openai sends every stage through openai-call.ts instead (same signature, same cost rows).
+  if (process.env.LLM_PROVIDER === "openai") return openaiToolCall(system, user, toolName, schema, maxTokens);
   const modelId = process.env[`BEDROCK_MODEL_${toolName.toUpperCase()}`] || process.env.BEDROCK_MODEL;
   if (!modelId) throw new Error("BEDROCK_MODEL must be set (e.g. us.amazon.nova-lite-v1:0).");
   emit({ kind: "llm-req", tool: toolName, model: modelId, system, user, schema });
+  // OpenAI GPT models on Converse reject temperature/topP at any value (400) and reason at `medium` by
+  // default; send neither knob and turn reasoning off so no reasoning tokens are billed.
+  const openai = modelId.includes("openai.");
 
   const res = await client().send(
     new ConverseCommand({
@@ -44,7 +50,8 @@ export async function bedrockToolCall(
         tools: [{ toolSpec: { name: toolName, inputSchema: { json: schema as never } } }],
         toolChoice: { tool: { name: toolName } }, // force the pick tool (Converse equivalent of forced tool_choice)
       },
-      inferenceConfig: { temperature: 0, maxTokens },
+      inferenceConfig: openai ? { maxTokens } : { temperature: 0, maxTokens },
+      additionalModelRequestFields: openai ? { reasoning: { effort: "none" } } : undefined,
     }),
   );
 
