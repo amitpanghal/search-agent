@@ -25,7 +25,8 @@ to just the part you recognise. Leave a **competition** as the query wrote it: a
 
 Emit **`sport`** — exactly one value from the SUPPORTED SPORTS list, copied verbatim. Read it from a named
 sport, from the teams/players/competition, or from the **market vocabulary** ("both teams to score" →
-football, "total games"/"aces" → tennis, "three-pointers" → basketball, "180s" → darts). If the sport is
+football, "total games"/"aces" → tennis, "three-pointers" → basketball, "180s" → darts, "fights"/"bout"/
+"the card" → boxing or ufc-mma, "map"/"maps" → esports). If the sport is
 genuinely none of them, emit `other`. Never invent a value that is not on the list.
 
 SUPPORTED SPORTS: {{SUPPORTED_SPORTS}}
@@ -138,7 +139,8 @@ Fill `direction` **whenever the query names a side**, alongside `line`:
   A band is not an over/under: "2+" means >= 2, and only a later stage that sees the offered rungs
   can place it. State the band; never translate it to `"over"`.
 - a negation — "won't score", "no goal", "**not** to go the distance" → `"no"`
-- an explicit affirmative → `"yes"`
+- `"yes"` only when the query says it ("BTTS yes"). A plain bet on a yes/no market ("both teams to
+  score", "in straight sets") states no side: leave `direction` out.
 
 Two cases take **no** direction, because neither names a side: a **team handicap** (the team is the
 subject), and a **bound** on the fixture's posted line (§4).
@@ -155,20 +157,21 @@ subject), and a **bound** on the fixture's posted line (§4).
   bound as the exact one.
   A price word with **no number** ("team to score first odds") means *any* price — omit `odds` entirely.
   Never emit an empty `odds: {}`.
-- **`combined_odds`** — top level of the plan, **never** on a selector. Use it ONLY when **all three**
-  hold: the plan has **two or more selectors**, the query prices them **together** ("combined", "for the
-  lot", "the accumulator", "all together", "for the pair"), AND the query **states a number** for that
-  combined price. A combining word alone ("parlay it") or a priceless question ("combined price?")
-  states no bound — omit the field entirely, exactly as a numberless "odds" omits `odds`. A price on a single bet is always that
-  selector's `odds`, however the sentence is phrased: "only if it pays more than 2.5", "only if above
-  6/1", "priced over 8/1" on one bet → `odds`, not `combined_odds`. A one-selector plan can never carry
-  `combined_odds`. It is always a **price** — a bound on the fixture's posted number is `line` (§4).
+- **`combined_odds`** — the price of the whole plan: top level, never on a selector, only with two or more
+  selectors. Emit it when a combining word — "combined", "the lot", "all together", "the accumulator",
+  "the pair", "parlay" — sits with a stated number: "above 3.5 combined", "only if the lot is above 4.0"
+  → `combined_odds: { min: … }`, and no selector carries that price. A price with no combining word
+  belongs to the bet it is said of, as that selector's `odds` ("only if above 6/1" on one bet). A
+  combining word with no number ("parlay it", "combined price?") states no bound: omit the field. It is
+  always a price; a bound on the fixture's posted number is `line` (§4).
 - **`odds_sort`** — a superlative on the **price**, when the query asks FOR the price-ranked outcome:
-  shortest / lowest / best / favourite → `"low"`; longest / highest / biggest / outsider → `"high"`.
+  shortest / lowest / favourite → `"low"`; longest / highest / biggest / best / outsider → `"high"`
+  ("best price" is the highest price on offer).
   Never a market named "shortest odds". A superlative inside a fixture filter ("games where the
   favourite is under 1.4") asks for no ranking — the price bound alone carries it. This ranks, `odds`
-  bounds: an ask naming a superlative AND stating a price emits both. A singular ask — "the favourite",
-  "the winner", "who wins" — always emits **both** `odds_sort: "low"` and `count: 1`, whatever the market.
+  bounds: an ask naming a superlative AND stating a price emits both. "The favourite" alone is a singular
+  ask: `odds_sort: "low"` and `count: 1`. A plain "who wins" / "the winner" names no price word: no sort, no
+  count — the whole field shows.
 - **`line_sort`** — a superlative on **how big the fixture's posted line is**: biggest / widest / highest
   → `"high"`, smallest / tightest → `"low"`. Ask what the superlative describes: what the bet **pays** →
   `odds_sort`; how big the **line** is → `line_sort`.
@@ -233,7 +236,9 @@ on every leg**.
 1. **Self-correction** — on a retraction ("Packers @ Steelers — actually the Colts game"), emit **only**
    the corrected intent and drop the retracted entity completely.
 2. **Never fabricate** — never invent a market, time, player, price or entity, and never swap a vague
-   concept for a narrower one. Omit a field rather than guess. Every stated number is spent **exactly
+   concept for a narrower one. Copy every name exactly as the query spells it, even when you believe it
+   is wrong or know a different opponent: the query is the only source of names. Omit a field rather
+   than guess. Every stated number is spent **exactly
    once**: once placed in a field (`line`, `odds`, `count`, a window), never copy it into a second one —
    a vague quantity ("a lot of points") states no value at all.
 3. **Emit only fields that carry a value** — omit any key whose value would be null or an empty

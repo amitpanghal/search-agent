@@ -12,7 +12,7 @@
 {"id":"t014","legs":[{"m":["total games"]}],"teams":["Giron","Rocha"]}
 {"id":"t018","legs":[{"subj":"player:Svrcina","m":["to win a set"],"odds":{"min":1.5}}]}
 {"id":"t020","stage":"set 2","legs":[{"m":["@CORRECT"]}],"teams":["Broady","Suresh"]}
-{"id":"t021","legs":[{"m":["@CORRECT"],"osort":"low"}],"teams":["Giron","Rocha"]}
+{"id":"t021","legs":[{"m":["@CORRECT"],"osort":"high"}],"teams":["Giron","Rocha"]}
 {"id":"t023","legs":[{"m":["@WIN"]}],"teams":["Giron","Rocha"]}
 {"id":"t024","legs":[{"subj":"player:Mejia","m":["straight sets","@CORRECT"]}]}
 {"id":"t026","legs":[{"m":["total sets"],"line":2.5,"dir":"over"}],"teams":["Lajal","Svrcina"]}
@@ -23,7 +23,7 @@
 // ---- football ----
 {"id":"f001","comp":"Premier League","time":"w:this weekend","legs":[{"m":["total goals"],"lsort":"high"}]}
 {"id":"f002","comp":"Premier League","time":"w:this weekend","legs":[{"subj":"either:home","m":["@WIN"],"odds":{"max":1.8}}]}
-{"id":"f004","comp":"Premier League","time":"w:this weekend","legs":[{"subj":"player","m":["anytime goalscorer","to score anytime"],"osort":"low"}]}
+{"id":"f004","comp":"Premier League","time":"w:this weekend","legs":[{"subj":"player","m":["anytime goalscorer","to score anytime"],"osort":"high"}]}
 {"id":"f005","teams":["Coventry"],"legs":[{"subj":"player:Saka","m":["to score or assist"],"odds":{"min":2}}]}
 {"id":"f007","teams":["Arsenal","Coventry"],"legs":[{"m":["both teams to score"],"odds":{"min":2.5}}]}
 {"id":"f008","comp":"Premier League","legs":[{"m":["total goals"],"line":{"min":3.5}}]}
@@ -81,7 +81,7 @@
 {"id":"b004","comp":"WNBA","time":"w:tonight","legs":[{"m":["total points","total"],"dir":"under","line":{"max":158}}]}
 {"id":"b005","legs":[{"subj":"player:Arike Ogunbowale","m":["points and rebounds"],"line":25.5,"dir":"over"}]}
 {"id":"b007","comp":"NBA","level":"competition","legs":[{"m":["@OUTRIGHT","to win the title"]}]}
-{"id":"b008","level":"competition","legs":[{"m":["regular season wins","games won"],"line":50,"osort":"low"}]}
+{"id":"b008","level":"competition","legs":[{"m":["regular season wins","games won"],"line":50,"osort":"high"}]}
 {"id":"b010","legs":[{"subj":"player:Bueckers","m":["points","to score 20+"],"line":20},{"subj":"team:Wings","m":["@WIN"]}]}
 {"id":"b011","legs":[{"subj":"team:Valkyries","m":["@MARGIN"],"line":10,"odds":{"min":3}}]}
 {"id":"b013","comp":"CEBL","play":"live","main":true}
@@ -92,7 +92,7 @@
 {"id":"b020","legs":[{"subj":"player:Victor Wembanyama","m":["blocks"]}]}
 {"id":"b021","sport":["basketball","american-football","ice-hockey","baseball"],"level":"competition","legs":[{"m":["to reach the playoffs","make the playoffs"],"osort":"high"}]}
 {"id":"b023","comp":"WNBA","legs":[{"m":["overtime","to go to overtime"],"odds":{"min":9}}]}
-{"id":"b024","legs":[{"subj":"player:Marina Mabrey","m":["threes","three pointers"],"line":2.5,"dir":"over","osort":"low"}]}
+{"id":"b024","legs":[{"subj":"player:Marina Mabrey","m":["threes","three pointers"],"line":2.5,"dir":"over","osort":"high"}]}
 {"id":"b026","comp":"NBA","legs":[{"m":["@HCP"],"line":{"min":12}}]}
 {"id":"b027","teams":["Sky","Valkyries"],"legs":[{"m":["@WIN"]}]}
 {"id":"b029","comp":"NCAAW","time":"w:this weekend","main":true}
@@ -110,7 +110,7 @@
 {"id":"m014","legs":[{"subj":"team:Cubs","m":["to score a run in inning 1","score a run"],"odds":{"min":2}}]}
 {"id":"m016","teams":["Cubs","Nationals"],"legs":[{"m":["total runs"]}]}
 {"id":"m017","legs":[{"subj":"team:Tigers","m":["@WIN"]},{"m":["total runs","runs"],"line":9.5,"dir":"over"}]}
-{"id":"m019","legs":[{"subj":"player:Gabriel Moreno","m":["to hit a home run","home run"],"osort":"low"}]}
+{"id":"m019","legs":[{"subj":"player:Gabriel Moreno","m":["to hit a home run","home run"],"osort":"high"}]}
 {"id":"m020","legs":[{"subj":"team:Nationals","m":["first 5 innings handicap","@HCP"],"odds":{"min":2}}]}
 {"id":"m022","legs":[{"subj":"player:Gabriel Moreno","m":["hits","total hits"],"line":2}]}
 {"id":"m023","comp":"MLB","level":"competition","legs":[{"m":["to win their division","division winner"],"osort":"high"}]}
@@ -140,14 +140,14 @@
 {"id":"r026","comp":["NRL (W)","NRLW"],"time":"w:this weekend","main":true}
 {"id":"r028","legs":[{"subj":"team:Penrith","m":["@HTFT","lead and win"],"line":["Penrith/Penrith","lead and win","home/home"]}]}
 {"id":"r029","comp":"NRL","legs":[{"m":["@FAV"],"odds":{"max":1.3}}]}
-{"id":"cc11","comp":"NRL","stage":"grand final","level":"competition","legs":[{"m":["@OUTRIGHT"],"osort":"low"}]}
+{"id":"cc11","comp":"NRL","stage":"grand final","level":"competition","legs":[{"m":["@OUTRIGHT"],"osort":"high"}]}
 //
 // ---- ufc-mma ----
 {"id":"u001","legs":[{"m":["@DISTANCE"],"odds":{"min":2.2}}],"teams":["Neil Magny","Ramiz Brahimaj"]}
 {"id":"u002","time":"w:saturday","legs":[{"m":["@FAV"],"osort":"high"}]}
 {"id":"u004","legs":[{"subj":"player:Magny","m":["@METHOD","to win by decision"],"odds":{"min":3}}]}
 {"id":"u005","comp":"UFC","time":"w:saturday","main":true}
-{"id":"u007","legs":[{"m":["@METHOD","to win by submission"],"osort":"low"}]}
+{"id":"u007","legs":[{"m":["@METHOD","to win by submission"],"osort":"high"}]}
 {"id":"u008","stage":"round 3","legs":[{"subj":"player:Joel Álvarez","m":["round betting","winning round"],"odds":{"min":7}}]}
 {"id":"u010","legs":[{"m":["@METHOD"]}],"teams":["Magny","Brahimaj"]}
 {"id":"u011","legs":[{"subj":"player:Njokuani","m":["@WIN"]},{"m":["@DISTANCE"],"dir":"no"}]}
@@ -163,11 +163,11 @@
 //
 // ---- golf ----
 {"id":"g001","comp":"FedEx St. Jude Championship","level":"competition","legs":[{"m":["@OUTRIGHT"]}]}
-{"id":"g002","comp":"FedEx St. Jude Championship","level":"competition","legs":[{"m":["top 10 finish","top 10"],"osort":"low"}]}
+{"id":"g002","comp":"FedEx St. Jude Championship","level":"competition","legs":[{"m":["top 10 finish","top 10"],"osort":"high"}]}
 {"id":"g004","comp":"Danish Golf Championship","level":"competition","main":true}
 {"id":"g005","comp":"Portland Classic","stage":"round 1","level":"competition","legs":[{"m":["best score","lowest round score"]}]}
 {"id":"g007","level":"competition","time":"w:this week","legs":[{"m":["@OUTRIGHT"],"osort":"high"}]}
-{"id":"g008","legs":[{"m":["@WIN"],"osort":"low"}],"teams":["Wenyi Ding","Freddy Schott"]}
+{"id":"g008","legs":[{"m":["@WIN"],"osort":"high"}],"teams":["Wenyi Ding","Freddy Schott"]}
 {"id":"g010","legs":[{"subj":"player:Hideki Matsuyama","m":["@WIN"],"odds":{"min":2.5}}],"teams":["Hideki Matsuyama","Tommy Fleetwood"]}
 {"id":"g011","level":"competition","time":"w:tomorrow","main":true}
 {"id":"g013","comp":"Swiss Ladies Open","level":"competition","legs":[{"m":["outright","@OUTRIGHT"],"osort":"low"}]}
@@ -215,7 +215,7 @@
 {"id":"e004","teams":["EMPIRE :3","ORA Temper"],"stage":"map 1","legs":[{"m":["total kills"],"line":21.5,"dir":"over"}]}
 {"id":"e005","stage":"map 1","legs":[{"subj":"player:bzm","m":["total kills"],"line":18.5,"dir":"over"}]}
 {"id":"e007","comp":"LEC","time":"w:this weekend","main":true}
-{"id":"e008","legs":[{"m":["@CORRECT","map score"],"line":"2-1","osort":"low"}]}
+{"id":"e008","legs":[{"m":["@CORRECT","map score"],"line":"2-1","osort":"high"}]}
 {"id":"e010","legs":[{"subj":"team:MVSK Secret","m":["@WIN"]},{"m":["total maps","maps"],"line":2.5,"dir":"over"}]}
 {"id":"e011","comp":"CS2","legs":[{"m":["map handicap","@HCP"],"line":{"min":4.5}}]}
 {"id":"e013","comp":"KPL","play":"live","main":true}
@@ -282,7 +282,7 @@
 //
 // ---- motorsports ----
 {"id":"z001","comp":"Cook Out 400","level":"competition","legs":[{"m":["@OUTRIGHT","race winner"]}]}
-{"id":"z002","comp":["IndyCar","IndyCar championship"],"level":"competition","legs":[{"m":["finishing position"],"osort":"low"}],"sport":["motorsports","formula-1"]}
+{"id":"z002","comp":["IndyCar","IndyCar championship"],"level":"competition","legs":[{"m":["finishing position"],"osort":"high"}],"sport":["motorsports","formula-1"]}
 {"id":"z004","comp":"Truck Series","level":"competition","time":"w:this weekend","main":true}
 {"id":"z005","comp":"Cook Out 400","legs":[{"m":["car number"]}]}
 //
@@ -309,17 +309,17 @@
 // ---- the long tail: one outright + one odds-sorted outright per sport ----
 {"id":"j001","comp":"FIH Hockey Women's World Cup","level":"competition","legs":[{"m":["@OUTRIGHT"]}]}
 {"id":"ch01","comp":"World Chess Championship","level":"competition","legs":[{"m":["@OUTRIGHT"]}]}
-{"id":"ch02","comp":"World Chess Championship","level":"competition","legs":[{"m":["finishing position"],"osort":"low"}]}
+{"id":"ch02","comp":"World Chess Championship","level":"competition","legs":[{"m":["finishing position"],"osort":"high"}]}
 {"id":"cy01","comp":["Vuelta","Vuelta a España"],"level":"competition","legs":[{"m":["@OUTRIGHT","general classification"]}]}
 {"id":"cy02","comp":"Vuelta a España","level":"competition","legs":[{"m":["@OUTRIGHT"],"osort":"low"}]}
 {"id":"tr01","comp":"Swedish Trotting Derby","level":"competition","legs":[{"m":["@OUTRIGHT"]}]}
 {"id":"tr02","comp":"Prix d'Amerique","level":"competition","legs":[{"m":["@OUTRIGHT"],"osort":"high"}]}
 {"id":"ga01","comp":"All-Ireland Hurling Championship","level":"competition","legs":[{"m":["@OUTRIGHT"]}]}
-{"id":"ga02","comp":"All-Ireland Senior Championship","level":"competition","legs":[{"m":["@OUTRIGHT"],"osort":"low"}]}
+{"id":"ga02","comp":"All-Ireland Senior Championship","level":"competition","legs":[{"m":["@OUTRIGHT"],"osort":"high"}]}
 {"id":"ws01","comp":"IBU World Cup","level":"competition","legs":[{"m":["@OUTRIGHT","overall standings"]}]}
 {"id":"ws02","comp":["FIS World Cup","FIS World Cup men's"],"level":"competition","legs":[{"m":["@OUTRIGHT"],"osort":"high"}]}
 {"id":"ww01","comp":"Royal Rumble","level":"competition","legs":[{"m":["@OUTRIGHT"]}]}
-{"id":"ww02","comp":["Money in the Bank","Men's Money in the Bank"],"level":"competition","legs":[{"m":["@OUTRIGHT","match winner"],"osort":"low"}]}
+{"id":"ww02","comp":["Money in the Bank","Men's Money in the Bank"],"level":"competition","legs":[{"m":["@OUTRIGHT","match winner"],"osort":"high"}]}
 {"id":"tv01","comp":"Rose of Tralee","level":"competition","legs":[{"m":["@OUTRIGHT"]}],"sport":["tv-novelty","other"]}
 {"id":"tv02","comp":"Strictly Come Dancing","level":"competition","legs":[{"m":["@OUTRIGHT"],"osort":"high"}]}
 {"id":"po01","comp":"Clacton by-election","level":"competition","legs":[{"m":["@OUTRIGHT","winning party"]}]}
