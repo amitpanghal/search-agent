@@ -1,0 +1,41 @@
+{
+  "family": "search-agent-dev",
+  "requiresCompatibilities": ["FARGATE"],
+  "networkMode": "awsvpc",
+  "cpu": "512",
+  "memory": "1024",
+  "runtimePlatform": { "operatingSystemFamily": "LINUX", "cpuArchitecture": "ARM64" },
+  "executionRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/search-agent-dev-execution-role",
+  "containerDefinitions": [
+    {
+      "name": "search-agent",
+      "image": "<ACCOUNT_ID>.dkr.ecr.<REGION>.amazonaws.com/search-agent:dev",
+      "essential": true,
+      "portMappings": [{ "containerPort": 3000, "protocol": "tcp" }],
+      "environment": [
+        { "name": "PORT", "value": "3000" },
+        { "name": "LLM_PROVIDER", "value": "openai" },
+        { "name": "OPENAI_MODEL", "value": "gpt-6-luna" },
+        { "name": "OPENAI_PRICE_IN", "value": "0.10" },
+        { "name": "OPENAI_PRICE_OUT", "value": "0.50" },
+        { "name": "OPENAI_PRICE_CACHED", "value": "0.01" },
+        { "name": "OPENAI_PRICE_CACHE_WRITE", "value": "0.125" }
+      ],
+      "secrets": [
+        {
+          "name": "OPENAI_API_KEY",
+          "valueFrom": "arn:aws:ssm:<REGION>:<ACCOUNT_ID>:parameter/search-agent/dev/OPENAI_API_KEY"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/search-agent-dev",
+          "awslogs-region": "<REGION>",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "stopTimeout": 30
+    }
+  ]
+}

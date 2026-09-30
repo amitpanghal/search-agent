@@ -1,0 +1,23 @@
+# Build context for the Dockerfile. Only package files, tsconfig, src/ and catalogData/ are copied in, but
+# everything listed here also stays out of the context upload: faster builds, and .env can never leak in.
+node_modules
+.git
+.env
+.env.*
+.claude
+.cursor
+.sweep
+.catalog-build
+planning
+docs
+queries
+scripts
+deploy
+README.md
+CLAUDE.md
+Case.md
+render.yaml
+*.jsonl
+*.log
+.DS_Store
+src/**/*.test.ts
