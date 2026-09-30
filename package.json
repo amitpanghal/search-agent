@@ -9,7 +9,7 @@
     "serve": "tsx --env-file=.env src/server/index.ts",
     "start": "tsx src/server/index.ts",
     "eval": "tsx src/eval/run.ts",
-    "test": "node --import tsx --test src/resolver/*.test.ts",
+    "test": "node --import tsx --test src/*/*.test.ts",
     "catalogs": "tsx scripts/build-catalogs.ts",
     "sweep": "tsx scripts/sweep-offerings.ts",
     "probe": "tsx --env-file=.env scripts/probe.ts",

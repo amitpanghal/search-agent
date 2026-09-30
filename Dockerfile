@@ -14,6 +14,10 @@ COPY tsconfig.json ./
 COPY src ./src
 COPY catalogData ./catalogData
 
+# The commit this image was built from, stamped on every log record (.git is not in the build context).
+ARG COMMIT
+ENV COMMIT=$COMMIT
+
 USER node
 EXPOSE 3000
 CMD ["node", "--import", "tsx", "src/server/index.ts"]

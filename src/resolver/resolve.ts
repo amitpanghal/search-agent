@@ -289,7 +289,7 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
     const fr = filterBySubject(scoped.offers, scoped.events, subjectName(leg, sel0.subject), subjId, subjSide);
     groupData.set(key, { scoped, fr });
     emit({ kind: "stage", stage: "scopeMenu", out: scoped });
-    emit({ kind: "stage", stage: "filter", out: fr });
+    emit({ kind: "stage", stage: "filter", out: { ...fr, legs: idxs } }); // `legs`: which selectors share this menu (the log reads it)
     idxs.forEach((i) => { keyByIdx[i] = key; });
     // "main" legs name no market — they skip the LLM pick entirely and fan out into every main market below.
     // Only the named legs go to resolveMarkets (keep the pick-index alignment to THOSE legs).

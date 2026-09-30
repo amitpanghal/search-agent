@@ -62,7 +62,7 @@ needed because the `docker` command is only a client; images are Linux and need 
 ```bash
 aws sso login --profile devluck
 aws ecr get-login-password --region eu-north-1 --profile devluck | docker login --username AWS --password-stdin <ACCOUNT_ID>.dkr.ecr.eu-north-1.amazonaws.com
-docker build --platform linux/arm64 -t search-agent:dev .
+docker build --platform linux/arm64 --build-arg COMMIT=$(git rev-parse --short HEAD) -t search-agent:dev .
 docker run --rm -p 3000:3000 --env-file .env search-agent:dev     # open http://localhost:3000/ → "ok", then Ctrl-C
 docker tag search-agent:dev <ACCOUNT_ID>.dkr.ecr.eu-north-1.amazonaws.com/search-agent:dev
 docker push <ACCOUNT_ID>.dkr.ecr.eu-north-1.amazonaws.com/search-agent:dev
@@ -120,7 +120,8 @@ Application Load Balancer → region → `search-agent-dev`.
 curl -N https://search-agent.bash.dev.kambi.cloud/query -H 'content-type: application/json' -d '{"query":"Arsenal to win tonight","tz":"Europe/Stockholm"}'
 ```
 
-Expect SSE events ending in `done`. CloudWatch → `/ecs/search-agent-dev` → newest stream shows the query.
+Expect SSE events ending in `done`. CloudWatch → `/ecs/search-agent-dev` → newest stream shows one JSON line
+`"type":"query"` for it, with `commit` set (null means the build skipped `--build-arg COMMIT`).
 Point the frontend at the HTTPS name; CORS on `/query` already allows any origin.
 
 ## Redeploy and rollback

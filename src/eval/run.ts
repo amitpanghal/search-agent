@@ -61,14 +61,15 @@ function loadMeta(): { schemaVersion?: string; catalogVersion?: string } {
 
 // `--from <probe.jsonl>`: replay plans already captured by `npm run probe --until=extract` instead of calling
 // the model. Same scorer, same report, zero cost — this is how a baseline gets re-scored after the GOLD changes
-// (only a prompt/model change needs fresh extractions).
+// (only a prompt/model change needs fresh extractions). Production log records (src/server/log.ts) replay too:
+// they carry the plan as `extract`.
 let replay: Map<string, QueryPlan> | null = null;
 function loadReplay(path: string): Map<string, QueryPlan> {
   const m = new Map<string, QueryPlan>();
   for (const line of readFileSync(path, "utf8").split("\n")) {
     if (!line.trim()) continue;
-    const row = JSON.parse(line) as { query: string; trace?: { stage?: string; out?: QueryPlan }[] };
-    const plan = row.trace?.find((t) => t.stage === "extract")?.out;
+    const row = JSON.parse(line) as { query: string; extract?: QueryPlan; trace?: { stage?: string; out?: QueryPlan }[] };
+    const plan = row.extract ?? row.trace?.find((t) => t.stage === "extract")?.out;
     if (plan) m.set(row.query, plan);
   }
   return m;
