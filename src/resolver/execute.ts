@@ -4,7 +4,7 @@
 // produces a ResponseEnvelope: one `results` card per event with a pick (its highlighted betoffers, each with the
 // single SELECTED outcome — theory §1, §4), plus a top-level `events[]` holding every referenced event block ONCE
 // (result events + betslip-leg events, deduped by id). Events with no pick never appear — the grouping IS the
-// prune. A leg priced into the betslip drops its standalone card on the combo's event only (the combo card
+// prune. A leg priced into the betslip drops its standalone card on its part's event only (the combo card
 // answers it there); its other fixtures keep theirs. A card
 // joins its event via highlighted[].eventId; `additional` (related-market suggestions) is a flat, query-scoped
 // list capped at 3.
@@ -92,7 +92,7 @@ export type ResponseEnvelope = {
   additional: EnvelopeHighlighted[]; // query-scoped related-market suggestions, flat + globally capped at 3
   notes: string[];
   clarificationNeeded: string | null;
-  betslip?: Combination; // the user's own resolved legs priced together; omitted when <2 combinable legs
+  betslip?: Combination; // the user's own resolved legs combined into one bet, a part per match; omitted when <2 legs combine
   cost?: QueryCost; // per-query LLM token usage + Bedrock cost, attached by runPipeline (see cost.ts)
 };
 
@@ -201,7 +201,8 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
 
   // Outcomes already priced INTO the betslip: a leg fully covered here is answered by the combo card, so its
   // standalone result card is dropped (the combined odds IS its price). A partially covered leg keeps its card.
-  const comboIds = new Set((input.betslip?.legs ?? []).map((l) => l.outcomeId));
+  const slipParts = input.betslip?.parts ?? [];
+  const comboIds = new Set(slipParts.flatMap((p) => p.legs.map((l) => l.outcomeId)));
 
   // group resolved legs by EVENT (insertion order preserved). A leg becomes a RESULT only when it picked a
   // market AND select returned a concrete outcome — the prune falls out: an event with no pick never appears.
@@ -282,10 +283,10 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
   const results: EnvelopeResult[] = groups.map((g) => ({ highlighted: g.highlighted }));
   const events: ResponseEvent[] = groups.map((g) => toEventBlock(g.event));
   const shownIds = new Set(events.map((e) => e.id));
-  for (const l of input.betslip?.legs ?? []) {
-    if (l.eventId == null || shownIds.has(l.eventId)) continue;
-    const e = eventById.get(l.eventId);
-    if (e) { shownIds.add(l.eventId); events.push(toEventBlock(e)); }
+  for (const { eventId } of slipParts) {
+    if (shownIds.has(eventId)) continue;
+    const e = eventById.get(eventId);
+    if (e) { shownIds.add(eventId); events.push(toEventBlock(e)); }
   }
 
   // Round-robin across legs, rank by rank, until the global related-market budget (3) is spent.

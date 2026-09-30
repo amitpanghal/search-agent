@@ -430,8 +430,9 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
     for (const b of scoped.offers) execOffers.add(b);
   }
 
-  // Price the user's OWN resolved legs together as one EXACT betslip (same-event legs via the correlated
-  // priceCombo endpoint, cross-event legs multiply); omitted when <2 legs combine. Skipped on an all-main
+  // Combine the user's OWN resolved legs into ONE EXACT bet — a Bet Builder part per match holding 2+ of them (the
+  // correlated priceCombo endpoint), a single part per lone leg, parts multiplied (combinations.ts); omitted when
+  // <2 legs combine. Skipped on an all-main
   // browse: the "picks" are our own main-market fan-out, not user selections, so combining them is noise
   // (this also spares the onDemandPricing calls for same-event pick groups). Also skipped when <2 legs hold
   // a selection: a single leg's multi-fixture selectedIds are one answer PER fixture, not conjuncts — combining

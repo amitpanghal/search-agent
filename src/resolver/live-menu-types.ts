@@ -120,5 +120,5 @@ export type ExecuteInput = {
   notes?: string[];        // caller-built notes (e.g. unresolved time — needs the per-leg phrase)
   truncated?: boolean;     // recall hit the 2000-betoffer cap / a capped group fan-out
   fetchFailed?: boolean;   // a group/participant fetch errored (degraded to empty, not thrown)
-  betslip?: Combination;   // the user's OWN resolved legs priced together as one betslip; omitted when <2 combinable legs
+  betslip?: Combination;   // the user's OWN resolved legs combined into one bet, a part per match; omitted when <2 legs combine
 };

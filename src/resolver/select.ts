@@ -101,7 +101,29 @@ export const subjectOutcomes = (outcomes: KOutcome[], spec: { subjectId?: number
   return outcomes;
 };
 
+// MULTI-FIXTURE: a leg whose market sits on several fixtures ("over 2.5 goals", "Kane not to score" across a
+// team's next games) answers ONCE PER FIXTURE — the same rules re-run on each fixture's own betoffers — so the
+// betslip can put the leg on the fixture the other legs share, not whichever one the feed listed first (a lone
+// pick pinned "over 2.5 first half" to Viking while Kane was only priced at Augsburg). The whole-slice pick stays
+// the primary — an exact line on one fixture still beats a nearest rung on another — and another fixture joins
+// only with a pick on that same line. Ranking asks (price sort / count / line sort) compare fixtures against each
+// other, and the no-line/no-side branch already flags one per fixture, so both come back as-is.
 export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; away?: string } = {}): Selection {
+  const s = selectOne(slice, spec, ctx);
+  const eventIds = [...new Set(slice.betOffers.map((b) => b.eventId).filter((id): id is number => id != null))];
+  if (s.outcomeId == null || s.selectedIds || eventIds.length < 2 || spec.sort || spec.count != null || spec.lineSort) return s;
+  const own = slice.betOffers.find((b) => b.outcomes?.some((o) => o.id === s.outcomeId))?.eventId;
+  const ids = [s.outcomeId];
+  for (const eid of eventIds) {
+    if (eid === own) continue;
+    const e = slice.events.find((x) => x.id === eid);
+    const p = selectOne({ events: e ? [e] : [], betOffers: slice.betOffers.filter((b) => b.eventId === eid) }, spec, { home: e?.homeName, away: e?.awayName });
+    if (p.outcomeId != null && p.line === s.line) ids.push(p.outcomeId);
+  }
+  return ids.length > 1 ? { ...s, selectedIds: ids } : s;
+}
+
+function selectOne(slice: Slice, spec: SelectSpec, ctx: { home?: string; away?: string } = {}): Selection {
   // resolve a relational subject to the fixture's team name; a plain name passes through
   const subjName = spec.subject === "home" ? ctx.home : spec.subject === "away" ? ctx.away : spec.subject;
   const relational = spec.subject === "home" || spec.subject === "away";
@@ -402,16 +424,18 @@ export function select(slice: Slice, spec: SelectSpec, ctx: { home?: string; awa
     return absent("side-absent");
   }
 
-  // ---- (4) no direction / no line -> the owner-bound affirmative (Yes), else the single survivor ----
-  const yes = !hasNamed ? pool.find(({ o }) => dirOf(o) === "yes") : undefined;
-  const chosen = (yes ?? pool[0])?.o;
-  if (!chosen) return absent("subject-absent");
+  // ---- (4) no direction / no line -> the owner-bound affirmative (Yes), else an over/under ladder's LOWEST
+  // Over ("France to score" = Over 0.5, never whichever rung the feed lists first), else the single survivor ----
+  const yes = !hasNamed ? pool.filter(({ o }) => dirOf(o) === "yes") : [];
+  const overs = pool.filter(({ o }) => dirOf(o) === "over" && lineOf(o) != null).sort((a, b) => lineOf(a.o)! - lineOf(b.o)!);
   // MULTI-FIXTURE: the pool holds one answer PER FIXTURE, each its own -> flag one per event, not just the
   // first. Not only the relational case ("home teams to win"): a NAMED subject spans fixtures too ("City to
   // win", several upcoming games), and flagging only the first leaves every later card rendered with nothing
   // selected. Dedupe over the answers `chosen` came from, so the flagged id per event matches the pick rule.
   // A single-fixture pool keeps single-pick semantics, unchanged.
-  const answers = yes ? pool.filter(({ o }) => dirOf(o) === "yes") : pool;
+  const answers = yes.length ? yes : overs.length ? overs : pool;
+  const chosen = answers[0]?.o;
+  if (!chosen) return absent("subject-absent");
   const perEvent = new Map<number, number>();
   for (const { o, bo } of answers) if (bo.eventId != null && o.id != null && !perEvent.has(bo.eventId)) perEvent.set(bo.eventId, o.id);
   return withPool(chosen, undefined, ids, perEvent.size > 1 ? [...perEvent.values()] : undefined);

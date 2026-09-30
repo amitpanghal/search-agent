@@ -1,13 +1,13 @@
-// COMBINATIONS — price the user's OWN resolved legs together as one betslip (bet-builder "EXACT" combo).
-// Same-event legs are priced by the feed's correlated onDemandPricing endpoint (their joint price is NOT the
-// product); cross-event legs multiply. No fetching beyond the injected priceCombo, no LLM.
+// COMBINATIONS — combine the user's OWN resolved legs into ONE bet ("EXACT"), one part per match: 2+ legs on a
+// match are a Bet Builder priced by the feed's correlated onDemandPricing endpoint (a same-event joint price is
+// NOT the product); a leg alone on its match is a single at its own odds. Parts are different matches, so they
+// multiply. No fetching beyond the injected priceCombo, no LLM.
 
 import { levelOf, type BetOffer, type KEvent, type KOutcome } from "./offering-client";
 import type { ResolvedLeg } from "./live-menu-types";
 
 // One leg of the priced combination, rendered for the envelope (odds/line stay RAW integer millis).
 export type CombinationLeg = {
-  eventId?: number;
   market: string;      // criterion englishLabel ("Total Goals")
   outcome: string;     // outcome englishLabel ("Over", "France", "Yes")
   participant?: string;
@@ -15,26 +15,34 @@ export type CombinationLeg = {
   matched?: boolean;   // true when this leg is one of the user's exact resolved picks
   outcomeId: number;   // the feed outcome id (the betslip selection id) — set on every leg so the frontend can add it
 };
-// The user's resolved legs priced together as one betslip (`tag` EXACT).
-export type Combination = {
-  odds: number;        // RAW millis combined price (3750 = 3.75)
-  tag: string;
+// One match inside the combination: a Bet Builder (2+ legs priced together) or a single (1 leg at its own odds).
+export type CombinationPart = {
+  eventId: number;
+  odds: number;        // RAW millis — the Bet Builder's joint price, or the single's own odds
   legs: CombinationLeg[];
+};
+// The user's resolved legs combined into ONE bet (`tag` EXACT) — one card, a section per part.
+export type Combination = {
+  odds: number;        // RAW millis combined price (3750 = 3.75) — the product of the parts. Not for display
+  oddsLabel: string;   // the combined price exactly as the Kambi betslip shows it ("4.35") — the frontend prints this
+  tag: string;
+  parts: CombinationPart[];
 };
 
 // The correlated same-event pricing call (offering-client.onDemandPricing), injected so buildBetslip stays pure.
 export type PriceCombo = (eventId: number, outcomeIds: number[], lang?: string) => Promise<number | null>;
 
-// EXACT betslip — price the user's OWN resolved legs together. Fixture-level picks only
+// EXACT combination — price the user's OWN resolved legs together. Fixture-level picks only
 // (competition/outright picks have no match event to price against). Each LEG contributes AT MOST ONE pick:
 // a multi-fixture leg ("City to win" over its next 3 games) is one intent, never an accumulator of itself.
 // Legs are assigned to events greedily — the event covering the most legs first (soonest kickoff tie-break) —
-// so co-occurring legs price as ONE correlated `priceCombo` group and genuinely-disjoint legs multiply as a
-// cross-event double. A group the feed refuses whole is retried on its subsets (largest first — see
-// priceLargest); a group where NOTHING prices bans that event and its legs re-assign to their other fixtures
-// (the "City to win and Liverpool to win" pair that happen to meet next becomes the intended double).
-// <2 surviving legs -> no betslip. Legs keep query order and carry `outcomeId` so the frontend can show what's
-// in vs out. RAW millis.
+// so co-occurring legs price as ONE correlated `priceCombo` group (a Bet Builder part) and genuinely-disjoint
+// legs are single parts. A group the feed refuses whole is retried on its subsets (largest first — see
+// priceLargest): a leg that can't combine with its match drops out of the combination and keeps its result
+// card. A group where NOTHING prices bans that event and its legs re-assign to their other fixtures (the
+// "City to win and Liverpool to win" pair that happen to meet next becomes the intended double).
+// <2 surviving legs -> no combination. Parts, and legs inside a part, keep query order; legs carry `outcomeId`
+// so the frontend can show what's in vs out. RAW millis.
 
 // k-subsets of arr in lexicographic index order — the tie-break: among same-size subsets, the one keeping the
 // earliest-mentioned legs is generated (and therefore picked) first.
@@ -61,6 +69,13 @@ async function priceLargest(eventId: number, ids: number[], priceCombo: PriceCom
   }
   return null;
 }
+
+// Kambi's own decimal display rule (formatDecimalOdds in @kambi/betting-client-helpers, which the betslip uses):
+// 2 decimals below 100, 1 below 1000, none above.
+const kambiOddsLabel = (rawMillis: number): string => {
+  const n = rawMillis / 1000;
+  return n < 100 ? n.toFixed(2) : n < 1000 ? n.toFixed(1) : n.toFixed(0);
+};
 
 export async function buildBetslip(
   legs: ResolvedLeg[],
@@ -114,12 +129,12 @@ export async function buildBetslip(
   const legOf = (id: number) => legPicks.findIndex((p) => [...p.values()].includes(id));
 
   // Price the assigned groups (all in parallel): ≥2 picks -> the largest combinable subset via the correlated
-  // API (priceLargest); single -> the outcome's own odds; groups multiply. A group where NOTHING prices bans
-  // that event and re-assigns its legs to their remaining fixtures next round; legs merely outside a priced
-  // subset fall out for good (keep their result cards). A re-assigned leg landing on an ALREADY-PRICED event
-  // MERGES into that event's group and the whole group re-prices correlated: one event holds ONE price, never
-  // two that multiply (a same-event joint price is not the product of the singles) — so the multiply happens
-  // only at the end, from each event's FINAL group. A refused merge keeps the group that already priced.
+  // API (priceLargest); single -> the outcome's own odds. A group where NOTHING prices bans that event and
+  // re-assigns its legs to their remaining fixtures next round; legs merely outside a priced subset fall out for
+  // good (keep their result cards). A re-assigned leg landing on an ALREADY-PRICED event MERGES into that event's
+  // group and the whole group re-prices correlated: one event holds ONE price, never two that multiply (a
+  // same-event joint price is not the product of the singles) — so the multiply happens only at the end, from
+  // each event's FINAL group. A refused merge keeps the group that already priced.
   // ponytail: 3 reassign rounds — a chain of 3 fully-refused events leaves the tail legs un-combined.
   const pricedAt = new Map<number, { ids: number[]; price: number }>(); // eventId -> its ONE priced group
   const banned = new Set<number>();
@@ -144,28 +159,27 @@ export async function buildBetslip(
     });
   }
 
-  const survivors = new Set<number>();
-  let product = 1;
-  for (const { ids, price } of pricedAt.values()) { product *= price / 1000; for (const id of ids) survivors.add(id); }
-
-  const outLegs: CombinationLeg[] = [];
-  for (const l of legs) {
-    for (const id of l.selection?.selectedIds ?? (l.selection?.outcomeId != null ? [l.selection.outcomeId] : [])) {
-      if (!survivors.has(id)) continue;
-      survivors.delete(id); // emit each surviving pick once, in query order
-      const { b, o } = byOutcome.get(id)!;
-      outLegs.push({
-        ...(b.eventId != null ? { eventId: b.eventId } : {}),
-        market: b.criterion?.label ?? b.criterion?.englishLabel ?? "?",
-        outcome: o.label ?? o.englishLabel ?? "?",
-        ...(o.participant ? { participant: o.participant } : {}),
-        ...(o.line != null ? { line: o.line } : {}),
-        outcomeId: id,
-        matched: true,
-      });
-    }
-  }
-
-  if (outLegs.length < 2) return undefined;
-  return { tag: "EXACT", odds: Math.round(product * 1000), legs: outLegs };
+  // Each event's FINAL group is one part (a Bet Builder, or a single); the parts multiply. Group ids are already in
+  // leg order, so sorting the parts by their first leg keeps query order.
+  const toLeg = (id: number): CombinationLeg => {
+    const { b, o } = byOutcome.get(id)!;
+    return {
+      market: b.criterion?.label ?? b.criterion?.englishLabel ?? "?",
+      outcome: o.label ?? o.englishLabel ?? "?",
+      ...(o.participant ? { participant: o.participant } : {}),
+      ...(o.line != null ? { line: o.line } : {}),
+      outcomeId: id,
+      matched: true,
+    };
+  };
+  const parts = [...pricedAt]
+    .sort(([, a], [, b]) => legOf(a.ids[0]!) - legOf(b.ids[0]!))
+    .map(([eventId, g]) => ({ eventId, odds: g.price, legs: g.ids.map(toLeg) }));
+  if (parts.reduce((n, p) => n + p.legs.length, 0) < 2) return undefined;
+  // Priced exactly the way the Kambi betslip prices it, so the card and the slip always agree: the RAW product in
+  // the slip's order (singles first, then Bet Builders — at a tie the float order moves the last digit), rounded
+  // ONCE for display. Rounding to millis first rounds twice: 1.58 × 2.75 -> 4345 -> "4.34" vs the slip's "4.35".
+  const product = [...parts.filter((p) => p.legs.length === 1), ...parts.filter((p) => p.legs.length > 1)]
+    .reduce((x, p) => x * (p.odds / 1000), 1);
+  return { tag: "EXACT", odds: Math.round(product * 1000), oddsLabel: kambiOddsLabel(product * 1000), parts };
 }

@@ -11,7 +11,7 @@ import assert from "node:assert/strict";
 import { resolveTimeWindow, eventMatchesTime, applyFixturePick, filterEventsByTime } from "./time-window";
 import { fold, contentTokens, lc, stripSettle } from "./lexical";
 import type { BetOffer, KEvent } from "./offering-client";
-import { buildBetslip } from "./combinations";
+import { buildBetslip, type Combination } from "./combinations";
 import { picksByLeg, resolveMarkets } from "./resolve-market";
 import type { ResolvedLeg } from "./live-menu-types";
 import { queryNamesSport, adoptSport, resolveEntities } from "./resolve-entities";
@@ -217,12 +217,14 @@ const slipFixture = () => {
   const legs: ResolvedLeg[] = [1, 2, 3, 4].map((id) => ({ phrase: `leg${id}`, pick: { label: `M${id}`, match: "exact" }, selection: { outcomeId: id } }));
   return { legs, offers, events: [{ id: 100, tags: ["MATCH"] }] as KEvent[] };
 };
+// The priced slip's picks as [eventId, outcomeId], across its parts in order.
+const picksOf = (s?: Combination) => s?.parts.flatMap((p) => p.legs.map((l) => [p.eventId, l.outcomeId]));
 
 test("betslip: one toxic leg falls out, the biggest combo prices in 2 rounds", async () => {
   const { legs, offers, events } = slipFixture();
   const calls: number[][] = [];
   const slip = await buildBetslip(legs, offers, events, async (_e, ids) => { calls.push(ids); return ids.includes(4) ? null : 15000; });
-  assert.deepEqual(slip?.legs.map((l) => l.outcomeId), [1, 2, 3]); // pen-style leg 4 excluded, not the whole group
+  assert.deepEqual(picksOf(slip), [[100, 1], [100, 2], [100, 3]]); // pen-style leg 4 excluded, not the whole group
   assert.equal(slip?.odds, 15000);
   assert.equal(calls.length, 5); // full set + the 4 triples; pairs never tried
 });
@@ -231,7 +233,7 @@ test("betslip tie-break: among same-size combinable subsets, keep the earliest-m
   const { legs, offers, events } = slipFixture();
   // legs 1 and 2 conflict with EACH OTHER; every set avoiding that pair prices. [1,3,4] must beat [2,3,4].
   const slip = await buildBetslip(legs, offers, events, async (_e, ids) => (ids.includes(1) && ids.includes(2) ? null : 12000));
-  assert.deepEqual(slip?.legs.map((l) => l.outcomeId), [1, 3, 4]); // drops the later-mentioned conflicting leg
+  assert.deepEqual(picksOf(slip), [[100, 1], [100, 3], [100, 4]]); // drops the later-mentioned conflicting leg
 });
 
 // ---- betslip event assignment: one pick per LEG, shared event first, refusal re-assigns ------------------
@@ -262,14 +264,14 @@ test("betslip: two fan-out legs collapse to ONE correlated pair on the soonest s
   const slip = await buildBetslip(legs, offers, events, async (e, ids) => { calls.push([e, ids]); return 2030; });
   assert.deepEqual(calls, [[100, [1, 3]]]); // one correlated call, soonest event only — never an accumulator
   assert.equal(slip?.odds, 2030);
-  assert.deepEqual(slip?.legs.map((l) => [l.eventId, l.outcomeId]), [[100, 1], [100, 3]]);
+  assert.deepEqual(picksOf(slip), [[100, 1], [100, 3]]);
 });
 
 test("betslip: a refused shared event re-assigns its legs — rivals who meet next still get their double", async () => {
   const { legs, offers, events } = fanoutFixture(); // shared event 100 refuses (e.g. City win + Liverpool win same game)
   const slip = await buildBetslip(legs, offers, events, async (e) => (e === 100 ? null : 9999));
   // both legs fall back to event 200: still same-event there -> one correlated group on the next fixture
-  assert.deepEqual(slip?.legs.map((l) => [l.eventId, l.outcomeId]), [[200, 2], [200, 4]]);
+  assert.deepEqual(picksOf(slip), [[200, 2], [200, 4]]);
   assert.equal(slip?.odds, 9999);
 });
 
@@ -296,7 +298,7 @@ test("betslip: a leg re-assigned onto an already-priced event re-prices correlat
   const slip = await buildBetslip(legs, offers, events, async (e, ids) => { calls.push([e, ids]); return e === 100 ? null : 9999; });
   assert.deepEqual(calls, [[100, [1, 3]], [200, [2, 4]]]); // the merged ev200 pair IS re-priced correlated
   assert.equal(slip?.odds, 9999); // the joint price, never 1.5 × 1.7 = 2550
-  assert.deepEqual(slip?.legs.map((l) => [l.eventId, l.outcomeId]), [[200, 2], [200, 4]]);
+  assert.deepEqual(picksOf(slip), [[200, 2], [200, 4]]);
 });
 
 test("betslip: legs on disjoint events multiply as a genuine cross-event double", async () => {
@@ -313,7 +315,42 @@ test("betslip: legs on disjoint events multiply as a genuine cross-event double"
   const slip = await buildBetslip(legs, offers, events, async () => { called = true; return null; });
   assert.equal(called, false); // singles use their own odds — the correlated API is never hit
   assert.equal(slip?.odds, 6000); // 2.0 × 3.0
-  assert.deepEqual(slip?.legs.map((l) => l.outcomeId), [1, 2]);
+  assert.deepEqual(picksOf(slip), [[100, 1], [200, 2]]); // two single parts
+});
+
+test("betslip: two Bet Builders and a single make ONE combination — a part per match, the parts multiply", async () => {
+  // "Kane to score and Bayern to win, Saka to score and Arsenal to win, Chelsea to win": legs 1-2 @100, 3-4 @200,
+  // 5 alone @300. Each pair is a Bet Builder at its match's joint price, leg 5 a single at its own odds; the
+  // parts keep query order even though match 200 kicks off first.
+  const offers = [1, 2, 3, 4, 5].map((id) => ({
+    id: 10 + id, eventId: id <= 2 ? 100 : id <= 4 ? 200 : 300, criterion: { id, englishLabel: `M${id}` },
+    outcomes: [{ id, odds: 2000 }],
+  })) as BetOffer[];
+  const legs: ResolvedLeg[] = [1, 2, 3, 4, 5].map((id) => ({ phrase: `leg${id}`, pick: { label: `M${id}`, match: "exact" }, selection: { outcomeId: id } }));
+  const events = [
+    { id: 100, tags: ["MATCH"], start: "2026-10-10T13:30:00Z" },
+    { id: 200, tags: ["MATCH"], start: "2026-10-10T11:30:00Z" },
+    { id: 300, tags: ["MATCH"], start: "2026-10-11T15:00:00Z" },
+  ] as KEvent[];
+  const slip = await buildBetslip(legs, offers, events, async (e) => (e === 100 ? 1470 : 3050));
+  assert.deepEqual(slip?.parts.map((p) => [p.eventId, p.odds, p.legs.map((l) => l.outcomeId)]), [[100, 1470, [1, 2]], [200, 3050, [3, 4]], [300, 2000, [5]]]);
+  assert.equal(slip?.odds, 8967); // 1.47 × 3.05 × 2.0
+});
+
+// [eventId, odds] per leg in query order: an optional Bet Builder pair (event 900, priced `bb`) first, then a single per event.
+const comboLabel = async (singles: number[], bb?: number) => {
+  const outs = [...(bb ? [[900, 2000], [900, 2000]] : []), ...singles.map((odds, i) => [100 + i, odds])] as [number, number][];
+  const offers = outs.map(([eventId, odds], i) => ({ id: 10 + i, eventId, criterion: { id: i, englishLabel: `M${i}` }, outcomes: [{ id: i + 1, odds }] })) as BetOffer[];
+  const legs: ResolvedLeg[] = outs.map((_, i) => ({ phrase: `leg${i}`, pick: { label: `M${i}`, match: "exact" }, selection: { outcomeId: i + 1 } }));
+  const events = [...new Set(outs.map(([e]) => e))].map((id) => ({ id, tags: ["MATCH"] })) as KEvent[];
+  return (await buildBetslip(legs, offers, events, async () => bb ?? null))?.oddsLabel;
+};
+
+test("betslip: oddsLabel is what the Kambi betslip shows — raw product, singles first, rounded once", async () => {
+  assert.equal(await comboLabel([1580, 2750]), "4.35");        // Finland × Moldova — millis-first rounding showed 4.34
+  assert.equal(await comboLabel([1010, 1450]), "1.46");        // …and 1.47 in the other direction
+  assert.equal(await comboLabel([11000, 12133]), "133.5");     // 1 decimal from 100 up, like the slip
+  assert.equal(await comboLabel([1450, 4200], 7500), "45.67"); // Bet Builder asked first still multiplies last
 });
 
 // ---------------------------------------------------------------------------------------------------------
@@ -367,6 +404,20 @@ test("select: zero-of-the-stat needs the real 0.5 rung — a ladder starting hig
     assert.equal(sel.outcomeId, undefined, `dir=${dir} must not pick a far rung`);
     assert.ok(sel.fallback, `dir=${dir} must degrade honestly`);
   }
+});
+
+test("select: a line leg on several fixtures picks that line on EACH; a fixture without it never stands in", () => {
+  // "over 2.5 first half" across a team's next two games: the feed lists fixture 200 first. One pick per fixture
+  // lets the betslip land the leg on the fixture the other legs share, not whichever the feed listed first.
+  const ou = (id: number, eventId: number, line: number): BetOffer => ({
+    id, eventId, betOfferType: { id: 6 }, criterion: { label: "Total Goals - 1st Half" },
+    outcomes: [{ id: id * 10 + 1, type: "OT_OVER", line }, { id: id * 10 + 2, type: "OT_UNDER", line }],
+  }) as unknown as BetOffer;
+  const events = [{ id: 100 }, { id: 200 }] as KEvent[];
+  const both = select({ events, betOffers: [ou(1, 200, 2500), ou(2, 100, 1500), ou(3, 100, 2500)] }, { lineValue: 2.5, dir: "over" });
+  assert.deepEqual([both.outcomeId, both.selectedIds], [11, [11, 31]]); // Over 2.5 on each, feed-first stays primary
+  const one = select({ events, betOffers: [ou(1, 200, 1500), ou(3, 100, 2500)] }, { lineValue: 2.5, dir: "over" });
+  assert.deepEqual([one.outcomeId, one.selectedIds], [31, undefined]); // 200's 1.5 is a nearest rung, not 2.5
 });
 
 // ---------------------------------------------------------------------------------------------------------
@@ -470,4 +521,17 @@ test("resolve-market: a 1X2 side code is never an outcomeLabel (the subject gate
   assert.equal((await resolveMarkets(["to win"], menu, saying("1")))[0]!.outcomeLabel, undefined);
   assert.equal((await resolveMarkets(["to win"], menu, saying("2")))[0]!.outcomeLabel, undefined);
   assert.equal((await resolveMarkets(["to draw"], menu, saying("Draw")))[0]!.outcomeLabel, "Draw");
+});
+
+test("select: no side and no line on an over/under ladder picks the LOWEST Over, not the feed's first rung", () => {
+  const ou = (id: number, line: number): BetOffer => ({
+    id, eventId: 9, betOfferType: { id: 6 }, criterion: { label: "Total Goals by France" },
+    outcomes: [
+      { id: id * 10 + 1, type: "OT_OVER", line },
+      { id: id * 10 + 2, type: "OT_UNDER", line },
+    ],
+  }) as unknown as BetOffer;
+  const pick = (lines: number[]) => select({ events: [{ id: 9 }] as KEvent[], betOffers: lines.map((l, i) => ou(i + 1, l)) }, { subjectId: 321, subject: "France" });
+  assert.deepEqual([pick([1500, 2500, 500]).line, pick([1500, 2500, 500]).outcomeId], [0.5, 31], "'France to score' = Over 0.5");
+  assert.equal(pick([2500, 1500, 3500]).line, 1.5, "no 0.5 rung -> the lowest offered, never a drop");
 });

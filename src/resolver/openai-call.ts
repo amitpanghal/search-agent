@@ -3,15 +3,16 @@
 // LLM_PROVIDER=openai — for models the AWS account cannot reach on Bedrock (GPT-6 Luna, 2026-09). Usage lands in the per-query cost store with
 // OPENAI_PRICE_* on the row, so the envelope's cost block stays right under a mixed config.
 //
-// Config (env): OPENAI_API_KEY, OPENAI_MODEL (e.g. gpt-6-luna), OPENAI_PRICE_IN / OPENAI_PRICE_OUT / OPENAI_PRICE_CACHED
-// (USD per 1M, unset => cost reports 0), OPENAI_BASE_URL (default https://api.openai.com/v1; eu.api.openai.com/v1 for EU residency).
+// Config (env): OPENAI_API_KEY, OPENAI_MODEL (e.g. gpt-6-luna), OPENAI_PRICE_IN / OPENAI_PRICE_OUT / OPENAI_PRICE_CACHED /
+// OPENAI_PRICE_CACHE_WRITE (USD per 1M, unset => cost reports 0; an unset CACHE_WRITE prices writes as plain input),
+// OPENAI_BASE_URL (default https://api.openai.com/v1; eu.api.openai.com/v1 for EU residency).
 
 import { usageStore } from "./cost";
 import { emit } from "./trace";
 
 type Resp = {
   error?: { message?: string };
-  usage?: { prompt_tokens?: number; completion_tokens?: number; prompt_tokens_details?: { cached_tokens?: number } };
+  usage?: { prompt_tokens?: number; completion_tokens?: number; prompt_tokens_details?: { cached_tokens?: number; cache_write_tokens?: number } };
   choices?: Array<{ finish_reason?: string; message?: { content?: string | null; tool_calls?: Array<{ function?: { arguments?: string } }> } }>;
 };
 
@@ -41,9 +42,11 @@ export async function openaiToolCall(
 
   const inputTokens = body.usage?.prompt_tokens ?? 0, outputTokens = body.usage?.completion_tokens ?? 0;
   const cachedTokens = body.usage?.prompt_tokens_details?.cached_tokens ?? 0; // automatic for prompts > 1,024 tokens; counted inside prompt_tokens
-  usageStore.getStore()?.push({ tool: toolName, inputTokens, outputTokens, cachedTokens,
+  const cacheWriteTokens = body.usage?.prompt_tokens_details?.cache_write_tokens ?? 0; // GPT-5.6+ bills these at 1.25× input; also inside prompt_tokens
+  usageStore.getStore()?.push({ tool: toolName, inputTokens, outputTokens, cachedTokens, cacheWriteTokens,
     priceIn: Number(process.env.OPENAI_PRICE_IN ?? 0), priceOut: Number(process.env.OPENAI_PRICE_OUT ?? 0),
-    priceCached: Number(process.env.OPENAI_PRICE_CACHED ?? 0) });
+    priceCached: Number(process.env.OPENAI_PRICE_CACHED ?? 0),
+    priceCacheWrite: Number(process.env.OPENAI_PRICE_CACHE_WRITE || process.env.OPENAI_PRICE_IN || 0) });
 
   // The forced call's arguments are JSON; if the model answers in text instead, slice the JSON out (as bedrock-call does).
   const choice = body.choices?.[0];
