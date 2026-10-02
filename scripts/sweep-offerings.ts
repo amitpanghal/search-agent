@@ -14,10 +14,16 @@
 // ("A - B" vs "B @ A") — the last one is the root cause of the home/away side inversion the probes found.
 
 import { mkdirSync, writeFileSync } from "node:fs";
-import { eventsByGroup, betOffersByGroup, levelOf, type BetOffer, type KEvent } from "../src/resolver/offering-client";
-import { marketLabelOf } from "../src/resolver/recall";
-import { loadScopeCatalog } from "../src/resolver/scope-catalog";
-import { builtSports } from "../src/resolver/sports";
+import {
+  eventsByGroup,
+  betOffersByGroup,
+  levelOf,
+  type BetOffer,
+  type KEvent,
+} from "../src/resolver/shared/offering-client";
+import { marketLabelOf } from "../src/resolver/grounding/recall";
+import { loadScopeCatalog } from "../src/resolver/catalog/scope-catalog";
+import { builtSports } from "../src/resolver/catalog/sports";
 
 const OUT = ".sweep";
 const GROUPS_PER_SPORT = 12; // busiest groups by event count — covers each sport's real offering without a full fan-out
@@ -69,7 +75,12 @@ async function sweepSport(sport: string): Promise<Sheet | { sport: string; error
 
   const offers: BetOffer[] = [];
   const seen = new Set<number>();
-  for (const m of menus) for (const b of m.betOffers) if (b.id == null || !seen.has(b.id)) { if (b.id != null) seen.add(b.id); offers.push(b); }
+  for (const m of menus)
+    for (const b of m.betOffers)
+      if (b.id == null || !seen.has(b.id)) {
+        if (b.id != null) seen.add(b.id);
+        offers.push(b);
+      }
 
   const fams = new Map<string, Family & { evIds: Set<number> }>();
   const types: Record<string, number> = {};
@@ -79,16 +90,21 @@ async function sweepSport(sport: string): Promise<Sheet | { sport: string; error
     const label = marketLabelOf(b);
     let f = fams.get(label);
     if (!f) {
-      fams.set(label, (f = {
+      fams.set(
         label,
-        type,
-        level: levelOf(evById.get(b.eventId ?? -1)?.tags) ?? "?",
-        offers: 0,
-        events: 0,
-        evIds: new Set<number>(),
-        // un-localized labels; the participant shows which families are per-player (the prop/total twin split)
-        sampleOutcomes: (b.outcomes ?? []).slice(0, 4).map((o) => `${o.englishLabel ?? o.label ?? "?"}${o.participant ? ` [${o.participant}]` : ""}`),
-      }));
+        (f = {
+          label,
+          type,
+          level: levelOf(evById.get(b.eventId ?? -1)?.tags) ?? "?",
+          offers: 0,
+          events: 0,
+          evIds: new Set<number>(),
+          // un-localized labels; the participant shows which families are per-player (the prop/total twin split)
+          sampleOutcomes: (b.outcomes ?? [])
+            .slice(0, 4)
+            .map((o) => `${o.englishLabel ?? o.label ?? "?"}${o.participant ? ` [${o.participant}]` : ""}`),
+        }),
+      );
     }
     f.offers++;
     if (b.eventId != null) f.evIds.add(b.eventId);
@@ -102,8 +118,14 @@ async function sweepSport(sport: string): Promise<Sheet | { sport: string; error
     if (shape.samples.length < 3) shape.samples.push(n);
   }
 
-  const groupName = (id: number) => cat.groupById.get(id)?.name ?? menus.flatMap((m) => m.events).find((e) => e.groupId === id)?.group ?? String(id);
-  const sampled = ranked.map(([id, events]) => ({ id, name: groupName(id), events, inCatalog: !!cat.groupById.get(id) }));
+  const groupName = (id: number) =>
+    cat.groupById.get(id)?.name ?? menus.flatMap((m) => m.events).find((e) => e.groupId === id)?.group ?? String(id);
+  const sampled = ranked.map(([id, events]) => ({
+    id,
+    name: groupName(id),
+    events,
+    inCatalog: !!cat.groupById.get(id),
+  }));
 
   // Upcoming fixtures only (a finished game makes a useless corpus query), soonest first.
   const now = Date.now();
@@ -111,7 +133,13 @@ async function sweepSport(sport: string): Promise<Sheet | { sport: string; error
     .filter((e) => e.start && Date.parse(e.start) > now)
     .sort((a, b) => Date.parse(a.start!) - Date.parse(b.start!))
     .slice(0, 10)
-    .map((e) => ({ name: e.name ?? "", ...(e.homeName ? { home: e.homeName } : {}), ...(e.awayName ? { away: e.awayName } : {}), start: e.start ?? "", group: e.group ?? "" }));
+    .map((e) => ({
+      name: e.name ?? "",
+      ...(e.homeName ? { home: e.homeName } : {}),
+      ...(e.awayName ? { away: e.awayName } : {}),
+      start: e.start ?? "",
+      group: e.group ?? "",
+    }));
   // Real participant names off the menus — the ones player-prop and outright queries have to name.
   const parts = new Set<string>();
   for (const b of offers)
@@ -155,7 +183,9 @@ async function main(): Promise<void> {
       `${sport.padEnd(20)} groups=${String(sheet.feedGroupsSampled.length).padStart(2)}/${String(sheet.catalogGroups).padStart(3)}` +
       ` families=${String(sheet.families.length).padStart(4)} types=${String(Object.keys(sheet.betOfferTypes).length).padStart(2)}` +
       ` name=${s.dash}dash/${s.at}at/${s.other}other` +
-      (sheet.missingFromCatalog.length ? `  MISSING-FROM-CATALOG: ${sheet.missingFromCatalog.map((g) => g.name).join(", ")}` : "");
+      (sheet.missingFromCatalog.length
+        ? `  MISSING-FROM-CATALOG: ${sheet.missingFromCatalog.map((g) => g.name).join(", ")}`
+        : "");
     rows.push(line);
     console.log(line);
   }

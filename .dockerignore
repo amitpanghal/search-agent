@@ -21,3 +21,6 @@ render.yaml
 *.log
 .DS_Store
 src/**/*.test.ts
+biome.jsonc
+.githooks
+.github

@@ -16,11 +16,17 @@
 import { execFileSync } from "node:child_process";
 import { rmSync, existsSync } from "node:fs";
 import { join } from "node:path";
-import { GROUPS_PATH, BUILD_DIR, allSportConfigs, getSport, type SportConfig } from "../src/resolver/sports";
+import { GROUPS_PATH, BUILD_DIR, allSportConfigs, getSport, type SportConfig } from "../src/resolver/catalog/sports";
 
-const NORMALIZER = "scripts/football/refactor_participants.py";
-const sh = (cmd: string, args: string[], capture = false): string =>
-  execFileSync(cmd, args, capture ? { encoding: "utf8" } : { stdio: "inherit" }) ?? "";
+const NORMALIZER = "scripts/catalog/refactor_participants.py";
+// Two calls, not one with a conditional options object: the overloads then type the capture path as string.
+function sh(cmd: string, args: string[], capture = false): string {
+  if (!capture) {
+    execFileSync(cmd, args, { stdio: "inherit" });
+    return "";
+  }
+  return execFileSync(cmd, args, { encoding: "utf8" });
+}
 
 function buildOne(cfg: SportConfig): { teams: number; players: number } {
   const raw = join(BUILD_DIR, `${cfg.slug}_participants_raw.json`);
@@ -28,12 +34,25 @@ function buildOne(cfg: SportConfig): { teams: number; players: number } {
 
   sh("npx", ["tsx", "scripts/fetch-participants.ts", cfg.slug]);
 
-  const nArgs = ["--sport-label", cfg.label, "--sport-root-id", String(cfg.sportRootId), "--sport-slug", cfg.slug, "--groups", GROUPS_PATH, "--participants", raw, "--out", norm];
+  const nArgs = [
+    "--sport-label",
+    cfg.label,
+    "--sport-root-id",
+    String(cfg.sportRootId),
+    "--sport-slug",
+    cfg.slug,
+    "--groups",
+    GROUPS_PATH,
+    "--participants",
+    raw,
+    "--out",
+    norm,
+  ];
   if (cfg.individual) nArgs.push("--individual");
   if (cfg.nationalTeams) nArgs.push("--national-teams");
   sh("python3", [NORMALIZER, ...nArgs]);
 
-  const out = sh("npx", ["tsx", "src/resolver/build-scope-index.ts", cfg.slug], true);
+  const out = sh("npx", ["tsx", "src/resolver/catalog/build-scope-index.ts", cfg.slug], true);
   process.stdout.write(out);
 
   // Cleanup on success only (a throw above skips this, leaving the evidence). Keep groups.json;
@@ -60,7 +79,9 @@ function main(): void {
   for (const cfg of configs) {
     try {
       const { teams, players } = buildOne(cfg);
-      summary.push(`ok    ${cfg.slug.padEnd(22)} teams=${String(teams).padStart(6)} players=${String(players).padStart(7)}`);
+      summary.push(
+        `ok    ${cfg.slug.padEnd(22)} teams=${String(teams).padStart(6)} players=${String(players).padStart(7)}`,
+      );
     } catch (e) {
       summary.push(`FAIL  ${cfg.slug.padEnd(22)} ${(e as Error).message.split("\n")[0]} (intermediates kept)`);
     }

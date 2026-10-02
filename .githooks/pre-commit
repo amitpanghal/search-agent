@@ -1,0 +1,8 @@
+#!/bin/sh
+# Pre-commit gate, wired by `npm run prepare` (it points core.hooksPath at this folder): types, tests, and
+# Biome lint + format on the staged files. Runs only when a .ts file is staged, so a docs-only commit is instant.
+set -e
+git diff --cached --name-only --diff-filter=ACMR | grep -q '\.ts$' || exit 0
+npm run -s typecheck
+npm test -s
+node_modules/.bin/biome check --staged --diagnostic-level=error

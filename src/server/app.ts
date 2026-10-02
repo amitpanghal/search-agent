@@ -10,15 +10,20 @@ import { cors } from "hono/cors";
 import { streamSSE } from "hono/streaming";
 import { z } from "zod";
 import { runPipeline } from "../resolver/resolve";
-import type { ResponseEnvelope } from "../resolver/execute";
-import { traceStore, type TraceEvent } from "../resolver/trace";
+import type { ResponseEnvelope } from "../resolver/result/execute";
+import { traceStore, type TraceEvent } from "../resolver/shared/trace";
 import { queryRecord, writeLog, OFFERING } from "./log";
 
 // An IANA zone NAME the runtime actually knows ("Europe/Stockholm"), never a numeric offset — an offset is only
 // correct at one instant and silently breaks across a DST switch. Constructing the formatter is the check:
 // Intl throws RangeError on an unknown zone.
 const isKnownZone = (tz: string): boolean => {
-  try { new Intl.DateTimeFormat("en", { timeZone: tz }); return true; } catch { return false; }
+  try {
+    new Intl.DateTimeFormat("en", { timeZone: tz });
+    return true;
+  } catch {
+    return false;
+  }
 };
 
 // `tz` is the USER's zone; the resolver reads day boundaries and kickoff hours in it (see time-window.ts). The
@@ -28,7 +33,10 @@ const isKnownZone = (tz: string): boolean => {
 const QueryBody = z.object({
   query: z.string().min(1).max(500),
   tz: z.string().refine(isKnownZone, "unknown IANA timezone").optional(),
-  locale: z.string().regex(/^[a-z]{2}_[A-Z]{2}$/, "locale must look like sv_SE").optional(),
+  locale: z
+    .string()
+    .regex(/^[a-z]{2}_[A-Z]{2}$/, "locale must look like sv_SE")
+    .optional(),
 });
 
 // A click on something /query showed (planning/logging.md). Ids only: the query record, joined on queryId, already
@@ -68,7 +76,16 @@ export function buildApp() {
     } catch (err) {
       const message = err instanceof Error ? err.message : "Invalid request body";
       const raw = (body as { query?: unknown } | undefined)?.query;
-      writeLog(queryRecord({ queryId, t0, query: typeof raw === "string" ? raw.slice(0, 500) : null, trace: [], error: message, errorClass: "bad-request" }));
+      writeLog(
+        queryRecord({
+          queryId,
+          t0,
+          query: typeof raw === "string" ? raw.slice(0, 500) : null,
+          trace: [],
+          error: message,
+          errorClass: "bad-request",
+        }),
+      );
       return c.json({ error: message }, 400);
     }
 

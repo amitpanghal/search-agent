@@ -28,8 +28,8 @@ npm run catalogs -- --fresh      # force a fresh tree first
 ```
 
 Per sport the chain is: `fetch-groups.ts` (ONE shared tree, kambi/GB market — the tree IS the competition
-whitelist) → `fetch-participants.ts` → `scripts/football/refactor_participants.py` (the normalizer, all
-sports despite the path) → `build-scope-index.ts` (pure local join, writes the index). Intermediates live in
+whitelist) → `fetch-participants.ts` → `scripts/catalog/refactor_participants.py` (the normalizer, all
+sports) → `build-scope-index.ts` (pure local join, writes the index). Intermediates live in
 `.catalog-build/` (gitignored): deleted on success, **kept on failure as evidence** — a `FAIL` summary row
 means look there. Review a build with `git diff --stat catalogData/`.
 

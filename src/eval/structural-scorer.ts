@@ -16,7 +16,7 @@
 // Everything else (binding, line, odds, event_scope) is text in both modes.
 
 import type { GoldRecord } from "./gold-record";
-import type { QueryPlan } from "../resolver/schema";
+import type { QueryPlan } from "../resolver/extractor/schema";
 
 // The market-grounding shape the ID-mode market axis consumes. Formerly imported from ground-market.ts,
 // deleted at the Phase 6 cut (market is now resolved post-fetch). The type is relocated here, its sole
@@ -149,8 +149,11 @@ function bindingFailure(g: GoldSelector, p: PredSelector): string | null {
 function stageNote(g: StageVal | null, p: StageVal | null): string | null {
   if (!g && !p) return null;
   if (!g || !p) return `stage: expected ${JSON.stringify(g)}, got ${JSON.stringify(p)}`;
-  const gr = normalize(g), pr = normalize(p);
-  return gr === pr || gr.includes(pr) || pr.includes(gr) ? null : `stage: round ${JSON.stringify(p)} vs ${JSON.stringify(g)}`;
+  const gr = normalize(g),
+    pr = normalize(p);
+  return gr === pr || gr.includes(pr) || pr.includes(gr)
+    ? null
+    : `stage: round ${JSON.stringify(p)} vs ${JSON.stringify(g)}`;
 }
 
 function timeNote(g: TimeVal | null, p: TimeVal | null): string | null {
@@ -223,20 +226,27 @@ function scopeDiffs(
     // subject and scope into the same participant ids, so "Saka to score … against Coventry" scoping
     // teams=[Saka, Coventry] fetches exactly what teams=[Coventry] does. Don't score it as an error.
     if (subjectName && looseMatch(pt, [subjectName])) continue;
-    if (!ge.teams.some((gt) => looseMatch(pt, gt.accept))) out.push({ facet: "teams", msg: `unexpected team: "${pt}"` });
+    if (!ge.teams.some((gt) => looseMatch(pt, gt.accept)))
+      out.push({ facet: "teams", msg: `unexpected team: "${pt}"` });
   }
 
   if (ge.competition === null) {
     if (pe.competition !== null) out.push({ facet: "competition", msg: `unexpected competition: "${pe.competition}"` });
   } else if (pe.competition === null || !looseMatch(pe.competition, ge.competition.accept)) {
-    out.push({ facet: "competition", msg: `competition: expected ~${JSON.stringify(ge.competition.accept)}, got ${JSON.stringify(pe.competition)}` });
+    out.push({
+      facet: "competition",
+      msg: `competition: expected ~${JSON.stringify(ge.competition.accept)}, got ${JSON.stringify(pe.competition)}`,
+    });
   }
 
   for (const gp of ge.players) {
     const match = pe.players.find((pp) => looseMatch(pp.name, gp.name.accept));
     if (!match) out.push({ facet: "players", msg: `player missing: ~${JSON.stringify(gp.name.accept)}` });
     else if (match.role !== gp.role) {
-      out.push({ facet: "players", msg: `player role: ~${JSON.stringify(gp.name.accept)} expected ${gp.role}, got ${match.role}` });
+      out.push({
+        facet: "players",
+        msg: `player role: ~${JSON.stringify(gp.name.accept)} expected ${gp.role}, got ${match.role}`,
+      });
     }
   }
 
@@ -254,11 +264,7 @@ function scopeDiffs(
 
 // ---- main entry ----
 
-export function scoreRun(
-  gold: GoldRecord,
-  plan: QueryPlan,
-  grounded?: (GroundResult | null)[],
-): RunResult {
+export function scoreRun(gold: GoldRecord, plan: QueryPlan, grounded?: (GroundResult | null)[]): RunResult {
   const failures: string[] = [];
   const soft: string[] = [];
   const expect = gold.expect;
@@ -274,7 +280,9 @@ export function scoreRun(
   if (isGoldMarketless(expect)) {
     if (!sportOk(plan, expect)) failures.push(`sport: expected ~${JSON.stringify(expect.sport)}, got "${plan.sport}"`);
     if (!isPlanMarketless(plan)) {
-      failures.push(`marketless: expected a single "main" selector, got ${JSON.stringify(plan.selectors.map((s) => s.market_concept))}`);
+      failures.push(
+        `marketless: expected a single "main" selector, got ${JSON.stringify(plan.selectors.map((s) => s.market_concept))}`,
+      );
     }
     const hard = assertedFacets(expect.selectors[0]!.scope, true);
     for (const d of scopeDiffs(expect.selectors[0]!.scope, plan.selectors[0]!.scope)) {
@@ -291,7 +299,9 @@ export function scoreRun(
   // 2b. combined_odds — QUERY-level, so it is graded here rather than per pair. A combined bound landing on a
   // selector instead deletes that leg, so both "missing" and "on the wrong level" have to fail.
   if (!oddsEqual(plan.combined_odds, expect.combined_odds)) {
-    failures.push(`combined_odds: expected ${JSON.stringify(expect.combined_odds)}, got ${JSON.stringify(plan.combined_odds)}`);
+    failures.push(
+      `combined_odds: expected ${JSON.stringify(expect.combined_odds)}, got ${JSON.stringify(plan.combined_odds)}`,
+    );
   }
 
   // 3. selector pairing + "market found". In ID mode (grounded supplied) a pair requires the gold
@@ -328,7 +338,11 @@ export function scoreRun(
         if (isNone) {
           // NONE outcome: pair by text, pass iff this leg ABSTAINED — id-less (groundPlan's perSelector nulls
           // every id-less leg, so a `none` reads as null here), method "none", or empty ids.
-          if (mc.accept.length > 0 && looseMatch(p.market_concept, mc.accept) && (!gr || gr.method === "none" || gr.ids.length === 0)) {
+          if (
+            mc.accept.length > 0 &&
+            looseMatch(p.market_concept, mc.accept) &&
+            (!gr || gr.method === "none" || gr.ids.length === 0)
+          ) {
             matched = p;
             matchedIdx = pi;
             break;
@@ -375,9 +389,13 @@ export function scoreRun(
       usedPred.add(matchedIdx);
       pairs.push({ g, p: matched });
     } else if (idMode && offer) {
-      failures.push(`offer not surfaced: gold[${gi}] (${g.subject.kind}) expected a shortlist offering ${JSON.stringify(offer)}`);
+      failures.push(
+        `offer not surfaced: gold[${gi}] (${g.subject.kind}) expected a shortlist offering ${JSON.stringify(offer)}`,
+      );
     } else if (idMode && isNone) {
-      failures.push(`expected-none: gold[${gi}] (${g.subject.kind}) "${mc.accept[0] ?? g.subject.kind}" should ground to nothing (abstain), but it didn't`);
+      failures.push(
+        `expected-none: gold[${gi}] (${g.subject.kind}) "${mc.accept[0] ?? g.subject.kind}" should ground to nothing (abstain), but it didn't`,
+      );
     } else if (idMode && clarifyIdx >= 0) {
       usedPred.add(clarifyIdx); // consume it so it isn't double-reported as an unexpected market
       const gr = grounded[clarifyIdx];
@@ -408,7 +426,10 @@ export function scoreRun(
     // Wording: survival only (see gold-record's must[]). Length, synonym choice and word order are the
     // resolver's business — it reads the phrase against the live menu with the raw query.
     const missing = (g.market_concept.must ?? []).filter((t) => !looseMatch(p.market_concept, [t]));
-    if (missing.length) failures.push(`market dropped: gold[${expect.selectors.indexOf(g)}] lost ${JSON.stringify(missing)} from "${p.market_concept}"`);
+    if (missing.length)
+      failures.push(
+        `market dropped: gold[${expect.selectors.indexOf(g)}] lost ${JSON.stringify(missing)} from "${p.market_concept}"`,
+      );
     const bind = bindingFailure(g, p);
     if (bind) failures.push(`${bind} [market "${p.market_concept}"]`);
     if (!lineEqual(p.line, g.line)) {
@@ -419,16 +440,22 @@ export function scoreRun(
     }
     // odds_sort: selector facet, hard like odds (both undefined -> equal -> no-op on existing rows).
     if (p.odds_sort !== g.odds_sort) {
-      failures.push(`odds_sort: "${p.market_concept}" expected ${JSON.stringify(g.odds_sort)}, got ${JSON.stringify(p.odds_sort)}`);
+      failures.push(
+        `odds_sort: "${p.market_concept}" expected ${JSON.stringify(g.odds_sort)}, got ${JSON.stringify(p.odds_sort)}`,
+      );
     }
     // direction: the SIDE of a two-sided market. Hard — a flipped side is the opposite bet. Same
     // both-undefined no-op as odds_sort, so rows that state no side are unaffected.
     if (p.direction !== g.direction) {
-      failures.push(`direction: "${p.market_concept}" expected ${JSON.stringify(g.direction)}, got ${JSON.stringify(p.direction)}`);
+      failures.push(
+        `direction: "${p.market_concept}" expected ${JSON.stringify(g.direction)}, got ${JSON.stringify(p.direction)}`,
+      );
     }
     // line_sort: the LINE-size ranking axis (distinct from odds_sort's price ranking). Same hard/no-op rule.
     if (p.line_sort !== g.line_sort) {
-      failures.push(`line_sort: "${p.market_concept}" expected ${JSON.stringify(g.line_sort)}, got ${JSON.stringify(p.line_sort)}`);
+      failures.push(
+        `line_sort: "${p.market_concept}" expected ${JSON.stringify(g.line_sort)}, got ${JSON.stringify(p.line_sort)}`,
+      );
     }
   }
 

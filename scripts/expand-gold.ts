@@ -142,10 +142,13 @@ const expandFamilies = (m: string[]): string[] => [
 ];
 
 const cell = (n: Names): { accept: string[] } => ({ accept: Array.isArray(n) ? n : [n] });
-const isRole = (p: Player): p is [Names, Role] => Array.isArray(p) && p.length === 2 && typeof p[1] === "string" && ["plays", "starts", "captain"].includes(p[1]);
+const isRole = (p: Player): p is [Names, Role] =>
+  Array.isArray(p) && p.length === 2 && typeof p[1] === "string" && ["plays", "starts", "captain"].includes(p[1]);
 // A bare {min?,max?} is a line RANGE; a number is a rung; anything else is a named pick (accept-list).
 const lineOf = (v: Leg["line"]): unknown =>
-  v === undefined || typeof v === "number" || (!Array.isArray(v) && typeof v === "object" && v !== null) ? v : cell(v as Names);
+  v === undefined || typeof v === "number" || (!Array.isArray(v) && typeof v === "object" && v !== null)
+    ? v
+    : cell(v as Names);
 
 function scopeOf(shared: Scope, leg: Leg): Record<string, unknown> {
   const pick = <K extends keyof Scope>(k: K): Scope[K] => (leg[k] !== undefined ? leg[k] : shared[k]);

@@ -16,15 +16,15 @@
 import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { GoldRecord, loadGold } from "./gold-record";
+import { type GoldRecord, loadGold } from "./gold-record";
 import { catalogSupport } from "./catalog-support";
-import { BEHAVIOR_TAGS, CRITICAL_TAGS, SOFT_TAGS, BEHAVIOR_TAG_IDS, type BehaviorTag } from "./behavior-tags";
-import { extract, EXTRACTION_MODEL } from "../resolver/extract";
-import { recoverSport } from "../resolver/recover-sport";
+import { CRITICAL_TAGS, SOFT_TAGS, BEHAVIOR_TAG_IDS, type BehaviorTag } from "./behavior-tags";
+import { extract, EXTRACTION_MODEL } from "../resolver/extractor/extract";
+import { recoverSport } from "../resolver/grounding/recover-sport";
 import { scoreRun, type RunResult } from "./structural-scorer";
 import { gradeAll, printEntityReport } from "./scope-scorer";
 import { runMarketResolveGate, resolveEyeball } from "./market-resolve-gate";
-import type { QueryPlan } from "../resolver/schema";
+import type { QueryPlan } from "../resolver/extractor/schema";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "..", ".."); // src/eval -> repo root (where .env lives)
@@ -68,7 +68,11 @@ function loadReplay(path: string): Map<string, QueryPlan> {
   const m = new Map<string, QueryPlan>();
   for (const line of readFileSync(path, "utf8").split("\n")) {
     if (!line.trim()) continue;
-    const row = JSON.parse(line) as { query: string; extract?: QueryPlan; trace?: { stage?: string; out?: QueryPlan }[] };
+    const row = JSON.parse(line) as {
+      query: string;
+      extract?: QueryPlan;
+      trace?: { stage?: string; out?: QueryPlan }[];
+    };
     const plan = row.extract ?? row.trace?.find((t) => t.stage === "extract")?.out;
     if (plan) m.set(row.query, plan);
   }
@@ -208,7 +212,10 @@ function printTagSummary(stats: Map<BehaviorTag, TagStat>): void {
 // Tuning one rule at a time needs the narrower question: did the facet I aimed at move, and did another break?
 const FACETS: [string, RegExp][] = [
   ["sport", /^sport:/],
-  ["market", /^market not found|^market dropped|^unexpected market|^market (ambiguous|shortlist|not grounded)|^offer not surfaced|^expected-none|^marketless:/],
+  [
+    "market",
+    /^market not found|^market dropped|^unexpected market|^market (ambiguous|shortlist|not grounded)|^offer not surfaced|^expected-none|^marketless:/,
+  ],
   ["binding", /^binding /],
   ["line", /^line:/],
   ["line_sort", /^line_sort:/],
@@ -264,7 +271,9 @@ function printShipGate(reports: QueryReport[], stats: Map<BehaviorTag, TagStat>)
 
   const passedQueries = reports.filter((r) => r.passed).length;
   console.log(`Queries passed: ${passedQueries}/${reports.length}`);
-  console.log(`Soft aggregate: ${softTotal ? `${softPassed}/${softTotal} (${Math.round(softRate * 100)}%)` : "n/a"} (bar ~${SOFT_BAR * 100}%)`);
+  console.log(
+    `Soft aggregate: ${softTotal ? `${softPassed}/${softTotal} (${Math.round(softRate * 100)}%)` : "n/a"} (bar ~${SOFT_BAR * 100}%)`,
+  );
 
   const gatePass = criticalMisses.length === 0;
   if (gatePass) {
@@ -296,7 +305,9 @@ async function main(): Promise<void> {
   if (from) replay = loadReplay(from);
 
   if (!replay && (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY || !process.env.BEDROCK_MODEL)) {
-    console.error("AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and BEDROCK_MODEL must be set. Export them, or copy .env.example -> .env.");
+    console.error(
+      "AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and BEDROCK_MODEL must be set. Export them, or copy .env.example -> .env.",
+    );
     process.exit(2);
   }
 
@@ -325,8 +336,14 @@ async function main(): Promise<void> {
   // a coin flip. `--runs 3` is the measuring default for the tuning gold; holdout stays 1x; `--release` (5x)
   // is the final sign-off.
   const n = replay ? 1 : Number(flagValue(args, "--runs")) || (release ? 5 : 1);
-  console.log(replay ? `Structural eval — REPLAY of ${from} (${replay.size} captured plans, no model call)` : `Structural eval — model ${EXTRACTION_MODEL}, ${n}x per query (temp 0)`);
-  console.log(`Gold: ${gold.length} record(s) | schema ${meta.schemaVersion ?? "?"} | catalog ${meta.catalogVersion ?? "?"}`);
+  console.log(
+    replay
+      ? `Structural eval — REPLAY of ${from} (${replay.size} captured plans, no model call)`
+      : `Structural eval — model ${EXTRACTION_MODEL}, ${n}x per query (temp 0)`,
+  );
+  console.log(
+    `Gold: ${gold.length} record(s) | schema ${meta.schemaVersion ?? "?"} | catalog ${meta.catalogVersion ?? "?"}`,
+  );
   console.log("Mode: TEXT market axis (extraction); criterion-id resolution graded by the live market gate.\n");
 
   // The market/extractor ship gate runs the LLM on gradeMarket rows; pure-scope rows (gradeMarket:false)
@@ -351,7 +368,10 @@ async function main(): Promise<void> {
     printReport(rep, n);
   }
 
-  if (unservable.size) console.log(`\n${unservable.size} row(s) excluded: no anchor our catalogs carry (catalog coverage, not extraction). --unservable to grade them.`);
+  if (unservable.size)
+    console.log(
+      `\n${unservable.size} row(s) excluded: no anchor our catalogs carry (catalog coverage, not extraction). --unservable to grade them.`,
+    );
 
   const stats = computeTagStats(reports);
   printTagSummary(stats);
@@ -370,7 +390,9 @@ async function main(): Promise<void> {
   // Replay has no model, and this gate resolves markets LIVE against the snapshot menu — skip it rather than
   // spend on a stage the replayed capture says nothing about.
   console.log("");
-  const market = replay ? { pass: true, lines: ["Market-resolution gate: SKIPPED (--from replay)"] } : await runMarketResolveGate(gold);
+  const market = replay
+    ? { pass: true, lines: ["Market-resolution gate: SKIPPED (--from replay)"] }
+    : await runMarketResolveGate(gold);
   for (const l of market.lines) console.log(l);
 
   process.exit(gatePass && entity.pass && market.pass ? 0 : 1);

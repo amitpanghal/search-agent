@@ -60,7 +60,9 @@ const GoldSubject = z.discriminatedUnion("kind", [
 // than naming a rung. Distinguishable from `Grounded` by having no `accept`/`id`.
 const Line = z.union([
   z.number(),
-  z.object({ min: z.number().optional(), max: z.number().optional() }).refine((o) => o.min !== undefined || o.max !== undefined, "need >=1 bound"),
+  z
+    .object({ min: z.number().optional(), max: z.number().optional() })
+    .refine((o) => o.min !== undefined || o.max !== undefined, "need >=1 bound"),
   Grounded,
 ]);
 
@@ -105,9 +107,7 @@ const Stage = z.string().min(1); // the tournament round as text -- resolved by 
 
 const Time = z
   .object({
-    date_window: z
-      .object({ value: z.string().min(1), anchor: z.enum(["tournament", "now"]) })
-      .nullable(),
+    date_window: z.object({ value: z.string().min(1), anchor: z.enum(["tournament", "now"]) }).nullable(),
     kickoff_time_of_day: z.string().min(1).nullable(), // text
     fixture_pick: z
       .object({ order: z.enum(["earliest", "latest"]), count: z.number().int().min(1) })
@@ -116,7 +116,7 @@ const Time = z
   })
   .refine(
     (t) => t.date_window != null || t.kickoff_time_of_day != null || t.fixture_pick != null,
-    "need a window, a kickoff band, or a fixture pick"
+    "need a window, a kickoff band, or a fixture pick",
   );
 
 // PER-LEG scope (the grounded twin of schema.ts `Scope`): every selector carries its OWN grounded scope.

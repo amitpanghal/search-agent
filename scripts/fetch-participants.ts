@@ -12,12 +12,13 @@
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { getSport, BUILD_DIR, GROUPS_PATH } from "../src/resolver/sports";
+import { getSport, BUILD_DIR, GROUPS_PATH } from "../src/resolver/catalog/sports";
 import { curlJsonOrNull, closeBrowser } from "./curl-fetch";
 
 const FEED = (id: number) => `https://feeds-eu.offering-api.kambicdn.com/feeds/api/kambi/participant/group/${id}.json`;
 // Live betoffer-group menu with participants — the clean player source for `participantsFrom:"betoffer"` sports.
-const BETOFFER_GROUP = (id: number) => `https://eu.offering-api.kambicdn.com/offering/v2018/kambi/betoffer/group/${id}.json?lang=en_GB&market=GB&client_id=200&channel_id=1&includeParticipants=true`;
+const BETOFFER_GROUP = (id: number) =>
+  `https://eu.offering-api.kambicdn.com/offering/v2018/kambi/betoffer/group/${id}.json?lang=en_GB&market=GB&client_id=200&channel_id=1&includeParticipants=true`;
 
 // Reshape a betoffer-group response into the participant blob the normalizer's individual path reads.
 // Each distinct outcome participantId → one PARTICIPANT row; its competitions are the groupIds of the
@@ -36,10 +37,15 @@ function participantsFromBetOffers(bo: { betOffers?: any[]; events?: any[] }): P
       byId.set(o.participantId, rec);
     }
   }
-  return [...byId].map(([id, r]) => ({ id, type: "PARTICIPANT", names: [{ locale: "en_GB", name: r.name }], groupIds: [...r.groups] }));
+  return [...byId].map(([id, r]) => ({
+    id,
+    type: "PARTICIPANT",
+    names: [{ locale: "en_GB", name: r.name }],
+    groupIds: [...r.groups],
+  }));
 }
 const TIMEOUT_MS = 120_000; // client abort → treat the group as too-big, split into children (NCAA feeds are slow: ~31s)
-const CONCURRENCY = 4;      // ponytail: pool the sport's direct children; kept modest so slow feeds don't get transient errors under load
+const CONCURRENCY = 4; // ponytail: pool the sport's direct children; kept modest so slow feeds don't get transient errors under load
 
 type Node = { id: number; name?: string; groups?: Node[] };
 type Participant = { id: number; [k: string]: unknown };
@@ -82,7 +88,10 @@ async function mapPool<T, R>(items: T[], n: number, fn: (t: T) => Promise<R>): P
   let i = 0;
   await Promise.all(
     Array.from({ length: Math.min(n, items.length) }, async () => {
-      while (i < items.length) { const k = i++; out[k] = await fn(items[k]!); }
+      while (i < items.length) {
+        const k = i++;
+        out[k] = await fn(items[k]!);
+      }
     }),
   );
   return out;
@@ -90,14 +99,18 @@ async function mapPool<T, R>(items: T[], n: number, fn: (t: T) => Promise<R>): P
 
 function findNode(root: Node, id: number): Node | null {
   if (root.id === id) return root;
-  for (const g of root.groups ?? []) { const f = findNode(g, id); if (f) return f; }
+  for (const g of root.groups ?? []) {
+    const f = findNode(g, id);
+    if (f) return f;
+  }
   return null;
 }
 
 async function main(): Promise<void> {
   const slug = process.argv[2] ?? "football";
   const config = getSport(slug);
-  if (!config) throw new Error(`Unknown sport "${slug}" — not a top-level node in the offering tree (run fetch-groups first).`);
+  if (!config)
+    throw new Error(`Unknown sport "${slug}" — not a top-level node in the offering tree (run fetch-groups first).`);
   const DATA = BUILD_DIR; // flat scratch: <slug>_participants_raw.json (+ tour feeds); groups.json is shared
   const out = process.argv[3] ?? join(DATA, `${config.slug}_participants_raw.json`);
 
@@ -107,7 +120,9 @@ async function main(): Promise<void> {
     if (!bo) throw new Error(`betoffer-group fetch failed for ${config.slug} (${config.sportRootId})`);
     const participants = participantsFromBetOffers(bo);
     writeFileSync(out, JSON.stringify({ participants }) + "\n");
-    console.log(`[${config.slug}] betoffer-group: ${participants.length} players from ${(bo.events ?? []).length} events / ${(bo.betOffers ?? []).length} betOffers`);
+    console.log(
+      `[${config.slug}] betoffer-group: ${participants.length} players from ${(bo.events ?? []).length} events / ${(bo.betOffers ?? []).length} betOffers`,
+    );
     console.log(`wrote ${out}`);
     return;
   }
@@ -139,7 +154,7 @@ async function main(): Promise<void> {
   // some copies come back rosterless; "first wins" could discard the squad, dropping national teams
   // (Brazil/England) whose rostered copy lost the fetch-order race.
   const parts = perChild.flat();
-  const memberCount = (p: Participant): number => ((p as { teamMembers?: unknown[] }).teamMembers?.length ?? 0);
+  const memberCount = (p: Participant): number => (p as { teamMembers?: unknown[] }).teamMembers?.length ?? 0;
   const bestById = new Map<number, Participant>();
   for (const p of parts) {
     const prev = bestById.get(p.id);

@@ -16,11 +16,11 @@
 import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { filterBySubject } from "../resolver/filter";
-import { marketLabelOf } from "../resolver/recall";
-import { resolveMarket } from "../resolver/resolve-market";
-import type { BetOffer, KEvent } from "../resolver/offering-client";
-import type { Menu } from "../resolver/live-menu-types";
+import { filterBySubject } from "../resolver/market/filter";
+import { marketLabelOf } from "../resolver/grounding/recall";
+import { resolveMarket } from "../resolver/market/resolve-market";
+import type { BetOffer, KEvent } from "../resolver/shared/offering-client";
+import type { Menu } from "../resolver/shared/live-menu-types";
 import { loadGold, type GoldRecord } from "./gold-record";
 
 type Grain = { betOffers: BetOffer[]; events: KEvent[] };
@@ -38,7 +38,13 @@ export type GateResult = { pass: boolean; lines: string[] };
 
 // One gradeable id-cell lifted from a gold row: the gold's accept phrasings + subject kind + the criterion
 // id(s) any of which is a correct resolution (a side-split cell lists both sides; picking either passes).
-type IdCase = { id: string; subjectKind: string; accept: string[]; level: "fixture" | "competition"; wantIds: number[] };
+type IdCase = {
+  id: string;
+  subjectKind: string;
+  accept: string[];
+  level: "fixture" | "competition";
+  wantIds: number[];
+};
 
 function idCases(gold: GoldRecord[]): IdCase[] {
   const out: IdCase[] = [];
@@ -48,7 +54,13 @@ function idCases(gold: GoldRecord[]): IdCase[] {
       const mc = sel.market_concept;
       if (!("id" in mc)) continue; // only EXACT id cells (offer/none/main are subject-bound or sentinels)
       if (!mc.accept.length) continue; // no canonical phrasing to resolve against — skip (gold-authoring gap)
-      out.push({ id: rec.id, subjectKind: sel.subject.kind, accept: mc.accept, level: sel.scope.level, wantIds: Array.isArray(mc.id) ? mc.id : [mc.id] });
+      out.push({
+        id: rec.id,
+        subjectKind: sel.subject.kind,
+        accept: mc.accept,
+        level: sel.scope.level,
+        wantIds: Array.isArray(mc.id) ? mc.id : [mc.id],
+      });
     }
   }
   return out;
@@ -61,8 +73,10 @@ const uniq = (xs: string[]): string[] => [...new Set(xs)];
 // team-total binds to a concrete FIXTURE team (the abstract team/either_match_team subject maps, in this match,
 // to one of its two teams). An `event` subject needs no owner — the bare concept is enough.
 function phrasings(subjectKind: string, accept: string[], teams: string[]): string[] {
-  if (subjectKind === "player") return uniq([...accept, ...accept.map((a) => (/\bplayer\b/i.test(a) ? a : `player ${a}`))]);
-  if (subjectKind === "team" || subjectKind === "either_match_team") return uniq(teams.flatMap((t) => accept.map((a) => `${t} ${a}`)));
+  if (subjectKind === "player")
+    return uniq([...accept, ...accept.map((a) => (/\bplayer\b/i.test(a) ? a : `player ${a}`))]);
+  if (subjectKind === "team" || subjectKind === "either_match_team")
+    return uniq(teams.flatMap((t) => accept.map((a) => `${t} ${a}`)));
   return accept; // event
 }
 
@@ -75,8 +89,14 @@ export async function runMarketResolveGate(gold: GoldRecord[]): Promise<GateResu
   // The pick now carries a LABEL, not a criterion id (the menu identity is the englishLabel-based label). Map it
   // back to criterion id(s) via the snapshot betoffers — a label can front >1 id only if two criteria share it
   // (none observed), so the intersection with wantIds is the robust check.
-  const idsForLabel = (offers: BetOffer[], label: string): number[] =>
-    [...new Set(offers.filter((b) => marketLabelOf(b) === label).map((b) => b.criterion?.id).filter((id): id is number => id != null))];
+  const idsForLabel = (offers: BetOffer[], label: string): number[] => [
+    ...new Set(
+      offers
+        .filter((b) => marketLabelOf(b) === label)
+        .map((b) => b.criterion?.id)
+        .filter((id): id is number => id != null),
+    ),
+  ];
 
   const cases = idCases(gold);
   const fails: string[] = [];
@@ -92,14 +112,23 @@ export async function runMarketResolveGate(gold: GoldRecord[]): Promise<GateResu
     for (const phrase of tries) {
       const pick = await resolveMarket(phrase, menu); // LIVE LLM (default decider)
       const gotIds = pick.match === "exact" && pick.label != null ? idsForLabel(grainOffers, pick.label) : [];
-      if (gotIds.some((id) => c.wantIds.includes(id))) { hit = phrase; break; }
+      if (gotIds.some((id) => c.wantIds.includes(id))) {
+        hit = phrase;
+        break;
+      }
       lastMiss = `"${phrase}" -> ${pick.match} ${pick.label ?? "—"}`;
     }
     if (hit) passed++;
-    else fails.push(`   x ${c.id} (${c.subjectKind}) — want exact ∈ ${JSON.stringify(c.wantIds)}; no phrasing hit (tried ${tries.length}, last ${lastMiss})`);
+    else
+      fails.push(
+        `   x ${c.id} (${c.subjectKind}) — want exact ∈ ${JSON.stringify(c.wantIds)}; no phrasing hit (tried ${tries.length}, last ${lastMiss})`,
+      );
   }
 
-  const lines = [`Market-resolve gate (live resolve vs captured snapshot ${snap.captured.slice(0, 10)}): ${passed}/${cases.length}`, ...fails];
+  const lines = [
+    `Market-resolve gate (live resolve vs captured snapshot ${snap.captured.slice(0, 10)}): ${passed}/${cases.length}`,
+    ...fails,
+  ];
   return { pass: passed === cases.length, lines };
 }
 
@@ -109,7 +138,7 @@ export async function resolveEyeball(concept: string, grain: "match" | "competit
   const snap = loadSnapshot();
   const menu = menuOf(grain === "competition" ? snap.competition : snap.match);
   const pick = await resolveMarket(concept, menu);
-  const label = pick.match === "none" ? "—" : pick.label ?? "?";
+  const label = pick.match === "none" ? "—" : (pick.label ?? "?");
   console.log(`resolve "${concept}" [${grain}, menu=${menu.length}] -> ${pick.match}  ${label}`);
 }
 
@@ -123,5 +152,8 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
       if (m && m[1] && !process.env[m[1]]) process.env[m[1]] = (m[2] ?? "").replace(/^["']|["']$/g, "");
     }
   }
-  runMarketResolveGate(loadGold()).then((r) => { console.log(r.lines.join("\n")); process.exit(r.pass ? 0 : 1); });
+  runMarketResolveGate(loadGold()).then((r) => {
+    console.log(r.lines.join("\n"));
+    process.exit(r.pass ? 0 : 1);
+  });
 }

@@ -11,8 +11,8 @@
 // out of this gate, so a correctly-surfaced clarify PASSES on recall.
 
 import type { GoldRecord } from "./gold-record";
-import type { QueryPlan } from "../resolver/schema";
-import { groundScope, type EntityResolution, type ScopeTier } from "../resolver/ground-scope";
+import type { QueryPlan } from "../resolver/extractor/schema";
+import { groundScope, type EntityResolution, type ScopeTier } from "../resolver/grounding/ground-scope";
 
 export type EntityType = "region" | "competition" | "team" | "player";
 
@@ -82,7 +82,19 @@ function gradeCell(rec: string, type: EntityType, cell: GroundedCell, res: Entit
     if (!clarify) reason = `expected a clarify (${expectedTier}), got ${res.tier}`;
     else if (!recall) reason = `recall miss: ${JSON.stringify(candIds)} ⊉ gold ${JSON.stringify(goldIds)}`;
   }
-  return { rec, type, text: textOf(cell), goldIds, expectedTier, gotTier: res.tier, candIds, recall, cleanTier, pass, reason };
+  return {
+    rec,
+    type,
+    text: textOf(cell),
+    goldIds,
+    expectedTier,
+    gotTier: res.tier,
+    candIds,
+    recall,
+    cleanTier,
+    pass,
+    reason,
+  };
 }
 
 // Grade every entity cell of one gold record. Empty if the record carries no scope entities.
@@ -98,9 +110,14 @@ export function gradeScope(gold: GoldRecord): EntityGrade[] {
   const grades: EntityGrade[] = [];
 
   if (graded(sc.region) && leg.region) grades.push(gradeCell(gold.id, "region", sc.region!, leg.region));
-  if (graded(sc.competition) && leg.competition) grades.push(gradeCell(gold.id, "competition", sc.competition!, leg.competition));
-  sc.teams.forEach((t, i) => { if (graded(t) && leg.teams[i]) grades.push(gradeCell(gold.id, "team", t, leg.teams[i]!)); });
-  sc.players.forEach((p, i) => { if (graded(p.name) && leg.players[i]) grades.push(gradeCell(gold.id, "player", p.name, leg.players[i]!)); });
+  if (graded(sc.competition) && leg.competition)
+    grades.push(gradeCell(gold.id, "competition", sc.competition!, leg.competition));
+  sc.teams.forEach((t, i) => {
+    if (graded(t) && leg.teams[i]) grades.push(gradeCell(gold.id, "team", t, leg.teams[i]!));
+  });
+  sc.players.forEach((p, i) => {
+    if (graded(p.name) && leg.players[i]) grades.push(gradeCell(gold.id, "player", p.name, leg.players[i]!));
+  });
   return grades;
 }
 
@@ -127,12 +144,15 @@ export function printEntityReport(report: EntityReport): void {
     const clean = cells.filter((g) => g.cleanTier);
     const cleanOk = clean.filter((g) => g.recall).length;
     const prec = clean.length ? `${cleanOk}/${clean.length} (${Math.round((cleanOk / clean.length) * 100)}%)` : "n/a";
-    console.log(`  ${t.padEnd(11)} recall@k ${recall}/${cells.length} (${Math.round((recall / cells.length) * 100)}%) | confident-precision ${prec}`);
+    console.log(
+      `  ${t.padEnd(11)} recall@k ${recall}/${cells.length} (${Math.round((recall / cells.length) * 100)}%) | confident-precision ${prec}`,
+    );
   }
   const fails = grades.filter((g) => !g.pass);
   if (fails.length) {
     console.log("  failures:");
-    for (const f of fails) console.log(`    x ${f.rec} ${f.type} "${f.text}" [expect ${f.expectedTier}, got ${f.gotTier}]: ${f.reason}`);
+    for (const f of fails)
+      console.log(`    x ${f.rec} ${f.type} "${f.text}" [expect ${f.expectedTier}, got ${f.gotTier}]: ${f.reason}`);
   }
   console.log(report.pass ? "ENTITY GATE: PASS (no recall miss / confident-wrong)\n" : "ENTITY GATE: FAIL\n");
 }

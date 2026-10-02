@@ -12,9 +12,9 @@
 //
 // Standalone:  npx tsx src/eval/catalog-support.ts        # list the unservable rows
 
-import { loadScopeCatalog } from "../resolver/scope-catalog";
-import { groundTeam, groundPlayer, groundCompetition, groundRegion } from "../resolver/ground-scope";
-import { slugify, getSport, builtSports } from "../resolver/sports";
+import { loadScopeCatalog } from "../resolver/catalog/scope-catalog";
+import { groundTeam, groundPlayer, groundCompetition, groundRegion } from "../resolver/grounding/ground-scope";
+import { slugify, getSport, builtSports } from "../resolver/catalog/sports";
 import { loadGold, type GoldRecord } from "./gold-record";
 
 type Anchor = { text: string; competitor: boolean };
@@ -45,8 +45,9 @@ function anchorsOf(row: GoldRecord): Anchor[] {
 // matches more than a third of the catalogs is noise. Without this, those two rows graded as servable and the
 // gate missed the very case it exists for.
 const tiersFor = (a: Anchor, sport: string) =>
-  (a.competitor ? [groundTeam, groundPlayer] : [groundCompetition, groundRegion])
-    .map((g) => g(a.text, loadScopeCatalog(sport)).tier);
+  (a.competitor ? [groundTeam, groundPlayer] : [groundCompetition, groundRegion]).map(
+    (g) => g(a.text, loadScopeCatalog(sport)).tier,
+  );
 
 const isFuzzy = (a: Anchor): boolean =>
   builtSports().filter((s) => tiersFor(a, s).some((t) => t !== "none")).length > builtSports().length / 3;

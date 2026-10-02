@@ -8,21 +8,29 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { resolveTimeWindow, eventMatchesTime, applyFixturePick, filterEventsByTime } from "./time-window";
-import { fold, contentTokens, lc, stripSettle } from "./lexical";
-import type { BetOffer, KEvent } from "./offering-client";
-import { buildBetslip, type Combination } from "./combinations";
-import { picksByLeg, resolveMarkets } from "./resolve-market";
-import type { ResolvedLeg } from "./live-menu-types";
-import { queryNamesSport, adoptSport, resolveEntities } from "./resolve-entities";
-import { propagate, retier, byProminence, type Candidate } from "./ground-scope";
-import { execute } from "./execute";
+import { resolveTimeWindow, eventMatchesTime, applyFixturePick, filterEventsByTime } from "./grounding/time-window";
+import { fold, contentTokens, lc, stripSettle } from "./shared/lexical";
+import type { BetOffer, KEvent } from "./shared/offering-client";
+import { buildBetslip, type Combination } from "./result/combinations";
+import { picksByLeg, resolveMarkets } from "./market/resolve-market";
+import type { ResolvedLeg } from "./shared/live-menu-types";
+import { queryNamesSport, adoptSport, resolveEntities } from "./grounding/resolve-entities";
+import { propagate, retier, byProminence, type Candidate } from "./grounding/ground-scope";
+import { execute } from "./result/execute";
 
-const ev = (id: number, start?: string, state?: string): KEvent => ({ id, ...(start && { start }), ...(state && { state }) });
+const ev = (id: number, start?: string, state?: string): KEvent => ({
+  id,
+  ...(start && { start }),
+  ...(state && { state }),
+});
 // The extractor's time field has all three keys, nullable — spell the absent ones so the tests type-check.
 type TimeField = NonNullable<NonNullable<Parameters<typeof resolveTimeWindow>[0]>>;
-const tf = (t: Partial<TimeField>): TimeField =>
-  ({ date_window: null, kickoff_time_of_day: null, fixture_pick: null, ...t });
+const tf = (t: Partial<TimeField>): TimeField => ({
+  date_window: null,
+  kickoff_time_of_day: null,
+  fixture_pick: null,
+  ...t,
+});
 const NOW = new Date("2026-06-18T12:00:00Z"); // a Thursday
 
 // ---- invariant 1: lenient on missing data -------------------------------------------------------------
@@ -97,14 +105,23 @@ test("late/early is relative to the other kickoffs that day", () => {
   const events = [ev(1, "2026-06-18T13:00:00Z"), ev(2, "2026-06-18T16:00:00Z"), ev(3, "2026-06-19T20:00:00Z")];
   const late = resolveTimeWindow(tf({ kickoff_time_of_day: "late" }), { now: NOW });
   // 16:00 is the last kickoff on the 18th; the 19th's 20:00 is a different day and is also its own latest.
-  assert.deepEqual(filterEventsByTime(events, late).map((e) => e.id), [2, 3]);
+  assert.deepEqual(
+    filterEventsByTime(events, late).map((e) => e.id),
+    [2, 3],
+  );
 });
 
 // ---- fixture pick -----------------------------------------------------------------------------------
 test("fixture pick orders by kickoff and drops events it cannot order", () => {
   const events = [ev(3, "2026-06-20T12:00:00Z"), ev(1, "2026-06-18T12:00:00Z"), ev(2, "2026-06-19T12:00:00Z"), ev(9)];
-  assert.deepEqual(applyFixturePick(events, { order: "earliest", count: 2 }).map((e) => e.id), [1, 2]);
-  assert.deepEqual(applyFixturePick(events, { order: "latest", count: 1 }).map((e) => e.id), [3]);
+  assert.deepEqual(
+    applyFixturePick(events, { order: "earliest", count: 2 }).map((e) => e.id),
+    [1, 2],
+  );
+  assert.deepEqual(
+    applyFixturePick(events, { order: "latest", count: 1 }).map((e) => e.id),
+    [3],
+  );
 });
 
 test("a fixture pick floors the window at now so past fixtures never win", () => {
@@ -146,17 +163,30 @@ test("a stated sport word locks widening; a guessed sport doesn't", () => {
 // Uses the committed tennis catalog (disk read, zero network). Kambi keeps gendered editions as separate
 // groups ("US Open" vs "US Open Women"); the squad marker must pick the twin, and must NEVER degrade the
 // bare name when no twin matches (squad "men" has no twin -> falls back to the men's group).
-import { groundScope } from "./ground-scope";
-import type { QueryPlan } from "./schema";
+import { groundScope } from "./grounding/ground-scope";
+import type { QueryPlan } from "./extractor/schema";
 
-const planFor = (squad: string | null): QueryPlan => ({
-  sport: "tennis",
-  selectors: [{
-    subject: { kind: "event" },
-    market_concept: "who wins",
-    scope: { teams: [], players: [], competition: "US Open", region: null, level: "competition", stage: null, squad, time: null, play_state: null },
-  }],
-} as QueryPlan);
+const planFor = (squad: string | null): QueryPlan =>
+  ({
+    sport: "tennis",
+    selectors: [
+      {
+        subject: { kind: "event" },
+        market_concept: "who wins",
+        scope: {
+          teams: [],
+          players: [],
+          competition: "US Open",
+          region: null,
+          level: "competition",
+          stage: null,
+          squad,
+          time: null,
+          play_state: null,
+        },
+      },
+    ],
+  }) as QueryPlan;
 
 test("squad 'women' grounds the competition to its Women twin; null and 'men' keep the men's group", () => {
   const women = groundScope(planFor("women")).legs[0]!.competition!;
@@ -171,13 +201,18 @@ test("squad 'women' grounds the competition to its Women twin; null and 'men' ke
 });
 
 // ---- pair grounding: doubles pairs are players-table entries; multi-surname queries must reach them ----
-import { groundTeam, groundPlayer } from "./ground-scope";
-import { loadScopeCatalog } from "./scope-catalog";
+import { groundTeam, groundPlayer } from "./grounding/ground-scope";
+import { loadScopeCatalog } from "./catalog/scope-catalog";
 
 test("pair phrasings ground to the pair entry; single names keep the old ladder", () => {
   const cat = loadScopeCatalog("tennis");
   const pair = /granollers.*zeballos|zeballos.*granollers/i;
-  for (const q of ["Granollers/Zeballos", "Granollers and Zeballos", "Marcel Granollers and Horacio Zeballos", "Granollers y Zeballos"]) {
+  for (const q of [
+    "Granollers/Zeballos",
+    "Granollers and Zeballos",
+    "Marcel Granollers and Horacio Zeballos",
+    "Granollers y Zeballos",
+  ]) {
     const r = groundTeam(q, cat);
     assert.equal(r.tier, "confident", `${q} must ground confident`);
     assert.match(r.candidates[0]!.name, pair, q);
@@ -185,23 +220,40 @@ test("pair phrasings ground to the pair entry; single names keep the old ladder"
   // regression guards: exact and single/initial names keep today's behavior
   assert.equal(groundTeam("Marcel Granollers", cat).candidates[0]!.name, "Marcel Granollers");
   assert.equal(groundTeam("Spain", cat).candidates[0]!.name, "Spain");
-  assert.ok(groundPlayer("R. Matos", cat).candidates.some((c) => c.name === "Rafael Matos"),
-    "R. Matos must still shortlist the singles player, not only pairs");
+  assert.ok(
+    groundPlayer("R. Matos", cat).candidates.some((c) => c.name === "Rafael Matos"),
+    "R. Matos must still shortlist the singles player, not only pairs",
+  );
 });
 
 test("pair join: two weak partner mentions both gain the joint pair candidate", () => {
   const plan = {
     sport: "tennis",
-    selectors: [{
-      subject: { kind: "event" },
-      market_concept: "who wins",
-      scope: { teams: ["Nys", "Roger-Vasselin"], players: [], competition: null, region: null, level: "fixture", stage: null, squad: null, time: null, play_state: null },
-    }],
+    selectors: [
+      {
+        subject: { kind: "event" },
+        market_concept: "who wins",
+        scope: {
+          teams: ["Nys", "Roger-Vasselin"],
+          players: [],
+          competition: null,
+          region: null,
+          level: "fixture",
+          stage: null,
+          squad: null,
+          time: null,
+          play_state: null,
+        },
+      },
+    ],
   } as QueryPlan;
   const { legs } = groundScope(plan);
   const joint = /nys.*roger.*vasselin/i;
   for (const t of legs[0]!.teams) {
-    assert.ok(t.candidates.some((c) => joint.test(c.name)), `"${t.text}" must carry the joint pair candidate`);
+    assert.ok(
+      t.candidates.some((c) => joint.test(c.name)),
+      `"${t.text}" must carry the joint pair candidate`,
+    );
     assert.notEqual(t.tier, "none");
   }
 });
@@ -211,10 +263,16 @@ test("pair join: two weak partner mentions both gain the joint pair candidate", 
 // observable (round 1 = full set, round 2 = the four triples in parallel, pairs never reached).
 const slipFixture = () => {
   const offers = [1, 2, 3, 4].map((id) => ({
-    id: 10 + id, eventId: 100, criterion: { id, englishLabel: `M${id}` },
+    id: 10 + id,
+    eventId: 100,
+    criterion: { id, englishLabel: `M${id}` },
     outcomes: [{ id, odds: 2000, englishLabel: `O${id}` }],
   })) as BetOffer[];
-  const legs: ResolvedLeg[] = [1, 2, 3, 4].map((id) => ({ phrase: `leg${id}`, pick: { label: `M${id}`, match: "exact" }, selection: { outcomeId: id } }));
+  const legs: ResolvedLeg[] = [1, 2, 3, 4].map((id) => ({
+    phrase: `leg${id}`,
+    pick: { label: `M${id}`, match: "exact" },
+    selection: { outcomeId: id },
+  }));
   return { legs, offers, events: [{ id: 100, tags: ["MATCH"] }] as KEvent[] };
 };
 // The priced slip's picks as [eventId, outcomeId], across its parts in order.
@@ -223,8 +281,15 @@ const picksOf = (s?: Combination) => s?.parts.flatMap((p) => p.legs.map((l) => [
 test("betslip: one toxic leg falls out, the biggest combo prices in 2 rounds", async () => {
   const { legs, offers, events } = slipFixture();
   const calls: number[][] = [];
-  const slip = await buildBetslip(legs, offers, events, async (_e, ids) => { calls.push(ids); return ids.includes(4) ? null : 15000; });
-  assert.deepEqual(picksOf(slip), [[100, 1], [100, 2], [100, 3]]); // pen-style leg 4 excluded, not the whole group
+  const slip = await buildBetslip(legs, offers, events, async (_e, ids) => {
+    calls.push(ids);
+    return ids.includes(4) ? null : 15000;
+  });
+  assert.deepEqual(picksOf(slip), [
+    [100, 1],
+    [100, 2],
+    [100, 3],
+  ]); // pen-style leg 4 excluded, not the whole group
   assert.equal(slip?.odds, 15000);
   assert.equal(calls.length, 5); // full set + the 4 triples; pairs never tried
 });
@@ -232,8 +297,14 @@ test("betslip: one toxic leg falls out, the biggest combo prices in 2 rounds", a
 test("betslip tie-break: among same-size combinable subsets, keep the earliest-mentioned legs", async () => {
   const { legs, offers, events } = slipFixture();
   // legs 1 and 2 conflict with EACH OTHER; every set avoiding that pair prices. [1,3,4] must beat [2,3,4].
-  const slip = await buildBetslip(legs, offers, events, async (_e, ids) => (ids.includes(1) && ids.includes(2) ? null : 12000));
-  assert.deepEqual(picksOf(slip), [[100, 1], [100, 3], [100, 4]]); // drops the later-mentioned conflicting leg
+  const slip = await buildBetslip(legs, offers, events, async (_e, ids) =>
+    ids.includes(1) && ids.includes(2) ? null : 12000,
+  );
+  assert.deepEqual(picksOf(slip), [
+    [100, 1],
+    [100, 3],
+    [100, 4],
+  ]); // drops the later-mentioned conflicting leg
 });
 
 // ---- betslip event assignment: one pick per LEG, shared event first, refusal re-assigns ------------------
@@ -248,8 +319,16 @@ const fanoutFixture = () => {
     { id: 14, eventId: 200, criterion: { id: 2, englishLabel: "To Score" }, outcomes: [{ id: 4, odds: 1700 }] },
   ] as BetOffer[];
   const legs: ResolvedLeg[] = [
-    { phrase: "city to win", pick: { label: "Full Time", match: "exact" }, selection: { outcomeId: 1, selectedIds: [1, 2] } },
-    { phrase: "haaland to score", pick: { label: "To Score", match: "exact" }, selection: { outcomeId: 3, selectedIds: [3, 4] } },
+    {
+      phrase: "city to win",
+      pick: { label: "Full Time", match: "exact" },
+      selection: { outcomeId: 1, selectedIds: [1, 2] },
+    },
+    {
+      phrase: "haaland to score",
+      pick: { label: "To Score", match: "exact" },
+      selection: { outcomeId: 3, selectedIds: [3, 4] },
+    },
   ];
   const events = [
     { id: 100, tags: ["MATCH"], start: "2026-09-05T14:00:00Z" },
@@ -261,17 +340,26 @@ const fanoutFixture = () => {
 test("betslip: two fan-out legs collapse to ONE correlated pair on the soonest shared fixture", async () => {
   const { legs, offers, events } = fanoutFixture();
   const calls: [number, number[]][] = [];
-  const slip = await buildBetslip(legs, offers, events, async (e, ids) => { calls.push([e, ids]); return 2030; });
+  const slip = await buildBetslip(legs, offers, events, async (e, ids) => {
+    calls.push([e, ids]);
+    return 2030;
+  });
   assert.deepEqual(calls, [[100, [1, 3]]]); // one correlated call, soonest event only — never an accumulator
   assert.equal(slip?.odds, 2030);
-  assert.deepEqual(picksOf(slip), [[100, 1], [100, 3]]);
+  assert.deepEqual(picksOf(slip), [
+    [100, 1],
+    [100, 3],
+  ]);
 });
 
 test("betslip: a refused shared event re-assigns its legs — rivals who meet next still get their double", async () => {
   const { legs, offers, events } = fanoutFixture(); // shared event 100 refuses (e.g. City win + Liverpool win same game)
   const slip = await buildBetslip(legs, offers, events, async (e) => (e === 100 ? null : 9999));
   // both legs fall back to event 200: still same-event there -> one correlated group on the next fixture
-  assert.deepEqual(picksOf(slip), [[200, 2], [200, 4]]);
+  assert.deepEqual(picksOf(slip), [
+    [200, 2],
+    [200, 4],
+  ]);
   assert.equal(slip?.odds, 9999);
 });
 
@@ -295,10 +383,19 @@ test("betslip: a leg re-assigned onto an already-priced event re-prices correlat
     { id: 200, tags: ["MATCH"], start: "2026-09-08T19:00:00Z" },
   ] as KEvent[];
   const calls: [number, number[]][] = [];
-  const slip = await buildBetslip(legs, offers, events, async (e, ids) => { calls.push([e, ids]); return e === 100 ? null : 9999; });
-  assert.deepEqual(calls, [[100, [1, 3]], [200, [2, 4]]]); // the merged ev200 pair IS re-priced correlated
+  const slip = await buildBetslip(legs, offers, events, async (e, ids) => {
+    calls.push([e, ids]);
+    return e === 100 ? null : 9999;
+  });
+  assert.deepEqual(calls, [
+    [100, [1, 3]],
+    [200, [2, 4]],
+  ]); // the merged ev200 pair IS re-priced correlated
   assert.equal(slip?.odds, 9999); // the joint price, never 1.5 × 1.7 = 2550
-  assert.deepEqual(picksOf(slip), [[200, 2], [200, 4]]);
+  assert.deepEqual(picksOf(slip), [
+    [200, 2],
+    [200, 4],
+  ]);
 });
 
 test("betslip: legs on disjoint events multiply as a genuine cross-event double", async () => {
@@ -310,12 +407,21 @@ test("betslip: legs on disjoint events multiply as a genuine cross-event double"
     { phrase: "city to win", pick: { label: "Full Time", match: "exact" }, selection: { outcomeId: 1 } },
     { phrase: "liverpool to win", pick: { label: "Full Time", match: "exact" }, selection: { outcomeId: 2 } },
   ];
-  const events = [{ id: 100, tags: ["MATCH"] }, { id: 200, tags: ["MATCH"] }] as KEvent[];
+  const events = [
+    { id: 100, tags: ["MATCH"] },
+    { id: 200, tags: ["MATCH"] },
+  ] as KEvent[];
   let called = false;
-  const slip = await buildBetslip(legs, offers, events, async () => { called = true; return null; });
+  const slip = await buildBetslip(legs, offers, events, async () => {
+    called = true;
+    return null;
+  });
   assert.equal(called, false); // singles use their own odds — the correlated API is never hit
   assert.equal(slip?.odds, 6000); // 2.0 × 3.0
-  assert.deepEqual(picksOf(slip), [[100, 1], [200, 2]]); // two single parts
+  assert.deepEqual(picksOf(slip), [
+    [100, 1],
+    [200, 2],
+  ]); // two single parts
 });
 
 test("betslip: two Bet Builders and a single make ONE combination — a part per match, the parts multiply", async () => {
@@ -323,50 +429,84 @@ test("betslip: two Bet Builders and a single make ONE combination — a part per
   // 5 alone @300. Each pair is a Bet Builder at its match's joint price, leg 5 a single at its own odds; the
   // parts keep query order even though match 200 kicks off first.
   const offers = [1, 2, 3, 4, 5].map((id) => ({
-    id: 10 + id, eventId: id <= 2 ? 100 : id <= 4 ? 200 : 300, criterion: { id, englishLabel: `M${id}` },
+    id: 10 + id,
+    eventId: id <= 2 ? 100 : id <= 4 ? 200 : 300,
+    criterion: { id, englishLabel: `M${id}` },
     outcomes: [{ id, odds: 2000 }],
   })) as BetOffer[];
-  const legs: ResolvedLeg[] = [1, 2, 3, 4, 5].map((id) => ({ phrase: `leg${id}`, pick: { label: `M${id}`, match: "exact" }, selection: { outcomeId: id } }));
+  const legs: ResolvedLeg[] = [1, 2, 3, 4, 5].map((id) => ({
+    phrase: `leg${id}`,
+    pick: { label: `M${id}`, match: "exact" },
+    selection: { outcomeId: id },
+  }));
   const events = [
     { id: 100, tags: ["MATCH"], start: "2026-10-10T13:30:00Z" },
     { id: 200, tags: ["MATCH"], start: "2026-10-10T11:30:00Z" },
     { id: 300, tags: ["MATCH"], start: "2026-10-11T15:00:00Z" },
   ] as KEvent[];
   const slip = await buildBetslip(legs, offers, events, async (e) => (e === 100 ? 1470 : 3050));
-  assert.deepEqual(slip?.parts.map((p) => [p.eventId, p.odds, p.legs.map((l) => l.outcomeId)]), [[100, 1470, [1, 2]], [200, 3050, [3, 4]], [300, 2000, [5]]]);
+  assert.deepEqual(
+    slip?.parts.map((p) => [p.eventId, p.odds, p.legs.map((l) => l.outcomeId)]),
+    [
+      [100, 1470, [1, 2]],
+      [200, 3050, [3, 4]],
+      [300, 2000, [5]],
+    ],
+  );
   assert.equal(slip?.odds, 8967); // 1.47 × 3.05 × 2.0
 });
 
 // [eventId, odds] per leg in query order: an optional Bet Builder pair (event 900, priced `bb`) first, then a single per event.
 const comboLabel = async (singles: number[], bb?: number) => {
-  const outs = [...(bb ? [[900, 2000], [900, 2000]] : []), ...singles.map((odds, i) => [100 + i, odds])] as [number, number][];
-  const offers = outs.map(([eventId, odds], i) => ({ id: 10 + i, eventId, criterion: { id: i, englishLabel: `M${i}` }, outcomes: [{ id: i + 1, odds }] })) as BetOffer[];
-  const legs: ResolvedLeg[] = outs.map((_, i) => ({ phrase: `leg${i}`, pick: { label: `M${i}`, match: "exact" }, selection: { outcomeId: i + 1 } }));
+  const outs = [
+    ...(bb
+      ? [
+          [900, 2000],
+          [900, 2000],
+        ]
+      : []),
+    ...singles.map((odds, i) => [100 + i, odds]),
+  ] as [number, number][];
+  const offers = outs.map(([eventId, odds], i) => ({
+    id: 10 + i,
+    eventId,
+    criterion: { id: i, englishLabel: `M${i}` },
+    outcomes: [{ id: i + 1, odds }],
+  })) as BetOffer[];
+  const legs: ResolvedLeg[] = outs.map((_, i) => ({
+    phrase: `leg${i}`,
+    pick: { label: `M${i}`, match: "exact" },
+    selection: { outcomeId: i + 1 },
+  }));
   const events = [...new Set(outs.map(([e]) => e))].map((id) => ({ id, tags: ["MATCH"] })) as KEvent[];
   return (await buildBetslip(legs, offers, events, async () => bb ?? null))?.oddsLabel;
 };
 
 test("betslip: oddsLabel is what the Kambi betslip shows — raw product, singles first, rounded once", async () => {
-  assert.equal(await comboLabel([1580, 2750]), "4.35");        // Finland × Moldova — millis-first rounding showed 4.34
-  assert.equal(await comboLabel([1010, 1450]), "1.46");        // …and 1.47 in the other direction
-  assert.equal(await comboLabel([11000, 12133]), "133.5");     // 1 decimal from 100 up, like the slip
+  assert.equal(await comboLabel([1580, 2750]), "4.35"); // Finland × Moldova — millis-first rounding showed 4.34
+  assert.equal(await comboLabel([1010, 1450]), "1.46"); // …and 1.47 in the other direction
+  assert.equal(await comboLabel([11000, 12133]), "133.5"); // 1 decimal from 100 up, like the slip
   assert.equal(await comboLabel([1450, 4200], 7500), "45.67"); // Bet Builder asked first still multiplies last
 });
 
 // ---------------------------------------------------------------------------------------------------------
 // SELECT: margin asks and zero-of-the-stat — "win by 2+" lands the -(N-0.5) handicap rung, "not scoring"
 // lands Under 0.5 on an anonymous over/under ladder (not a subject-absent).
-import { select } from "./select";
+import { select } from "./result/select";
 
 test("select: 'win by 2 or more' picks the subject's -1.5 handicap rung, not the nearest-to-+2", () => {
-  const hcp = (id: number, line: number): BetOffer => ({
-    id, eventId: 9, betOfferType: { id: 1 }, criterion: { label: "Handicap" },
-    outcomes: [
-      { id: id * 10 + 1, type: "OT_ONE", line, participant: "Barca", participantId: 160 },
-      { id: id * 10 + 2, type: "OT_CROSS", line },
-      { id: id * 10 + 3, type: "OT_TWO", line },
-    ],
-  }) as unknown as BetOffer;
+  const hcp = (id: number, line: number): BetOffer =>
+    ({
+      id,
+      eventId: 9,
+      betOfferType: { id: 1 },
+      criterion: { label: "Handicap" },
+      outcomes: [
+        { id: id * 10 + 1, type: "OT_ONE", line, participant: "Barca", participantId: 160 },
+        { id: id * 10 + 2, type: "OT_CROSS", line },
+        { id: id * 10 + 3, type: "OT_TWO", line },
+      ],
+    }) as unknown as BetOffer;
   const slice = { events: [{ id: 9 }] as KEvent[], betOffers: [hcp(1, -500), hcp(2, -1500), hcp(3, -2500)] };
   const sel = select(slice, { subjectId: 160, lineValue: 2, dir: "at_least" });
   assert.equal(sel.line, -1.5);
@@ -374,13 +514,17 @@ test("select: 'win by 2 or more' picks the subject's -1.5 handicap rung, not the
 });
 
 test("select: 'not scoring' on an anonymous team-total ladder picks Under 0.5, not subject-absent", () => {
-  const ou = (id: number, line: number): BetOffer => ({
-    id, eventId: 9, betOfferType: { id: 6 }, criterion: { label: "Total Goals by Rayo" },
-    outcomes: [
-      { id: id * 10 + 1, type: "OT_OVER", line },
-      { id: id * 10 + 2, type: "OT_UNDER", line },
-    ],
-  }) as unknown as BetOffer;
+  const ou = (id: number, line: number): BetOffer =>
+    ({
+      id,
+      eventId: 9,
+      betOfferType: { id: 6 },
+      criterion: { label: "Total Goals by Rayo" },
+      outcomes: [
+        { id: id * 10 + 1, type: "OT_OVER", line },
+        { id: id * 10 + 2, type: "OT_UNDER", line },
+      ],
+    }) as unknown as BetOffer;
   const slice = { events: [{ id: 9 }] as KEvent[], betOffers: [ou(1, 500), ou(2, 1500)] };
   const sel = select(slice, { subjectId: 214, subject: "Rayo", dir: "no" });
   assert.equal(sel.fallback, undefined);
@@ -391,13 +535,17 @@ test("select: 'not scoring' on an anonymous team-total ladder picks Under 0.5, n
 test("select: zero-of-the-stat needs the real 0.5 rung — a ladder starting higher degrades honestly", () => {
   // Under 8.5 PAYS on eight corners — a different bet from "no corners". No 0.5 rung -> honest absent,
   // never the nearest rung shipped as a confident pick. Same for "yes": Over 8.5 is not "to score".
-  const ou = (id: number, line: number): BetOffer => ({
-    id, eventId: 9, betOfferType: { id: 6 }, criterion: { label: "Total Corners" },
-    outcomes: [
-      { id: id * 10 + 1, type: "OT_OVER", line },
-      { id: id * 10 + 2, type: "OT_UNDER", line },
-    ],
-  }) as unknown as BetOffer;
+  const ou = (id: number, line: number): BetOffer =>
+    ({
+      id,
+      eventId: 9,
+      betOfferType: { id: 6 },
+      criterion: { label: "Total Corners" },
+      outcomes: [
+        { id: id * 10 + 1, type: "OT_OVER", line },
+        { id: id * 10 + 2, type: "OT_UNDER", line },
+      ],
+    }) as unknown as BetOffer;
   const slice = { events: [{ id: 9 }] as KEvent[], betOffers: [ou(1, 8500), ou(2, 9500), ou(3, 10500)] };
   for (const dir of ["no", "yes"] as const) {
     const sel = select(slice, { dir });
@@ -409,12 +557,22 @@ test("select: zero-of-the-stat needs the real 0.5 rung — a ladder starting hig
 test("select: a line leg on several fixtures picks that line on EACH; a fixture without it never stands in", () => {
   // "over 2.5 first half" across a team's next two games: the feed lists fixture 200 first. One pick per fixture
   // lets the betslip land the leg on the fixture the other legs share, not whichever the feed listed first.
-  const ou = (id: number, eventId: number, line: number): BetOffer => ({
-    id, eventId, betOfferType: { id: 6 }, criterion: { label: "Total Goals - 1st Half" },
-    outcomes: [{ id: id * 10 + 1, type: "OT_OVER", line }, { id: id * 10 + 2, type: "OT_UNDER", line }],
-  }) as unknown as BetOffer;
+  const ou = (id: number, eventId: number, line: number): BetOffer =>
+    ({
+      id,
+      eventId,
+      betOfferType: { id: 6 },
+      criterion: { label: "Total Goals - 1st Half" },
+      outcomes: [
+        { id: id * 10 + 1, type: "OT_OVER", line },
+        { id: id * 10 + 2, type: "OT_UNDER", line },
+      ],
+    }) as unknown as BetOffer;
   const events = [{ id: 100 }, { id: 200 }] as KEvent[];
-  const both = select({ events, betOffers: [ou(1, 200, 2500), ou(2, 100, 1500), ou(3, 100, 2500)] }, { lineValue: 2.5, dir: "over" });
+  const both = select(
+    { events, betOffers: [ou(1, 200, 2500), ou(2, 100, 1500), ou(3, 100, 2500)] },
+    { lineValue: 2.5, dir: "over" },
+  );
   assert.deepEqual([both.outcomeId, both.selectedIds], [11, [11, 31]]); // Over 2.5 on each, feed-first stays primary
   const one = select({ events, betOffers: [ou(1, 200, 1500), ou(3, 100, 2500)] }, { lineValue: 2.5, dir: "over" });
   assert.deepEqual([one.outcomeId, one.selectedIds], [31, undefined]); // 200's 1.5 is a nearest rung, not 2.5
@@ -426,12 +584,26 @@ test("select: a line leg on several fixtures picks that line on EACH; a fixture 
 // carried the right market (ref 31, exact) and was shown as "no market" because `leg` never arrived.
 test("resolve-market: a leg-less pick binds by position when picks match bets one-to-one", () => {
   const cutOff = [{ match: "exact", ref: 31, related: [0, 15, 10, 20, 27, 40, 12, 26] }]; // no `leg`
-  assert.deepEqual(picksByLeg(cutOff as never, 1)[0], { ref: 31, match: "exact", outcome: undefined, related: cutOff[0]!.related });
+  assert.deepEqual(picksByLeg(cutOff as never, 1)[0], {
+    ref: 31,
+    match: "exact",
+    outcome: undefined,
+    related: cutOff[0]!.related,
+  });
   // explicit legs still win over position (reordered picks bind correctly)
-  const swapped = [{ leg: 1, ref: 5, match: "close" }, { leg: 0, ref: 2, match: "exact" }];
-  assert.deepEqual(picksByLeg(swapped as never, 2).map((p) => p.ref), [2, 5]);
+  const swapped = [
+    { leg: 1, ref: 5, match: "close" },
+    { leg: 0, ref: 2, match: "exact" },
+  ];
+  assert.deepEqual(
+    picksByLeg(swapped as never, 2).map((p) => p.ref),
+    [2, 5],
+  );
   // a count mismatch never guesses: 2 bets, 1 leg-less pick -> both none
-  assert.deepEqual(picksByLeg(cutOff as never, 2).map((p) => p.match), ["none", "none"]);
+  assert.deepEqual(
+    picksByLeg(cutOff as never, 2).map((p) => p.match),
+    ["none", "none"],
+  );
 });
 
 // ---------------------------------------------------------------------------------------------------------
@@ -439,17 +611,21 @@ test("resolve-market: a leg-less pick binds by position when picks match bets on
 // SUBJECT is absent (naming the grounded person, so a wrong grounding is visible and correctable) — never the
 // false "no market is available". The generic no-market wording stays for a genuinely missing concept.
 test("execute: subject-absent clarify names the resolved subject, not a missing market", () => {
-  const leg = (unavailable: ResolvedLeg["unavailable"]): ResolvedLeg => ({ phrase: "to score", pick: { match: "none" }, unavailable });
+  const leg = (unavailable: ResolvedLeg["unavailable"]): ResolvedLeg => ({
+    phrase: "to score",
+    pick: { match: "none" },
+    unavailable,
+  });
   const run = (unavailable: ResolvedLeg["unavailable"]) =>
     execute({ legs: [leg(unavailable)], data: { events: [], betOffers: [] } }).clarificationNeeded ?? "";
 
   const absent = run({ kind: "subject-absent", subject: "Jamal Musiala", event: "FC Barcelona - Racing Santander" });
   assert.ok(absent.includes("Jamal Musiala"), "must name the grounded subject");
   assert.ok(absent.includes("FC Barcelona - Racing Santander"), "must name the fixture");
-  assert.ok(!absent.includes("No \"to score\" market"), "must not claim the market is missing");
+  assert.ok(!absent.includes('No "to score" market'), "must not claim the market is missing");
 
   const noMarket = run({ kind: "no-market" });
-  assert.ok(noMarket.includes("No \"to score\" market"), "a genuinely missing concept keeps the old wording");
+  assert.ok(noMarket.includes('No "to score" market'), "a genuinely missing concept keeps the old wording");
 });
 
 // ---------------------------------------------------------------------------------------------------------
@@ -461,7 +637,11 @@ test("grounder: a linked candidate beyond the shortlist cap survives the cross-c
   // six same-first-name players; only the LAST (beyond the old cap of 5) belongs to the team.
   const players = [p(1, 11), p(2, 12), p(3, 13), p(4, 14), p(5, 15), p(6, 100)];
   const [kept] = propagate([players, [team]], 0);
-  assert.deepEqual(kept!.map((c) => c.id), [6], "the strong club link must keep exactly the linked player");
+  assert.deepEqual(
+    kept!.map((c) => c.id),
+    [6],
+    "the strong club link must keep exactly the linked player",
+  );
   const res = retier({ text: "lamine", tier: "shortlist", candidates: players }, kept!);
   assert.equal(res.tier, "confident");
   assert.equal(res.candidates[0]!.id, 6);
@@ -477,14 +657,25 @@ test("grounder: a linked candidate beyond the shortlist cap survives the cross-c
 // wrong-sport rescue alive; disagreeing foreign picks never flip.
 test("entity gate: a lone foreign pick cannot flip the sport against home-settled evidence", () => {
   const foreign = new Map([[358, { sport: "basketball", cand: { id: 358, name: "FC Barcelona", score: 0.8 } }]]);
-  const pick = (id: number, ref = "team:0") =>
-    ({ kind: "settle-entity", ref, resolution: { text: "barcelona", tier: "confident", candidates: [{ id, name: "FC Barcelona", score: 0.8 }] } });
-  const legHome = { teams: [], players: [], subjectPlayer: { text: "lamine", tier: "confident", candidates: [{ id: 7, name: "Lamine Yamal", score: 1 }] } };
+  const pick = (id: number, ref = "team:0") => ({
+    kind: "settle-entity",
+    ref,
+    resolution: { text: "barcelona", tier: "confident", candidates: [{ id, name: "FC Barcelona", score: 0.8 }] },
+  });
+  const legHome = {
+    teams: [],
+    players: [],
+    subjectPlayer: { text: "lamine", tier: "confident", candidates: [{ id: 7, name: "Lamine Yamal", score: 1 }] },
+  };
   const legBare = { teams: [], players: [], subjectPlayer: null };
   assert.equal(adoptSport([pick(358)] as never, [legHome] as never, foreign as never), null, "home player vetoes");
   assert.equal(adoptSport([pick(358)] as never, [legBare] as never, foreign as never), "basketball", "rescue intact");
   const f2 = new Map([...foreign, [9, { sport: "ice-hockey", cand: { id: 9, name: "X", score: 0.8 } }]]);
-  assert.equal(adoptSport([pick(358), pick(9, "team:1")] as never, [legBare] as never, f2 as never), null, "disagreement never flips");
+  assert.equal(
+    adoptSport([pick(358), pick(9, "team:1")] as never, [legBare] as never, f2 as never),
+    null,
+    "disagreement never flips",
+  );
 });
 
 // ---------------------------------------------------------------------------------------------------------
@@ -492,21 +683,43 @@ test("entity gate: a lone foreign pick cannot flip the sport against home-settle
 // comps, before a 1-comp namesake) — ties keep catalog order via stable sort.
 test("grounder: weak shortlists rank by live-competition prominence", () => {
   const c = (id: number, comps: number[]): Candidate => ({ id, name: `C${id}`, score: 0.7, competitionIds: comps });
-  assert.deepEqual([c(1, [1]), c(2, [1, 2, 3]), c(3, [1, 2])].sort(byProminence).map((x) => x.id), [2, 3, 1]);
+  assert.deepEqual(
+    [c(1, [1]), c(2, [1, 2, 3]), c(3, [1, 2])].sort(byProminence).map((x) => x.id),
+    [2, 3, 1],
+  );
 });
 
 // ---------------------------------------------------------------------------------------------------------
 // ENTITY GATE: settling a name from a WEAK shortlist is a guess — the envelope must carry a non-blocking
 // "Showing X — could also be Y" note naming the runners-up (results + hedge, never a silent wrong answer).
 test("entity gate: a pick from a weak shortlist ships with a 'could also be' note", async () => {
-  const scope = { sport: "football", legs: [{ region: null, competition: null, level: "fixture", stage: null,
-    time: null, playState: null, teams: [], players: [], playerRoles: [], subjectPlayer: { text: "lamine",
-    tier: "shortlist", candidates: [
-      { id: 1, name: "Lamine A", score: 0.7, competitionIds: [1, 2] },
-      { id: 2, name: "Lamine B", score: 0.7, competitionIds: [1] },
-    ] } }] };
-  const decide = async (_q: string, cells: { ref: string; candidates: { id: number }[] }[]) =>
-    [{ ref: cells[0]!.ref, action: "pick", id: cells[0]!.candidates[0]!.id }];
+  const scope = {
+    sport: "football",
+    legs: [
+      {
+        region: null,
+        competition: null,
+        level: "fixture",
+        stage: null,
+        time: null,
+        playState: null,
+        teams: [],
+        players: [],
+        playerRoles: [],
+        subjectPlayer: {
+          text: "lamine",
+          tier: "shortlist",
+          candidates: [
+            { id: 1, name: "Lamine A", score: 0.7, competitionIds: [1, 2] },
+            { id: 2, name: "Lamine B", score: 0.7, competitionIds: [1] },
+          ],
+        },
+      },
+    ],
+  };
+  const decide = async (_q: string, cells: { ref: string; candidates: { id: number }[] }[]) => [
+    { ref: cells[0]!.ref, action: "pick", id: cells[0]!.candidates[0]!.id },
+  ];
   // the query NAMES the sport, so no cross-sport widening (keeps the test offline-cheap and deterministic)
   const settled = await resolveEntities("lamine to score football", scope as never, decide as never);
   assert.equal(settled.notes.length, 1);
@@ -524,14 +737,120 @@ test("resolve-market: a 1X2 side code is never an outcomeLabel (the subject gate
 });
 
 test("select: no side and no line on an over/under ladder picks the LOWEST Over, not the feed's first rung", () => {
-  const ou = (id: number, line: number): BetOffer => ({
-    id, eventId: 9, betOfferType: { id: 6 }, criterion: { label: "Total Goals by France" },
-    outcomes: [
-      { id: id * 10 + 1, type: "OT_OVER", line },
-      { id: id * 10 + 2, type: "OT_UNDER", line },
-    ],
-  }) as unknown as BetOffer;
-  const pick = (lines: number[]) => select({ events: [{ id: 9 }] as KEvent[], betOffers: lines.map((l, i) => ou(i + 1, l)) }, { subjectId: 321, subject: "France" });
-  assert.deepEqual([pick([1500, 2500, 500]).line, pick([1500, 2500, 500]).outcomeId], [0.5, 31], "'France to score' = Over 0.5");
+  const ou = (id: number, line: number): BetOffer =>
+    ({
+      id,
+      eventId: 9,
+      betOfferType: { id: 6 },
+      criterion: { label: "Total Goals by France" },
+      outcomes: [
+        { id: id * 10 + 1, type: "OT_OVER", line },
+        { id: id * 10 + 2, type: "OT_UNDER", line },
+      ],
+    }) as unknown as BetOffer;
+  const pick = (lines: number[]) =>
+    select(
+      { events: [{ id: 9 }] as KEvent[], betOffers: lines.map((l, i) => ou(i + 1, l)) },
+      { subjectId: 321, subject: "France" },
+    );
+  assert.deepEqual(
+    [pick([1500, 2500, 500]).line, pick([1500, 2500, 500]).outcomeId],
+    [0.5, 31],
+    "'France to score' = Over 0.5",
+  );
   assert.equal(pick([2500, 1500, 3500]).line, 1.5, "no 0.5 rung -> the lowest offered, never a drop");
+});
+
+// ---- sport recovery under `other`: names read with their squad, the sport every name shares, feed tie-break ---
+// Uses the committed catalogs (disk read, zero network); the tie-break takes an injected feed.
+import { recoverSport, breakSportTie, type SportCandidate } from "./grounding/recover-sport";
+
+const otherPlan = (teams: string[], squad: string | null, day?: string): QueryPlan =>
+  ({
+    sport: "other",
+    selectors: [
+      {
+        subject: { kind: "team", name: teams[0] },
+        market_concept: "to win",
+        scope: {
+          teams,
+          players: [],
+          competition: null,
+          region: null,
+          level: "fixture",
+          stage: null,
+          squad,
+          time: day ? tf({ date_window: { value: day, anchor: "now" } }) : null,
+          play_state: null,
+        },
+      },
+    ],
+  }) as QueryPlan;
+
+test("an `other` plan takes the one sport that places every named team, read with the squad", () => {
+  assert.deepEqual(recoverSport(otherPlan(["Växjö", "Lund"], "women")), { kind: "switch", sport: "floorball" });
+  // "women" alone matches trotting's "Honky Tonk Women" and winter-sports' "Alpine Skiing … Women": never a home
+  assert.deepEqual(recoverSport(otherPlan(["Lund", "Växjö"], "women")), { kind: "switch", sport: "floorball" });
+});
+
+test("under `other`, a name its own sport lists only weakly stops honestly instead of switching", () => {
+  // England (W) sits behind its U19 twin in football (shortlist) but is confident in field hockey
+  assert.deepEqual(recoverSport(otherPlan(["England"], "women")), { kind: "keep" });
+  // Sweden (W) is only a football shortlist: the twin is known, so the men's "Sweden" must not decide the sport
+  assert.deepEqual(recoverSport(otherPlan(["Sweden"], "women")), { kind: "keep" });
+  // bare Växjö is a football shortlist (Växjö Norra IF, Växjö DFF (W)), so the men's query can't be settled
+  assert.deepEqual(recoverSport(otherPlan(["Växjö", "Lund"], null)), { kind: "keep" });
+});
+
+test("a name that fits several sports under `other` is a tie over the squad's teams, not a dead end", () => {
+  const fix = recoverSport(otherPlan(["Växjö"], "women"));
+  assert.equal(fix.kind, "tie");
+  const tied = fix.kind === "tie" ? fix.candidates : [];
+  assert.deepEqual(tied.map((c) => c.sport).sort(), ["floorball", "football"], "ice hockey has no Växjö women");
+  assert.ok(
+    tied.every((c) => c.ids.length && c.names.every((n) => n.includes("(W)"))),
+    "squad 'women' must reach the (W) teams, never the men's sides",
+  );
+});
+
+test("a sport tie goes to the biggest match that fits the leg, and the note names only sides that play", async () => {
+  const tied: SportCandidate[] = [
+    { sport: "football", rootId: 1, ids: [10], names: ["Växjö DFF (W)"] },
+    { sport: "floorball", rootId: 2, ids: [20], names: ["Växjö IBK (W)"] },
+    { sport: "ice-hockey", rootId: 3, ids: [30], names: ["Växjö HC (W)"] },
+  ];
+  const match = (root: number, start: string, markets: number, tags = ["MATCH"]): KEvent => ({
+    id: root * 100 + markets,
+    start,
+    tags,
+    path: [{ id: root }],
+    nonLiveBoCount: markets,
+  });
+  const feed = (events: KEvent[]) => async () => ({ betOffers: [], events });
+  const saturday = otherPlan(["Växjö"], "women", "saturday"); // NOW is Thu 2026-06-18 -> Sat 2026-06-20
+  const tie = (events: KEvent[]) => breakSportTie(saturday, tied, { now: NOW }, feed(events));
+  const sat = "2026-06-20T14:00:00Z";
+  const sun = "2026-06-21T14:00:00Z";
+
+  const both = await tie([match(1, sat, 15), match(2, sat, 5)]);
+  assert.equal(both.sport, "football", "both play Saturday -> the match with more pre-match markets");
+  assert.match(both.note ?? "", /also matches Växjö IBK \(W\) in floorball — add the sport/);
+  assert.doesNotMatch(both.note ?? "", /ice hockey/, "a side with no event at all is never offered");
+
+  assert.equal(
+    (await tie([match(1, sun, 15), match(2, sat, 5)])).sport,
+    "floorball",
+    "outside the window never counts",
+  );
+  const outright = await tie([match(1, sat, 90, ["COMPETITION"]), match(2, sat, 5)]);
+  assert.equal(outright.sport, "floorball", "a fixture leg never counts an outright, however big");
+
+  const nobody = await tie([match(1, sun, 15), match(2, sun, 5)]);
+  assert.equal(nobody.sport, "football", "nobody plays in the window -> the most markets overall");
+  assert.match(nobody.note ?? "", /Växjö IBK \(W\) in floorball/);
+
+  const down = await breakSportTie(saturday, tied, { now: NOW }, async () => {
+    throw new Error("HTTP 404");
+  });
+  assert.deepEqual(down, { sport: "football" }, "a failed fetch degrades to the first sport, never a crash");
 });

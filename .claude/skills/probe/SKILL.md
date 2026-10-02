@@ -19,7 +19,7 @@ stage is wrong and *why*, then name the fix layer — not to score final results
 ```bash
 npm run probe -- "Arsenal to win" "over 2.5 goals"      # 1+ queries, summary log
 npm run probe -- --file queries.txt --log=full          # one query per line, raw payloads
-npm run probe -- "Kane top scorer" --until=ground       # stop after grounding — no Kambi, no paid market LLM
+npm run probe -- "Kane top scorer" --until=ground       # stop after grounding — no paid market LLM (Kambi only for a sport tie)
 npm run probe -- "..." --apis=kambi --out run.jsonl      # only feed traffic; also append the full trace
 ```
 
@@ -61,7 +61,7 @@ Timing (ms since prior event), token counts, cost, and the failure point are alw
 
 ## Reading the trace
 Each `stage` row is one pipeline stage; **its bug lives in that stage's file** (see the resolver-pipeline skill's
-stage→file table). Quick map: `extract`→extract.ts+prompt · `ground`→ground-scope.ts · `entities`→resolve-entities.ts+prompt
+stage→file table). Quick map: `extract`→extract.ts+prompt · `sport`→recover-sport.ts (only on a sport tie) · `ground`→ground-scope.ts · `entities`→resolve-entities.ts+prompt
 · `recall`→recall.ts (the fetch) · `scopeMenu`/`filter`→per-leg narrowing (recall.ts/filter.ts) · `market`→resolve-market.ts+prompt
 · `select`→select.ts (outcome/fallback) · `execute`→execute.ts (envelope). `[llm …]` rows are the Bedrock
 boundary (bedrock-call.ts); `[kambi]` rows the offering boundary (offering-client.ts).
@@ -75,7 +75,7 @@ boundary (bedrock-call.ts); `[kambi]` rows the offering boundary (offering-clien
   gate resolved no ids (look at the `entities` row).
 
 ## Invariants
-- The trace is **no-op instrumentation**: `src/resolver/trace.ts` + the `emit()` calls in bedrock-call/offering-client/
+- The trace is **no-op instrumentation**: `src/resolver/shared/trace.ts` + the `emit()` calls in bedrock-call/offering-client/
   resolve only fire when this script sets the ALS store. Prod, eval, and the SSE server pass no store → unchanged.
 - `--until` early-stops leave **no envelope** (the generator returns before `done`); that's expected, not a failure.
 - Not traced: the `onDemandPricing` betslip fetch (secondary path). Add an `emit` there if you probe betslips.

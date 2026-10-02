@@ -8,25 +8,25 @@
 // leg narrows the data to its OWN scope (scopeMenu) and resolves its market against that narrowed menu. Per-leg
 // scope (the redesign): every selector carries its own grain/competition/time, so narrowing is per leg, not global.
 
-import { extract } from "./extract";
-import { checkComplete } from "./check-complete";
-import { groundScope, type EntityResolution, type ResolvedLegScope } from "./ground-scope";
-import { resolveEntities } from "./resolve-entities";
-import { planRecall } from "./plan-recall";
-import { recall, scopeMenu, marketLabelOf } from "./recall";
-import { filterBySubject } from "./filter";
-import { resolveMarkets } from "./resolve-market";
-import { select, type SelectSpec } from "./select";
-import { execute, type ResponseEnvelope, type EnvelopeSubject } from "./execute";
-import { buildBetslip } from "./combinations";
-import { fold } from "./lexical";
-import { isMain, onDemandPricing, type BetOffer, type KEvent } from "./offering-client";
-import { usageStore, summarizeCost, type RawCall } from "./cost";
-import type { Subject, Line, LineRange } from "./schema";
-import { getSport } from "./sports";
-import { recoverSport } from "./recover-sport";
-import type { ResolvedLeg, MarketPick, EnvelopeLeg, Selection } from "./live-menu-types";
-import { emit } from "./trace";
+import { extract } from "./extractor/extract";
+import { checkComplete } from "./extractor/check-complete";
+import { groundScope, type EntityResolution, type ResolvedLegScope } from "./grounding/ground-scope";
+import { resolveEntities } from "./grounding/resolve-entities";
+import { planRecall } from "./grounding/plan-recall";
+import { recall, scopeMenu, marketLabelOf } from "./grounding/recall";
+import { filterBySubject } from "./market/filter";
+import { resolveMarkets } from "./market/resolve-market";
+import { select, type SelectSpec } from "./result/select";
+import { execute, type ResponseEnvelope, type EnvelopeSubject } from "./result/execute";
+import { buildBetslip } from "./result/combinations";
+import { fold } from "./shared/lexical";
+import { isMain, onDemandPricing, type BetOffer, type KEvent } from "./shared/offering-client";
+import { usageStore, summarizeCost, type RawCall } from "./llm/cost";
+import type { Subject, Line, LineRange } from "./extractor/schema";
+import { getSport } from "./catalog/sports";
+import { recoverSport, breakSportTie } from "./grounding/recover-sport";
+import type { ResolvedLeg, MarketPick, EnvelopeLeg, Selection } from "./shared/live-menu-types";
+import { emit } from "./shared/trace";
 
 // FILTER subject — a NAMED entity narrows the menu to its markets; a relational role (home/away) or `event`
 // subject has no name to filter on, so the whole fixture menu is kept (the per-side precision is a SELECT job).
@@ -53,8 +53,14 @@ const selectSubject = (s: Subject): string | undefined =>
 // A bare unit noun ("goals") is not a bet; the selector's direction + numeric line make it one ("goals over 2.5").
 // Folded from fields, never from wording, so every surface form of the same bet reads the same. Handicaps (no
 // direction), correct scores (string line) and ranges (object line) stay as the concept alone.
-const betPhrase = (sel: { subject: Subject; market_concept: string; direction?: string; line?: unknown }, level?: string): string => {
-  const concept = typeof sel.line === "number" && sel.direction ? `${sel.market_concept} ${sel.direction.replace("_", " ")} ${sel.line}` : sel.market_concept;
+const betPhrase = (
+  sel: { subject: Subject; market_concept: string; direction?: string; line?: unknown },
+  level?: string,
+): string => {
+  const concept =
+    typeof sel.line === "number" && sel.direction
+      ? `${sel.market_concept} ${sel.direction.replace("_", " ")} ${sel.line}`
+      : sel.market_concept;
   if (level === "competition") return concept;
   if (sel.subject.kind === "player") return `${concept} (for ${sel.subject.name ?? "one player"})`;
   if (sel.subject.kind === "team" && sel.subject.name) return `${concept} (for ${sel.subject.name})`;
@@ -71,12 +77,17 @@ const confidentId = (r: EntityResolution | null | undefined): number | undefined
 // team matched by folded name in the leg's `teams`. Relational/event subjects have none.
 function subjectEntity(leg: ResolvedLegScope, s: Subject): EntityResolution | null | undefined {
   if (s.kind === "player") return leg.subjectPlayer;
-  if (s.kind === "team") return leg.teams.find((e) => fold(e.text) === fold(s.name)) ?? leg.teams.find((e) => fold(e.candidates[0]?.name ?? "") === fold(s.name));
+  if (s.kind === "team")
+    return (
+      leg.teams.find((e) => fold(e.text) === fold(s.name)) ??
+      leg.teams.find((e) => fold(e.candidates[0]?.name ?? "") === fold(s.name))
+    );
   return undefined;
 }
 
 // The subject's grounded participant id (confident only) — SELECT's robust key, == the feed's participantId.
-const subjectParticipantId = (leg: ResolvedLegScope, s: Subject): number | undefined => confidentId(subjectEntity(leg, s));
+const subjectParticipantId = (leg: ResolvedLegScope, s: Subject): number | undefined =>
+  confidentId(subjectEntity(leg, s));
 
 // The subject's CANONICAL feed name — confident grounding ONLY. The feed builds market labels / event names
 // from this exact string, so the filter's text homes match precisely (no "Korea" vs "Korea Republic" slip).
@@ -122,7 +133,11 @@ function selSpec(
   // A RANGE bounds which fixtures qualify (by headline line); a scalar/token is the rung to select. The two
   // never co-occur — the extractor emits one shape or the other.
   if (typeof line === "object") {
-    return { ...base, ...(line.min != null ? { lineMin: line.min } : {}), ...(line.max != null ? { lineMax: line.max } : {}) };
+    return {
+      ...base,
+      ...(line.min != null ? { lineMin: line.min } : {}),
+      ...(line.max != null ? { lineMax: line.max } : {}),
+    };
   }
   return { ...base, lineValue: line };
 }
@@ -138,18 +153,24 @@ export type StageEvent =
   | { stage: "resolving" }
   | { stage: "searching" }
   | { stage: "routing" }
-  | { stage: 'disambiguating' }
+  | { stage: "disambiguating" }
   | { stage: "done"; envelope: ResponseEnvelope };
 
 // runPipeline — the orchestrator as an async generator. It yields a coarse progress marker before each
 // expensive phase (extract LLM, recall fetch, market-resolve LLM) and a final `done` carrying the envelope.
 // The SSE server forwards each yield; resolveQuery (below) drains it to the single envelope for non-streaming
 // callers (eval, probes).
-export async function* runPipeline(query: string, opts: { until?: string; tz?: string; locale?: string } = {}): AsyncGenerator<StageEvent> {
+export async function* runPipeline(
+  query: string,
+  opts: { until?: string; tz?: string; locale?: string } = {},
+): AsyncGenerator<StageEvent> {
   // Per-query LLM usage: each stage runs inside usageStore so bedrock-call records its tokens here (cost.ts).
   // Stamp every `done` envelope with the running total so the frontend can show per-query token/cost.
   const calls: RawCall[] = [];
-  const withCost = (e: ResponseEnvelope): ResponseEnvelope => { e.cost = summarizeCost(calls); return e; };
+  const withCost = (e: ResponseEnvelope): ResponseEnvelope => {
+    e.cost = summarizeCost(calls);
+    return e;
+  };
 
   yield { stage: "resolving" };
   const plan = await usageStore.run(calls, () => extract(query));
@@ -167,23 +188,67 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
   // grounding/fetch/LLM and ask the user to add one (canned message; no network spent).
   const incomplete = checkComplete(plan);
   if (incomplete) {
-    yield { stage: "done", envelope: withCost({ summary: "", events: [], subjects: [], results: [], legs: [], additional: [], notes: [], clarificationNeeded: incomplete.question }) };
+    yield {
+      stage: "done",
+      envelope: withCost({
+        summary: "",
+        events: [],
+        subjects: [],
+        results: [],
+        legs: [],
+        additional: [],
+        notes: [],
+        clarificationNeeded: incomplete.question,
+      }),
+    };
     return;
   }
 
   // Sport self-correction: the extractor's sport is a prior. If it's blind to a team/player the query names,
   // let the entity's real catalog home override it before the unsupported-sport stop below (see recover-sport.ts).
+  // A TIE (`other`, names that fit 2+ sports) asks the feed which one; the query still runs for ONE sport and the
+  // note naming the others rides on the envelopes from here on (dropped if the entity gate moves the sport).
   const fix = recoverSport(plan);
+  let sportNote: string | undefined;
   if (fix.kind === "switch") plan.sport = fix.sport;
-  else if (fix.kind === "clarify") {
+  else if (fix.kind === "tie") {
+    const tie = await breakSportTie(plan, fix.candidates, { tz: opts.tz });
+    emit({ kind: "stage", stage: "sport", out: { candidates: fix.candidates, ...tie } });
+    plan.sport = tie.sport;
+    sportNote = tie.note;
+  } else if (fix.kind === "clarify") {
     const names = fix.sports.map((s) => s.replace(/-/g, " ")).join(" or ");
-    yield { stage: "done", envelope: withCost({ summary: "", events: [], subjects: [], results: [], legs: [], additional: [], notes: [], clarificationNeeded: `That name matches more than one sport — did you mean ${names}? Add the sport or a league to your search.` }) };
+    yield {
+      stage: "done",
+      envelope: withCost({
+        summary: "",
+        events: [],
+        subjects: [],
+        results: [],
+        legs: [],
+        additional: [],
+        notes: [],
+        clarificationNeeded: `That name matches more than one sport — did you mean ${names}? Add the sport or a league to your search.`,
+      }),
+    };
     return;
   }
 
   if (plan.sport === "other" || !getSport(plan.sport)) {
     const what = plan.sport === "other" ? "that sport" : plan.sport;
-    yield { stage: "done", envelope: withCost({ summary: "", events: [], subjects: [], results: [], legs: [], additional: [], notes: [], clarificationNeeded: `We don't support ${what} yet. Try searching for another sport, or check back later as we continue adding more.` }) };
+    yield {
+      stage: "done",
+      envelope: withCost({
+        summary: "",
+        events: [],
+        subjects: [],
+        results: [],
+        legs: [],
+        additional: [],
+        notes: [],
+        clarificationNeeded: `We don't support ${what} yet. Try searching for another sport, or check back later as we continue adding more.`,
+      }),
+    };
     return;
   }
 
@@ -197,6 +262,7 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
   // extractor's sport was wrong. The entity already carries the right ids; only planRecall's squad lookup still
   // reads plan.sport, so bring it along. AFTER the emit — `plan` is the same object the extract stage captured,
   // so assigning before it rewrites that trace row and hides what the extractor actually said.
+  if (settled.sport !== plan.sport) sportNote = undefined; // a tie's "Showing <sport>" would now name the wrong one
   plan.sport = settled.sport;
   if (opts.until === "entities") return;
 
@@ -205,7 +271,17 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
   const recallInput = planRecall(settled, plan, opts.locale);
   if (!recallInput.participantIds?.length && !recallInput.groupIds?.length && !recallInput.eventIds?.length) {
     if (settled.clarifications.length > 0) {
-      yield { stage: "done", envelope: withCost(execute({ legs: [], data: { betOffers: [], events: [] }, clarifications: settled.clarifications })) };
+      yield {
+        stage: "done",
+        envelope: withCost(
+          execute({
+            legs: [],
+            data: { betOffers: [], events: [] },
+            clarifications: settled.clarifications,
+            ...(sportNote ? { notes: [sportNote] } : {}),
+          }),
+        ),
+      };
       return;
     }
     // No ids AND no clarifications — fall through; recall will throw its diagnostic error.
@@ -224,10 +300,13 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
   const sigOf = (i: number): string => {
     const leg = settled.legs[i]!;
     const sel = plan.selectors[i]!;
-    const teamIds = leg.teams.filter((t) => t.tier === "confident").flatMap((t) => t.candidates.map((c) => c.id)).sort((a, b) => a - b);
+    const teamIds = leg.teams
+      .filter((t) => t.tier === "confident")
+      .flatMap((t) => t.candidates.map((c) => c.id))
+      .sort((a, b) => a - b);
     return JSON.stringify([
       filterSubject(sel.subject) ?? "",
-      sel.subject.kind === "either_match_team" ? sel.subject.side ?? "" : "",
+      sel.subject.kind === "either_match_team" ? (sel.subject.side ?? "") : "",
       subjectParticipantId(leg, sel.subject) ?? 0,
       leg.level,
       confidentId(leg.competition) ?? 0,
@@ -258,10 +337,13 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
   // only those events. No anchor in the query -> floats stay broad (unchanged).
   const isFloating = (i: number): boolean => {
     const leg = settled.legs[i]!;
-    return filterSubject(plan.selectors[i]!.subject) == null
-      && !leg.teams.some((t) => t.tier === "confident")
-      && leg.competition?.tier !== "confident"
-      && !leg.time && leg.level !== "competition";
+    return (
+      filterSubject(plan.selectors[i]!.subject) == null &&
+      !leg.teams.some((t) => t.tier === "confident") &&
+      leg.competition?.tier !== "confident" &&
+      !leg.time &&
+      leg.level !== "competition"
+    );
   };
   const anchorEventIds = new Set<number>();
   const ordered = [...groups].sort(([, a], [, b]) => Number(isFloating(a[0]!)) - Number(isFloating(b[0]!)));
@@ -274,15 +356,18 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
     const leg = settled.legs[idxs[0]!]!;
     const sel0 = plan.selectors[idxs[0]!]!;
     const floating = isFloating(idxs[0]!);
-    const data = floating && anchorEventIds.size
-      ? { events: r.data.events.filter((e) => e.id != null && anchorEventIds.has(e.id)), betOffers: r.data.betOffers }
-      : r.data;
+    const data =
+      floating && anchorEventIds.size
+        ? { events: r.data.events.filter((e) => e.id != null && anchorEventIds.has(e.id)), betOffers: r.data.betOffers }
+        : r.data;
     const scoped = scopeMenu(data, leg, { tz: opts.tz }); // narrow the (possibly fixture-restricted) data to this group's leg scope
     if (scoped.timeUnresolved) {
       const bad = scoped.unresolvedPhrase ?? "you gave";
-      extraNotes.add(scoped.timeApplied
-        ? `Couldn't read "${bad}" as a kickoff time — showing all kickoff times.`
-        : `Couldn't read "${bad}" — showing all matching games.`);
+      extraNotes.add(
+        scoped.timeApplied
+          ? `Couldn't read "${bad}" as a kickoff time — showing all kickoff times.`
+          : `Couldn't read "${bad}" — showing all matching games.`,
+      );
     }
     const subjId = subjectParticipantId(leg, sel0.subject);
     const subjSide = sel0.subject.kind === "either_match_team" ? sel0.subject.side : undefined;
@@ -290,24 +375,43 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
     groupData.set(key, { scoped, fr });
     emit({ kind: "stage", stage: "scopeMenu", out: scoped });
     emit({ kind: "stage", stage: "filter", out: { ...fr, legs: idxs } }); // `legs`: which selectors share this menu (the log reads it)
-    idxs.forEach((i) => { keyByIdx[i] = key; });
+    idxs.forEach((i) => {
+      keyByIdx[i] = key;
+    });
     // "main" legs name no market — they skip the LLM pick entirely and fan out into every main market below.
     // Only the named legs go to resolveMarkets (keep the pick-index alignment to THOSE legs).
     // An unidentified-subject leg abstains (see subjectUnidentified): none-pick now, no market call spent.
-    idxs.forEach((i) => { if (subjectUnidentified(settled.legs[i]!, plan.selectors[i]!.subject)) pickByIdx[i] = { match: "none" }; });
+    idxs.forEach((i) => {
+      if (subjectUnidentified(settled.legs[i]!, plan.selectors[i]!.subject)) pickByIdx[i] = { match: "none" };
+    });
     const llmIdxs = idxs.filter((i) => plan.selectors[i]!.market_concept !== "main" && pickByIdx[i] == null);
     // Kick the pick off WITHOUT awaiting — each group resolves against its own menu with no cross-group
     // dependency, so all groups' picks run concurrently; awaited together after the loop.
     // ponytail: unbounded fan-out (one call per group). If a query splits into enough groups to hit Bedrock's
     // per-second limit, pool it like recall.ts (chunk + Promise.all).
-    if (llmIdxs.length) pickJobs.push({ idxs: llmIdxs, picks: usageStore.run(calls, () => resolveMarkets(llmIdxs.map((i) => betPhrase(plan.selectors[i]!, settled.legs[i]!.level)), fr.menu, undefined, query)) });
+    if (llmIdxs.length)
+      pickJobs.push({
+        idxs: llmIdxs,
+        picks: usageStore.run(calls, () =>
+          resolveMarkets(
+            llmIdxs.map((i) => betPhrase(plan.selectors[i]!, settled.legs[i]!.level)),
+            fr.menu,
+            undefined,
+            query,
+          ),
+        ),
+      });
     // anchored group -> remember the fixtures it prices, so later floating groups inherit them
     if (!floating) for (const b of fr.offers) if (b.eventId != null) anchorEventIds.add(b.eventId);
   }
   // All group picks were kicked off concurrently above; await together, then map each group's results back to its
   // leg indices (order within a group == llmIdxs order == resolveMarkets phrase order).
   const jobResults = await Promise.all(pickJobs.map((j) => j.picks));
-  pickJobs.forEach((j, ji) => j.idxs.forEach((i, k) => { pickByIdx[i] = jobResults[ji]![k]!; }));
+  pickJobs.forEach((j, ji) => {
+    j.idxs.forEach((i, k) => {
+      pickByIdx[i] = jobResults[ji]![k]!;
+    });
+  });
   emit({ kind: "stage", stage: "market", out: pickByIdx });
 
   // Relational subjects need the fixture's home/away — from THIS leg's picked betoffer's event, within the
@@ -342,20 +446,39 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
     // can still drop a leg whose ids don't land — rare (execute is fed exactly what select resolved against).
     // "We understood" echo. A line RANGE is rendered for the human ("line above 8.5"); a scalar/token rides as-is.
     const lineEcho =
-      sel.line == null ? undefined
+      sel.line == null
+        ? undefined
         : typeof sel.line === "object"
-          ? [sel.line.min != null ? `above ${sel.line.min}` : "", sel.line.max != null ? `below ${sel.line.max}` : ""].filter(Boolean).join(" and ")
+          ? [sel.line.min != null ? `above ${sel.line.min}` : "", sel.line.max != null ? `below ${sel.line.max}` : ""]
+              .filter(Boolean)
+              .join(" and ")
           : sel.line;
-    const under = { ...(subj ? { subject: subj } : {}), phrase: sel.market_concept, ...(lineEcho != null ? { line: lineEcho } : {}) };
+    const under = {
+      ...(subj ? { subject: subj } : {}),
+      phrase: sel.market_concept,
+      ...(lineEcho != null ? { line: lineEcho } : {}),
+    };
     // Unidentified named subject -> abstain (covers "main" browses too): a no-fixture leg naming the subject,
     // no selection. execute renders the sentence and, with the leg unresolved, surfaces the entity clarification.
     if (subjectUnidentified(leg, sel.subject)) {
-      legsOut.push({ phrase: sel.market_concept, pick: { match: "none" }, unavailable: { kind: "no-fixture", ...(subj ? { scope: subj } : {}) } });
+      legsOut.push({
+        phrase: sel.market_concept,
+        pick: { match: "none" },
+        unavailable: { kind: "no-fixture", ...(subj ? { scope: subj } : {}) },
+      });
       legsUnderstood.push({ ...under, matched: false });
       continue;
     }
     const spec: SelectSpec = {
-      ...selSpec(sel.line, sel.odds, subj, subjectParticipantId(leg, sel.subject), sel.odds_sort, sel.count, sel.line_sort),
+      ...selSpec(
+        sel.line,
+        sel.odds,
+        subj,
+        subjectParticipantId(leg, sel.subject),
+        sel.odds_sort,
+        sel.count,
+        sel.line_sort,
+      ),
       ...(sel.direction ? { dir: sel.direction } : {}),
       ...(pickByIdx[i]?.outcomeLabel ? { outcomeLabel: pickByIdx[i]!.outcomeLabel } : {}),
     };
@@ -366,12 +489,19 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
       subjEntry = subjectsOut.get(spec.subjectId);
       if (!subjEntry) {
         const name = subjectName(leg, sel.subject);
-        if (name) subjectsOut.set(spec.subjectId, subjEntry = { kind: sel.subject.kind, id: spec.subjectId, name, eventIds: [] });
+        if (name)
+          subjectsOut.set(
+            spec.subjectId,
+            (subjEntry = { kind: sel.subject.kind, id: spec.subjectId, name, eventIds: [] }),
+          );
       }
     }
     // select one market's outcomes; event comes off the picked offers (per-leg home/away binds to the right match).
     const selectFor = (picked: BetOffer[]) =>
-      select({ events: scoped.events, betOffers: picked }, spec, { home: eventOf(picked, scoped.events)?.homeName, away: eventOf(picked, scoped.events)?.awayName });
+      select({ events: scoped.events, betOffers: picked }, spec, {
+        home: eventOf(picked, scoped.events)?.homeName,
+        away: eventOf(picked, scoped.events)?.awayName,
+      });
 
     // "main": no LLM pick — surface EVERY main market for the matched fixtures. Filter this leg's offers to the
     // MAIN-tagged ones (the per-leg client-side cut — works on any endpoint; a no-op when recall shrank server-side),
@@ -389,7 +519,12 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
         const selection = selectFor(offersForPick(mainOffers, label));
         if (selection && !selection.fallback) matched = true;
         addSubjectEvents(subjEntry, mainOffers, selection);
-        legsOut.push({ phrase: label, pick: { label, match: "exact" }, ...(selection ? { selection } : {}), ...(spec.subjectId != null ? { subjectId: spec.subjectId } : {}) });
+        legsOut.push({
+          phrase: label,
+          pick: { label, match: "exact" },
+          ...(selection ? { selection } : {}),
+          ...(spec.subjectId != null ? { subjectId: spec.subjectId } : {}),
+        });
       }
       legsUnderstood.push({ ...under, matched });
       continue;
@@ -402,22 +537,48 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
     // a drop). Say so, or "texans -3" answered with -1.5 reads as a wrong answer instead of a substitute.
     // Bands are exempt: "2+" resolving to "over 1.5" IS the exact conversion, not a substitute.
     const bandDir = sel.direction === "at_least" || sel.direction === "at_most";
-    if (!bandDir && typeof sel.line === "number" && selection?.line != null && !selection.fallback && selection.line !== sel.line)
-      extraNotes.add(`No ${sel.line} line for "${sel.market_concept}" right now — showing the nearest offered (${selection.line}).`);
+    if (
+      !bandDir &&
+      typeof sel.line === "number" &&
+      selection?.line != null &&
+      !selection.fallback &&
+      selection.line !== sel.line
+    )
+      extraNotes.add(
+        `No ${sel.line} line for "${sel.market_concept}" right now — showing the nearest offered (${selection.line}).`,
+      );
     // A `none` pick has no result: distinguish "the scope found no fixture at all" (a fixture-grain leg with an
     // empty scoped slate) from "a fixture existed but no market fit the concept" — execute renders each differently.
     const namedTeams = [...(sel.scope.teams ?? []), ...(sel.subject.kind === "team" ? [sel.subject.name] : [])];
     const wantedFixture = sel.scope.level === "fixture" || namedTeams.length > 0 || !!sel.scope.time;
     const filteredSubject = subjectName(leg, sel.subject);
-    const unavailable = pick.match === "none"
-      ? (scoped.events.length === 0 && wantedFixture
-          ? { kind: "no-fixture" as const, ...(namedTeams.length ? { scope: [...new Set(namedTeams)].join(" vs ") } : {}) }
+    const unavailable =
+      pick.match === "none"
+        ? scoped.events.length === 0 && wantedFixture
+          ? {
+              kind: "no-fixture" as const,
+              ...(namedTeams.length ? { scope: [...new Set(namedTeams)].join(" vs ") } : {}),
+            }
           : scoped.offers.length > 0 && fr.offers.length === 0 && filteredSubject
-            ? { kind: "subject-absent" as const, subject: filteredSubject, ...(scoped.events.length === 1 ? { event: scoped.events[0]!.name } : {}) }
-            : { kind: "no-market" as const })
-      : undefined;
-    legsOut.push({ phrase: sel.market_concept, pick, ...(selection ? { selection } : {}), ...(spec.subjectId != null ? { subjectId: spec.subjectId } : {}), ...(unavailable ? { unavailable } : {}) });
-    legsUnderstood.push({ ...under, matched: !!selection && !selection.fallback, ...(pick.label ? { market: pick.label } : {}) });
+            ? {
+                kind: "subject-absent" as const,
+                subject: filteredSubject,
+                ...(scoped.events.length === 1 ? { event: scoped.events[0]!.name } : {}),
+              }
+            : { kind: "no-market" as const }
+        : undefined;
+    legsOut.push({
+      phrase: sel.market_concept,
+      pick,
+      ...(selection ? { selection } : {}),
+      ...(spec.subjectId != null ? { subjectId: spec.subjectId } : {}),
+      ...(unavailable ? { unavailable } : {}),
+    });
+    legsUnderstood.push({
+      ...under,
+      matched: !!selection && !selection.fallback,
+      ...(pick.label ? { market: pick.label } : {}),
+    });
   }
   emit({ kind: "stage", stage: "select", out: legsOut });
 
@@ -439,7 +600,10 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
   // them turns "PL home teams to win" into a forced accumulator and drops every per-match card.
   const noMarketBrowse = !!recallInput.onlyMain;
   const pickedLegs = legsOut.filter((l) => l.selection?.outcomeId != null || l.selection?.selectedIds?.length).length;
-  const betslip = noMarketBrowse || pickedLegs < 2 ? undefined : await buildBetslip(legsOut, [...execOffers], [...execEvents.values()], onDemandPricing, recallInput.lang);
+  const betslip =
+    noMarketBrowse || pickedLegs < 2
+      ? undefined
+      : await buildBetslip(legsOut, [...execOffers], [...execEvents.values()], onDemandPricing, recallInput.lang);
 
   // Query-level combined-odds bound ("only if the combined odds clear 2.0"). Checked ONCE against the priced
   // betslip, here rather than per leg — a per-selector bound deletes whichever leg it lands on (the Arsenal-at-1.2
@@ -449,8 +613,12 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
   if (cOdds && betslip) {
     const price = betslip.odds / 1000;
     if ((cOdds.min != null && price < cOdds.min) || (cOdds.max != null && price > cOdds.max)) {
-      const want = [cOdds.min != null ? `above ${cOdds.min}` : "", cOdds.max != null ? `below ${cOdds.max}` : ""].filter(Boolean).join(" and ");
-      extraNotes.add(`These selections combine to ${price.toFixed(2)}, not ${want}. Swap a leg or adjust the price you're after.`);
+      const want = [cOdds.min != null ? `above ${cOdds.min}` : "", cOdds.max != null ? `below ${cOdds.max}` : ""]
+        .filter(Boolean)
+        .join(" and ");
+      extraNotes.add(
+        `These selections combine to ${price.toFixed(2)}, not ${want}. Swap a leg or adjust the price you're after.`,
+      );
     }
   }
 
@@ -458,7 +626,7 @@ export async function* runPipeline(query: string, opts: { until?: string; tz?: s
     legs: legsOut,
     data: { events: [...execEvents.values()], betOffers: [...execOffers] },
     clarifications: settled.clarifications,
-    notes: [...settled.notes, ...extraNotes],
+    notes: [...(sportNote ? [sportNote] : []), ...settled.notes, ...extraNotes],
     truncated: r.truncated,
     fetchFailed: r.failed,
     ...(betslip ? { betslip } : {}),

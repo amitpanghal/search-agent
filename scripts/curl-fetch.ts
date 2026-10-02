@@ -13,7 +13,7 @@
 // Call closeBrowser() at the end of a script's main() so the Node process can exit (a live browser keeps
 // the event loop alive). CI must install the browser binary: `npx playwright install --with-deps chromium`.
 
-import { chromium, type Browser } from "@playwright/test";
+import { chromium, type Browser, type Page } from "@playwright/test";
 
 // Lazy singleton browser; the ??= hands the same launch promise to all racing first callers.
 let browserP: Promise<Browser> | undefined;
@@ -22,7 +22,7 @@ const getBrowser = () => (browserP ??= chromium.launch());
 // Parsed JSON on HTTP 2xx, or null on ANY failure (timeout, non-2xx, parse error). Same contract as the
 // old curl version, so the caller's "null → split into children / skip leaf" fallback is unchanged.
 export async function curlJsonOrNull(url: string, timeoutSec = 120): Promise<any | null> {
-  let page;
+  let page: Page | undefined;
   try {
     page = await (await getBrowser()).newPage();
     return await page.evaluate(

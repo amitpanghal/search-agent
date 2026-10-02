@@ -1,0 +1,16 @@
+# Dependabot: weekly PRs for outdated or vulnerable npm packages. Minor and patch bumps arrive as ONE grouped PR;
+# a major bump gets its own. Security alerts and security updates are a repo setting (Settings > Code security),
+# not this file. There is no CI yet, so run the free checks (typecheck, test, gate:live-menu, lint) before merging.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]
+    commit-message:
+      prefix: "chore(deps)"

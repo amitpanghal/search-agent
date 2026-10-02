@@ -7,7 +7,7 @@
 # cards, which change with the live feed. Whether `weekend` becomes the right Friday-18:00-LOCAL instant
 # is stage 2 (offline, frozen clock, see time-window.ts).
 #
-# Contract under test: Time/Line/LineRange/Odds in src/resolver/schema.ts:21-73, token rules in
+# Contract under test: Time/Line/LineRange/Odds in src/resolver/extractor/schema.ts:21-73, token rules in
 # extractor-prompt.md:102-126.
 #
 # KNOWN RED, not new bugs: the mixed-grain row in section G (per-leg-scope structural gap; the prompt fix

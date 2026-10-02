@@ -1,0 +1,36 @@
+// Incomplete-query gate (Part A1). A pure, no-LLM check that runs right after extract() and BEFORE
+// grounding: if the query named no anchor — no team, no player, no competition, no region — there is nothing
+// to scope to ("show me odds tomorrow" → "all of football"), so we stop and ask the user to add one. With no
+// model in the loop the message is a FIXED canned string (decided: Option 1), not a model-written one.
+//
+// Known edge, documented on purpose: this checks PRESENCE, not whether the words are REAL. "odds in Atlantis"
+// sets region:"Atlantis", so it PASSES this gate and later abstains during grounding. That's the deferred
+// "unsupported region" case, not a gate bug — don't re-file it.
+
+import type { QueryPlan } from "./schema";
+
+// The shared clarification shape — the same one `disambiguate` pushes, so the two sources are interchangeable
+// downstream. For this gate `ref` is always "query" and there is no `suggest` (no candidates to offer).
+export type Clarification = { ref: string; question: string; suggest?: number[] };
+
+// Two parts: (1) what's wrong, (2) what to do. No example query — the gate has no data to build a valid one.
+export const INCOMPLETE_QUESTION =
+  "We couldn't find a team, player, or league in your search. Add one to narrow your search, then try again.";
+
+export function checkComplete(plan: QueryPlan): Clarification | null {
+  // A player OR team named ONLY as a market owner (selector subject) is still an anchor — the extractor doesn't
+  // always mirror it into a leg's scope, so check the subjects too (else "Cody Gakpo over 1.5 shots" or
+  // "Shopify Rebellion to win map 1" false-clarifies).
+  const hasSubjectAnchor = plan.selectors.some(
+    (sel) => (sel.subject.kind === "player" || sel.subject.kind === "team") && !!sel.subject.name,
+  );
+  // Per-leg scope: ANY leg naming a team / player / competition / region is an anchor for the whole query.
+  const hasScopeAnchor = plan.selectors.some(
+    (sel) =>
+      sel.scope.teams.length > 0 ||
+      sel.scope.players.length > 0 ||
+      sel.scope.competition !== null ||
+      sel.scope.region !== null,
+  );
+  return hasSubjectAnchor || hasScopeAnchor ? null : { ref: "query", question: INCOMPLETE_QUESTION };
+}
