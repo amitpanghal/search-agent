@@ -2,8 +2,8 @@
 // line/odds); event_scope facets are tracked as soft notes only (E5).
 //
 // The market axis grades in one of two modes:
-//   - TEXT (Sprint 1, default): lenient text containment of `market_concept` vs each gold cell's
-//     accept[] (so accept[] is load-bearing, not just diagnostic).
+//   - TEXT (default): legs pair by subject kind, and the wording is graded only through each gold cell's
+//     must[] (the tokens that have to survive); accept[] is not graded in this mode.
 //   - ID (Sprint 3 E13, when `grounded` is supplied): the harness pre-grounds each selector to a
 //     tiered id-set; pairing + market-found pass iff the gold id(s) are *contained* in the returned
 //     ids AND the tier is clean (confident|variants). A containing-but-clarify (`ambiguous` near-tie or
@@ -17,6 +17,7 @@
 
 import type { GoldRecord } from "./gold-record";
 import type { QueryPlan } from "../resolver/extractor/schema";
+import { contentTokens } from "../resolver/shared/lexical";
 
 // The market-grounding shape the ID-mode market axis consumes. Formerly imported from ground-market.ts,
 // deleted at the Phase 6 cut (market is now resolved post-fetch). The type is relocated here, its sole
@@ -132,7 +133,14 @@ function bindingFailure(g: GoldSelector, p: PredSelector): string | null {
     "name" in g.subject &&
     !!g.subject.name &&
     looseMatch((p.subject as { name?: string }).name ?? "", g.subject.name.accept);
-  if (g.subject.kind !== p.subject.kind && !sameEntityOtherSlot) {
+  // An outright has no match, so "either team" names nobody: a side-less either_match_team takes the event path
+  // downstream (no filter or select subject, no picker note — resolve.ts filterSubject/selectSubject/betPhrase).
+  const outrightEither =
+    g.subject.kind === "event" &&
+    g.scope.level === "competition" &&
+    p.subject.kind === "either_match_team" &&
+    !p.subject.side;
+  if (g.subject.kind !== p.subject.kind && !sameEntityOtherSlot && !outrightEither) {
     return `binding kind: expected "${g.subject.kind}", got "${p.subject.kind}"`;
   }
   if ((g.subject.kind === "player" || g.subject.kind === "team") && g.subject.name) {
@@ -207,6 +215,19 @@ function isPlanMarketless(p: ResolvedPlan): boolean {
   return p.selectors.length === 1 && p.selectors[0]!.market_concept === "main";
 }
 
+// A squad marker may ride on the competition ("NRL (W)") or sit in `squad` ("NRL" + "women"): ground-scope grounds
+// the competition WITH the squad appended (withSquad), so both reach the same group. Fold the squad in and compare
+// canonical tokens (women/ladies/(W) -> "w"); a bare "NRL" still fails a gold "NRL (W)".
+function competitionMatch(comp: string, squad: string | null, accept: string[]): boolean {
+  if (looseMatch(comp, accept)) return true;
+  if (!squad) return false;
+  const have = contentTokens(`${comp} ${squad}`);
+  return accept.some((a) => {
+    const want = contentTokens(a);
+    return want.size > 0 && [...want].every((t) => have.has(t));
+  });
+}
+
 function scopeDiffs(
   ge: ResolvedGold["selectors"][number]["scope"],
   pe: ResolvedPlan["selectors"][number]["scope"],
@@ -232,7 +253,7 @@ function scopeDiffs(
 
   if (ge.competition === null) {
     if (pe.competition !== null) out.push({ facet: "competition", msg: `unexpected competition: "${pe.competition}"` });
-  } else if (pe.competition === null || !looseMatch(pe.competition, ge.competition.accept)) {
+  } else if (pe.competition === null || !competitionMatch(pe.competition, pe.squad, ge.competition.accept)) {
     out.push({
       facet: "competition",
       msg: `competition: expected ~${JSON.stringify(ge.competition.accept)}, got ${JSON.stringify(pe.competition)}`,

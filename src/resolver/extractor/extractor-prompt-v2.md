@@ -26,8 +26,9 @@ to just the part you recognise. Leave a **competition** as the query wrote it: a
 Emit **`sport`** — exactly one value from the SUPPORTED SPORTS list, copied verbatim. Read it from a named
 sport, from the teams/players/competition, or from the **market vocabulary** ("both teams to score" →
 football, "total games"/"aces" → tennis, "three-pointers" → basketball, "180s" → darts, "fights"/"bout"/
-"the card" → boxing or ufc-mma, "map"/"maps" → esports). If the sport is
-genuinely none of them, emit `other`. Never invent a value that is not on the list.
+"the card" → boxing or ufc-mma, "map"/"maps" → esports). A sport the list does not name by itself goes
+under the broader entry that covers it. If the sport is genuinely none of them, emit `other`. Never
+invent a value that is not on the list.
 
 SUPPORTED SPORTS: {{SUPPORTED_SPORTS}}
 
@@ -52,8 +53,9 @@ serious error you can make.
 
 A selector exists **only for a bettable outcome**. A part of the query that merely locates or asks to see
 events — a schedule question ("is X playing today?"), a browse verb ("show me", "what's on") — or that
-only states a price ("something paying 10x") contributes its entities, time and price to `scope`/`odds`;
-it is never a leg of its own. If after that **no** leg names a market, emit exactly one selector
+only states a price ("something paying 10x", or a trailing "…, over N" naming no stat after a bet that
+cannot take it as its line — §4) contributes its entities, time and price to `scope`/`odds`; it is never
+a leg of its own. If after that **no** leg names a market, emit exactly one selector
 `{ subject: { kind: "event" }, market_concept: "main" }` carrying that scope and any odds bound.
 A noun naming the event ("match", "game", "fixture", "card") is **not** a market — but a noun coordinated
 with another market noun, or modifying "bets"/"markets"/"odds" ("card and corner bets"), **always names a
@@ -101,13 +103,14 @@ follow both:
   "market(s)", and the scope words (teams / competition / stage / time / players). A qualifier that
   changes *which* market this is **stays**:
   - a segment — "first half", "in round 2", "first 5 innings", "at half time", "on map 1"
-  - a margin — "to win **by** 7+", "**by** 13+", "win 9+ **margin**"
+  - a margin — "to win **by**", "**by**", "win **margin**": the word stays, the number still moves
+    ("to win by 5+" → concept "to win by", `line 5`, `direction "at_least"`)
   - a parity or enumeration — "odd or even", "correct score", "half time full time"
   - a unit — "**set** handicap", "**leg** handicap", "**frame** handicap", "run line"
   - a discipline — "**doubles** match winner", "to win the **mixed doubles**": the format picks a
     different event family, so it stays in the concept even though it reads like scope
 
-  "to win by 7+" is **not** "to win". "first half total goals" is **not** "total goals". "Total runs odd or
+  "to win by" is **not** "to win". "first half total goals" is **not** "total goals". "Total runs odd or
   even" is **not** "total runs". "to win the mixed doubles" is **not** "to win". Losing the qualifier
   turns the bet into a different one.
 
@@ -122,6 +125,8 @@ number is compared against**:
 - **A rung** — the comparison sits on the **counted thing**, picking one outcome inside one market: a
   **number** for a threshold or a handicap start ("over 2.5 `<stat>`" → `2.5`, "-1.5 on the run line" →
   `-1.5`), or **text** for one named outcome of a multi-outcome market ("2-1", "draw/win", "1-39").
+  A result per period is written from the **subject's** side as win / draw / loss joined by "/" in time
+  order, also when the query says it in words ("level at the break, then win" → "draw/win").
 - **A bound** — `{ min?, max? }`. The comparison sits on **the market's own posted number**, which the
   query treats as something a fixture *has*: "games where the `<stat>` line is above 8.5", "with a total
   under 40", "where it sits below 158". This picks no outcome — it filters which fixtures qualify.
@@ -129,6 +134,10 @@ number is compared against**:
 The tell is what the number measures: a count of the stat ("over N `<stat>`") is a rung; the market's
 own posted number ("the line is over N", "with a total under N") is a bound. A number that measures a
 PRICE is never `line` — "the favourite is under 1.5" bounds what that bet pays → `odds` (§6).
+A trailing side word and number that name no stat ("…, over N") belong to the bet just before them. If
+that bet still lacks its number ("total `<stat>`, over N"), they are its rung. Otherwise — it already has
+its number, or it is a yes/no outcome with none to take — they are its price: `odds` only, adding no
+`line`, no `direction` and no leg. Joined by "and" instead, they start a new bet (§1).
 
 ## 5. `direction` — which side of a two-sided market
 
@@ -165,13 +174,15 @@ subject), and a **bound** on the fixture's posted line (§4).
   combining word with no number ("parlay it", "combined price?") states no bound: omit the field. It is
   always a price; a bound on the fixture's posted number is `line` (§4).
 - **`odds_sort`** — a superlative on the **price**, when the query asks FOR the price-ranked outcome:
-  shortest / lowest / favourite → `"low"`; longest / highest / biggest / best / outsider → `"high"`
-  ("best price" is the highest price on offer).
-  Never a market named "shortest odds". A superlative inside a fixture filter ("games where the
-  favourite is under 1.4") asks for no ranking — the price bound alone carries it. This ranks, `odds`
-  bounds: an ask naming a superlative AND stating a price emits both. "The favourite" alone is a singular
-  ask: `odds_sort: "low"` and `count: 1`. A plain "who wins" / "the winner" names no price word: no sort, no
-  count — the whole field shows.
+  shortest / lowest → `"low"`; longest / highest / biggest / best / outsider → `"high"`
+  ("best price" is the highest price on offer). Never a market named "shortest odds".
+  Decide by what the query asks to SEE. The ranked outcome itself ("the longest odds", "the biggest outsider")
+  → the sort, plus `odds` when a price is also stated. Fixtures that meet a price condition ("matches
+  where the outsider is above 6.0") → `odds` alone: no sort, no count. A superlative on the counted thing
+  ("highest `<stat>`", "most `<stat>`") is the market's own name, never a sort.
+  "The favourite" asked for on its own is a singular ask: `odds_sort: "low"` and `count: 1`; a favourite that
+  only describes the fixtures wanted is a condition (above). A plain "who wins" / "the winner" names no
+  price word: no sort, no count — the whole field shows.
 - **`line_sort`** — a superlative on **how big the fixture's posted line is**: biggest / widest / highest
   → `"high"`, smallest / tightest → `"low"`. Ask what the superlative describes: what the bet **pays** →
   `odds_sort`; how big the **line** is → `line_sort`.
@@ -193,13 +204,16 @@ on every leg**.
   unless a league or tournament is separately named.
 - **`teams`** — named teams that scope the match(es) ("A vs B" → `["A","B"]`). May be empty. A fixture
   is often named by bare juxtaposition — "A B totals", "A B who wins": two adjacent competitor names ARE
-  the pairing. Split them into two entries — never one fused string, never a competition.
+  the pairing. Split them into two entries — never one fused string, never a competition. In a sport
+  contested by individuals, the competitors are the sides: a named competitor who scopes the fixture goes
+  in `teams`, not `players`.
 - **`players`** — players that scope **which fixtures** (not who owns a market), each `{ name, role }`:
   "featuring / with / involving X" → `"plays"`; "X starting / in the lineup" → `"starts"`; "X is captain"
   → `"captain"`.
 - **`region`** — a place that scopes **where** the matches are, or qualifies a competition phrase — not a
   competitor. Split a leading place off a competition phrase ("Italian Serie A" → region "Italy",
-  competition "Serie A"). The same word is a **team** when it is the side that plays or wins.
+  competition "Serie A"). The same word is a **team** when it is the side that plays or wins. A racetrack
+  the race is held at is the `competition`, never a region.
 - **`level`** — what settles THIS leg: `"competition"` for a tournament-wide outcome (outright, award,
   tournament-long stat leader, a team's progression); else `"fixture"`, even when a competition is named.
   Two legs may differ.

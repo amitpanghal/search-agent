@@ -48,11 +48,15 @@ model call settles only the doubtful cells. A genuine collision becomes a questi
 - **The extractor owns region-versus-team routing.** The grounder never re-decides it.
 - **Sport recovery switches only on a blind sport.** A weak match keeps the extractor's sport; generic names
   ("Barcelona", "Bundesliga") invert the tier signal across sports, so "confident elsewhere" is not a trigger.
+  Leagues never vote against a named sport; under `other`, a league that exactly one sport knows places the
+  query in that sport (a league-only query no longer stops dead), and any other league abstains.
 - **Aliases are bridge-only.** An alias is added only for a gap lexical matching cannot cross.
 
 ## Invariants
 - A stated sport word locks widening; a guessed sport does not (`invariants.test.ts`).
 - A lone foreign pick cannot flip the sport against home-settled evidence (`invariants.test.ts`).
+- Under `other`, a league only one sport knows switches the plan to it; a league several sports know abstains,
+  and no league overrides a named sport (`invariants.test.ts`).
 - A linked candidate beyond the shortlist cap survives the cross-check; weak shortlists rank by live
   prominence; a weak-shortlist pick ships with a "could also be" note (`invariants.test.ts`).
 - Entity gate in `npm run eval` (free): gold ids recalled, and a clean tier must contain the gold id

@@ -63,7 +63,8 @@ Two decks, edited differently:
   join from `planning/corpus/corpus.jsonl`), then `npm run gold` expands it. The compact format is documented
   at the top of scripts/expand-gold.ts.
 - Schema for both: gold-record.ts (`Grounded` cells; market cells are `id` / `offer` / `main` / `none`).
-  Market accept-phrases are graded by lenient containment — include the DISTINGUISHING noun ("winning
-  margin", not "margin").
+  Text mode pairs legs by subject kind and grades market wording ONLY through `must` (tokens that must
+  survive: `"must":["first half"]`); accept-phrases are not graded there. Bands are `"dir":"at_least"`.
+  Both go in gold-expect.jsonl — a hand edit to the generated file is lost on the next `npm run gold`.
 - Gold fixes change the measure, not the system — after one, re-score the existing capture with `--from`
   (free) rather than paying for a fresh run.

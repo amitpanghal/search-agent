@@ -53,7 +53,7 @@ Everything not marked LLM is deterministic and zero-LLM.
 |---|-------|------|------|----------|
 | 1 | extract | `extractor/extract.ts` + prompt | LLM | `query` → `QueryPlan` (text-valued, ≥1 selector, each with its own scope) |
 | 2 | checkComplete | `extractor/check-complete.ts` | no | gate: no team/player/competition/region anchor → clarify and STOP (no fetch) |
-| 3 | recoverSport | `grounding/recover-sport.ts` | no | the extractor's sport is a prior: switch when it is blind to an anchor confident in exactly one other sport; clarify when several. Under `other`: the one sport that places EVERY anchor (read with its squad) switches; 2+ is a tie that `breakSportTie` settles with ONE participant fetch (biggest in-window match by `nonLiveBoCount`, the rest named in a note) |
+| 3 | recoverSport | `grounding/recover-sport.ts` | no | the extractor's sport is a prior: switch when it is blind to an anchor confident in exactly one other sport; clarify when several. Under `other`: the one sport that places EVERY anchor (read with its squad) switches, a league counting only when exactly one sport knows it (leagues never vote against a named sport); 2+ is a tie that `breakSportTie` settles with ONE participant fetch (biggest in-window match by `nonLiveBoCount`, the rest named in a note) |
 | 4 | groundScope | `grounding/ground-scope.ts` | no | `QueryPlan` → `ResolvedScope` (per-leg entity candidates + tier; lexical, no embeddings) |
 | 5 | resolveEntities | `grounding/resolve-entities.ts` + prompt | LLM | `ResolvedScope` → `SettledEntities` (ONE call: pick / reexpress per doubtful cell; clarify is deterministic) |
 | 6 | planRecall | `grounding/plan-recall.ts` | no | `SettledEntities` + plan → `RecallInput` (BROAD union across legs; no market) |

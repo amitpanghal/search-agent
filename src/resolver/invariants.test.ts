@@ -813,6 +813,28 @@ test("a name that fits several sports under `other` is a tie over the squad's te
   );
 });
 
+// A league-only plan: no team or player to vote, so the league reads alone.
+const leaguePlan = (competition: string, sport = "other"): QueryPlan => {
+  const p = otherPlan([], null);
+  return {
+    ...p,
+    sport,
+    selectors: [{ ...p.selectors[0]!, subject: { kind: "event" }, scope: { ...p.selectors[0]!.scope, competition } }],
+  } as QueryPlan;
+};
+
+test("under `other`, a league exactly one sport knows places the query in that sport", () => {
+  assert.deepEqual(recoverSport(leaguePlan("Czech Liga Pro")), { kind: "switch", sport: "table-tennis" });
+  assert.deepEqual(recoverSport(leaguePlan("NPC")), { kind: "switch", sport: "rugby-union" });
+});
+
+test("a league several sports know abstains under `other`, and no league overrides a named sport", () => {
+  // football knows "Premier League" only weakly, lacrosse strongly: the inversion, so no vote
+  assert.deepEqual(recoverSport(leaguePlan("Premier League")), { kind: "keep" });
+  // only football knows "CPL" (Canadian Premier League); a cricket query naming it stays cricket
+  assert.deepEqual(recoverSport(leaguePlan("CPL", "cricket")), { kind: "keep" });
+});
+
 test("a sport tie goes to the biggest match that fits the leg, and the note names only sides that play", async () => {
   const tied: SportCandidate[] = [
     { sport: "football", rootId: 1, ids: [10], names: ["Växjö DFF (W)"] },

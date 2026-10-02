@@ -13,13 +13,16 @@
 //     -- shared scope, repeated onto every leg (a leg may override any of them) --
 //     "comp":"Cincinnati", "region":"Italy", "teams":["Giron"], "players":[["Odegaard","starts"]],
 //     "level":"competition", "stage":"round 1", "time":"w:tonight,k:after 5pm", "play":"live",
-//     "legs":[ { "m":["total games"], "subj":"team:Giron", "line":22.5, "dir":"over",
+//     "legs":[ { "m":["total games"], "must":["first set"], "subj":"team:Giron", "line":22.5, "dir":"over",
 //                "odds":{"min":2}, "osort":"low", "lsort":"high" } ] }
 //
 //   subj   "event" (default) | "team:Name" | "player:Name" | "player" (generic per-player market)
 //          | "either" | "either:home" | "either:away" | "soft:player/event"
-//   m      accept phrasings for market_concept — graded by lenient containment either way, so include the
-//          DISTINGUISHING noun ("winning margin", not "margin" alone, which "margin of victory" also contains)
+//   m      accept phrasings for market_concept. Text mode pairs legs by subject kind and does not grade these,
+//          but list the DISTINGUISHING noun ("winning margin", not "margin" alone, which "margin of victory" contains)
+//   must   tokens that must SURVIVE in the extracted phrase ("first half", "straight sets") — the only graded
+//          wording. Author them here: an edit to the generated gold.corpus.jsonl is lost on the next `npm run gold`
+//   dir    "over" | "under" | "at_least" ("N+") | "at_most" | "yes" | "no"
 //   line   number = a rung to select · string = a named pick (correct score, HT/FT) · {min?,max?} = a bound
 //          on which fixtures qualify
 //   time   comma-separated: w:<window> (anchor now) · wt:<window> (anchor tournament) · k:<band> · p:earliest:1
@@ -50,9 +53,10 @@ type Scope = {
 };
 type Leg = Scope & {
   m?: string[];
+  must?: string[];
   subj?: string;
   line?: number | Names | Bound;
-  dir?: "over" | "under" | "yes" | "no";
+  dir?: "over" | "under" | "at_least" | "at_most" | "yes" | "no";
   odds?: Bound;
   osort?: "low" | "high";
   lsort?: "low" | "high";
@@ -179,7 +183,9 @@ function expand(c: Compact, row: CorpusRow): unknown {
     if (!main && !leg.m?.length) throw new Error(`${id}: every leg needs "m" (accept phrasings)`);
     return {
       subject: main ? { kind: "event" } : subjectOf(leg.subj),
-      market_concept: main ? { main: true, accept: [] } : { accept: expandFamilies(leg.m!) },
+      market_concept: main
+        ? { main: true, accept: [] }
+        : { accept: expandFamilies(leg.m!), ...(leg.must ? { must: leg.must } : {}) },
       ...(leg.line !== undefined ? { line: lineOf(leg.line) } : {}),
       ...(leg.dir ? { direction: leg.dir } : {}),
       ...(leg.odds ? { odds: leg.odds } : {}),

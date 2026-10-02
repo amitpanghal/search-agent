@@ -40,8 +40,11 @@ The canonical list of things the resolver deliberately does **not** handle yet, 
 
 - **Unknown sport (`other`) is rescued only on precise names.** When the extractor can't tell the sport, the sport
   that places every named team (read with its squad) is used, and a tie between sports is settled by the feed
-  (biggest match in the asked window; the other sides are named in a note). If any name is only a weak match in
-  some sport, the query stops with the unsupported-sport message, as before: "England women" is behind its U19
-  twin in football, and bare "Växjö" matches two football teams, so "Växjö to beat Lund" (the men's sides) is not
-  rescued. *Deliberate: a weak match is usually the name's real sport, so acting on it would switch silently to
-  the wrong one (see recover-sport.ts).*
+  (biggest match in the asked window; the other sides are named in a note). A league counts too, but only when
+  exactly one sport knows it ("Czech Liga Pro" → table tennis, "NPC" → rugby union); a league several sports
+  know ("Premier League", "Serie A") neither rescues nor stops the query, and no league ever overrides a sport
+  the extractor named ("CPL" is cricket's, yet only football's catalog knows the acronym). If any name is only a
+  weak match in some sport, the query stops with the unsupported-sport message, as before: "England women" is
+  behind its U19 twin in football, and bare "Växjö" matches two football teams, so "Växjö to beat Lund" (the
+  men's sides) is not rescued. *Deliberate: a weak match is usually the name's real sport, so acting on it would
+  switch silently to the wrong one (see recover-sport.ts).*

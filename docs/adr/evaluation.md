@@ -32,7 +32,9 @@ Free:
 Gold decks: `gold.seed.jsonl` (12 hand-authored rows with real catalog and criterion ids; they drive the
 entity and market gates) and `gold.corpus.jsonl` (279 generated rows, text-graded). The corpus is authored
 compactly in `planning/corpus/gold-expect.jsonl` against `corpus.jsonl` and expanded by `npm run gold`;
-never hand-edit the expanded file. `catalog-support.ts` excludes rows whose entities no catalog carries:
+never hand-edit the expanded file (the next rebuild erases it; the compact format carries `must` and
+`at_least`). Text mode grades market wording only through `must`, never the accept-list.
+`catalog-support.ts` excludes rows whose entities no catalog carries:
 that measures catalog coverage, not extraction.
 
 Probe: `npm run probe -- "query"` runs the live pipeline and prints one row per stage and per API call,

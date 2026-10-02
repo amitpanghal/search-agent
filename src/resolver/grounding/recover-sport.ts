@@ -8,7 +8,15 @@
 // (one edition); "Bundesliga" is `confident` only in ice-hockey. So switching on "confident elsewhere" would
 // hijack the RIGHT sport to an obscure one. An anchor therefore votes to switch ONLY when the extractor's sport
 // has NO match for it at all (both team and player index = `none`); any partial match counts as "seen" and keeps
-// the extractor's sport. Competitions are excluded entirely — the same inversion, worse — so they never switch.
+// the extractor's sport. Competitions never vote against a NAMED sport — the same inversion, worse: football knows
+// "Premier League" only weakly, lacrosse strongly; "CPL" is cricket's Caribbean Premier League, yet only football
+// (Canadian Premier League) knows the acronym.
+//
+// LEAGUES UNDER `other`: there is no sport to protect, and a league-only query used to stop dead ("Czech Liga Pro
+// matches tonight"). So under `other` a league that exactly ONE sport knows — strong there, unknown to every other —
+// is placed like a team; any other league abstains, never stops. Measured on the gold's 87 leagues: 24 of the 25
+// that one sport knows point at the right sport (the miss is CPL); widening to "strong in one, weak elsewhere"
+// would add Premier League -> lacrosse and European Championship -> beach volley.
 //
 // CORROBORATION VETO: one blind anchor used to outvote a confident one. "Crvena Zvezda vs Bayern Munich, total
 // points over 160.5" is basketball; Crvena Zvezda grounds `confident` there so it merely abstained, while Bayern
@@ -46,6 +54,7 @@ import type { QueryPlan } from "../extractor/schema";
 import {
   groundTeam,
   groundPlayer,
+  groundCompetition,
   withSquad,
   type Candidate,
   type EntityResolution,
@@ -87,6 +96,9 @@ function knows(r: EntityResolution, name: string): boolean {
 // `text` in `cat`, team and player index — only the groundings that know `name`.
 const readingsOf = (text: string, name: string, cat: ScopeCatalog): EntityResolution[] =>
   [groundTeam(text, cat), groundPlayer(text, cat)].filter((r) => knows(r, name));
+// The same read over the competition index — a league, under `other` only (see header).
+const leagueReadingsOf = (text: string, name: string, cat: ScopeCatalog): EntityResolution[] =>
+  [groundCompetition(text, cat)].filter((r) => knows(r, name));
 
 // `a` in the extractor's own sport: the squad twin when this sport knows it, else the bare name read exactly as
 // before the squad rule (every grounding, any tier).
@@ -102,10 +114,10 @@ const tierIn = (a: Anchor, sport: string, tiers: Set<ScopeTier>): boolean =>
 // Every built sport's reading of `text`: STRONG homes with what they ground to (a tie fetches those ids), and the
 // sports that only know it weakly. ponytail: O(all-catalogs) lexical scan, only on the blind-anchor path;
 // loadScopeCatalog memoizes per sport. Index the participant names if this ever shows.
-function scanHomes(text: string, name: string): Homes {
+function scanHomes(text: string, name: string, read = readingsOf): Homes {
   const homes: Homes = { strong: new Map(), weak: new Set() };
   for (const sport of userSports()) {
-    const known = readingsOf(text, name, loadScopeCatalog(sport));
+    const known = read(text, name, loadScopeCatalog(sport));
     const hits = known.filter((r) => STRONG.has(r.tier)).flatMap((r) => r.candidates);
     if (hits.length) homes.strong.set(sport, hits);
     else if (known.length) homes.weak.add(sport);
@@ -119,8 +131,8 @@ function homesOf(a: Anchor): Homes {
   return !a.squad || twin.strong.size || twin.weak.size ? twin : scanHomes(a.name, a.name);
 }
 
-// Specific anchors only (teams + players, scope + subject), teams with their leg's squad. Competitions
-// excluded — see header.
+// Specific anchors only (teams + players, scope + subject), teams with their leg's squad. Competitions are
+// read separately, under `other` only — see header.
 function anchorsOf(plan: QueryPlan): Anchor[] {
   const anchors = new Map<string, Anchor>();
   const add = (name: string, squad: string | null) => anchors.set(`${name}|${squad ?? ""}`, { name, squad });
@@ -157,6 +169,17 @@ export function recoverSport(plan: QueryPlan): SportFix {
     if (!valid && homes.strong.size) placed.push(homes);
     // ponytail: under a NAMED sport, an anchor confident in >=2 other sports abstains, not clarifies; add a
     // 2-home clarify only if a real query needs it. Under `other` it still counts, via the shared check below.
+  }
+  // `other` only: a league exactly one sport knows is placed like a team; any other league abstains (header).
+  const leagues = new Map<string, string>(); // read with the leg's squad -> the name as written
+  if (!valid)
+    for (const s of plan.selectors)
+      if (s.scope.competition) leagues.set(withSquad(s.scope.competition, s.scope.squad), s.scope.competition);
+  for (const [text, name] of leagues) {
+    const homes = scanHomes(text, name, leagueReadingsOf);
+    if (homes.strong.size !== 1 || homes.weak.size) continue;
+    placed.push(homes);
+    votes.add([...homes.strong.keys()][0]!);
   }
 
   if (placed.length) {

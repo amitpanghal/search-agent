@@ -69,19 +69,24 @@ Each of these was a real fork in the road; they are written down so the next bat
    to reach the playoffs?" — four leagues say that). Grading a coin flip teaches nothing. Matching is loose,
    so `basketball` already accepts the narrower `esports-basketball`.
 3. **A person inside a team is a `player`; a competitor who *is* a side is a `team`.** So Gyökeres and LeBron
-   are players, and Giron, Magny, Matsuyama and Selby are teams. Checked against the grounder, not taste:
-   `groundTeam` resolves MMA's "Njokuani" *confident* where `groundPlayer` only manages *shortlist* (the team
-   list is the smaller, active-participant one), and only `scope.teams` drives head-to-head fixture narrowing
-   (`fixtureHasAllTeams`). Both slots reach `participantIds`, so this costs nothing at fetch time.
+   are players, and Giron, Magny, Matsuyama and Selby go in `scope.teams`. Checked against the grounder, not
+   taste (2026-10-02, all 41 competitors in the deck): a full name grounds the same in either slot (24/24), but a
+   surname grounds surer as a team — MMA's "Njokuani" is *confident* there and only a *shortlist* as a player,
+   which costs an entity-check call and pulls in other sports' rows. Head-to-head narrowing is not the reason:
+   `fixtureHasAllTeams` is a no-op in individual sports, whose competitors are `PARTICIPANT`s. The extractor
+   prompt states the rule (§7) and the scorer grades the slot.
 4. **`either_match_team` only when the query names a side but not the team** ("the home side", "the away
    team"). "The favourite" names no side — it is a property of the match, so the subject is the `event`.
 5. **Don't mirror the subject into `scope.teams`** unless the query really names it as a fixture side
    ("A vs B"). `ground-scope` folds a team subject into the leg's teams by itself.
-6. **Market accept-lists come from the families** in `expand-gold.ts` (`@WIN`, `@MARGIN`, `@HCP`, …). Grading
-   is containment in *either* direction, which cuts both ways: too narrow a list fails a good answer
-   ("who wins" vs a gold that only lists "to win"), too broad a one passes a bad answer — which is why
-   `@WIN` deliberately excludes a bare "winner" that "outright winner" and "toss winner" would satisfy, and
-   why a margin row must never accept a phrase containing "to win".
+6. **Market wording is graded by `must`, not by the accept-list.** Text mode pairs legs by subject kind and
+   only checks that each `must` token survives in the extracted phrase: `"must":["first half"]` fails "goals"
+   for "first half total goals". Add `must` for the qualifier that makes it a different market; leave it out
+   when no single word has to survive. Accept-lists
+   still come from the families in `expand-gold.ts` (`@WIN`, `@MARGIN`, `@HCP`, …) and record the acceptable
+   phrasings, but text mode does not grade them. Inclusive bands ("N+") are `"dir":"at_least"`. Author all of
+   it in `gold-expect.jsonl`: a hand edit to the generated file is lost on the next `npm run gold` (50e7092
+   erased 24 rows' worth that way).
 7. **A price is never a market and never a leg.** Fractional odds normalise to decimal (`4/1` → 5.0,
    `even money` → 2.0).
 8. **`line` vs range vs sort.** A rung to select is a number; a bound on which fixtures qualify is
