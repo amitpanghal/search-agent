@@ -736,6 +736,69 @@ test("resolve-market: a 1X2 side code is never an outcomeLabel (the subject gate
   assert.equal((await resolveMarkets(["to draw"], menu, saying("Draw")))[0]!.outcomeLabel, "Draw");
 });
 
+// ---------------------------------------------------------------------------------------------------------
+// A `none` pick keeps the model's related refs: the asked market isn't offered, but its live siblings are the
+// useful answer (HockeyAllsvenskan 2026/27 had only Top 2 / Top 4 when "AIK to win the league" was asked). They
+// ride as suggestions — the pick itself stays unlabelled, so nothing is sold as the asked bet.
+const TOP2 = "Winner - Including Playoffs — Top 2";
+const TOP4 = "Winner - Including Playoffs — Top 4";
+
+test("resolve-market: a none pick keeps its related suggestions but never gains a market", async () => {
+  const menu = [{ label: TOP2 }, { label: TOP4 }];
+  const decide = async () => [{ ref: null, match: "none", related: [0, 1, 7] }]; // 7 is off the menu -> dropped
+  assert.deepEqual((await resolveMarkets(["to win the league"], menu, decide))[0], {
+    match: "none",
+    related: [TOP2, TOP4],
+  });
+});
+
+test("execute: a none leg ships its related markets on its own event, trimmed to the subject's outright row", () => {
+  const row = (id: number, participantId: number, name: string, odds: number) => ({
+    id,
+    participantId,
+    participant: name,
+    label: name,
+    englishLabel: name,
+    odds,
+  });
+  const position = (id: number, variant: string, aik: number, leksand: number): BetOffer => ({
+    id,
+    eventId: 9,
+    criterion: { id: 1, label: "Winner - Including Playoffs", englishLabel: "Winner - Including Playoffs" },
+    description: variant,
+    outcomes: [row(id * 10 + 1, 7, "AIK", aik), row(id * 10 + 2, 8, "Leksands IF", leksand)],
+  });
+  const env = execute({
+    legs: [
+      {
+        phrase: "to win the league",
+        pick: { match: "none", related: [TOP2, TOP4] },
+        subjectId: 7,
+        eventIds: [9],
+        unavailable: { kind: "no-market" },
+      },
+    ],
+    data: {
+      events: [{ id: 9, name: "HockeyAllsvenskan 2026/2027" }],
+      betOffers: [position(1, "Top 2", 1900, 1900), position(2, "Top 4", 1250, 1250)],
+    },
+  });
+  assert.ok(env.clarificationNeeded?.includes('No "to win the league" market'), "the honest no-market sentence stays");
+  assert.equal(env.results.length, 0, "a suggestion is never a result");
+  assert.deepEqual(
+    env.events.map((e) => e.id),
+    [9],
+    "the suggestions' event ships so the cards can join it",
+  );
+  assert.deepEqual(
+    env.additional.map((h) => [h.betOffer.description, h.outcomes.map((o) => o.label)]),
+    [
+      ["Top 2", ["AIK"]],
+      ["Top 4", ["AIK"]],
+    ],
+  );
+});
+
 test("select: no side and no line on an over/under ladder picks the LOWEST Over, not the feed's first rung", () => {
   const ou = (id: number, line: number): BetOffer =>
     ({

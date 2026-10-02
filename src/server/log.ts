@@ -124,7 +124,7 @@ export function queryRecord(q: QueryLogInput, end = Date.now()) {
     locale: q.locale ?? null,
     commit: process.env.COMMIT || null,
     model: EXTRACTION_MODEL,
-    provider: process.env.LLM_PROVIDER === "openai" ? "openai" : "bedrock",
+    provider: process.env.LLM_PROVIDER === "deepseek" ? "deepseek" : "bedrock",
     extract: plan ?? null,
     ground: scope ? { sport: scope.sport, cells: [...cells.values()] } : null,
     entitiesLlm: llm.some((e) => e.tool === "settle_cells"),

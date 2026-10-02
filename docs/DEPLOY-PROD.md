@@ -8,7 +8,7 @@ domain with HTTPS, a firewall (WAF) in front of it and alarms on errors and cost
 by CI, never from a laptop. No database, no disk.
 
 ```
-browser → DNS name → WAF + load balancer (HTTPS) → 2+ Fargate tasks (private subnets) → NAT gateway → OpenAI + Kambi feed
+browser → DNS name → WAF + load balancer (HTTPS) → 2+ Fargate tasks (private subnets) → NAT gateway → model host + Kambi feed
 ```
 
 ## Why it differs from dev
@@ -18,7 +18,7 @@ browser → DNS name → WAF + load balancer (HTTPS) → 2+ Fargate tasks (priva
 | Front door | CloudFront's own address | a real domain on a load balancer | players need a stable address on our domain |
 | Copies | 1 task, re-pointed by hand after each restart | 2+ tasks in 2+ zones behind a load balancer | no downtime on deploys, crashes or a zone outage |
 | Network | public subnets, task has a public IP | private subnets and a NAT gateway, no public IP | nothing can reach a task except through the load balancer |
-| Abuse and cost guard | OpenAI spending limit | WAF rate limit, IP reputation, bot control, alarms, spending limit | real traffic, real money |
+| Abuse and cost guard | provider spending limit | WAF rate limit, IP reputation, bot control, alarms, spending limit | real traffic, real money |
 | Deploys | `docker push` from a laptop | CI, with a manual approval | repeatable, reviewed, no laptop credentials |
 
 ## Before you start: what to ask for
@@ -28,7 +28,7 @@ browser → DNS name → WAF + load balancer (HTTPS) → 2+ Fargate tasks (priva
 | Production AWS account and a permission set to deploy | Kambi cloud platform team | where everything runs |
 | VPC with 2+ public subnets (load balancer) and 2+ private subnets with a NAT gateway (tasks), over 2+ zones | Kambi cloud platform team | step 0 |
 | A domain and its Route 53 hosted zone in the account (or a record in the zone's owner account) | the DNS owner | steps 9 and 14 |
-| A production OpenAI key in its own project, with a monthly spending limit | the OpenAI billing owner | step 4 |
+| A production key at the chosen model host, in its own project with a spending limit | the billing owner | step 4 |
 | An email or Slack address for alarms that someone reads | the team | step 15 |
 
 ## Names used everywhere
@@ -39,7 +39,7 @@ browser → DNS name → WAF + load balancer (HTTPS) → 2+ Fargate tasks (priva
 | Domain | `<DOMAIN>` (e.g. `search.<zone>`) |
 | Security groups | `search-agent-prod-alb`, `search-agent-prod-task` |
 | ECR repository | `search-agent` |
-| OpenAI key in Parameter Store | `/search-agent/prod/OPENAI_API_KEY` |
+| Model key in Parameter Store | `/search-agent/prod/DEEPSEEK_API_KEY` |
 | Log group | `/ecs/search-agent-prod` |
 | Execution role | `search-agent-prod-execution-role` |
 | Cluster, service, task definition family | `search-agent-prod` |
@@ -86,7 +86,7 @@ Make sure the region at the top right of the console is **Europe (Stockholm)**.
   means one data centre can fail without taking the app down.
 - An **internet gateway** is the VPC's two-way door to the internet. **Public subnets** route through it; the
   load balancer lives there.
-- A **NAT gateway** is a one-way door: things in **private subnets** can call out (OpenAI, the Kambi feed), but
+- A **NAT gateway** is a one-way door: things in **private subnets** can call out (the model host, the Kambi feed), but
   nothing on the internet can call in. The tasks live there, with no public IP.
 
 The platform team provides this VPC. Check before going on: VPC → Route tables. The public subnets route
@@ -103,7 +103,7 @@ EC2 → Security Groups → **Create security group**, the load balancer's first
 |---|---|---|
 | VPC | the production VPC | the production VPC |
 | Inbound rules | HTTPS 443 and HTTP 80 (redirected to HTTPS) from `0.0.0.0/0`: players come from anywhere | Custom TCP 3000, source = the `search-agent-prod-alb` group |
-| Outbound rules | the default (all traffic) | the default (all traffic: OpenAI and the Kambi feed, through the NAT gateway) |
+| Outbound rules | the default (all traffic) | the default (all traffic: the model host and the Kambi feed, through the NAT gateway) |
 
 ### 2. Image repository (ECR)
 
@@ -135,14 +135,16 @@ docker push $ACCOUNT_ID.dkr.ecr.eu-north-1.amazonaws.com/search-agent:$SHA
 
 `--build-arg COMMIT` stamps the commit on every log line. Push only an image whose commit passed `npm run eval`.
 
-### 4. The OpenAI key
+### 4. The model key
 
 **For:** keeps the key encrypted in AWS. The app receives it when it starts, so it is never in the code or the
 image.
 
-Systems Manager → Parameter Store → **Create parameter**: name `/search-agent/prod/OPENAI_API_KEY`, tier
+Systems Manager → Parameter Store → **Create parameter**: name `/search-agent/prod/DEEPSEEK_API_KEY`, tier
 Standard, type SecureString, KMS key `alias/aws/ssm` (the default), value = the production key. Use a key of its
-own, never the dev one, in an OpenAI project with a monthly spending limit that stops requests.
+own, never the dev one, at the chosen host with a spending limit that stops requests. That host is not DeepSeek's
+own API (China-hosted, dev only): production serves the same model from OpenRouter, Fireworks or DeepInfra, set by
+`DEEPSEEK_BASE_URL` in the task definition.
 
 ### 5. Log group
 
@@ -160,10 +162,10 @@ and nothing else. An **IAM role** is a named set of permissions that an AWS serv
 1. IAM → Roles → **Create role** → AWS service → **Elastic Container Service**, use case **Elastic Container
    Service Task** → Next.
 2. Tick `AmazonECSTaskExecutionRolePolicy` → Next → name `search-agent-prod-execution-role` → **Create role**.
-3. Open the role → Add permissions → **Create inline policy** → JSON → paste this → name `read-openai-key`:
+3. Open the role → Add permissions → **Create inline policy** → JSON → paste this → name `read-model-key`:
 
 ```json
-{ "Version": "2012-10-17", "Statement": [ { "Effect": "Allow", "Action": "ssm:GetParameters", "Resource": "arn:aws:ssm:eu-north-1:<ACCOUNT_ID>:parameter/search-agent/prod/OPENAI_API_KEY" } ] }
+{ "Version": "2012-10-17", "Statement": [ { "Effect": "Allow", "Action": "ssm:GetParameters", "Resource": "arn:aws:ssm:eu-north-1:<ACCOUNT_ID>:parameter/search-agent/prod/DEEPSEEK_API_KEY" } ] }
 ```
 
 If the model moves to Bedrock, the task instead gets a task role with `bedrock:InvokeModel`, and the key and
@@ -197,7 +199,8 @@ Copy `deploy/task-definition.dev.json` to `deploy/task-definition.prod.json`, co
 | `cpu`, `memory` | `512`, `1024` | `1024`, `2048` (1 vCPU, 2 GB to start; adjust from the metrics) |
 | `executionRoleArn` | `…:role/search-agent-dev-execution-role` | `…:role/search-agent-prod-execution-role` |
 | `image` | `…/search-agent:dev` | `…/search-agent:<SHA>`, never `:dev` or `:latest` |
-| `secrets[0].valueFrom` | `…:parameter/search-agent/dev/OPENAI_API_KEY` | `…:parameter/search-agent/prod/OPENAI_API_KEY` |
+| `secrets[0].valueFrom` | `…:parameter/search-agent/dev/DEEPSEEK_API_KEY` | `…:parameter/search-agent/prod/DEEPSEEK_API_KEY` |
+| environment `DEEPSEEK_BASE_URL` | unset (DeepSeek's own API) | the chosen host's URL (OpenRouter, Fireworks or DeepInfra) |
 | `awslogs-group` | `/ecs/search-agent-dev` | `/ecs/search-agent-prod` |
 
 Replace `<ACCOUNT_ID>` and `<REGION>` (`eu-north-1`), then ECS → Task definitions → Create new task definition ▾
@@ -339,7 +342,7 @@ shows one `"type":"query"` line with `commit` = the deployed `<SHA>`.
 ## Go-live checklist
 
 - `npm run eval` gate passed on the exact image `<SHA>` being deployed.
-- A spending limit set on the production OpenAI project.
+- A spending limit set on the production key at the model host.
 - The four alarms wired to an address someone reads, and each one tested once.
 - One load test through the load balancer.
 - Both security groups reviewed: the tasks accept only the load balancer, the load balancer only 80 and 443.
@@ -353,4 +356,4 @@ operators' domains (today `/query` echoes any origin).
 ## Open decisions
 
 The production account · the domain · the CI system (GitHub Actions or Jenkins) · who provisions the VPC · the
-final model provider (an OpenAI key, or Bedrock with a task role).
+final model host (OpenRouter, Fireworks or DeepInfra serving DeepSeek V4.1 Flash, or Bedrock with a task role).

@@ -67,25 +67,28 @@ export type DecideFn = (phrase: string, menu: Menu) => Promise<RawPick>;
 const SIDE_CODES = new Set(["1", "2"]);
 const toPick = (raw: RawPick | undefined, menu: Menu): MarketPick => {
   const match = (raw?.match ?? "none") as MatchLabel;
-  if (!raw || match === "none" || raw.ref == null || !menu[raw.ref]) return { match: "none" };
-  const item = menu[raw.ref]!;
-  const outcomeLabel =
-    raw.outcome && item.outcomes?.includes(raw.outcome) && !SIDE_CODES.has(raw.outcome) ? raw.outcome : undefined;
   // related: the model's suggested refs (deduped, self dropped, capped 3). No same-event filter here — execute
-  // attaches a related market only if a betoffer with that label exists on the pick's OWN event, so the real
+  // attaches a related market only if a betoffer with that label exists on the leg's OWN event, so the real
   // event guard is downstream; filtering here on the menu's example eventId only dropped valid same-event markets.
+  // Kept on a `none` too: the asked market is missing but its live siblings still help (HockeyAllsvenskan 2026/27
+  // offers only Top 2 / Top 4, so "AIK to win the league" shows those instead of a dead end). Suggestions only.
   const related = [
     ...new Set(
-      (raw.related ?? []).filter((r): r is number => typeof r === "number" && r !== raw.ref && menu[r] != null),
+      (raw?.related ?? []).filter((r): r is number => typeof r === "number" && r !== raw?.ref && menu[r] != null),
     ),
   ]
     .slice(0, 3)
     .map((r) => menu[r]!.label);
+  const rel = related.length ? { related } : {};
+  if (!raw || match === "none" || raw.ref == null || !menu[raw.ref]) return { match: "none", ...rel };
+  const item = menu[raw.ref]!;
+  const outcomeLabel =
+    raw.outcome && item.outcomes?.includes(raw.outcome) && !SIDE_CODES.has(raw.outcome) ? raw.outcome : undefined;
   return {
     label: item.label,
     match,
     ...(outcomeLabel ? { outcomeLabel } : {}),
-    ...(related.length ? { related } : {}),
+    ...rel,
   };
 };
 

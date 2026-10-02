@@ -90,8 +90,8 @@ export const isNamedOutcome = (o: KOutcome): boolean => {
 // englishLabel/label (one outcome per player/team: a top-scorer / MVP / winner list). This is the live feed's
 // real shape for outright fields (participant == englishLabel == "Alexander Isak"), and it's the MIRROR IMAGE of
 // isNamedOutcome — the distinguishing signal from a player-prop line (participant "Isak", label "Over 16.5"),
-// which isNamedOutcome catches but this does not.
-const isOutrightOutcome = (o: KOutcome): boolean => {
+// which isNamedOutcome catches but this does not. Exported so execute trims a related outright to the subject too.
+export const isOutrightOutcome = (o: KOutcome): boolean => {
   const p = o.participant ?? "";
   return p !== "" && p !== "Yes" && p !== "No" && p === (o.englishLabel ?? o.label);
 };

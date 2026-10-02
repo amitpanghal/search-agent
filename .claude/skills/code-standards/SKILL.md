@@ -87,7 +87,8 @@ if (!ev) return failedTask(task); // an id the feed no longer serves: degrade, d
 - `ponytail:` marks a deliberate shortcut with its ceiling and the upgrade path:
   `// ponytail: capped at 3 rounds; a 5-leg group where no triple combines returns null`.
 - A measured fact carries its date (`verified live 2026-08-16`). A finding that decides a design goes in
-  the file header or an ADR under `docs/adr/`, not only in a chat.
+  the file header or a decision record under `docs/adr/`, not only in a chat; how the built component works
+  goes in its record under `docs/components/`.
 - No `TODO`. A deferred behaviour goes to `planning/limitations.md` or a `ponytail:` marker.
 - Never `@ts-ignore`, `@ts-expect-error` or a lint-disable comment. Fix the type instead.
 

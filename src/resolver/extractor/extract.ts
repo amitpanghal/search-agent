@@ -16,7 +16,7 @@ import { bedrockToolCall } from "../llm/bedrock-call";
 
 // Label for logging/eval; the actual model id is read from BEDROCK_MODEL at call time.
 export const EXTRACTION_MODEL =
-  (process.env.LLM_PROVIDER === "openai" ? process.env.OPENAI_MODEL : process.env.BEDROCK_MODEL) ?? "bedrock";
+  (process.env.LLM_PROVIDER === "deepseek" ? process.env.DEEPSEEK_MODEL : process.env.BEDROCK_MODEL) ?? "bedrock";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 // The live SUPPORTED SPORTS menu — every built catalog, de-slugified for reading ("ice-hockey" → "ice

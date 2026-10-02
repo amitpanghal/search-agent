@@ -5,7 +5,7 @@ balancer, no rate limiter and no database: this is the cheapest setup a browser 
 built differently; see `docs/DEPLOY-PROD.md`.
 
 ```
-browser → CloudFront (HTTPS) → Fargate task :3000 (HTTP) → OpenAI + Kambi feed
+browser → CloudFront (HTTPS) → Fargate task :3000 (HTTP) → model provider + Kambi feed
 ```
 
 ## What is running now
@@ -22,12 +22,12 @@ browser → CloudFront (HTTPS) → Fargate task :3000 (HTTP) → OpenAI + Kambi 
 - **No load balancer** (saves its monthly cost). The task gets a new address every time it starts (a redeploy, a
   crash, a resume from 0), and CloudFront must then be re-pointed by hand ("Redeploy and re-point" below). The
   app is down until that is done.
-- **No rate limit (WAF)** (saves its monthly cost). A spending limit on the dev OpenAI project (step 11) caps
+- **No rate limit (WAF)** (saves its monthly cost). A spending limit at the model provider (step 11) caps
   what a runaway client can cost instead.
 - **CloudFront → task is plain HTTP.** Only queries and odds travel on that hop.
 - **Any CloudFront distribution can reach the task**, not only ours: the security group allows CloudFront's
   shared address list.
-- **What it costs:** the running task and its public IP, the logs, and OpenAI tokens. CloudFront's free tier (1
+- **What it costs:** the running task and its public IP, the logs, and model tokens. CloudFront's free tier (1
   TB and 10 million requests a month) covers dev traffic. Set the service to 0 tasks to pay nothing while nobody
   is testing.
 
@@ -39,7 +39,7 @@ browser → CloudFront (HTTPS) → Fargate task :3000 (HTTP) → OpenAI + Kambi 
 | VPC | `search-agent-dev-vpc` |
 | Security group | `search-agent-dev-task` |
 | ECR repository | `search-agent` |
-| OpenAI key in Parameter Store | `/search-agent/dev/OPENAI_API_KEY` |
+| Model key in Parameter Store | `/search-agent/dev/DEEPSEEK_API_KEY` |
 | Log group | `/ecs/search-agent-dev` |
 | Execution role | `search-agent-dev-execution-role` |
 | Cluster, service, task definition family | `search-agent-dev` |
@@ -123,7 +123,7 @@ ignore it.
 ### 1. Security group
 
 **For:** a firewall around the app. It lets in only CloudFront, on port 3000; everything else is blocked.
-Outgoing traffic (OpenAI, the Kambi feed) is allowed.
+Outgoing traffic (the model provider, the Kambi feed) is allowed.
 
 EC2 → Security Groups → **Create security group**:
 
@@ -159,7 +159,7 @@ docker push $ACCOUNT_ID.dkr.ecr.eu-north-1.amazonaws.com/search-agent:dev
 
 `--build-arg COMMIT` stamps the git commit on every log line. Check: ECR → `search-agent` lists the tag `dev`.
 
-### 4. The OpenAI key
+### 4. The model key
 
 **For:** keeps the key encrypted in AWS. The app receives it when it starts, so it is never in the code or the
 image.
@@ -168,10 +168,10 @@ Systems Manager → Parameter Store → **Create parameter**:
 
 | Field | Value |
 |---|---|
-| Name | `/search-agent/dev/OPENAI_API_KEY` |
+| Name | `/search-agent/dev/DEEPSEEK_API_KEY` |
 | Tier, type | Standard, SecureString |
 | KMS key | My current account, `alias/aws/ssm` (the default) |
-| Value | the dev OpenAI key |
+| Value | the dev key for the model provider (DeepSeek V4.1 Flash; `LLM_PROVIDER=deepseek` in the task definition) |
 
 ### 5. Log group
 
@@ -189,10 +189,10 @@ role** is a named set of permissions that an AWS service can take on.
    Container Service Task** → Next.
 2. Tick `AmazonECSTaskExecutionRolePolicy` → Next → name `search-agent-dev-execution-role` → **Create role**.
 3. Open the role → Add permissions → **Create inline policy** → JSON → paste this, account id filled in → Next →
-   name `read-openai-key` → **Create policy**:
+   name `read-model-key` → **Create policy**:
 
 ```json
-{ "Version": "2012-10-17", "Statement": [ { "Effect": "Allow", "Action": "ssm:GetParameters", "Resource": "arn:aws:ssm:eu-north-1:<ACCOUNT_ID>:parameter/search-agent/dev/OPENAI_API_KEY" } ] }
+{ "Version": "2012-10-17", "Statement": [ { "Effect": "Allow", "Action": "ssm:GetParameters", "Resource": "arn:aws:ssm:eu-north-1:<ACCOUNT_ID>:parameter/search-agent/dev/DEEPSEEK_API_KEY" } ] }
 ```
 
 ### 7. Cluster
@@ -232,7 +232,7 @@ the editor, paste → **Create**. Check: `search-agent-dev:1` exists.
 ### 9. Service
 
 **For:** keeps one copy of the app running from the recipe, and starts a new one if it crashes. A running copy
-is a **task**. Its public IP lets it reach OpenAI and the Kambi feed.
+is a **task**. Its public IP lets it reach the model provider and the Kambi feed.
 
 ECS → Clusters → `search-agent-dev` → Services → **Create**:
 
@@ -245,7 +245,7 @@ ECS → Clusters → `search-agent-dev` → Services → **Create**:
 | Networking (a folded section further down) | VPC `search-agent-dev-vpc`, both public subnets, existing security group `search-agent-dev-task` only (remove `default`), public IP **on** |
 | Load balancing | none |
 
-The public IP must be on: without it the task cannot pull its image or reach OpenAI.
+The public IP must be on: without it the task cannot pull its image or reach the model provider.
 
 Check: the Tasks tab shows 1 Running. Then open the task → Networking → click the ENI id → copy **Public IPv4
 DNS**, e.g. `ec2-16-171-20-127.eu-north-1.compute.amazonaws.com`. CloudFront needs this name in step 10; it does
@@ -279,14 +279,14 @@ a domain of your own). Where the console offers recommended origin or cache sett
 Check: once "Last modified" shows a date instead of "Deploying", copy the distribution domain name
 (`dXXXX.cloudfront.net`). That is the URL for the frontend.
 
-### 11. OpenAI spending limit
+### 11. Provider spending limit
 
-**For:** a ceiling on the monthly OpenAI bill, in case a client (a frontend bug, a script) sends queries in a
+**For:** a ceiling on the monthly model bill, in case a client (a frontend bug, a script) sends queries in a
 loop. It replaces a paid rate limiter in dev.
 
-In the OpenAI dashboard, open the project that holds the dev key → **Limits** → set a monthly budget (for
-example $20). Make sure the limit stops requests rather than only sending an email; if it only alerts, add a WAF
-rate limit on the distribution (about $7 a month).
+At the model provider, cap what the dev key can spend. A prepaid balance (DeepSeek, DeepInfra) stops requests by
+itself when it runs out: top up in small amounts (for example $20). A host with a monthly budget setting must stop
+requests, not only send an email; if it can only alert, add a WAF rate limit on the distribution (about $7 a month).
 
 ### 12. Proof
 

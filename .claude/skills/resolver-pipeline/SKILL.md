@@ -16,7 +16,8 @@ description: >-
 The resolver turns one free-text query into a `ResponseEnvelope` (results grouped by event, plus notes and a
 clarification). `runPipeline(query, opts)` in `src/resolver/resolve.ts` is the single orchestrator; everything
 below is chained from there. `resolveQuery(query)` drains the generator to the final envelope for non-streaming
-callers (eval, probes). The long-form why of every component lives in `docs/adr/` (index: `docs/ARCHITECTURE.md`).
+callers (eval, probes). How every component works lives in `docs/components/`, why it was built that way in
+`docs/adr/` (index: `docs/ARCHITECTURE.md`).
 
 ## The one mental model: market is decided AFTER the fetch
 Recall fetches by **entity** ids broadly (teams/players/competitions), never by market. Each leg then narrows
@@ -40,13 +41,13 @@ pipeline order, plus three support folders. A stage's prompt (`.md`) sits next t
 | `market/` | filter.ts, resolve-market.ts, resolve-market-prompt.md |
 | `result/` | select.ts, combinations.ts, execute.ts |
 | `shared/` | live-menu-types.ts (pipeline contracts), lexical.ts (fold/tokens/BM25), offering-client.ts (feed client + raw shapes), trace.ts |
-| `llm/` | bedrock-call.ts, openai-call.ts, cost.ts |
+| `llm/` | bedrock-call.ts, deepseek-call.ts, cost.ts |
 | `catalog/` | scope-catalog.ts (load + derived indexes), sports.ts (configs, SPORT_OVERRIDES), build-scope-index.ts (build time only) |
 
 ## Stages (in pipeline order)
 Order and chaining live in `runPipeline` (`resolve.ts`). LLM = one forced-tool call through `llm/bedrock-call.ts`
-(Bedrock Converse, temp 0), or through `llm/openai-call.ts` when `LLM_PROVIDER=openai`. The model id is
-env-driven (`BEDROCK_MODEL` / `OPENAI_MODEL`, per-stage `BEDROCK_MODEL_<TOOL>` overrides); never hard-code one.
+(Bedrock Converse, temp 0), or through `llm/deepseek-call.ts` when `LLM_PROVIDER=deepseek`. The model id is
+env-driven (`BEDROCK_MODEL` / `DEEPSEEK_MODEL`, per-stage `BEDROCK_MODEL_<TOOL>` overrides); never hard-code one.
 Everything not marked LLM is deterministic and zero-LLM.
 
 | # | Stage | File | LLM? | In → Out |

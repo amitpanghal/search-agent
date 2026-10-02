@@ -11,8 +11,9 @@ against the menu that actually came back.
 
 ## Read this first
 
-- **`docs/ARCHITECTURE.md`** and **`docs/adr/`** — the why, one record per component: what each stage does,
-  its contract, the decisions behind it, its invariants and limits.
+- **`docs/ARCHITECTURE.md`** — the index. **`docs/components/`** — how each component works today: what it
+  does, its contract, invariants and limits (living, verified against a commit). **`docs/adr/`** — why it is
+  built that way: one frozen decision record per decision; a change in behaviour starts as a new one.
 - **`.claude/skills/resolver-pipeline`** — the stage map: the 13 stages in order, which folder and file owns
   which, the shared types, the injection points, and the invariants. Read it **before** editing anything in
   `src/resolver`.
@@ -88,7 +89,8 @@ src/eval/         gold decks, scorers, the eval gates (extractor, entity, market
 src/server/       Hono app: POST /query as SSE, POST /event click log, GET / health; log.ts writes the records
 scripts/          probe.ts (debugging) and the catalog/feed builders; catalog/ holds the Python normalizer
 catalogData/      per-sport entity catalogs (scope-index = generated, scope-aliases = curated by hand)
-docs/             ARCHITECTURE.md + adr/ (the why), DEPLOY-DEV/PROD.md (runbooks), OFFERING_API.md + BetOffer.md (the feed)
+docs/             ARCHITECTURE.md (index), components/ (how, living), adr/ (why, frozen decisions), DEPLOY-DEV/PROD.md
+                  (runbooks), OFFERING_API.md + BetOffer.md (the feed)
 deploy/           the ECS task definition; the Dockerfile at the root builds the image
 .githooks/        the pre-commit hook, wired by npm install; biome.jsonc and .github/dependabot.yml sit at the root
 planning/         design docs and decisions (see the warning below)
@@ -105,10 +107,11 @@ documentation — read the file top before changing it.
 - **There is no extraction cache.** Every eval or probe run pays per query. The free replay
   (`npm run eval -- --from cap.jsonl`) grades a capture, so after any prompt or schema edit recapture first, or
   you are grading stale output.
-- **`planning/` mixes plans in every state** (shipped, in flight, superseded); what is live is in `docs/adr/`.
-  Several approaches documented over time were built and dropped (vector embeddings, doc-view enrichment, a
-  cross-encoder reranker, the static market catalog). Do not implement a plan from `planning/` without checking
-  `docs/adr/` and git history, or asking.
+- **`planning/` mixes plans in every state** (shipped, in flight, superseded); what is live is in
+  `docs/components/`, and whether a decision is built is its ADR's status line in `docs/adr/`. Several approaches
+  documented over time were built and dropped (vector embeddings, doc-view enrichment, a cross-encoder reranker,
+  the static market catalog). Do not implement a plan from `planning/` without checking `docs/adr/` and git
+  history, or asking.
 - **Time is client-side.** The feed ignores `from`/`to`, so all date and kickoff filtering happens in
   `time-window.ts`. The calendar is read in the **user's** timezone; the instants stay UTC. A missing `tz`
   falls back to UTC and changes answers.
@@ -118,7 +121,7 @@ documentation — read the file top before changing it.
 
 ## Setup
 
-Copy `.env.example` to `.env`: AWS Bedrock credentials, or an OpenAI key with `LLM_PROVIDER=openai`. Node ≥ 20.
+Copy `.env.example` to `.env`: AWS Bedrock credentials, or a DeepSeek key with `LLM_PROVIDER=deepseek`. Node ≥ 20.
 `npm install` also wires the pre-commit hook (`.githooks/`). Deploys as a container on AWS ECS Fargate
 (`docs/DEPLOY-DEV.md`, `docs/DEPLOY-PROD.md`); `render.yaml` is the Render POC host. Catalogs are refreshed
 locally with `npm run catalogs` and committed: the feed hosts refuse non-browser clients, so the scripts fetch

@@ -9,7 +9,7 @@
 import { BedrockRuntimeClient, ConverseCommand } from "@aws-sdk/client-bedrock-runtime";
 import { usageStore } from "./cost";
 import { emit } from "../shared/trace";
-import { openaiToolCall } from "./openai-call";
+import { deepseekToolCall } from "./deepseek-call";
 
 let cached: BedrockRuntimeClient | null = null;
 function client(): BedrockRuntimeClient {
@@ -32,8 +32,8 @@ export async function bedrockToolCall(
   // Per-stage override: BEDROCK_MODEL_<TOOLNAME> (BEDROCK_MODEL_EMIT_QUERY_PLAN / _SETTLE_CELLS / _PICK)
   // beats the shared BEDROCK_MODEL, so the three stages can run different models from .env alone.
   // BEDROCK_PRICE_* stays single-model — per-query cost is approximate under a mixed config.
-  // LLM_PROVIDER=openai sends every stage through openai-call.ts instead (same signature, same cost rows).
-  if (process.env.LLM_PROVIDER === "openai") return openaiToolCall(system, user, toolName, schema, maxTokens);
+  // LLM_PROVIDER=deepseek sends every stage through deepseek-call.ts instead (same signature, same cost rows).
+  if (process.env.LLM_PROVIDER === "deepseek") return deepseekToolCall(system, user, toolName, schema, maxTokens);
   const modelId = process.env[`BEDROCK_MODEL_${toolName.toUpperCase()}`] || process.env.BEDROCK_MODEL;
   if (!modelId) throw new Error("BEDROCK_MODEL must be set (e.g. us.amazon.nova-lite-v1:0).");
   emit({ kind: "llm-req", tool: toolName, model: modelId, system, user, schema });

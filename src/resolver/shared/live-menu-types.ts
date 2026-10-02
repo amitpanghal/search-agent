@@ -61,7 +61,9 @@ export type MarketPick = {
   label?: string;
   match: MatchLabel;
   outcomeLabel?: string; // the resolver-picked outcome when the menu item exposed outcomes (verbatim from MenuItem.outcomes)
-  related?: string[]; // menu labels for related markets (same fixture, intent-ranked, most direct first; absent = none)
+  // menu labels for related markets (same fixture, intent-ranked, most direct first; absent = none). Kept on a
+  // `none` pick too: there they are the closest LIVE markets to an asked one that isn't offered.
+  related?: string[];
 };
 
 // ---- SELECT output ----
@@ -93,6 +95,9 @@ export type ResolvedLeg = {
   // the grounded participant id of this leg's subject — carried so execute can trim related-market suggestions
   // to the SAME subject as the highlighted pick (a player-anchored query shouldn't list every player again).
   subjectId?: number;
+  // a `none` leg's own events (the ones its menu came from). It has no picked outcome to read an event off, so
+  // execute attaches its related suggestions to these.
+  eventIds?: number[];
   // why a `none`-pick leg has no result: the scope matched no fixture (`no-fixture`, `scope` = the team it
   // wanted), vs the fixture's menu existed but the resolved subject isn't priced anywhere on it
   // (`subject-absent`, `subject` = the grounded name, `event` = the fixture when unambiguous), vs a fixture

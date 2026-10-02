@@ -573,6 +573,10 @@ export async function* runPipeline(
       ...(selection ? { selection } : {}),
       ...(spec.subjectId != null ? { subjectId: spec.subjectId } : {}),
       ...(unavailable ? { unavailable } : {}),
+      // a none pick's related markets come from this leg's filtered menu, so they live on its filtered offers' events
+      ...(pick.match === "none" && pick.related?.length
+        ? { eventIds: [...new Set(fr.offers.flatMap((b) => (b.eventId != null ? [b.eventId] : [])))] }
+        : {}),
     });
     legsUnderstood.push({
       ...under,

@@ -17,7 +17,7 @@ import type { ExecuteInput, EnvelopeLeg } from "../shared/live-menu-types";
 import type { Combination } from "./combinations";
 import type { QueryCost } from "../llm/cost";
 import { marketLabelOf } from "../grounding/recall";
-import { isNamedOutcome, subjectOutcomes } from "./select";
+import { isNamedOutcome, isOutrightOutcome, subjectOutcomes } from "./select";
 import { fold } from "../shared/lexical";
 
 export type CoarseLiveState = "PREMATCH" | "LIVE" | "FINISHED";
@@ -159,8 +159,9 @@ const toEventBlock = (e: KEvent): ResponseEvent => ({
 
 // A related-market SUGGESTION should echo the answer's subject, not re-list every player. Trim a related
 // betoffer's outcomes for display:
-//   - participant-keyed field (one outcome per player/team, incl. player props that also carry a line) + a named
-//     subject -> cut to the asked subject; DROPPED (null) when it doesn't price them (off-topic to the answer).
+//   - participant-keyed field (one outcome per player/team, incl. player props that also carry a line, and outright
+//     fields whose label IS the competitor) + a named subject -> cut to the asked subject; DROPPED (null) when it
+//     doesn't price them (off-topic to the answer).
 //   - subjectless team LINE ladder (over/under, handicap) -> kept whole; the alternative lines ARE the value.
 //   - any other long field (correct score, a subjectless outright) -> capped to the most-likely N by odds.
 // A small market (<= cap) and a no-subject query both pass through untouched.
@@ -169,7 +170,7 @@ const trimRelatedOutcomes = (
   outcomes: KOutcome[],
   subj: { subjectId?: number; subject?: string },
 ): KOutcome[] | null => {
-  if (outcomes.some(isNamedOutcome) && (subj.subjectId != null || subj.subject)) {
+  if (outcomes.some((o) => isNamedOutcome(o) || isOutrightOutcome(o)) && (subj.subjectId != null || subj.subject)) {
     const mine = subjectOutcomes(outcomes, subj);
     return mine.length ? mine : null;
   }
@@ -232,6 +233,13 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
     const { phrase, pick, selection, unavailable } = leg;
     if (pick.match === "none" || pick.label == null) {
       noPick.push(noPickReason(unavailable, phrase));
+      // no result, but the asked market's live siblings still help: queue them on the leg's own events
+      if (pick.related?.length && leg.eventIds?.length)
+        pendingRelated.push({
+          related: pick.related,
+          eventIds: new Set(leg.eventIds),
+          subj: leg.subjectId != null ? { subjectId: leg.subjectId } : {},
+        });
       continue;
     }
 
@@ -328,7 +336,7 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
   // One card per event with a pick (highlighted only — the event block lives in `events`). Build `events`
   // BEFORE the suggestion round-robin: it holds every result event plus any betslip-leg event not already shown
   // (a fully combined leg has no result card, but the frontend still needs its event block for the event tile),
-  // and suggestions may only reference events that ship.
+  // and suggestions may only reference events that ship (a none leg's event is added with its first suggestion).
   const groups = [...byEvent.values()];
   const results: EnvelopeResult[] = groups.map((g) => ({ highlighted: g.highlighted }));
   const events: ResponseEvent[] = groups.map((g) => toEventBlock(g.event));
@@ -344,8 +352,9 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
 
   // Round-robin across legs, rank by rank, until the global related-market budget (3) is spent.
   // Guarantees >=1 per leg (best-effort) while keeping the total cap hard. Rows attach to any SHOWN event —
-  // result card or betslip-leg — so suggestions survive a fully-combined query. Betoffers already highlighted
-  // in a card or priced into the betslip are never re-suggested.
+  // result card or betslip-leg — so suggestions survive a fully-combined query, and to a none leg's own events
+  // (its live alternatives to a market that isn't offered). Betoffers already highlighted in a card or priced into
+  // the betslip are never re-suggested.
   const additional: EnvelopeHighlighted[] = [];
   if (pendingRelated.length) {
     const usedBos = new Set<number>();
@@ -378,13 +387,20 @@ export function execute(input: ExecuteInput): ResponseEnvelope {
           // per player pairing per event, so decrementing once per label let a single label ship dozens of rows
           // under a documented cap of 3.
           if (relBudget <= 0) break;
-          if (b.eventId == null || !shownIds.has(b.eventId)) continue;
+          const e = b.eventId != null ? eventById.get(b.eventId) : undefined;
+          if (!e) continue;
           const boId = b.id ?? 0;
           if (usedBos.has(boId)) continue;
           const outs = trimRelatedOutcomes(b.outcomes ?? [], subj);
           if (outs == null) continue; // participant-keyed market that doesn't price the subject -> off-topic, drop
+          // A none leg's event has no result card, so its block ships with its first suggestion (cards join by
+          // id). An answered leg's suggestions sit on its own result/betslip events, which already ship.
+          if (!shownIds.has(e.id)) {
+            shownIds.add(e.id);
+            events.push(toEventBlock(e));
+          }
           usedBos.add(boId);
-          additional.push({ eventId: b.eventId, betOffer: toBetOffer(b), outcomes: outs.map(toOutcome) });
+          additional.push({ eventId: e.id, betOffer: toBetOffer(b), outcomes: outs.map(toOutcome) });
           relBudget--;
         }
       }

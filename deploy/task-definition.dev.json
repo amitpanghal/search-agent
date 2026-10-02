@@ -14,17 +14,16 @@
       "portMappings": [{ "containerPort": 3000, "protocol": "tcp" }],
       "environment": [
         { "name": "PORT", "value": "3000" },
-        { "name": "LLM_PROVIDER", "value": "openai" },
-        { "name": "OPENAI_MODEL", "value": "gpt-6-luna" },
-        { "name": "OPENAI_PRICE_IN", "value": "0.10" },
-        { "name": "OPENAI_PRICE_OUT", "value": "0.50" },
-        { "name": "OPENAI_PRICE_CACHED", "value": "0.01" },
-        { "name": "OPENAI_PRICE_CACHE_WRITE", "value": "0.125" }
+        { "name": "LLM_PROVIDER", "value": "deepseek" },
+        { "name": "DEEPSEEK_MODEL", "value": "deepseek-flash" },
+        { "name": "DEEPSEEK_PRICE_IN", "value": "0.15" },
+        { "name": "DEEPSEEK_PRICE_OUT", "value": "0.60" },
+        { "name": "DEEPSEEK_PRICE_CACHED", "value": "0.003" }
       ],
       "secrets": [
         {
-          "name": "OPENAI_API_KEY",
-          "valueFrom": "arn:aws:ssm:<REGION>:<ACCOUNT_ID>:parameter/search-agent/dev/OPENAI_API_KEY"
+          "name": "DEEPSEEK_API_KEY",
+          "valueFrom": "arn:aws:ssm:<REGION>:<ACCOUNT_ID>:parameter/search-agent/dev/DEEPSEEK_API_KEY"
         }
       ],
       "logConfiguration": {
