@@ -17,8 +17,9 @@ The same calls with a bet offer type: `type=2` (1X2) on the Premier League group
 240 offers, all 20 matches; on the Arsenal participant endpoint 41 KB in 43 ms. `type=2,6` (a comma list) works.
 Roughly 7–20× less data, ~100 ms faster, and the cap is escaped — that last part is the real win.
 
-The market-taxonomy ADR stores the bet offer type on every row, for the pick and for each related market,
-so that a typed fetch becomes possible without rebuilding anything. The types are the stable half of a
+The market-taxonomy rows store no type, but its log record carries the bet offer type of the pick and of every
+menu item, so the types for the pick and each related market are mined from the logs into the rows if this is
+accepted — nothing in the pipeline changes before then. The types are the stable half of a
 market across sports: a plain winner is type `Match` in all 19 sports that offer one, a total is `Over/Under`
 in all; only the label varies. A type is a family, not a market — `type=2` still returns Full Time, Half Time,
 Draw No Bet and First Goal — so the label (via the taxonomy id) still picks within it.
@@ -71,5 +72,5 @@ point 3 filled in) or closed as not worth it (status → `rejected`, numbers att
 
 ## Related
 
-- market-taxonomy (the rows and their types), recall (the fetch this would change), offering-feed (the
-  `type=` parameter and the 2000 cap).
+- market-taxonomy (the rows; their types mined from its logs), recall (the fetch this would change),
+  offering-feed (the `type=` parameter and the 2000 cap).
