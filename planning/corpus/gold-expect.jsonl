@@ -332,3 +332,4 @@
 {"id":"vs04","sport":["virtual-sports","greyhounds"],"comp":"Jennison Stadium","time":"p:earliest:1","legs":[{"m":["@FAV"],"osort":"low"}]}
 {"id":"zs01","sport":["z-sports","basketball"],"teams":["Los Angeles Lakers","Boston Celtics"],"legs":[{"m":["@HCP"]}]}
 {"id":"zs02","sport":["z-sports","basketball"],"teams":["Lakers"],"legs":[{"m":["total points"],"line":210.5,"dir":"over"}]}
+{"id":"r031","legs":[{"subj":"team:Sydney Roosters","m":["to win the Grand Final","to win"],"must":["win"],"level":"competition"},{"subj":"team:Newcastle Knights","m":["to score the first try","first try"],"must":["score"]}]}

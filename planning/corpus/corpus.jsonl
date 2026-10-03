@@ -409,3 +409,4 @@
 {"id":"cc12","sport":"tennis","query":"Cincinnati quarterfinal matches tomorrow","tags":["stage","fixture-lookup","time"]}
 {"id":"cc13","sport":"football","query":"Arsenal to win, priced over 1.5 — and a corner over 10.5","tags":["multi-leg","price-not-a-leg"]}
 {"id":"cc14","sport":"basketball","query":"Bueckers 20+ points at odds over 2.0","tags":["price-not-a-leg","player-prop","odds-only-bounds"]}
+{"id":"r031","sport":"rugby-league","query":"Sydney Roosters to win the Grand Final and Newcastle Knights to score the first try","tags":["multi-leg","binding","scope-team"]}

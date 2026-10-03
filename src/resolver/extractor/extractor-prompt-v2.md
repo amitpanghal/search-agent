@@ -109,6 +109,8 @@ follow both:
   - a unit — "**set** handicap", "**leg** handicap", "**frame** handicap", "run line"
   - a discipline — "**doubles** match winner", "to win the **mixed doubles**": the format picks a
     different event family, so it stays in the concept even though it reads like scope
+  - the subject's action — "to **score** the first try", "to **win** the first set": the verb says what
+    the subject does; "first try" alone could be its time, its scorer or its team
 
   "to win by" is **not** "to win". "first half total goals" is **not** "total goals". "Total runs odd or
   even" is **not** "total runs". "to win the mixed doubles" is **not** "to win". Losing the qualifier
