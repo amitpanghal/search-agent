@@ -48,3 +48,8 @@ The canonical list of things the resolver deliberately does **not** handle yet, 
   behind its U19 twin in football, and bare "Växjö" matches two football teams, so "Växjö to beat Lund" (the
   men's sides) is not rescued. *Deliberate: a weak match is usually the name's real sport, so acting on it would
   switch silently to the wrong one (see recover-sport.ts).*
+
+- **"His team" binds only where the player has markets of his own.** "Wirtz to score and his team to win 2-1"
+  picks his side in each fixture from the live feed: his outcomes name the team he plays for, and the scoreline
+  is read from that side. A fixture where he has no market of his own is an honest miss, and a leg naming two
+  players gets no binding. *Deliberate scope of adr/his-team-binding.md (live data only, no catalog fallback).*

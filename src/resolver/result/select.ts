@@ -36,6 +36,9 @@ export type SelectSpec = {
   sort?: "low" | "high"; // rank a field outright by price (low = favourite first) — drives count + selected
   count?: number; // surface only the top N of a many-outcome field (omitted = the whole field)
   outcomeLabel?: string; // a feed outcome the resolver named ("Eliminated in Round of Last 16") -> exact englishLabel match
+  // A subject bound PER FIXTURE ("his team to win"): by event id, the side the leg's player plays for there
+  // (teamSidesOf). A fixture missing from it has no known side, so its outcomes never bind.
+  sideByEvent?: Record<number, "home" | "away">;
 };
 
 // The picked market as Kambi's own shape (the market's betoffers + their events). We keep the betOffer
@@ -107,6 +110,23 @@ export const subjectOutcomes = (outcomes: KOutcome[], spec: { subjectId?: number
   return outcomes;
 };
 
+// The side a player's team holds in each fixture, from the live feed alone: an outcome about the player names
+// the event participant he plays for (`eventParticipantId`: Wirtz -> Germany in Greece v Germany, Liverpool v
+// City -> Liverpool), and the event lists that participant as home or away. No outcome there = no side.
+export function teamSidesOf(playerId: number, offers: BetOffer[], events: KEvent[]): Record<number, "home" | "away"> {
+  const sides: Record<number, "home" | "away"> = {};
+  for (const b of offers) {
+    if (b.eventId == null || sides[b.eventId]) continue;
+    const team = b.outcomes?.find(
+      (o) => o.participantId === playerId && o.eventParticipantId != null,
+    )?.eventParticipantId;
+    if (team == null) continue;
+    const home = events.find((e) => e.id === b.eventId)?.participants?.find((p) => p.participantId === team)?.home;
+    if (typeof home === "boolean") sides[b.eventId] = home ? "home" : "away";
+  }
+  return sides;
+}
+
 // MULTI-FIXTURE: a leg whose market sits on several fixtures ("over 2.5 goals", "Kane not to score" across a
 // team's next games) answers ONCE PER FIXTURE — the same rules re-run on each fixture's own betoffers — so the
 // betslip can put the leg on the fixture the other legs share, not whichever one the feed listed first (a lone
@@ -137,6 +157,7 @@ function selectOne(slice: Slice, spec: SelectSpec, ctx: { home?: string; away?: 
   // resolve a relational subject to the fixture's team name; a plain name passes through
   const subjName = spec.subject === "home" ? ctx.home : spec.subject === "away" ? ctx.away : spec.subject;
   const relational = spec.subject === "home" || spec.subject === "away";
+  const sides = spec.sideByEvent;
   const withSubj = subjName ? { subject: subjName } : {};
   let cands: Cand[] = slice.betOffers.flatMap((bo) => (bo.outcomes ?? []).map((o) => ({ o, bo })));
 
@@ -240,30 +261,34 @@ function selectOne(slice: Slice, spec: SelectSpec, ctx: { home?: string; away?: 
   // translate by the subject's side before matching, trying the literal token too:
   //   - HT/FT result tokens (win/draw/loss, "/"-joined) -> 1/X/2 per side  (an away team's "win/win" -> "2/2")
   //   - correct score "a-b" stated for a NAMED team is in that team's order -> reverse it for an away subject
+  // A per-fixture subject ("his team") reads the token from his side in EACH outcome's own fixture ("2-1" is the
+  // feed's "1-2" where he plays away); a fixture with no recorded side never matches. Any other subject has one
+  // side for the whole slice.
   // (Double Chance does NOT reach here — the extractor emits it as a binary, not a selection.)
   if (comboToken != null) {
-    const side = subjectSide();
     const want = norm(comboToken);
-    const wants = [want];
     const R: Record<string, Record<"home" | "away", string>> = {
       win: { home: "1", away: "2" },
       draw: { home: "x", away: "x" },
       loss: { home: "2", away: "1" },
     };
-    const parts = want.split("/");
-    if (side && parts.every((p) => p in R)) wants.push(parts.map((p) => R[p]![side]).join("/"));
-    const score = want.match(/^(\d+)-(\d+)$/);
-    // away subject: the feed scoreline is the REVERSED one; the literal is the OPPONENT's. Replace, don't add —
-    // else "2-0" and "0-2" both sit in `wants` and the match is decided by feed order, not the subject.
-    if (side === "away" && score) {
-      wants.length = 0;
-      wants.push(`${score[2]}-${score[1]}`);
-    }
-    const hit = cands.find(
-      ({ o }) =>
+    const wantsFor = (side: "home" | "away" | undefined): string[] => {
+      const score = want.match(/^(\d+)-(\d+)$/);
+      // away subject: the feed scoreline is the REVERSED one; the literal is the OPPONENT's. Replace, don't add —
+      // else "2-0" and "0-2" both sit in `wants` and the match is decided by feed order, not the subject.
+      if (side === "away" && score) return [`${score[2]}-${score[1]}`];
+      const parts = want.split("/");
+      return side && parts.every((p) => p in R) ? [want, parts.map((p) => R[p]![side]).join("/")] : [want];
+    };
+    const fixed = sides ? undefined : wantsFor(subjectSide());
+    const hit = cands.find(({ o, bo }) => {
+      const side = sides && bo.eventId != null ? sides[bo.eventId] : undefined;
+      const wants = fixed ?? (side ? wantsFor(side) : []);
+      return (
         (o.homeScore != null && o.awayScore != null && wants.includes(`${o.homeScore}-${o.awayScore}`)) ||
-        wants.includes(norm(o.englishLabel ?? o.label ?? "")),
-    );
+        wants.includes(norm(o.englishLabel ?? o.label ?? ""))
+      );
+    });
     return hit ? pick(hit.o) : absent("subject-absent");
   }
 
@@ -355,6 +380,15 @@ function selectOne(slice: Slice, spec: SelectSpec, ctx: { home?: string; away?: 
     // would collapse the pool to that one fixture. relationalSide reads outcome -> betoffer -> event -> side,
     // unifying static-label (OT_ONE/OT_TWO) and named (participant == fixture's home/away) markets.
     pool = cands.filter((c) => relationalSide(c, spec.subject as "home" | "away"));
+    if (!pool.length) return absent("subject-absent");
+  } else if (sides) {
+    // PER-FIXTURE subject ("his team to win"): the player's side differs by fixture (Germany away in Greece v
+    // Germany, Liverpool home v City), so each outcome binds to the side recorded for ITS OWN event. A fixture
+    // with no recorded side drops out; none left is an honest subject-absent, never the feed's first outcome.
+    pool = cands.filter((c) => {
+      const side = c.bo.eventId != null ? sides[c.bo.eventId] : undefined;
+      return side != null && relationalSide(c, side);
+    });
     if (!pool.length) return absent("subject-absent");
   } else if (spec.subject) {
     if (hasNamed) {

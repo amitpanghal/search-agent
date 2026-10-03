@@ -492,7 +492,7 @@ test("betslip: oddsLabel is what the Kambi betslip shows — raw product, single
 // ---------------------------------------------------------------------------------------------------------
 // SELECT: margin asks and zero-of-the-stat — "win by 2+" lands the -(N-0.5) handicap rung, "not scoring"
 // lands Under 0.5 on an anonymous over/under ladder (not a subject-absent).
-import { select } from "./result/select";
+import { select, teamSidesOf } from "./result/select";
 
 test("select: 'win by 2 or more' picks the subject's -1.5 handicap rung, not the nearest-to-+2", () => {
   const hcp = (id: number, line: number): BetOffer =>
@@ -576,6 +576,69 @@ test("select: a line leg on several fixtures picks that line on EACH; a fixture 
   assert.deepEqual([both.outcomeId, both.selectedIds], [11, [11, 31]]); // Over 2.5 on each, feed-first stays primary
   const one = select({ events, betOffers: [ou(1, 200, 1500), ou(3, 100, 2500)] }, { lineValue: 2.5, dir: "over" });
   assert.deepEqual([one.outcomeId, one.selectedIds], [31, undefined]); // 200's 1.5 is a nearest rung, not 2.5
+});
+
+test("select: 'his team to win' binds per fixture to the side the player's own outcomes name, never the first", () => {
+  // Wirtz (77) plays away for Germany (102) in fixture 1, at home for Liverpool (103) in fixture 2, and has no
+  // market in fixture 3. The 1X2 outcomes are typed; his props carry the team he plays for (eventParticipantId).
+  const fullTime = (eventId: number, home: number, away: number): BetOffer =>
+    ({
+      id: eventId * 100,
+      eventId,
+      criterion: { label: "Full Time", englishLabel: "Full Time" },
+      outcomes: [
+        { id: eventId * 10 + 1, type: "OT_ONE", label: "1", participantId: home },
+        { id: eventId * 10 + 2, type: "OT_CROSS", label: "X" },
+        { id: eventId * 10 + 3, type: "OT_TWO", label: "2", participantId: away },
+      ],
+    }) as unknown as BetOffer;
+  const prop = (eventId: number, team: number): BetOffer =>
+    ({
+      id: eventId * 100 + 1,
+      eventId,
+      outcomes: [{ id: eventId * 10 + 5, label: "Yes", participantId: 77, eventParticipantId: team }],
+    }) as unknown as BetOffer;
+  const side = (id: number, home: number, away: number) => ({
+    id,
+    participants: [
+      { participantId: home, home: true },
+      { participantId: away, home: false },
+    ],
+  });
+  const events = [side(1, 101, 102), side(2, 103, 104), side(3, 105, 103)] as KEvent[];
+  const winners = [fullTime(1, 101, 102), fullTime(2, 103, 104), fullTime(3, 105, 103)];
+  const sides = teamSidesOf(77, [...winners, prop(1, 102), prop(2, 103)], events);
+  assert.deepEqual(sides, { 1: "away", 2: "home" }, "fixture 3 has no outcome of his, so no side");
+  const s = select({ events, betOffers: winners }, { sideByEvent: sides });
+  assert.deepEqual(s.selectedIds, [13, 21], "Germany's '2' in fixture 1, Liverpool's '1' in fixture 2");
+  assert.equal(
+    select({ events, betOffers: winners }, { sideByEvent: {} }).fallback,
+    "subject-absent",
+    "no outcome of his anywhere: an honest miss, not the home side",
+  );
+});
+
+test("select: a 'his team' scoreline is read from his side in each fixture — '2-1' away is the feed's '1-2'", () => {
+  // His side, as teamSidesOf reads it: home in fixture 1, away in fixture 2, unknown in fixture 3. The feed
+  // writes both markets home-first: correct score (type 3) by homeScore-awayScore, HT/FT (type 8) as "1/1".
+  const sides = { 1: "home", 2: "away" } as const;
+  const events = [{ id: 1 }, { id: 2 }, { id: 3 }] as KEvent[];
+  const market = (eventId: number, typeId: number, labels: string[]): BetOffer =>
+    ({
+      id: eventId * 100 + typeId,
+      eventId,
+      betOfferType: { id: typeId },
+      outcomes: labels.map((label, i) => {
+        const [home, away] = label.split("-");
+        return { id: eventId * 10 + i + 1, englishLabel: label, ...(away ? { homeScore: home, awayScore: away } : {}) };
+      }),
+    }) as unknown as BetOffer;
+  const scores = [1, 2, 3].map((e) => market(e, 3, ["2-1", "1-2"]));
+  const htft = [1, 2, 3].map((e) => market(e, 8, ["1/1", "2/2"]));
+  const cs = select({ events, betOffers: scores }, { lineValue: "2-1", sideByEvent: sides });
+  assert.deepEqual(cs.selectedIds, [11, 22], "home: '2-1' as written; away: the feed's '1-2'; fixture 3 never matches");
+  const hf = select({ events, betOffers: htft }, { lineValue: "win/win", sideByEvent: sides });
+  assert.deepEqual(hf.selectedIds, [11, 22], "'win/win' is '1/1' at home and '2/2' away");
 });
 
 // ---------------------------------------------------------------------------------------------------------

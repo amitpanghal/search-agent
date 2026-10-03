@@ -17,7 +17,7 @@ import { planRecall } from "./grounding/plan-recall";
 import { recall, scopeMenu, marketLabelOf } from "./grounding/recall";
 import { filterBySubject } from "./market/filter";
 import { resolveMarkets, type Bet } from "./market/resolve-market";
-import { select, type SelectSpec } from "./result/select";
+import { select, teamSidesOf, type SelectSpec } from "./result/select";
 import { execute, type ResponseEnvelope, type EnvelopeSubject } from "./result/execute";
 import { buildBetslip } from "./result/combinations";
 import { fold } from "./shared/lexical";
@@ -462,6 +462,12 @@ export async function* runPipeline(
       legsUnderstood.push({ ...under, matched: false });
       continue;
     }
+    // "his team": the extractor leaves an unnamed team generic and keeps the player in the leg. With exactly one
+    // grounded player, the team is whichever side he plays for in each fixture, read off the live feed.
+    const teamOfPlayerId =
+      sel.subject.kind === "either_match_team" && !sel.subject.side && leg.players.length === 1
+        ? confidentId(leg.players[0])
+        : undefined;
     const spec: SelectSpec = {
       ...selSpec(
         sel.line,
@@ -474,6 +480,7 @@ export async function* runPipeline(
       ),
       ...(sel.direction ? { dir: sel.direction } : {}),
       ...(pickByIdx[i]?.outcomeLabel ? { outcomeLabel: pickByIdx[i]!.outcomeLabel } : {}),
+      ...(teamOfPlayerId != null ? { sideByEvent: teamSidesOf(teamOfPlayerId, scoped.offers, scoped.events) } : {}),
     };
     // Tile identity: the leg's confidently-grounded named PLAYER (team tiles dropped — events[] carries teams).
     // One entry per player across all legs; eventIds merge in below if a selection lands on concrete outcomes.
