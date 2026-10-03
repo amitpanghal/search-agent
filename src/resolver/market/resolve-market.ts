@@ -1,9 +1,13 @@
 // RESOLVE(market) — build plan Phase 2. The LLM picks one market per BET from the FILTERED live menu and labels
 // each exact | close | none (theory §4). It sees LABELS ONLY (no odds, no outcomes) and picks by `ref`; we map
-// the ref back to the menu item's label (the market identity). The model may always abstain (`none`). BATCHED (Q2): legs that share
-// one filtered menu resolve in a SINGLE call — the menu is sent once, not per leg — saving repeated input tokens
-// and a round-trip. `resolveMarket` (singular) is a thin wrapper kept for the offline gates. The contract —
-// confident-wrong ≈ 1 in 180 case-evaluations. Model is BEDROCK_MODEL via the Converse API (see bedrock-call.ts).
+// the ref back to the menu item's label (the market identity). The model may always abstain (`none`).
+// ONE CALL PER QUERY (ADR one-market-call): every bet arrives with its OWN filtered menu; the menus are unioned by
+// label (outcome lists merged) and sent once, and a bet whose menu is a strict subset of the union carries a
+// `[may pick: 0-5, 9]` tag naming its refs — the subject filter's precision survives the merge. Answered refs map
+// back into each bet's own menu, so a ref outside the bet's set (or an outcome on another bet's twin of the same
+// label) can never become a market: it collapses to `none`, as any unknown ref does. `resolveMarket` (singular) is
+// a thin wrapper kept for the offline gates. The contract — confident-wrong ≈ 1 in 180 case-evaluations. Model is
+// BEDROCK_MODEL (or DeepSeek under LLM_PROVIDER=deepseek) via bedrock-call.ts.
 
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -51,10 +55,13 @@ const INPUT_SCHEMA: Record<string, unknown> = {
   required: ["picks"],
 };
 
-// The raw model output for one bet (a menu ref + label), before we map it back to the market identity.
+// The raw model output for one bet (a ref + label), before we map it back to the market identity.
 export type RawPick = { ref: number | null; match: string; outcome?: string | null; related?: number[] };
-// Batched decider — one call for all bets sharing the menu. Injectable so the gate can replay captured decisions.
-export type DecideManyFn = (phrases: string[], menu: Menu, query?: string) => Promise<RawPick[]>;
+// A bet: the phrase to settle and the filtered menu it may pick from.
+export type Bet = { phrase: string; menu: Menu };
+// Batched decider — one call for every bet of the query, each with its own menu; refs index each bet's OWN menu.
+// Injectable so the gates can replay captured decisions.
+export type DecideManyFn = (bets: Bet[], query?: string) => Promise<RawPick[]>;
 // Singular decider — kept for the offline gates' per-phrase replay.
 export type DecideFn = (phrase: string, menu: Menu) => Promise<RawPick>;
 
@@ -92,41 +99,96 @@ const toPick = (raw: RawPick | undefined, menu: Menu): MarketPick => {
   };
 };
 
-// Pick + label a market for EACH phrase against the one shared filtered menu, in a single model call.
+// Pick + label a market for EACH bet against its own menu, in a single model call. A bet with an empty menu is
+// `none` without asking (a choice between `none` and nothing).
 export async function resolveMarkets(
-  phrases: string[],
-  menu: Menu,
+  bets: Bet[],
   decideFn: DecideManyFn = callModel,
   query?: string,
 ): Promise<MarketPick[]> {
-  if (!phrases.length) return [];
-  if (!menu.length) return phrases.map(() => ({ match: "none", reason: "empty menu" }));
-  const raws = await decideFn(phrases, menu, query);
-  return phrases.map((_, i) => toPick(raws[i], menu));
+  const asked = bets.filter((b) => b.menu.length);
+  const raws = asked.length ? await decideFn(asked, query) : [];
+  let i = 0;
+  return bets.map((b) => (b.menu.length ? toPick(raws[i++], b.menu) : { match: "none" }));
 }
 
-// Singular convenience (one phrase). Kept so the offline gates' singular replay deciders work unchanged.
+// Singular convenience (one phrase, one menu). Kept so the offline gates' singular replay deciders work unchanged.
 export async function resolveMarket(phrase: string, menu: Menu, decideFn?: DecideFn): Promise<MarketPick> {
-  const many: DecideManyFn = decideFn ? async (ps, m) => [await decideFn(ps[0]!, m)] : callModel;
-  return (await resolveMarkets([phrase], menu, many))[0]!;
+  const many: DecideManyFn = decideFn ? async (bs) => [await decideFn(bs[0]!.phrase, bs[0]!.menu)] : callModel;
+  return (await resolveMarkets([{ phrase, menu }], many))[0]!;
 }
 
-const callModel: DecideManyFn = async (phrases, menu, query) => {
+// The union of the bets' menus — one item per label, outcome lists merged — and each bet's refs into it. Labels
+// carry no team or fixture (englishLabel + variant), so two groups' menus overlap heavily: a team subject keeps
+// most of its fixture's menu, two outright subjects share the same Finishing Position labels.
+export const unionMenus = (bets: Bet[]): { menu: Menu; refs: number[][] } => {
+  const menu: Menu = [];
+  const at = new Map<string, number>();
+  const refs = bets.map((b) =>
+    b.menu.map((m) => {
+      let r = at.get(m.label);
+      if (r == null) {
+        r = menu.length;
+        at.set(m.label, r);
+        menu.push({ label: m.label, ...(m.outcomes?.length ? { outcomes: [...m.outcomes] } : {}) });
+      } else if (m.outcomes?.length) {
+        const u = menu[r]!;
+        u.outcomes = [...new Set([...(u.outcomes ?? []), ...m.outcomes])];
+      }
+      return r;
+    }),
+  );
+  return { menu, refs };
+};
+
+// A bet's allowed refs as compact ranges ("0-5, 9, 12-14"), or "" when it may use the whole union — then no tag is
+// written and the message reads exactly as a single-group call. Refs are distinct (a menu has one item per label).
+export const rangeTag = (refs: number[], total: number): string => {
+  if (refs.length >= total) return "";
+  const s = [...refs].sort((a, b) => a - b);
+  const parts: string[] = [];
+  for (let i = 0; i < s.length; ) {
+    let j = i;
+    while (j + 1 < s.length && s[j + 1] === s[j]! + 1) j++;
+    parts.push(j > i ? `${s[i]}-${s[j]}` : `${s[i]}`);
+    i = j + 1;
+  }
+  return parts.join(", ");
+};
+
+// Union refs -> each bet's OWN menu index. A ref outside the bet's set becomes -1, which toPick treats as unknown
+// (the pick abstains, a related ref is dropped) — the deterministic half of the `[may pick]` rule.
+export const ownRefs = (raws: RawPick[], refs: number[][]): RawPick[] =>
+  raws.map((p, i) => {
+    const own = (r: number) => refs[i]!.indexOf(r);
+    return { ...p, ref: p.ref == null ? null : own(p.ref), ...(p.related ? { related: p.related.map(own) } : {}) };
+  });
+
+const callModel: DecideManyFn = async (bets, query) => {
+  const { menu, refs } = unionMenus(bets);
   const list = menu
     .map((m, i) => `${i}: ${m.label}${m.outcomes?.length ? `  [outcomes: ${m.outcomes.join(" | ")}]` : ""}`)
     .join("\n");
-  const bets = phrases.map((p, i) => `${i}: ${p}`).join("\n");
+  const lines = bets
+    .map((b, i) => {
+      const tag = rangeTag(refs[i]!, menu.length);
+      return `${i}: ${b.phrase}${tag ? `  [may pick: ${tag}]` : ""}`;
+    })
+    .join("\n");
   const user =
-    `LIVE menu (ref: label) — the only markets actually offered:\n${list}\n\nBETS (leg: phrase):\n${bets}\n\n` +
+    `LIVE menu (ref: label) — the only markets actually offered:\n${list}\n\nBETS (leg: phrase):\n${lines}\n\n` +
     `${query ? `Original request (context):\n"${query}"\n\n` : ""}For EACH bet, pick one market by ref (or none) and label it exact/close/none.`;
   const out = await bedrockToolCall(
     systemPrompt(),
     user,
     TOOL_NAME,
     INPUT_SCHEMA,
-    Math.min(2048, 256 + 256 * phrases.length),
+    Math.min(2048, 256 + 256 * bets.length),
   );
-  return picksByLeg((Array.isArray(out.picks) ? out.picks : []) as Array<{ leg?: number } & RawPick>, phrases.length);
+  return ownRefs(
+    picksByLeg((Array.isArray(out.picks) ? out.picks : []) as Array<{ leg?: number } & RawPick>, bets.length),
+    refs,
+  );
 };
 
 // Map raw picks back to bet order BY `leg` (robust to reordering). A pick with NO `leg` falls back to its

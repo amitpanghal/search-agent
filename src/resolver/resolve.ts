@@ -1,7 +1,8 @@
 // resolve — the orchestrator (build plan Phase 6). The single entry that chains the whole pipeline:
 //
 //   extract → groundScope → resolveEntities → planRecall → recall(BROAD live data)
-//     → per leg-group: scopeMenu(narrow) → filter(subject) → resolve(market) → select(line/subject)
+//     → per leg-group: scopeMenu(narrow) → filter(subject); then ONE resolve(market) call for every group's bets
+//     → per leg: select(line/subject)
 //   → execute → ResponseEnvelope
 //
 // The market is NEVER decided before the fetch (theory §1): recall fetches by ENTITY ids broadly, then each
@@ -15,7 +16,7 @@ import { resolveEntities } from "./grounding/resolve-entities";
 import { planRecall } from "./grounding/plan-recall";
 import { recall, scopeMenu, marketLabelOf } from "./grounding/recall";
 import { filterBySubject } from "./market/filter";
-import { resolveMarkets } from "./market/resolve-market";
+import { resolveMarkets, type Bet } from "./market/resolve-market";
 import { select, type SelectSpec } from "./result/select";
 import { execute, type ResponseEnvelope, type EnvelopeSubject } from "./result/execute";
 import { buildBetslip } from "./result/combinations";
@@ -294,9 +295,10 @@ export async function* runPipeline(
   yield { stage: "disambiguating" };
 
   // Group selectors that share BOTH a filter-subject AND a grounded scope signature: they get ONE scopeMenu +
-  // ONE filterBySubject + ONE batched resolveMarkets call. The signature spans everything that shapes the menu
-  // (level, competition group, teams, time, stage, playState) + the subject filter (name + grounded id), built
-  // from GROUNDED ids so surface variants ("WC26" vs "World Cup 2026") collapse to one group, not two.
+  // ONE filterBySubject, and their bets share one filtered menu inside the query's single resolveMarkets call.
+  // The signature spans everything that shapes the menu (level, competition group, teams, time, stage,
+  // playState) + the subject filter (name + grounded id), built from GROUNDED ids so surface variants ("WC26" vs
+  // "World Cup 2026") collapse to one group, not two.
   const sigOf = (i: number): string => {
     const leg = settled.legs[i]!;
     const sel = plan.selectors[i]!;
@@ -348,10 +350,10 @@ export async function* runPipeline(
   const anchorEventIds = new Set<number>();
   const ordered = [...groups].sort(([, a], [, b]) => Number(isFloating(a[0]!)) - Number(isFloating(b[0]!)));
 
-  // Per group: scopeMenu + filterBySubject (deterministic, synchronous), then ONE resolveMarkets LLM call for that
-  // group's named legs against its shared filtered menu (the answer-preserving multi=false batch). Ordered
+  // Per group: scopeMenu + filterBySubject (deterministic, synchronous); the group's named legs become BETS (phrase +
+  // this group's filtered menu) collected for the query's ONE resolveMarkets call after the loop. Ordered
   // anchored-first so the sync prep populates anchorEventIds before any floating group reads it.
-  const pickJobs: { idxs: number[]; picks: Promise<MarketPick[]> }[] = [];
+  const pickJobs: { idxs: number[]; bets: Bet[] }[] = [];
   for (const [key, idxs] of ordered) {
     const leg = settled.legs[idxs[0]!]!;
     const sel0 = plan.selectors[idxs[0]!]!;
@@ -385,31 +387,22 @@ export async function* runPipeline(
       if (subjectUnidentified(settled.legs[i]!, plan.selectors[i]!.subject)) pickByIdx[i] = { match: "none" };
     });
     const llmIdxs = idxs.filter((i) => plan.selectors[i]!.market_concept !== "main" && pickByIdx[i] == null);
-    // Kick the pick off WITHOUT awaiting — each group resolves against its own menu with no cross-group
-    // dependency, so all groups' picks run concurrently; awaited together after the loop.
-    // ponytail: unbounded fan-out (one call per group). If a query splits into enough groups to hit Bedrock's
-    // per-second limit, pool it like recall.ts (chunk + Promise.all).
     if (llmIdxs.length)
       pickJobs.push({
         idxs: llmIdxs,
-        picks: usageStore.run(calls, () =>
-          resolveMarkets(
-            llmIdxs.map((i) => betPhrase(plan.selectors[i]!, settled.legs[i]!.level)),
-            fr.menu,
-            undefined,
-            query,
-          ),
-        ),
+        bets: llmIdxs.map((i) => ({ phrase: betPhrase(plan.selectors[i]!, settled.legs[i]!.level), menu: fr.menu })),
       });
     // anchored group -> remember the fixtures it prices, so later floating groups inherit them
     if (!floating) for (const b of fr.offers) if (b.eventId != null) anchorEventIds.add(b.eventId);
   }
-  // All group picks were kicked off concurrently above; await together, then map each group's results back to its
-  // leg indices (order within a group == llmIdxs order == resolveMarkets phrase order).
-  const jobResults = await Promise.all(pickJobs.map((j) => j.picks));
-  pickJobs.forEach((j, ji) => {
-    j.idxs.forEach((i, k) => {
-      pickByIdx[i] = jobResults[ji]![k]!;
+  // ONE market call for the whole query: every group's bets, each with its own filtered menu (resolve-market unions
+  // them by label and tags each bet with its refs). Picks map back to leg indices in job order, then bet order.
+  const allBets = pickJobs.flatMap((j) => j.bets);
+  const picks = allBets.length ? await usageStore.run(calls, () => resolveMarkets(allBets, undefined, query)) : [];
+  let k = 0;
+  pickJobs.forEach((j) => {
+    j.idxs.forEach((i) => {
+      pickByIdx[i] = picks[k++]!;
     });
   });
   emit({ kind: "stage", stage: "market", out: pickByIdx });

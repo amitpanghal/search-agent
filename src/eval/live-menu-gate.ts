@@ -133,13 +133,13 @@ export async function runLiveMenuGate(): Promise<GateResult> {
     );
   }
 
-  // ---- (B2) RESOLVE batched: many legs sharing ONE menu resolve in a single call (Q2) ----
+  // ---- (B2) RESOLVE batched: many bets resolve in a single call, each ref into its OWN menu (Q2) ----
   const replayMany =
     (golds: ({ label: string; match: MatchLabel } | null)[]): DecideManyFn =>
-    async (_phrases, menu) =>
-      golds.map((g) => {
+    async (bets) =>
+      golds.map((g, i) => {
         if (g == null) return { ref: null, match: "none", reason: "replay none" };
-        const ref = menu.findIndex((m) => m.label.toLowerCase() === g.label.toLowerCase());
+        const ref = bets[i]!.menu.findIndex((m) => m.label.toLowerCase() === g.label.toLowerCase());
         return ref >= 0
           ? { ref, match: g.match, reason: "replay" }
           : { ref: null, match: "none", reason: "gold not in menu" };
@@ -151,8 +151,7 @@ export async function runLiveMenuGate(): Promise<GateResult> {
       { label: "Finishing Position — Top 4", match: "exact" },
     ];
     const picks = await resolveMarkets(
-      ["Spain to win the World Cup", "Spain to finish in the top 4"],
-      menu,
+      ["Spain to win the World Cup", "Spain to finish in the top 4"].map((phrase) => ({ phrase, menu })),
       replayMany(golds),
     );
     const labelOf = (p: (typeof picks)[number]) => (p.match === "none" ? null : (p.label ?? null));
@@ -165,6 +164,27 @@ export async function runLiveMenuGate(): Promise<GateResult> {
       "resolve batched: 2 legs share one menu -> 2 correct picks",
       ok,
       picks.map((p) => `${p.match} ${labelOf(p) ?? "—"}`).join(" | "),
+    );
+  }
+
+  // ---- (B3) RESOLVE one call, two menus: each bet's ref binds into ITS menu (ADR one-market-call) ----
+  {
+    const bets = [
+      { phrase: "Spain to win the World Cup", menu: compMenu("Spain") },
+      { phrase: "USA to win", menu: matchMenu("USA") },
+    ];
+    const golds: { label: string; match: MatchLabel }[] = [
+      { label: "Finishing Position — Winner", match: "exact" },
+      { label: "Full Time", match: "exact" },
+    ];
+    const picks = await resolveMarkets(bets, replayMany(golds));
+    const ok = picks.every(
+      (p, i) => p.match === "exact" && (p.label ?? "").toLowerCase() === golds[i]!.label.toLowerCase(),
+    );
+    check(
+      "resolve one call, two menus: each bet lands on its own menu",
+      ok,
+      picks.map((p) => `${p.match} ${p.label ?? "—"}`).join(" | "),
     );
   }
 

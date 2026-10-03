@@ -12,7 +12,7 @@ import { resolveTimeWindow, eventMatchesTime, applyFixturePick, filterEventsByTi
 import { fold, contentTokens, lc, stripSettle } from "./shared/lexical";
 import type { BetOffer, KEvent } from "./shared/offering-client";
 import { buildBetslip, type Combination } from "./result/combinations";
-import { picksByLeg, resolveMarkets } from "./market/resolve-market";
+import { ownRefs, picksByLeg, rangeTag, resolveMarkets, unionMenus } from "./market/resolve-market";
 import type { ResolvedLeg } from "./shared/live-menu-types";
 import { queryNamesSport, adoptSport, resolveEntities } from "./grounding/resolve-entities";
 import { propagate, retier, byProminence, type Candidate } from "./grounding/ground-scope";
@@ -607,6 +607,101 @@ test("resolve-market: a leg-less pick binds by position when picks match bets on
 });
 
 // ---------------------------------------------------------------------------------------------------------
+// ONE market call per query (ADR one-market-call): bets from different leg groups share one union menu. The
+// union dedupes by label and merges outcomes; a bet whose menu is a strict subset carries a compact ref tag; a
+// union ref maps back into the bet's OWN menu, so a ref outside its set can never become a market.
+const WINNER = "Finishing Position — Winner";
+const TOP4_FP = "Finishing Position — Top 4";
+
+test("resolve-market: the union menu dedupes by label, merges outcomes, and tags only strict subsets", () => {
+  const spain = [{ label: WINNER }, { label: TOP4_FP }];
+  const all = [
+    { label: WINNER },
+    { label: TOP4_FP },
+    { label: "Tournament progress", outcomes: ["Reach the final"] },
+    { label: "Most Goals" },
+  ];
+  const france = [{ label: "Tournament progress", outcomes: ["Eliminated in Round of 16"] }, { label: WINNER }];
+  const { menu, refs } = unionMenus([
+    { phrase: "spain", menu: spain },
+    { phrase: "any", menu: all },
+    { phrase: "france", menu: france },
+  ]);
+  assert.deepEqual(
+    menu.map((m) => m.label),
+    [WINNER, TOP4_FP, "Tournament progress", "Most Goals"],
+  );
+  assert.deepEqual(menu[2]!.outcomes, ["Reach the final", "Eliminated in Round of 16"]); // both groups' twins, merged
+  assert.deepEqual(refs, [
+    [0, 1],
+    [0, 1, 2, 3],
+    [2, 0],
+  ]);
+  assert.equal(rangeTag(refs[0]!, menu.length), "0-1");
+  assert.equal(rangeTag(refs[1]!, menu.length), ""); // the whole union: no tag, the message reads as a single-group call
+  assert.equal(rangeTag(refs[2]!, menu.length), "0, 2");
+  assert.equal(rangeTag([0, 1, 2, 5, 9, 10, 11], 20), "0-2, 5, 9-11");
+});
+
+test("resolve-market: a union ref maps into the bet's own menu; one outside its set collapses to none", async () => {
+  const spain = [{ label: WINNER }, { label: TOP4_FP }];
+  const all = [...spain, { label: "Most Goals" }];
+  // the model answers in UNION refs: Spain -> 1 (Top 4, hers), the open bet -> 2 (Most Goals), and a leaked 2 for Spain
+  const own = ownRefs(
+    [
+      { ref: 1, match: "exact", related: [0, 2] },
+      { ref: 2, match: "exact" },
+      { ref: 2, match: "exact" },
+    ],
+    [
+      [0, 1],
+      [0, 1, 2],
+      [0, 1],
+    ],
+  );
+  assert.deepEqual(
+    own.map((p) => p.ref),
+    [1, 2, -1],
+  );
+  assert.deepEqual(own[0]!.related, [0, -1]); // the leaked related ref is dropped by toPick, the own one kept
+  const decide = async () => own;
+  const picks = await resolveMarkets(
+    [
+      { phrase: "Spain top 4", menu: spain },
+      { phrase: "most goals", menu: all },
+      { phrase: "Spain leaked", menu: spain },
+    ],
+    decide,
+  );
+  assert.deepEqual(picks, [
+    { label: TOP4_FP, match: "exact", related: [WINNER] },
+    { label: "Most Goals", match: "exact" },
+    { match: "none" },
+  ]);
+});
+
+test("resolve-market: a bet with an empty menu is none without being asked; the others still go in one call", async () => {
+  let asked: string[] = [];
+  const decide = async (bets: { phrase: string }[]) => {
+    asked = bets.map((b) => b.phrase);
+    return bets.map(() => ({ ref: 0, match: "exact" }));
+  };
+  const picks = await resolveMarkets(
+    [
+      { phrase: "a", menu: [{ label: "X" }] },
+      { phrase: "b", menu: [] },
+      { phrase: "c", menu: [{ label: "Y" }] },
+    ],
+    decide,
+  );
+  assert.deepEqual(asked, ["a", "c"]);
+  assert.deepEqual(
+    picks.map((p) => p.label ?? p.match),
+    ["X", "none", "Y"],
+  );
+});
+
+// ---------------------------------------------------------------------------------------------------------
 // EXECUTE: a none-pick leg whose fixture menu EXISTED but was emptied by the subject filter must say the
 // SUBJECT is absent (naming the grounded person, so a wrong grounding is visible and correctable) — never the
 // false "no market is available". The generic no-market wording stays for a genuinely missing concept.
@@ -731,9 +826,9 @@ test("entity gate: a pick from a weak shortlist ships with a 'could also be' not
 test("resolve-market: a 1X2 side code is never an outcomeLabel (the subject gate picks the side); Draw still is", async () => {
   const menu = [{ label: "Full Time", outcomes: ["1", "Draw", "2"] }];
   const saying = (outcome: string) => async () => [{ ref: 0, match: "exact", outcome }];
-  assert.equal((await resolveMarkets(["to win"], menu, saying("1")))[0]!.outcomeLabel, undefined);
-  assert.equal((await resolveMarkets(["to win"], menu, saying("2")))[0]!.outcomeLabel, undefined);
-  assert.equal((await resolveMarkets(["to draw"], menu, saying("Draw")))[0]!.outcomeLabel, "Draw");
+  assert.equal((await resolveMarkets([{ phrase: "to win", menu }], saying("1")))[0]!.outcomeLabel, undefined);
+  assert.equal((await resolveMarkets([{ phrase: "to win", menu }], saying("2")))[0]!.outcomeLabel, undefined);
+  assert.equal((await resolveMarkets([{ phrase: "to draw", menu }], saying("Draw")))[0]!.outcomeLabel, "Draw");
 });
 
 // ---------------------------------------------------------------------------------------------------------
@@ -746,7 +841,7 @@ const TOP4 = "Winner - Including Playoffs — Top 4";
 test("resolve-market: a none pick keeps its related suggestions but never gains a market", async () => {
   const menu = [{ label: TOP2 }, { label: TOP4 }];
   const decide = async () => [{ ref: null, match: "none", related: [0, 1, 7] }]; // 7 is off the menu -> dropped
-  assert.deepEqual((await resolveMarkets(["to win the league"], menu, decide))[0], {
+  assert.deepEqual((await resolveMarkets([{ phrase: "to win the league", menu }], decide))[0], {
     match: "none",
     related: [TOP2, TOP4],
   });
