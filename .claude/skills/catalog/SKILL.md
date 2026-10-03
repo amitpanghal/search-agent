@@ -33,6 +33,12 @@ sports) → `build-scope-index.ts` (pure local join, writes the index). Intermed
 `.catalog-build/` (gitignored): deleted on success, **kept on failure as evidence** — a `FAIL` summary row
 means look there. Review a build with `git diff --stat catalogData/`.
 
+**Twins.** Kambi can carry two ids for one team and price only one. The fetcher stamps every same-name team
+with its live bet-offer count, and the normalizer keeps the priced twin (then the bigger squad, then the
+lowest id) and moves the dropped twin's players onto it (`docs/adr/catalog-twins.md`). Suspect a twin
+whenever a team grounds confidently but recall finds no fixture, or a fixture's participant id differs from the
+catalog id; read the `twin check` line of the build log.
+
 ## sports.ts — the only hand-maintained part
 
 Everything else derives from the offering tree. `SPORT_OVERRIDES` (keyed by slug) carries what the tree

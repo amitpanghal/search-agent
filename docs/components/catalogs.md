@@ -19,9 +19,13 @@ has no catalog file, it does not exist at runtime.
 2. `fetch-groups.ts` fetches the group tree once, for the kambi/GB market. The tree is the competition
    whitelist: what is not in it does not exist.
 3. `fetch-participants.ts` fetches each group under the sport root, descending only where a group times out,
-   unions and dedups by id.
+   unions and dedups by id. Every TEAM that shares its English name with another TEAM (a twin) is stamped
+   with its live bet-offer count, `liveBetOffers`: one call at a time, about 3 a second, because the host
+   rate-limits bursts (429). The build log counts any 429.
 4. `scripts/catalog/refactor_participants.py` normalizes the raw feed into flat, deduped, English-only
-   records, for every sport.
+   records, for every sport. Twins collapse to one id: the most live offers, then the bigger squad, then the
+   lowest id; players pointing at the dropped twin move to the keeper
+   ([adr/catalog-twins.md](../adr/catalog-twins.md)).
 5. `build-scope-index.ts` does a pure local join of the tree and the participants into the slim index:
    `groups[]` (the participant-referenced whitelist, each with its root `branch`), `branches[]` (root
    children with at least one whitelisted descendant), `teams[]` (name, competition ids, group ids,
@@ -47,6 +51,7 @@ Aliases are three fold-matched tables per sport: competitions, regions, markers.
 
 ## Limits
 - Catalogs go stale between refreshes; a brand-new competition may just predate the last run.
+- One id per team: offers left on a dropped twin's id (Spain's old-id outrights) can't be matched to the team.
 - `participantsFrom: "betoffer"` lists only players with a live market; a big-roster sport would lose
   coverage under it.
 - Basketball national teams and tennis country links are missing (`planning/limitations.md`).

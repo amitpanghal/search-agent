@@ -118,7 +118,11 @@ locale variants. Apply these in order:
      `clubId` so the club's name and metadata are reachable by join.
    - Dedupe players by `id` across all teams; union `competitionIds` and
      `groupIds` (a national-team player will appear in multiple league
-     feeds when we scale).
+     feeds when we scale). `clubId` is the first roster that names the
+     player, except that a national squad gives way to a later club
+     roster (Nico Schlotterbeck: Dortmund, not Germany); the national
+     squad is his `countryTeamId`. A player on national squads only
+     keeps the squad as `clubId`.
 
 ### Group classification
 
@@ -233,14 +237,18 @@ g. **Friendly-only clubs.** Drop clubs whose only remaining
    `England Legends`, `Rest of the World XI`, `Bordeaux II`, etc.
 
 h. **Same-shape duplicates.** Collapse clubs sharing
-   `(name, sorted(groupIds))` to the lowest id; collapse players
-   sharing `(name, clubId)` to the lowest id. Loser's `competitionIds`
-   (and `groupIds` for players) union onto the keeper before drop, so
-   no membership is lost. Legitimately distinct clubs with the same
-   name but different `groupIds` (e.g. `Alianza FC` El Salvador vs
-   Panama) don't collide and stay separate. The `Australia`
-   national-team duplicate (one record carried `World Cup 2026`, the
-   other didn't) collapses to the lower id with the comp set unioned.
+   `(name, sorted(groupIds))` (twins: Kambi can carry two ids for one
+   team and price only one) to the twin with the most live bet offers
+   (`liveBetOffers`, stamped by `fetch-participants.ts`), then the
+   bigger squad (`rosterSize`), then the lowest id; see
+   `docs/adr/catalog-twins.md`. Players whose `clubId` or
+   `countryTeamId` points at a dropped twin move to the keeper, so no
+   squad is lost. Collapse players sharing `(name, clubId)` to the
+   lowest id. Loser's `competitionIds` (and `groupIds` for players)
+   union onto the keeper before drop, so no membership is lost.
+   Legitimately distinct clubs with the same name but different
+   `groupIds` (e.g. `Alianza FC` El Salvador vs Panama) don't collide
+   and stay separate.
 
 i. **Final zero-roster sweep.** After all player drops, any club left
    with zero roster members is removed (same invariant as the

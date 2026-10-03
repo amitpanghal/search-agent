@@ -156,6 +156,15 @@ def nt_variant_from_name(name: str | None) -> str:
     return f"{level}_{gender}" + (f"_u{age}" if age else "")
 
 
+def twin_rank_fields(p: dict) -> dict:
+    """What step h ranks same-name twins by: the live bet offers fetch-participants.ts stamped on the id
+    (absent = 0, so an unchecked feed falls back to squad size, then lowest id) and the squad size."""
+    return {
+        "liveBetOffers": p.get("liveBetOffers", 0),
+        "rosterSize": sum(1 for m in p.get("teamMembers") or [] if m.get("type") == "PARTICIPANT"),
+    }
+
+
 # A national team plays ONLY national-team competitions; a club plays a continental CLUB cup. On a sparse
 # offering tree, a club whose domestic league is absent collapses to "international-only" too, so this rules
 # it back out (Galatasaray plays the Champions League; Argentina never does). Validated: drops 133 club
@@ -423,7 +432,8 @@ def _remove_noise(
       a. drop cross-sport intruder ids
       f. drop zero-competition clubs (after the test-strip in classify())
       g. drop friendly-only clubs
-      h. dedupe clubs by (name, sorted(groupIds))
+      h. dedupe clubs by (name, sorted(groupIds)), keeping the live twin;
+         players pointing at a merged twin move to the keeper
       cascade-drop players whose club was dropped
       c/d/e. drop player names matching betting-market / placeholder /
              hygiene patterns
@@ -451,27 +461,36 @@ def _remove_noise(
         if not comps or all(i in friendly_ids for i in comps):
             drop_clubs.add(c["id"])
 
-    # h (clubs). Dedupe by (name, sorted(groupIds)); keep lowest id; union
-    # losers' competitionIds onto the keeper. Clubs that share a name but
-    # have different groupIds (e.g. "Alianza FC" in El Salvador vs Panama)
-    # don't collide here and stay as separate records.
+    # h (clubs). Dedupe by (name, sorted(groupIds)); union losers' competitionIds onto the keeper. The keeper
+    # is the twin Kambi prices (most live bet offers, stamped by fetch-participants.ts), then the bigger squad,
+    # then the lowest id. No fixed id order is right: Kambi moved Spain's fixtures to its NEW id but Lyon's
+    # new id is an empty row (verified live 2026-10-03; docs/adr/catalog-twins.md). Clubs that share a name
+    # but have different groupIds (e.g. "Alianza FC" in El Salvador vs Panama) don't collide here.
     by_key: dict[tuple[str, tuple[int, ...]], list[dict]] = {}
     for c in clubs:
         if c["id"] in drop_clubs:
             continue
         by_key.setdefault((c["name"], tuple(sorted(c["groupIds"]))), []).append(c)
+    merged_into: dict[int, int] = {}
     for group in by_key.values():
         if len(group) < 2:
             continue
-        group.sort(key=lambda c: c["id"])
+        group.sort(key=lambda c: (-c["liveBetOffers"], -c["rosterSize"], c["id"]))
         keeper, *losers = group
         merged = set(keeper["competitionIds"])
         for loser in losers:
             merged.update(loser["competitionIds"])
             drop_clubs.add(loser["id"])
+            merged_into[loser["id"]] = keeper["id"]
         keeper["competitionIds"] = sorted(merged)
 
     clubs = [c for c in clubs if c["id"] not in drop_clubs]
+    # Players pointing at a merged twin move to its keeper: otherwise a squad first seen on the dropped twin
+    # cascades out with it, and a countryTeamId dangles at an id the catalog no longer has.
+    for p in players.values():
+        p["clubId"] = merged_into.get(p["clubId"], p["clubId"])
+        if p.get("countryTeamId"):
+            p["countryTeamId"] = merged_into.get(p["countryTeamId"], p["countryTeamId"])
     surviving_ids = {c["id"] for c in clubs}
     surviving_names = {c["id"]: c["name"] for c in clubs}
 
@@ -592,6 +611,7 @@ def refactor(
                     "name": club_name,
                     "competitionIds": sorted(set(ccomp) | (set(cgrp) - {sport_root_id})),
                     "groupIds": [],
+                    **twin_rank_fields(p),
                 }
                 if national_teams:
                     # In an individual sport the country teams are the rostered TEAMs (Davis / BJK Cup
@@ -622,6 +642,7 @@ def refactor(
         home = derive_home_country(team_raw_groups, group_index)
         return {sport_root_id} | ({home} if home is not None else set())
 
+    national_team_ids: set[int] = set()
     for p in blob.get("participants", []):
         if p.get("type") != "TEAM":
             continue
@@ -667,9 +688,12 @@ def refactor(
             "name": club_name,
             "competitionIds": comp_ids,
             "groupIds": grp_ids,
+            **twin_rank_fields(p),
         }
         if national_teams:
             club["ntVariant"] = nt_variant_from_name(club_name) if is_national_team else None
+        if is_national_team:
+            national_team_ids.add(club_id)
         clubs.append(club)
 
         for m in members:
@@ -686,6 +710,8 @@ def refactor(
                 existing["groupIds"] = sorted(set(existing["groupIds"]) | set(pgrp))
                 if is_national_team:
                     existing["countryTeamId"] = club_id  # this TEAM is the player's national side
+                elif existing["clubId"] in national_team_ids:
+                    existing["clubId"] = club_id  # first seen on a national squad; a club roster names his club
             else:
                 player: dict = {
                     "id": pid,

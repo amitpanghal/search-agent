@@ -8,11 +8,18 @@
 // twice), write data/<sport>/<sport>_participants_raw.json — the same file scripts/<sport>/concat-feeds.ts
 // produces, so the rest of the pipeline (normalize → build:scope) is unchanged.
 //
+// Same-name TEAM twins: Kambi can carry two ids for one team and price only one of them — the NEW id for the
+// national teams it migrated (Spain 1003666473 holds the Nations League fixtures, 1000000186 three outrights),
+// the OLD id for clubs (Lyon's new id is an empty row with no offers; verified live 2026-10-03). The normalizer
+// keeps one twin, so each twin is stamped with `liveBetOffers`, its live bet-offer count, and the priced one wins.
+// See docs/adr/catalog-twins.md.
+//
 // Needs data/<sport>/groups.json first (run fetch-groups.ts). Feeds operator is `kambi` and takes no query.
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { getSport, BUILD_DIR, GROUPS_PATH } from "../src/resolver/catalog/sports";
+import { betOffersByParticipants } from "../src/resolver/shared/offering-client";
 import { curlJsonOrNull, closeBrowser } from "./curl-fetch";
 
 const FEED = (id: number) => `https://feeds-eu.offering-api.kambicdn.com/feeds/api/kambi/participant/group/${id}.json`;
@@ -48,7 +55,7 @@ const TIMEOUT_MS = 120_000; // client abort → treat the group as too-big, spli
 const CONCURRENCY = 4; // ponytail: pool the sport's direct children; kept modest so slow feeds don't get transient errors under load
 
 type Node = { id: number; name?: string; groups?: Node[] };
-type Participant = { id: number; [k: string]: unknown };
+type Participant = { id: number; type?: string; names?: { locale?: string; name?: string }[]; [k: string]: unknown };
 
 // GET a feed via a headless browser (every non-browser fingerprint is 410'd — see curl-fetch.ts), retried `attempts` times.
 // participants[] on 200 (even if empty), or null after all attempts fail → the caller splits into children
@@ -106,6 +113,52 @@ function findNode(root: Node, id: number): Node | null {
   return null;
 }
 
+// Twin checks go one at a time with a gap: 866 checks fired four at a time drew a 429 (rate limit) from the
+// offering host on 2026-10-03, and the host publishes no limit to pace against. ponytail: a fixed pace of about
+// 3 calls/s (football's ~866 ids take ~5 min); slow it further if the log ever counts a 429.
+const TWIN_CHECK_GAP_MS = 250;
+
+// Live bet-offer count for one participant id. Plain fetch through the runtime client, not the browser: the
+// offering host serves Node, and a 404 must read as "no offers", which curlJsonOrNull folds into a failure.
+// Any other failure is retried after a wait long enough to clear a rate limit (cleared within 15s when seen),
+// then degrades to null so the caller can report it.
+async function liveOfferCount(id: number, stats: { rateLimited: number }): Promise<number | null> {
+  for (let a = 0; a < 3; a++) {
+    if (a > 0) await sleep(30_000 * a);
+    try {
+      return (await betOffersByParticipants([id])).betOffers.length;
+    } catch (e) {
+      const message = (e as Error).message;
+      if (message.startsWith("HTTP 404")) return 0; // Kambi prices nothing on this id: a real 0
+      if (message.startsWith("HTTP 429")) stats.rateLimited++;
+    }
+  }
+  return null;
+}
+
+// Stamp every TEAM that shares its English name with another TEAM with `liveBetOffers` (see the header).
+async function markLiveTwins(participants: Participant[], slug: string): Promise<void> {
+  const byName = new Map<string, Participant[]>();
+  for (const p of participants) {
+    const name = p.names?.find((n) => n.locale === "en_GB")?.name;
+    if (p.type === "TEAM" && name) byName.set(name, [...(byName.get(name) ?? []), p]);
+  }
+  const twins = [...byName.values()].filter((g) => g.length > 1).flat();
+  const stats = { rateLimited: 0 };
+  const failed: number[] = [];
+  const started = Date.now();
+  for (const p of twins) {
+    const n = await liveOfferCount(p.id, stats);
+    if (n == null) failed.push(p.id);
+    p.liveBetOffers = n ?? 0; // a failed check counts as 0, so the normalizer's roster tie-break decides the pair
+    await sleep(TWIN_CHECK_GAP_MS);
+  }
+  const seconds = Math.round((Date.now() - started) / 1000);
+  console.log(
+    `[${slug}] twin check: ${twins.length} same-name team ids in ${seconds}s, ${stats.rateLimited} rate-limited (429), ${failed.length} failed${failed.length ? `: ${failed.join(",")}` : ""}`,
+  );
+}
+
 async function main(): Promise<void> {
   const slug = process.argv[2] ?? "football";
   const config = getSport(slug);
@@ -161,6 +214,7 @@ async function main(): Promise<void> {
     if (!prev || memberCount(p) > memberCount(prev)) bestById.set(p.id, p);
   }
   const participants = [...bestById.values()];
+  await markLiveTwins(participants, config.slug);
 
   writeFileSync(out, JSON.stringify({ participants }) + "\n");
   console.log(`\ntotal fetched: ${parts.length}, unique: ${participants.length}`);
