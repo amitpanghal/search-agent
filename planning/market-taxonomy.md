@@ -7,16 +7,17 @@ acceptance, open items. It does not restate the decisions; where it names one it
 ## In one paragraph
 
 After `filterBySubject`, each leg looks up `sport | level | subject kind | concept | direction class` in a
-committed JSON file. A hit names a criterion id (a home/away pair for team-scoped markets); if that id is on the
-leg's live menu as exactly one market, the leg is resolved without the LLM. Rows are mined offline from
-production logs and from a synthetic query run, judged in a Claude Code session, reviewed by a human, committed,
-deployed. `TAXONOMY=off` turns it off. Rows store no bet offer types; the log keeps one per menu item, mined if a
-typed fetch is accepted (its own ADR).
+committed JSON file. A hit names criterion ids (alternatives: one per competition type, one per team side); if
+exactly one market on the leg's live menu carries one of them, the leg is resolved without the LLM. Rows are mined
+offline from production logs and from a synthetic query run, judged in a Claude Code session, reviewed by a human,
+committed, deployed. `TAXONOMY=off` turns it off. Rows store no bet offer types; the log keeps one per menu item,
+mined if a typed fetch is accepted (its own ADR).
 
-> Rejected on purpose, don't re-propose (ADR Context + decisions 1, 4, 6, 8): a pre-fetch `type=` from the
+> Rejected on purpose, don't re-propose (ADR Context + decisions 1, 4, 6, 8, 10): a pre-fetch `type=` from the
 > taxonomy now; a per-query read from a bucket; learn-on-miss in process memory; hand-written rows as the source;
-> a judge as a new pipeline tool call; shadow mode; a sighting floor; matching on label text; a skill per
-> component; a lower bar for the "at least N" shared-id family (it goes to the LLM unless the leg has a line).
+> the gold's id cells as a row source (they are the gate's one independent check); a judge as a new pipeline tool
+> call; shadow mode; a sighting floor; matching on label text; a skill per component; a lower bar for the "at
+> least N" shared-id family (it goes to the LLM unless the leg has a line).
 
 ## Artefacts
 
@@ -26,21 +27,24 @@ typed fetch is accepted (its own ADR).
 {
   "football": {
     "fixture|team|to win|-": {
-      "pick":    { "name": "Full Time", "id": 1001159858 },
+      "pick":    [ { "name": "Full Time", "id": 1001159858 } ],
       "related": [ { "name": "Draw No Bet", "id": 1001159862 },
                    { "name": "Double Chance", "id": 1001159870 } ]
     },
     "fixture|team|total goals|-": {
-      "pick":    { "name": "Total Goals by Home/Away Team", "home": 1001159967, "away": 1001159633 },
-      "related": [ { "name": "Total Goals by Home/Away Team - 1st Half", "home": 1003194958, "away": 1003194956 },
+      "pick":    [ { "name": "Total Goals by Home Team", "id": 1001159967, "side": "home" },
+                   { "name": "Total Goals by Away Team", "id": 1001159633, "side": "away" } ],
+      "related": [ { "name": "Total Goals by Home Team - 1st Half", "id": 1003194958, "side": "home" },
+                   { "name": "Total Goals by Away Team - 1st Half", "id": 1003194956, "side": "away" },
                    { "name": "Total Goals", "id": 1001159926 } ]
     },
     "fixture|player|goals|atleast": {
-      "pick":    { "name": "To score at least N goals", "id": 1005153925, "byLine": true },
+      "pick":    [ { "name": "To score at least N goals", "id": 1005153925, "byLine": true } ],
       "related": []
     },
     "competition|team|to win|-": {
-      "pick":    { "name": "Season Finishing Position — Winner", "id": 1004240932, "variant": "Winner" },
+      "pick":    [ { "name": "Season Finishing Position — Winner", "id": 1004240932, "variant": "Winner" },
+                   { "name": "To Win The Trophy", "id": 1001159600 } ],
       "related": [ { "name": "Season Finishing Position — Top 4", "id": 1004240932, "variant": "Top 4" },
                    { "name": "Team(s) to be relegated", "id": 1001625325 } ]
     }
@@ -50,11 +54,14 @@ typed fetch is accepted (its own ADR).
 
 Key = `level|subject kind|folded concept|direction class` under the sport (ADR 2): level ∈ `fixture`,
 `competition`; subject kind ∈ `player`, `team`, `either_match_team`, `event` (`soft` builds no key); direction
-class ∈ `-`, `ou`, `atleast`, `atmost`, `yn`. A market reference is `{ name, id }` or
-`{ name, home?, away? }` (at least one side), plus `variant` when the id is shared across variants (ADR 3) and
-`byLine: true` on a threshold family (ADR 7). `name` is for the reader. Nothing else
-in a row. A half pair is normal at first: the logged menu is subject-filtered, so the opponent's twin ("Total Goals
-by Lille" when the subject is Arsenal) never shows; the missing side is a miss until filled (ADR 3).
+class ∈ `-`, `ou`, `atleast`, `atmost`, `yn`. `pick` is a list of alternative references and `related` a list of
+up to three; every reference is `{ name, id, side?, variant?, byLine? }` (ADR 3): `side` where Kambi splits the
+market by team side, `variant` when the id is shared across variants, `byLine: true` on a threshold family
+(ADR 7). `name` is for the reader. Nothing else in a row. Two alternatives in one `pick` are normal wherever a
+league and a cup answer one concept with different ids (`Season Finishing Position — Winner` / `To Win The
+Trophy`). A sided reference without its twin is normal at first: the logged menu is subject-filtered, so the
+opponent's twin ("Total Goals by Lille" when the subject is Arsenal) never shows; the missing side is a miss until
+filled (ADR 3).
 
 ### The lookup — `src/resolver/market/taxonomy.ts` + one hook in `resolve.ts` (ADR 1, 7)
 
@@ -68,20 +75,23 @@ by Lille" when the subject is Arsenal) never shows; the missing side is a miss u
 - `lookup(leg, sel, sides, offers): MarketPick | undefined`, rules in order:
   1. key from the leg (`leg.level`, `sel.subject.kind`, `fold(sel.market_concept)`, class of `sel.direction`);
      a `soft` subject or no row → `undefined`.
-  2. the id per offer: a single-id reference → that id, no side needed (an outright has no home or away, so
-     `competition|team|to win|-` must not depend on one); a pair → the id of `sides[offer.eventId]`, and an event
-     with no side, or whose side's id isn't stored, contributes nothing.
-  3. offers with `criterion.id ===` that id, and `description === variant` when the reference carries one; a
-     `byLine` reference keeps only those whose `criterion.order[0] === sel.line` (no numeric line → `undefined`),
-     even when one member is on the menu. Then distinct `marketLabelOf` labels: one → the hit; several or none →
-     `undefined`. `order` is never read without `byLine` — it is `[0]` or `[]` on most markets (ADR 7).
-  4. related: each reference → same mapping on the same `eventId`s (a pair with no side is skipped, not the
-     hit); keep the labels found, cap 3.
-  Returns `{ label, match: "exact", related }`.
-- Hook in `resolve.ts`, in the per-group loop just before `llmIdxs` is computed: for each `i` in `idxs` with no
-  pick yet and `market_concept !== "main"`,
-  `pickByIdx[i] = lookup(leg, sel, sidesOf(scoped.events, sel.subject, …), fr.offers)` when defined. The
-  `pickSource` per leg is emitted on the `market` stage output for the log.
+  2. per reference in `pick`, the offers that match it: `criterion.id === ref.id`; `variantOf(offer) === ref.variant`
+     when the reference carries one; `sides[offer.eventId] === ref.side` when it carries one — an event with no
+     side matches no sided reference, and a reference without `side` needs none (an outright has no home or away,
+     so `competition|team|to win|-` must not depend on one); a `byLine` reference keeps only those whose
+     `criterion.order[0] === sel.line` (no numeric line → `undefined`), even when one member is on the menu.
+     `order` is never read without `byLine` — it is `[0]` or `[]` on most markets (ADR 7).
+  3. the distinct `marketLabelOf` labels across every match of every reference: one → the hit; several or none →
+     `undefined`. Two alternatives both on the menu are "several" and go to the LLM.
+  4. related: each reference → the same match on the same `eventId`s (a sided reference with no side resolved is
+     skipped, not the hit); keep the labels found, in list order, cap 3.
+  Returns `{ label, match: "exact", related, source: "taxonomy" }`.
+- Hook in `resolve.ts`, in the per-group loop just before `llmIdxs` is computed, so a hit never becomes a bet in
+  the query's one market call (ADR one-market-call): for each `i` in `idxs` with no pick yet and
+  `market_concept !== "main"`, `pickByIdx[i] = lookup(leg, sel, sides, fr.offers)` when defined, with `sides` the
+  value item 1 already computes for the filter emit. The pick's `source` (`taxonomy` here, `llm` on the picks the
+  one market call returns) is what the log writes as `pickSource`; a pick with neither — the unidentified-subject
+  `none` — and a `main` leg with no pick log `null`.
 
 ### The log record — `src/server/log.ts` (ADR 9)
 
@@ -99,12 +109,14 @@ Per leg today: `phrase, pick (label), match, matched, labels[]`. Per leg after:
   "pickSource": "llm", "matched": true }
 ```
 
-`dir` is the class exactly as the file writes it. `pickSource` is `taxonomy`, `llm`, or `null` when no pick runs
-(a `main` browse, an unidentified subject). `menu` replaces `labels`: per item ids, type and event ids, plus
-`order` and `variant` when set, from the filter stage's offers via `marketLabelOf`. That is everything `lookup`
-reads, so a record replays in the gate with no feed (ADR 9). Related ids and judge corrections are resolved from
-`menu`. `sport` stays where it is (`ground.sport`). The menu is the subject-filtered one, so the opponent's twin is
-absent (half pairs, above).
+`dir` is the class exactly as the file writes it. `pickSource` is the pick's `source`: `taxonomy`, `llm`, or `null`
+when no pick runs (a `main` browse, an unidentified subject). `sides` is copied from the filter emit, where the
+pipeline computes it (item 1) — the log never recomputes it, because the grounded subject id and name live in
+helpers private to `resolve.ts`. `menu` replaces `labels`: per item ids, type and event ids, plus `order` and
+`variant` when set, from the filter stage's offers via `marketLabelOf`. That is everything `lookup` reads, so a
+record replays in the gate with no feed (ADR 9). Related ids and judge corrections are resolved from `menu`.
+`sport` stays where it is (`ground.sport`). The menu is the subject-filtered one, so the opponent's twin is absent
+(the missing side of a split market, above).
 
 ### The packet script — `scripts/taxonomy.ts`, `npm run taxonomy` (ADR 4)
 
@@ -125,18 +137,24 @@ one per (event id, id) of each item, carrying label, `order` and `variant` (an i
 crosses them — harmless, the hit is a label); pass iff every hit equals the judge's ids; print hit rate.
 
 That checks the code, not the rows — the same session writes rows and fixture — so a second pass checks the rows
-against a source the judge did not write (ADR 10): the gold's `market_concept.id` cells, lifted exactly as
-`market-resolve-gate.ts` lifts them (accept phrasings, subject kind, level, direction), each looked up against
-`live-menu.snapshot.json` with a pair tried on both sides; every hit must land on one of the cell's gold criterion
-ids. A key the snapshot can't reach is a miss, not a failure.
+against a source the judge did not write (ADR 10): the gold's `market_concept.id` cells, lifted as
+`market-resolve-gate.ts` lifts them (accept phrasings, subject kind, level) plus the gold's `direction`, which that
+lift does not read today and the key needs; each looked up against the captured snapshots with sided references
+tried on both sides; every hit must land on one of the cell's gold criterion ids. A key no snapshot reaches is a
+miss, not a failure. The pass is independent only while the gold seeds no rows (build item 5). Today's snapshot
+(`live-menu.snapshot.json`) is the June 2026 World Cup: it has no Draw No Bet, Double Chance, relegation or
+Season Finishing Position, so it reaches few league rows; item 2 captures a second snapshot of one league fixture
+plus its league group — a free feed fetch, the same shape as the existing file — and the pass runs over both.
 
 Wired into `npm run eval`'s exit code like `gate:live-menu`; free, no network.
 
 ### The two skills (ADR 4, 5)
 
 - `.claude/skills/taxonomy` — judge a packet, write rows and the fixture, run the gate. Holds the rules that
-  decide a row (key parts; home/away ids — a half pair is fine, the other side filled only from a later sighting
-  or one free feed fetch of a fixture where the team plays that side, never guessed; shared-id families need a
+  decide a row (key parts; sided references — one side without its twin is fine, the other filled only from a
+  later sighting or one free feed fetch of a fixture where the team plays that side, never guessed; a second
+  competition type answering the same key with another id adds an alternative to `pick`, never a second row or
+  a competition in the key; shared-id families need a
   `variant` on the reference, or `byLine: true` when the members differ by `criterion.order` as a threshold —
   set only after checking the members' `order` against their outcome lines; related ≤ 3; a `none` is a vote
   against; what never becomes a row: `outcomeLabel` picks, `main`, a `soft` subject, a key whose sightings the
@@ -155,28 +173,40 @@ Wired into `npm run eval`'s exit code like `gate:live-menu`; free, no network.
 
 ## Build plan
 
-Ungated (server, scripts, eval tooling, tests, docs, skills):
+Ungated (server, scripts, eval tooling, tests, docs, skills; item 1's two emit lines in `resolve.ts` are shown as a
+diff first all the same):
 
 1. **Log fields** — `src/server/log.ts`: the per-leg entry above. Reads what the trace already carries
-   (`extract` plan, `filter` offers, `market` picks, the scoped events + grounded subject id for `sides`), with
-   `sidesOf` written now in `src/resolver/market/taxonomy.ts` (a pure helper, not wired into the pipeline until
-   item 10, which reuses it). Declares `order?: number[]` on `BetOffer.criterion` (`offering-client.ts`; the
-   feed sends it, the type lacks it). One unit test on a captured trace. The same change updates every reader
-   of the old shape (`labels` → `menu`, `match` → `pick.match`): the record example and field list in
-   `planning/logging.md`, `docs/components/logging.md`, `src/server/log.test.ts` (it asserts `labels`), and
-   any saved Logs Insights query (SB-195171). Deploy → production starts collecting. *Prerequisite for everything mined.*
-2. **Gate + fixture + tests** — `src/eval/taxonomy-gate.ts` (both passes), the fixture file (empty at first), the
+   (`extract` plan, `filter` offers, `market` picks) plus two values the trace lacks, which the pipeline emits
+   rather than the log recomputing them (the grounded subject id and name come from helpers private to
+   `resolve.ts`): `sides` on the `filter` emit (`{ ...fr, legs, sides }`, from `sidesOf(scoped.events,
+   sel0.subject, subjId, subjectName(…))`, written now in `src/resolver/market/taxonomy.ts` and reused by item
+   10), and `source: "llm"` on each pick the one market call returns (an optional `source?: "taxonomy" | "llm"`
+   on `MarketPick`). Two one-line emits in `resolve.ts` and one optional type field, no behaviour change — still
+   shown as a diff before editing (CLAUDE.md rule 2). Declares `order?: number[]` on `BetOffer.criterion`
+   (`offering-client.ts`; the feed sends it, the type lacks it). One unit test on a captured trace. The same
+   change updates every reader of the old shape (`labels` → `menu`, `match` → `pick.match`): the record example
+   and field list in `planning/logging.md`, `docs/components/logging.md`, `src/server/log.test.ts` (it asserts
+   `labels`), any saved Logs Insights query (SB-195171), and the `log.ts` header, which says the record carries no
+   full menu — it now carries the filtered menu with ids. Deploy → production starts collecting. *Prerequisite for
+   everything mined.*
+2. **Gate + fixture + tests** — `src/eval/taxonomy-gate.ts` (both passes; the second lifts `direction` and runs
+   over both snapshots), a second snapshot — one league fixture plus its league group, captured like
+   `live-menu.snapshot.json` — the fixture file (empty at first), the
    `invariants.test.ts` cases — the `sidesOf` ones run now; the ones that call `lookup` are written as `todo`
    (node's runner reports them without failing) and switched on by item 9. The cases: home/away side
    resolution (per event, and an `either_match_team` subject's own side), a competition-level team row hits
-   with no side, a half pair misses on its unknown side, a `byLine` reference takes the line's member and misses when only another member is on the menu, `order` is ignored
+   with no side, a sided reference misses on the other side, two alternatives hit with one on the menu and go to
+   the LLM with both, a `byLine` reference takes the line's member and misses when only another member is on the
+   menu, `order` is ignored
    without `byLine`, the shared-id variant match, a `soft` subject never hits, a hit is always on the menu,
    `TAXONOMY=off`.
 3. **Packet script** — `scripts/taxonomy.ts`, capture reader first, CloudWatch pull second.
 4. **Skills** — `synth-queries`, then `taxonomy`.
-5. **Seed session** — judge the eval gold's verified concept → criterion cells and the 2026-10-02 probe capture
-   (`src/eval/team-scoped.capture.jsonl`) into the first rows (football). Review, commit. The file is small but
-   not empty when the lookup ships.
+5. **Seed session** — judge the 2026-10-02 probe capture (`src/eval/team-scoped.capture.jsonl`) into the first
+   rows (football). Not the gold's id cells: they are the gate's second pass, the one source the judge did not
+   write, and a row seeded from them would be checked against itself. Review, commit. The file is small but not
+   empty when the lookup ships; the synthetic run (item 6) fills it.
 6. **Synthetic bootstrap** — per-sport lists from the skill (football first, then the sports with expected
    traffic), one paid batch run per list through `probe --file … --out` (ask first), packet, judging session,
    review, commit, deploy.
@@ -192,7 +222,8 @@ Gated (resolver code — plan + worked example, then ask before editing; CLAUDE.
 9. **`src/resolver/market/taxonomy.ts`** — load + `lookup` as specified above. `sides` and `offers` are passed in,
    so the gate and tests replay without a network. Done when item 2's `todo` cases are switched on and pass, and
    both gate passes are green.
-10. **The hook in `resolve.ts`** — ~10 lines before `llmIdxs`; `pickSource` on the `market` stage emit.
+10. **The hook in `resolve.ts`** — ~10 lines before `llmIdxs`; the hit carries `source: "taxonomy"` (item 1 added
+    the field and the `llm` value).
 
 Order: 1 → (2, 3, 4 in parallel) → 5 → 9, 10 → dev deploy → 6 → 7; 8 alongside 9–10.
 
@@ -201,17 +232,29 @@ Order: 1 → (2, 3, 4 in parallel) → 5 → 9, 10 → dev deploy → 6 → 7; 8
 - `npm test`, `npm run typecheck`, `npm run lint`, `npm run gate:live-menu`, `npm run gate:taxonomy` green.
 - Dev deploy: the two 2026-10-02 probe queries resolve both team legs with `pickSource: taxonomy` and zero
   `pick` LLM calls; `TAXONOMY=off` restores today's behaviour exactly.
-- Paid 1× `npm run eval` with the taxonomy off: unchanged (the LLM path is untouched).
-- After the first production week: hit rate from `pickSource` reported; production disagreements from the judge
-  reported as a list — the first free audit of the resolver.
+- Paid 1× `npm run eval` with the taxonomy off: unchanged (the LLM path is untouched while it is off; with it on,
+  the misses of a partly-hit query see a smaller union menu).
+- After the first production week, reported from `pickSource`: the per-leg hit rate and the all-legs-hit share
+  (queries where no leg has `pickSource: llm` and at least one has `taxonomy`, so no market call runs — the
+  number that measures the saving); production disagreements from the judge reported as a list — the first free
+  audit of the resolver.
 
 ## Open items
 
 - Which strong model the judging session runs on is a session setting, not code; nothing to decide here.
-- ~~Competition-level ids: per competition or shared?~~ Verified 2026-10-03: shared (`Winner` 1004240932 on
-  PL, La Liga, Serie A; relegation 1001625325; top scorer 1001304945 on PL, Serie A, UCL). One row covers all
-  competitions. The check found the variant-shared family (`Winner` / `Top 2` / `Top 4` / `Top 5` / `Top 6` on
-  one id) → the `variant` field (ADR 3).
+- ~~Competition-level ids: per competition or shared?~~ Verified 2026-10-03: shared across leagues (`Winner`
+  1004240932 on PL, La Liga, Serie A; relegation 1001625325; top scorer 1001304945 on PL, Serie A, UCL). Cups
+  answer the same key with other ids (the June 2026 World Cup snapshot: `To Win The Trophy` 1001159600,
+  `Finishing Position` 1004240929, no 1004240932) → `pick` is a list of alternatives, and one row still covers
+  every competition (ADR 3). The check also found the variant-shared family (`Winner` / `Top 2` / `Top 4` /
+  `Top 5` / `Top 6` on one id) → the `variant` field (ADR 3).
+- Three ceilings on the hit rate, none a bug, to list under limits in the component record (item 8): the key is
+  the exact folded phrase, so "to win" / "win" / "winner" / "wins" are four rows (the evidence shows 2–4
+  phrasings per family); the direction classes split keys that land on one market — "Arsenal over 1.5 goals"
+  (`ou`) and "Arsenal 2+ goals" (`atleast`) both resolve to `Total Goals by Arsenal`, select turning at-least
+  into over, so two rows for one market; an `either_match_team` leg across several fixtures never hits — the
+  sided references find "Total Goals by Arsenal", "… by Chelsea", "… by Leeds", several labels, LLM — the same
+  limit the LLM path has today, since a pick is one label.
 - A hit on a `close`-only situation cannot happen (rows are exact by construction); a leg whose exact market is
   missing today takes the LLM path as before. Fine, noted.
 - The log record is ~5 KB larger on a 100-item menu (estimate). If CloudWatch cost becomes visible, cap `menu` to the
@@ -232,10 +275,12 @@ Under epic PD-9573 "NL Search — Partner POC", next to SB-195164 (logging; sub-
   - SB-195349 — Eval: `gate:taxonomy` replay gate, fixture and unit tests (item 2)
   - SB-195350 — Script: `npm run taxonomy` — review packet from captures and CloudWatch (item 3)
   - SB-195351 — Skills: `synth-queries` and `taxonomy` (item 4)
-  - SB-195352 — Taxonomy: seed from the eval gold, synthetic bootstrap run and judging (items 5, 6)
+  - SB-195352 — Taxonomy: seed from the probe capture, synthetic bootstrap run and judging (items 5, 6; item 5
+    before the dev deploy, item 6 after — the Jira title still says "eval gold", to fix)
   - SB-195353 — Taxonomy: first production judging session, then weekly (item 7)
   - SB-195354 — Docs: ADR to current, component record, pointers, CLAUDE.md, `.env.example` (item 8)
 - **SB-195346** — story: NL Search - Typed fetch from the taxonomy (decision pending data); blocked by SB-195345;
   ADR `docs/adr/typed-fetch.md`. No sub-tasks until the decision.
 
-Order: 195347 → (195349, 195350, 195351) → 195352 → 195348 → dev deploy → 195353; 195354 alongside 195348.
+Order: 195347 → (195349, 195350, 195351) → 195352 (item 5) → 195348 → dev deploy → 195352 (item 6) → 195353;
+195354 alongside 195348.

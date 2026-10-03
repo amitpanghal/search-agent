@@ -62,7 +62,8 @@ point 3 filled in) or closed as not worth it (status → `rejected`, numbers att
 - Risk: a wrong type in a row hides the right market behind a typed fetch. Mitigated three times: rows are judged
   and human-approved; the id-on-menu check turns a hidden market into a miss, not a wrong pick; the miss goes
   to the LLM on a menu that still holds the family.
-- Partial-hit queries get no fetch benefit; their saving is the skipped resolver calls only.
+- Partial-hit queries get no fetch benefit; their saving is a smaller resolver call only (one call per query
+  since one-market-call).
 
 ## Not this
 
