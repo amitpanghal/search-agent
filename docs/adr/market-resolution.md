@@ -28,4 +28,5 @@ live menu by label and grade the fit. The model may always abstain. This is wher
 - **Batched per group.** The menu is the expensive part of the prompt; it is sent once per group.
 
 ## Related
+- Superseded 2026-10-03 by [one-market-call](one-market-call.md): the menu is sent once per query, not per group.
 - Related: recall, selection, llm-providers, evaluation.

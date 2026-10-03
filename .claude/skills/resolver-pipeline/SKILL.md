@@ -61,7 +61,7 @@ Everything not marked LLM is deterministic and zero-LLM.
 | 7 | recall | `grounding/recall.ts` | network | `RecallInput` → `RecallResult` (broad live data + menu; the main network call — the only other is recoverSport's tie fetch) |
 | 8 | scopeMenu | `grounding/recall.ts` (`scopeMenu`) | no | broad data + one leg → that leg's narrowed offers/events/menu (grain, comp, teams, time via `time-window.ts`, state) |
 | 9 | filterBySubject | `market/filter.ts` | no | scoped offers → only markets that PRICE the subject (P/Q/M/E homes; diacritic-folded) |
-| 10 | resolveMarkets | `market/resolve-market.ts` + prompt | LLM | phrases + filtered menu (+ raw query) → one `MarketPick` per phrase (exact/close/none); BATCHED per group |
+| 10 | resolveMarkets | `market/resolve-market.ts` + prompt | LLM | bets (phrase + its group's filtered menu) (+ raw query) → one `MarketPick` per bet (exact/close/none); ONE call per query, menus unioned by label, per-bet `[may pick]` refs |
 | 11 | select | `result/select.ts` | no | picked market's real betoffers + spec → concrete `Selection` (outcome(s), or `fallback`) |
 | 12 | buildBetslip | `result/combinations.ts` | network | fixture-level picks → ONE `Combination`, a part per match (same-event parts priced by `onDemandPricing`) |
 | 13 | execute | `result/execute.ts` | no | resolved legs + referenced data → `ResponseEnvelope` (grouped by event; thin, no fetch) |
@@ -69,7 +69,8 @@ Everything not marked LLM is deterministic and zero-LLM.
 ## Grouping & "main" (the orchestrator's two non-obvious moves)
 In `resolve.ts`, selectors are grouped by a **signature** = filter-subject (+ side) + grounded subject id +
 level + competition id + confident team ids + time + stage + playState (built from GROUNDED ids, so surface
-variants collapse). Each group gets ONE `scopeMenu` + ONE `filterBySubject` + ONE batched `resolveMarkets` call.
+variants collapse). Each group gets ONE `scopeMenu` + ONE `filterBySubject`; its named legs become bets (phrase +
+the group's filtered menu) for the query's single `resolveMarkets` call after the loop (ADR one-market-call).
 
 A `market_concept === "main"` selector is a sentinel: it skips the LLM market pick entirely and fans out into
 **every** main-tagged market for its matched fixtures (line/subject/odds still apply via `select`).
@@ -96,7 +97,7 @@ is grounded once and shares one `EntityResolution` reference — that identity i
 ## Injection points (how the gates replay without a model or a network)
 `runPipeline` takes no dependency object; the doubles go in at the stage boundary, as defaulted parameters:
 - `resolveEntities(query, scope, decideFn = decide)` — the entity LLM step.
-- `resolveMarkets(phrases, menu, decideFn = callModel, query)` and the singular `resolveMarket` — the market pick.
+- `resolveMarkets(bets, decideFn = callModel, query)` (refs index each bet's OWN menu) and the singular `resolveMarket` — the market pick.
 - `buildBetslip(…, priceCombo)` — the same-event pricing call.
 Production passes nothing. `src/eval/live-menu-gate.ts` and `market-resolve-gate.ts` pass captured decisions;
 `invariants.test.ts` passes stubs. The trace (`shared/trace.ts`) and the cost store (`llm/cost.ts`) are

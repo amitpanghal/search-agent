@@ -71,6 +71,7 @@ status lines (`accepted — not yet built` → `current — built <commit>` → 
 | [evaluation](adr/evaluation.md) | current — built | 2026-09-30 |
 | [deployment](adr/deployment.md) | current — built | 2026-10-02 |
 | [market-taxonomy](adr/market-taxonomy.md) | accepted — not yet built | 2026-10-03 |
+| [one-market-call](adr/one-market-call.md) | current — built | 2026-10-03 |
 | [typed-fetch](adr/typed-fetch.md) | proposed — decision pending production numbers | 2026-10-03 |
 
 ## The rule for changes
